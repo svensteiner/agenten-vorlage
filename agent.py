@@ -1,7 +1,12 @@
-"""Agent — Autonomer Haupt-Loop.
+"""Agent — Autonomer Haupt-Loop (Vorlage v2.0).
 
-Der Agent läuft in einem Observe → Think → Act → Reflect Zyklus.
-Er nutzt Brain für Intelligenz, Tools für Fähigkeiten, Memory für Persistenz.
+Vorlage-Standard für alle AI_Studioxyz Agenten.
+ReAct-Zyklus: Observe → Think → Act → Reflect
+
+NEU in v2.0:
+  - Proaktive Goal-Generierung: Agent entwickelt eigene Ziele via Brain
+  - MessageBus: Empfängt und sendet Nachrichten an andere Agenten
+  - Eingehende Messages werden als Tasks verarbeitet
 
 Verwendung:
     python agent.py                    # Einmal ausführen
@@ -9,12 +14,13 @@ Verwendung:
     python agent.py --task "Aufgabe"   # Spezifische Aufgabe
     python agent.py --dry-run          # Vorschau ohne Ausführung
     python agent.py --status           # Memory-Zusammenfassung
+    python agent.py --messages         # Ungelesene Bus-Nachrichten anzeigen
 
 Anpassen:
-    1. SOUL.md mit Agenten-Wissen füllen
+    1. SOUL.md mit Agenten-Identität füllen
     2. TOOLS mit eigenen Tools bestücken
-    3. get_tasks() an eigene Task-Quelle anpassen
-    4. run_task() Tool-Logik einbauen
+    3. proactive_goals() mit domänenspezifischer Logik ergänzen
+    4. run_task() Tool-Logik implementieren
 """
 
 import argparse
@@ -24,18 +30,22 @@ import os
 import signal
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 import brain
 from memory import Memory
+from tools.message_bus import MessageBus
 
 load_dotenv(Path(__file__).parent / ".env")
 
-# ── Logging ───────────────────────────────────────────────────────────────
+# ── Konfiguration ──────────────────────────────────────────────────────────
 
+AGENT_NAME = "agent"  # ← ANPASSEN: Name dieses Agenten (z.B. "cmo", "cto", "cso")
+
+CONFIG_PATH = Path(__file__).parent / "config.json"
 LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -50,144 +60,306 @@ logging.basicConfig(
 )
 logger = logging.getLogger("agent")
 
-# ── Konfiguration ─────────────────────────────────────────────────────────
-
-CONFIG_PATH = Path(__file__).parent / "config.json"
 
 def load_config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     return {
+        "agent_name": AGENT_NAME,
         "loop_interval_minutes": 60,
         "max_retries": 2,
         "quality_threshold": 7,
         "dry_run": False,
+        "proactive": True,
     }
 
-# ── Tool-Registry ─────────────────────────────────────────────────────────
+
+# ── Tool-Registry ──────────────────────────────────────────────────────────
 # Eigene Tools hier registrieren:
 # from tools.web_search import WebSearchTool
 # TOOLS["web_search"] = WebSearchTool()
 
 TOOLS: dict = {}
 
-# ── Task-Quelle ───────────────────────────────────────────────────────────
 
-def get_tasks() -> list[dict]:
-    """Holt die nächsten Aufgaben.
+# ── Proaktive Ziel-Generierung ─────────────────────────────────────────────
 
-    Anpassen für eigene Task-Quelle:
-    - Queue-Datei lesen
-    - API aufrufen
-    - Eigene Logik implementieren
+def proactive_goals(mem: Memory) -> list[dict]:
+    """Der Agent analysiert seinen Zustand und generiert eigene Ziele.
+
+    Das ist der Unterschied zwischen einem Script und einem Agenten:
+    Er entscheidet selbst, was als nächstes wichtig ist.
+
+    Anpassen: Ergänze domänenspezifische Trigger für diesen Agenten.
     """
-    # ── ANPASSEN: Hier eigene Task-Logik implementieren ──────────────────
+    cfg = load_config()
+    if not cfg.get("proactive", True):
+        return []
 
-    # Beispiel 1: Tasks aus Datei
+    # Zustand für Brain aufbereiten
+    summary = mem.summary()
+    recent_actions = mem.load("actions", limit=10)
+    recent_learnings = mem.load("learnings", limit=5)
+    today = date.today().isoformat()
+    weekday = date.today().strftime("%A")
+
+    state_context = f"""
+Aktueller Agenten-Zustand ({today}, {weekday}):
+
+Memory-Übersicht: {json.dumps(summary, ensure_ascii=False)}
+
+Letzte 5 Aktionen: {json.dumps([{
+    'task': a.get('task', '')[:60],
+    'success': a.get('success'),
+    'date': a.get('date')
+} for a in recent_actions[-5:]], ensure_ascii=False)}
+
+Letzte Learnings: {json.dumps([l.get('insight', '') for l in recent_learnings], ensure_ascii=False)}
+
+Aufgabe: Analysiere diesen Zustand und entscheide, was der Agent als nächstes tun sollte.
+Generiere 1-3 konkrete, proaktive Aufgaben die JETZT relevant sind.
+Berücksichtige: Was wurde heute noch nicht gemacht? Was sollte regelmäßig passieren?
+Welche Learnings sollten in Aktionen umgesetzt werden?
+
+Antworte NUR mit JSON:
+{{
+    "goals": [
+        {{
+            "id": "proactive_001",
+            "task": "Konkrete Aufgabe die der Agent jetzt tun sollte",
+            "reasoning": "Warum ist das jetzt wichtig",
+            "priority": "high | medium | low"
+        }}
+    ],
+    "skip_reason": null
+}}
+"""
+
+    try:
+        result = brain.think(
+            task="Generiere proaktive Ziele basierend auf aktuellem Agenten-Zustand",
+            context=state_context
+        )
+        # Brain gibt uns einen Plan — wir wollen aber Goals
+        # Daher direkt den LLM für proaktive Goals aufrufen
+        import brain as b
+        raw = b._call_llm(b._load_soul(), state_context, temperature=0.6, max_tokens=600)
+        parsed = b._parse_json(raw)
+
+        goals_raw = parsed.get("goals", [])
+        if not goals_raw:
+            return []
+
+        goals = []
+        for g in goals_raw[:3]:  # max 3 proaktive Goals
+            goals.append({
+                "id": g.get("id", f"proactive_{date.today().isoformat()}"),
+                "task": g.get("task", ""),
+                "source": "proactive",
+                "priority": g.get("priority", "medium"),
+                "reasoning": g.get("reasoning", ""),
+            })
+
+        logger.info(f"  Proaktiv: {len(goals)} eigene Ziele generiert")
+        for g in goals:
+            logger.info(f"    [{g['priority']}] {g['task'][:80]}")
+
+        return goals
+
+    except Exception as e:
+        logger.warning(f"Proaktive Goal-Generierung fehlgeschlagen: {e}")
+        return []
+
+
+# ── MessageBus-Integration ─────────────────────────────────────────────────
+
+def get_bus_tasks(bus: MessageBus) -> list[dict]:
+    """Wandelt eingehende Bus-Nachrichten in ausführbare Tasks um."""
+    messages = bus.receive(unread_only=True)
+    if not messages:
+        return []
+
+    tasks = []
+    for msg in messages:
+        task_text = ""
+        msg_type = msg.get("type", "")
+        content = msg.get("content", "")
+        sender = msg.get("from", "?")
+
+        # Nachrichtentypen → Tasks
+        if msg_type == "deploy_request":
+            task_text = f"Deployment-Anfrage von {sender}: {content}"
+        elif msg_type == "content_ready":
+            task_text = f"Content von {sender} ist bereit zur Verarbeitung: {content}"
+        elif msg_type == "alert":
+            task_text = f"ALERT von {sender}: {content} — sofort reagieren"
+        elif msg_type == "review_request":
+            task_text = f"{sender} bittet um Review: {content}"
+        elif msg_type == "task":
+            task_text = str(content)
+        else:
+            task_text = f"Nachricht von {sender} ({msg_type}): {content}"
+
+        if task_text:
+            tasks.append({
+                "id": f"bus_{msg['id']}",
+                "task": task_text,
+                "source": "message_bus",
+                "bus_msg_id": msg["id"],
+                "priority": msg.get("priority", "normal"),
+            })
+
+    if tasks:
+        logger.info(f"  MessageBus: {len(tasks)} eingehende Nachrichten als Tasks")
+    return tasks
+
+
+# ── Task-Quelle (kombiniert) ────────────────────────────────────────────────
+
+def get_tasks(mem: Memory, bus: MessageBus) -> list[dict]:
+    """Sammelt Tasks aus allen Quellen:
+    1. Externe Queue (tasks.json)
+    2. Eingehende Bus-Nachrichten
+    3. Proaktiv generierte Ziele (via Brain)
+    """
+    tasks = []
+
+    # 1. Externe Task-Queue
     tasks_file = Path(__file__).parent / "tasks.json"
     if tasks_file.exists():
-        tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
-        return [t for t in tasks if t.get("status") == "pending"]
+        queued = json.loads(tasks_file.read_text(encoding="utf-8"))
+        pending = [t for t in queued if t.get("status") == "pending"]
+        tasks.extend(pending)
+        if pending:
+            logger.info(f"  Queue: {len(pending)} Tasks aus tasks.json")
 
-    # Beispiel 2: Default-Task wenn nichts da ist
-    return [{"id": "default", "task": "Status-Check ausführen und Memory zusammenfassen"}]
+    # 2. Bus-Nachrichten (höhere Priorität als proaktive Ziele)
+    bus_tasks = get_bus_tasks(bus)
+    tasks.extend(bus_tasks)
+
+    # 3. Proaktive Ziele (wenn Queue leer oder config erlaubt)
+    cfg = load_config()
+    if cfg.get("proactive", True):
+        proactive = proactive_goals(mem)
+        # Proaktive Goals nur hinzufügen wenn kein überlappender Task existiert
+        existing_tasks = {t.get("task", "")[:40] for t in tasks}
+        for g in proactive:
+            if g.get("task", "")[:40] not in existing_tasks:
+                tasks.append(g)
+
+    # Sortiere: Priorität high → normal → medium → low
+    priority_order = {"high": 0, "urgent": 0, "normal": 1, "medium": 2, "low": 3}
+    tasks.sort(key=lambda t: priority_order.get(t.get("priority", "normal"), 2))
+
+    return tasks
 
 
-def mark_done(task: dict) -> None:
-    """Markiert einen Task als erledigt."""
+def mark_done(task: dict, bus: MessageBus) -> None:
+    """Markiert Task als erledigt — inkl. Bus-Bestätigung."""
     tasks_file = Path(__file__).parent / "tasks.json"
-    if not tasks_file.exists():
-        return
-    tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
-    for t in tasks:
-        if t.get("id") == task.get("id"):
-            t["status"] = "done"
-            t["completed_at"] = datetime.now().isoformat()
-    tasks_file.write_text(json.dumps(tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+    if tasks_file.exists():
+        all_tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
+        for t in all_tasks:
+            if t.get("id") == task.get("id"):
+                t["status"] = "done"
+                t["completed_at"] = datetime.now().isoformat()
+        tasks_file.write_text(json.dumps(all_tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Bus-Nachricht als gelesen markieren
+    if task.get("bus_msg_id"):
+        bus.mark_read(task["bus_msg_id"])
 
 
-# ── Kern-Loop: Observe → Think → Act → Reflect ───────────────────────────
+# ── Kern-Loop: Observe → Think → Act → Reflect ────────────────────────────
 
-def run_task(task: dict, mem: Memory, dry_run: bool = False) -> dict:
-    """Führt einen einzelnen Task durch den vollen Agenten-Zyklus.
-
-    Returns: {"success": bool, "result": str, "learning": dict}
-    """
+def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) -> dict:
+    """Führt einen Task durch den vollen ReAct-Zyklus."""
     task_text = task.get("task", str(task))
     task_id = task.get("id", "?")
+    task_source = task.get("source", "queue")
     cfg = load_config()
     max_retries = cfg.get("max_retries", 2)
 
-    logger.info(f"─── Task [{task_id}]: {task_text[:80]}")
+    source_label = {"proactive": "🎯", "message_bus": "📨", "queue": "📋"}.get(task_source, "•")
+    logger.info(f"─── {source_label} Task [{task_id}]: {task_text[:80]}")
 
-    # ── 1. OBSERVE: Kontext sammeln ────────────────────────────────────
+    # ── 1. OBSERVE ────────────────────────────────────────────────
     context_parts = []
-    recent_actions = mem.load("actions", limit=5)
-    if recent_actions:
-        context_parts.append(f"Letzte Aktionen: {json.dumps(recent_actions[-3:], ensure_ascii=False)}")
-    recent_learnings = mem.load("learnings", limit=5)
-    if recent_learnings:
-        context_parts.append(f"Learnings: {[l.get('insight', '') for l in recent_learnings[-3:]]}")
+    recent = mem.load("actions", limit=5)
+    if recent:
+        context_parts.append(f"Letzte Aktionen: {json.dumps(recent[-3:], ensure_ascii=False)}")
+    learnings = mem.load("learnings", limit=5)
+    if learnings:
+        context_parts.append(f"Learnings: {[l.get('insight', '') for l in learnings[-3:]]}")
+
+    # Bus-Kontext: Gibt es relevante Nachrichten anderer Agenten?
+    unread = bus.unread_count()
+    if unread > 0:
+        context_parts.append(f"Ungelesene Bus-Nachrichten: {unread}")
+
+    context_parts.append(f"Task-Quelle: {task_source}")
     context = "\n".join(context_parts)
 
-    # ── 2. THINK: Plan erstellen ───────────────────────────────────────
-    logger.info("  → Think: Plan erstellen...")
+    # ── 2. THINK ──────────────────────────────────────────────────
+    logger.info("  → Think...")
     plan = brain.think(task_text, context)
     logger.info(f"  → Plan: {plan.get('plan', [])[:2]}")
     logger.info(f"  → Tool: {plan.get('tool', 'keins')}")
 
     if plan.get("needs_human"):
-        logger.warning(f"  → Eskalation: Mensch benötigt für: {task_text}")
-        mem.save("escalations", {"task": task_text, "reason": plan.get("reasoning")})
+        logger.warning(f"  → Eskalation: Mensch benötigt")
+        mem.save("escalations", {"task": task_text, "reason": plan.get("reasoning"), "source": task_source})
+        # Eskalation über Bus melden
+        bus.send("all", "escalation", {
+            "task": task_text[:100],
+            "reason": plan.get("reasoning", "")
+        }, priority="high")
         return {"success": False, "result": "Eskalation", "learning": {}}
 
     if dry_run:
-        logger.info(f"  [DRY RUN] Würde ausführen: {json.dumps(plan, ensure_ascii=False)[:200]}")
+        logger.info(f"  [DRY RUN] Plan: {json.dumps(plan, ensure_ascii=False)[:200]}")
         return {"success": True, "result": "dry-run", "learning": {}}
 
-    # ── 3. ACT: Ausführen ────────────────────────────────────────────
+    # ── 3. ACT ───────────────────────────────────────────────────
     tool_name = plan.get("tool")
     tool_input = plan.get("tool_input", task_text)
     tool_result = ""
 
     for attempt in range(max_retries + 1):
         if attempt > 0:
-            logger.info(f"  → Retry {attempt}/{max_retries}...")
-            time.sleep(2 ** attempt)  # Exponential backoff
+            wait = 2 ** attempt
+            logger.info(f"  → Retry {attempt}/{max_retries} (warte {wait}s)...")
+            time.sleep(wait)
 
         if tool_name and tool_name in TOOLS:
-            logger.info(f"  → Tool ausführen: {tool_name}")
+            logger.info(f"  → Tool: {tool_name}")
             tool_result = TOOLS[tool_name].safe_run(tool_input)
         else:
-            # ── ANPASSEN: Eigene Ausführungslogik hier ───────────────
-            logger.info(f"  → Direkte Ausführung (kein Tool)")
-            tool_result = f"Task '{task_text}' verarbeitet."
-            # Hier echte Logik implementieren
+            # ── ANPASSEN: Eigene Ausführungslogik ──────────────
+            logger.info(f"  → Direkte Ausführung")
+            tool_result = f"Task '{task_text[:60]}' verarbeitet."
 
-        # Ergebnis bewerten
         act_result = brain.act(plan, tool_result)
-        logger.info(f"  → Ergebnis: {act_result.get('next_action')} | {act_result.get('summary', '')[:100]}")
+        logger.info(f"  → {act_result.get('next_action')} | {act_result.get('summary', '')[:80]}")
 
-        if act_result.get("success"):
-            break
-        if act_result.get("next_action") == "escalate":
-            logger.warning("  → Eskalation nach Fehler")
+        if act_result.get("success") or act_result.get("next_action") == "escalate":
             break
 
-    # ── 4. REFLECT: Lernen ────────────────────────────────────────────
+    # ── 4. REFLECT ────────────────────────────────────────────────
     learning = brain.reflect(
-        action_taken=f"Task: {task_text}, Tool: {tool_name}",
+        action_taken=f"Task: {task_text[:60]}, Tool: {tool_name}, Quelle: {task_source}",
         result=act_result.get("summary", tool_result),
         expected="Erfolgreiche Ausführung",
     )
-    logger.info(f"  → Learning: {learning.get('insight', '')[:100]}")
+    logger.info(f"  → Learning: {learning.get('insight', '')[:80]}")
 
-    # ── 5. Persistieren ──────────────────────────────────────────────
+    # ── 5. PERSISTIEREN ───────────────────────────────────────────
     success = act_result.get("success", False)
 
     mem.save("actions", {
-        "task": task_text,
+        "task": task_text[:200],
         "task_id": task_id,
+        "task_source": task_source,
         "tool": tool_name,
         "success": success,
         "summary": act_result.get("summary", ""),
@@ -200,6 +372,10 @@ def run_task(task: dict, mem: Memory, dry_run: bool = False) -> dict:
             "improve": learning.get("improve_next_time"),
         })
 
+    # Erfolgreiche proaktive Aktionen als Metriken tracken
+    if task_source == "proactive" and success:
+        mem.log_metric("proactive_success", 1.0)
+
     return {
         "success": success,
         "result": act_result.get("output") or act_result.get("summary", ""),
@@ -207,31 +383,36 @@ def run_task(task: dict, mem: Memory, dry_run: bool = False) -> dict:
     }
 
 
-# ── Haupt-Entrypoint ──────────────────────────────────────────────────────
+# ── Haupt-Entrypoints ──────────────────────────────────────────────────────
 
 def run_once(task_text: str = None, dry_run: bool = False) -> None:
-    """Führt einen einzelnen Zyklus aus."""
-    mem = Memory()
+    """Führt einen vollständigen Agenten-Zyklus aus."""
     cfg = load_config()
+    agent_name = cfg.get("agent_name", AGENT_NAME)
+    mem = Memory()
+    bus = MessageBus(agent_name=agent_name)
+
+    # Cleanup alter Bus-Nachrichten
+    bus.cleanup(max_age_days=7)
 
     if task_text:
-        tasks = [{"id": "cli", "task": task_text}]
+        tasks = [{"id": "cli", "task": task_text, "source": "cli"}]
     else:
-        tasks = get_tasks()
+        tasks = get_tasks(mem, bus)
 
     if not tasks:
-        logger.info("Keine Tasks im Queue.")
+        logger.info("Keine Tasks — Agent ist idle.")
         return
 
-    logger.info(f"Agent startet — {len(tasks)} Task(s) gefunden")
+    logger.info(f"Agent [{agent_name}] startet — {len(tasks)} Task(s)")
 
     for task in tasks:
-        result = run_task(task, mem, dry_run=dry_run or cfg.get("dry_run", False))
+        result = run_task(task, mem, bus, dry_run=dry_run or cfg.get("dry_run", False))
         if result["success"]:
-            mark_done(task)
+            mark_done(task, bus)
             logger.info(f"✅ Task erledigt: {task.get('id', '?')}")
         else:
-            logger.warning(f"⚠️ Task fehlgeschlagen: {task.get('id', '?')}")
+            logger.warning(f"⚠️  Task fehlgeschlagen: {task.get('id', '?')}")
 
 
 def run_loop(interval_minutes: int = None) -> None:
@@ -239,8 +420,8 @@ def run_loop(interval_minutes: int = None) -> None:
     cfg = load_config()
     interval = interval_minutes or cfg.get("loop_interval_minutes", 60)
 
-    # Graceful Shutdown
     running = [True]
+
     def handle_stop(sig, frame):
         logger.info("Signal empfangen — stoppe nach diesem Zyklus...")
         running[0] = False
@@ -263,23 +444,43 @@ def run_loop(interval_minutes: int = None) -> None:
     logger.info("Agent gestoppt.")
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────
+# ── CLI ─────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Autonomer Agent")
+    parser = argparse.ArgumentParser(description="Autonomer Agent (Vorlage v2.0)")
     parser.add_argument("--loop", action="store_true", help="Dauerbetrieb")
     parser.add_argument("--task", type=str, help="Spezifischer Task")
     parser.add_argument("--dry-run", action="store_true", help="Vorschau ohne Ausführung")
     parser.add_argument("--status", action="store_true", help="Memory-Status anzeigen")
     parser.add_argument("--interval", type=int, help="Loop-Intervall in Minuten")
+    parser.add_argument("--messages", action="store_true", help="Bus-Nachrichten anzeigen")
     args = parser.parse_args()
+
+    cfg = load_config()
+    agent_name = cfg.get("agent_name", AGENT_NAME)
 
     if args.status:
         mem = Memory()
         summary = mem.summary()
-        print("\n=== Agent Memory Status ===")
+        print(f"\n=== Agent [{agent_name}] Memory Status ===")
         for key, info in summary.items():
             print(f"  {key}: {info['total']} gesamt, {info['today']} heute, letzter: {info['last']}")
+
+        # Proaktive Metriken
+        avg = mem.avg_metric("proactive_success", days=7)
+        if avg is not None:
+            print(f"\n  Proaktive Erfolgsrate (7 Tage): {avg:.0%}")
+        return
+
+    if args.messages:
+        bus = MessageBus(agent_name=agent_name)
+        msgs = bus.receive(unread_only=False)
+        print(f"\n=== Bus-Nachrichten für [{agent_name}] ===")
+        if not msgs:
+            print("  Keine Nachrichten.")
+        for m in msgs[-10:]:
+            status = "📬" if not m.get("read") else "✓"
+            print(f"  {status} [{m['priority']}] Von {m['from']}: {m['type']} — {str(m['content'])[:60]}")
         return
 
     if args.loop:
