@@ -1,0 +1,15 @@
+{
+  "_comment": "Agent-Konfiguration — hier anpassen, NICHT im Code",
+
+  "model": "gpt-4o-mini",
+  "model_brain": "gpt-4o",
+  "model_anthropic": "claude-haiku-4-5-20251001",
+
+  "quality_threshold": 7,
+  "max_retries": 2,
+  "loop_interval_minutes": 60,
+  "dry_run": false,
+
+  "agent_name": "Agent",
+  "agent_version": "1.0.0"
+}
