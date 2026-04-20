@@ -1,5 +1,15 @@
+# Runtime — nie committen
 state/
 logs/
 .env
+tasks.json
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp

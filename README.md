@@ -24,17 +24,24 @@ Der Agent läuft, lernt, verbessert sich.
 
 ```
 agent-vorlage/
-├── SOUL.md          ← Wer ist der Agent? Was weiß er?
-├── agent.py         ← Haupt-Loop (Observe→Think→Act→Reflect)
-├── brain.py         ← LLM-Intelligenz (think/act/reflect/evaluate)
-├── memory.py        ← Persistenter Speicher (JSON)
+├── SOUL.md              ← Wer ist der Agent? Was weiß er?
+├── agent.py             ← Haupt-Loop (Observe→Think→[Challenge]→Act→Reflect)
+├── brain.py             ← LLM-Intelligenz (think/act/reflect/evaluate/challenge)
+├── memory.py            ← Persistenter Speicher (JSON)
+├── governance.py        ← Action-Cooldowns + Tageslimits
 ├── tools/
-│   ├── base_tool.py ← Basisklasse für Tools
-│   └── web_search.py← Beispiel-Tool
-├── config.json      ← Einstellungen (Modell, Schwellenwerte)
-├── .env             ← API Keys (nicht ins Git!)
-├── state/           ← Auto-erstellt: Memory-Dateien
-└── logs/            ← Auto-erstellt: Log-Dateien
+│   ├── base_tool.py     ← Basisklasse (alle Tools erben davon)
+│   ├── notify.py        ← Telegram + Slack Benachrichtigungen
+│   ├── file_tool.py     ← Lesen/Schreiben von Dateien
+│   ├── web_search.py    ← Web-Suche (Beispiel)
+│   └── message_bus.py   ← Agent-zu-Agent Kommunikation
+├── config.json          ← Einstellungen (Modell, Schwellenwerte)
+├── .env                 ← API Keys (nicht ins Git!)
+├── .env.example         ← Vorlage für .env
+├── tasks.json           ← Runtime: Task-Queue (nicht ins Git!)
+├── tasks.json.example   ← Schema-Vorlage für tasks.json
+├── state/               ← Auto-erstellt: Memory + Governance
+└── logs/                ← Auto-erstellt: Log-Dateien
 ```
 
 ### Die 3 Schichten
@@ -117,11 +124,7 @@ class MeinTool(BaseTool):
         return "Ergebnis"
 ```
 
-```python
-# agent.py — registrieren
-from tools.mein_tool import MeinTool
-TOOLS["mein_tool"] = MeinTool()
-```
+Fertig. Der Agent lädt alle Tools aus `tools/` **automatisch** — keine manuelle Registrierung nötig.
 
 ---
 
