@@ -218,9 +218,10 @@ risk_level: "low" = sicher ausführen | "medium" = mit Vorsicht | "high" = besse
     parsed = _parse_json(result)
 
     if not parsed:
+        logger.warning("Challenge nicht verfügbar (kein LLM) — Plan wird ohne Review ausgeführt")
         return {
             "approved": True,
-            "concerns": [],
+            "concerns": ["Challenge nicht verfügbar — kein LLM"],
             "risk_level": "low",
             "suggestion": None,
         }

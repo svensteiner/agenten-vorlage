@@ -387,18 +387,22 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, gov: Governor = None, dry
     if cfg.get("challenge_enabled", False):
         review = brain.challenge(plan, context)
         risk = review.get("risk_level", "low")
-        if not review.get("approved") or risk == "high":
-            logger.warning(f"  → Challenge blockiert Plan (risk={risk}): {review.get('concerns', [])}")
+        if risk == "high":
+            logger.warning(f"  → Challenge blockiert Plan (risk=high): {review.get('concerns', [])}")
             if review.get("suggestion"):
                 logger.info(f"  → Vorschlag: {review['suggestion'][:100]}")
             mem.save("escalations", {
                 "task": task_text,
-                "reason": f"Challenge: {review.get('concerns')}",
+                "reason": f"Challenge high-risk: {review.get('concerns')}",
                 "source": task_source,
             })
-            return {"success": False, "result": "Challenge abgelehnt", "learning": {}}
-        if review.get("concerns"):
-            logger.info(f"  → Challenge OK (risk={risk}), Hinweise: {review['concerns']}")
+            return {"success": False, "result": "Challenge abgelehnt (high risk)", "learning": {}}
+        if risk == "medium" or not review.get("approved"):
+            logger.warning(f"  → Challenge Warnung (risk={risk}): {review.get('concerns', [])} — fahre fort")
+            if review.get("suggestion"):
+                logger.info(f"  → Vorschlag: {review['suggestion'][:100]}")
+        elif review.get("concerns"):
+            logger.info(f"  → Challenge OK, Hinweise: {review['concerns']}")
 
     if dry_run:
         logger.info(f"  [DRY RUN] Plan: {json.dumps(plan, ensure_ascii=False)[:200]}")
@@ -525,11 +529,10 @@ def _log_session_summary(mem: Memory, successes: int, failures: int) -> None:
     agent_name = cfg.get("agent_name", AGENT_NAME)
     if failures >= 2 and (failures / max(successes + failures, 1)) > 0.5:
         if "notify" in TOOLS:
-            usage2 = brain.get_usage_stats()
             msg = (
                 f"\u26a0\ufe0f [{agent_name}] Hohe Fehlerrate\n"
                 f"{failures} von {successes + failures} Tasks fehlgeschlagen.\n"
-                f"LLM: {usage2.get('calls', 0)} Calls, {usage2.get('billed_tokens', 0):,} Token"
+                f"LLM: {usage.get('calls', 0)} Calls, {usage.get('billed_tokens', 0):,} Token"
             )
             TOOLS["notify"].safe_run(msg)
 
@@ -571,6 +574,11 @@ def run_once(task_text: str = None, dry_run: bool = False) -> None:
     logger.info(f"Agent [{agent_name}] startet — {len(tasks)} Task(s)")
 
     gov = Governor()
+    # ── ANPASSEN: Aktionen mit Cooldown/Tageslimit registrieren ───────────
+    # gov.register("send_report",  cooldown_hours=24,    description="Tagesreport")
+    # gov.register("notify",       cooldown_minutes=30,  description="Benachrichtigung", max_per_day=10)
+    # gov.register("web_search",   cooldown_minutes=5,   description="Web-Suche",        max_per_day=50)
+    # gov.register("file",         cooldown_minutes=1,   description="Datei schreiben")
     brain.reset_usage_stats()
     successes = failures = 0
 
@@ -625,7 +633,7 @@ def run_loop(interval_minutes: int = None) -> None:
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Autonomer Agent (Vorlage v2.0)")
+    parser = argparse.ArgumentParser(description="Autonomer Agent (Vorlage v2.2)")
     parser.add_argument("--loop", action="store_true", help="Dauerbetrieb")
     parser.add_argument("--task", type=str, help="Spezifischer Task")
     parser.add_argument("--dry-run", action="store_true", help="Vorschau ohne Ausführung")
