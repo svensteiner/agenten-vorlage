@@ -20,6 +20,8 @@ Beispiel für ein eigenes Tool:
 
 from abc import ABC, abstractmethod
 
+MAX_OUTPUT_CHARS = 4000
+
 
 class BaseTool(ABC):
     name: str = "base_tool"
@@ -31,9 +33,12 @@ class BaseTool(ABC):
         ...
 
     def safe_run(self, input: str) -> str:
-        """Führt Tool aus mit Fehlerbehandlung."""
+        """Führt Tool aus mit Fehlerbehandlung und Output-Größenbegrenzung."""
         try:
-            return self.run(input)
+            result = self.run(input)
+            if len(result) > MAX_OUTPUT_CHARS:
+                result = result[:MAX_OUTPUT_CHARS] + f"\n[...gekürzt auf {MAX_OUTPUT_CHARS} Zeichen]"
+            return result
         except Exception as e:
             return f"FEHLER in {self.name}: {e}"
 

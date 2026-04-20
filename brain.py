@@ -20,6 +20,14 @@ logger = logging.getLogger("brain")
 SOUL_PATH = Path(__file__).parent / "SOUL.md"
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
+_session_usage: dict = {
+    "calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+}
+
 
 def _load_config() -> dict:
     if CONFIG_PATH.exists():
@@ -33,8 +41,12 @@ def _load_soul() -> str:
     return "Du bist ein autonomer KI-Agent. Handle verantwortungsbewusst."
 
 
-def _get_client():
-    """Gibt (client, model, provider) zurück. Probiert OpenAI dann Anthropic."""
+def _get_client(use_fast: bool = False):
+    """Gibt (client, model, provider) zurück. Probiert OpenAI dann Anthropic.
+
+    use_fast=True  → günstiges Modell für reflect/evaluate
+    use_fast=False → smartes Modell für think/act/proactive
+    """
     cfg = _load_config()
 
     # OpenAI
@@ -42,7 +54,8 @@ def _get_client():
     if api_key:
         try:
             from openai import OpenAI
-            model = cfg.get("model", "gpt-4o-mini")
+            default = cfg.get("model", "gpt-4o-mini")
+            model = cfg.get("model_fast", default) if use_fast else cfg.get("model_smart", default)
             return OpenAI(api_key=api_key), model, "openai"
         except ImportError:
             pass
@@ -52,7 +65,8 @@ def _get_client():
     if api_key:
         try:
             import anthropic
-            model = cfg.get("model_anthropic", "claude-haiku-4-5-20251001")
+            default = cfg.get("model_anthropic", "claude-haiku-4-5-20251001")
+            model = cfg.get("model_anthropic_fast", default) if use_fast else cfg.get("model_anthropic_smart", default)
             return anthropic.Anthropic(api_key=api_key), model, "anthropic"
         except ImportError:
             pass
@@ -60,9 +74,10 @@ def _get_client():
     return None, None, "fallback"
 
 
-def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
+def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int = 1000,
+              use_fast: bool = False) -> str:
     """Ruft LLM auf. Gibt Text zurück oder leeren String bei Fehler."""
-    client, model, provider = _get_client()
+    client, model, provider = _get_client(use_fast=use_fast)
 
     if provider == "fallback" or client is None:
         logger.warning("Kein LLM verfügbar — Keyword-Fallback aktiv")
@@ -79,15 +94,29 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
+            _session_usage["calls"] += 1
+            _session_usage["input_tokens"] += getattr(response.usage, "prompt_tokens", 0)
+            _session_usage["output_tokens"] += getattr(response.usage, "completion_tokens", 0)
             return response.choices[0].message.content.strip()
 
         elif provider == "anthropic":
+            # Prompt Caching: SOUL.md als ephemeral cache (bis zu 90% Kostenersparnis)
+            # Cache TTL: 5 Minuten — rentiert sich bei mehreren Calls pro Session
             response = client.messages.create(
                 model=model,
                 max_tokens=max_tokens,
-                system=system,
+                system=[{
+                    "type": "text",
+                    "text": system,
+                    "cache_control": {"type": "ephemeral"},
+                }],
                 messages=[{"role": "user", "content": user}],
             )
+            _session_usage["calls"] += 1
+            _session_usage["input_tokens"] += getattr(response.usage, "input_tokens", 0)
+            _session_usage["output_tokens"] += getattr(response.usage, "output_tokens", 0)
+            _session_usage["cache_read_tokens"] += getattr(response.usage, "cache_read_input_tokens", 0)
+            _session_usage["cache_write_tokens"] += getattr(response.usage, "cache_creation_input_tokens", 0)
             return response.content[0].text.strip()
 
     except Exception as e:
@@ -151,6 +180,49 @@ Du planst eine Aufgabe. Antworte NUR mit JSON:
             "tool_input": task,
             "needs_human": False,
             "reasoning": "Fallback — kein LLM verfügbar",
+        }
+
+    return parsed
+
+
+def challenge(plan: dict, context: str = "") -> dict:
+    """Plan adversarial hinterfragen — zweite Meinung vor dem Handeln.
+
+    Returns:
+        {
+            "approved": True/False,
+            "concerns": ["Bedenken 1", ...],
+            "risk_level": "low | medium | high",
+            "suggestion": "Alternative oder None"
+        }
+    """
+    soul = _load_soul()
+    system = f"""{soul}
+
+Du bist ein kritischer Reviewer. Hinterfrage diesen Plan streng.
+Antworte NUR mit JSON:
+{{
+    "approved": true,
+    "concerns": [],
+    "risk_level": "low",
+    "suggestion": null
+}}
+
+risk_level: "low" = sicher ausführen | "medium" = mit Vorsicht | "high" = besser nicht"""
+
+    user = f"Plan zur Überprüfung: {json.dumps(plan, ensure_ascii=False)}"
+    if context:
+        user += f"\n\nKontext: {context}"
+
+    result = _call_llm(system, user, temperature=0.2, max_tokens=300)
+    parsed = _parse_json(result)
+
+    if not parsed:
+        return {
+            "approved": True,
+            "concerns": [],
+            "risk_level": "low",
+            "suggestion": None,
         }
 
     return parsed
@@ -226,7 +298,7 @@ Reflektiere über eine abgeschlossene Aktion. Antworte NUR mit JSON:
 Erwartet: {expected or 'Erfolgreiche Ausführung'}
 Tatsächlich: {result}"""
 
-    result_text = _call_llm(system, user, temperature=0.4, max_tokens=200)
+    result_text = _call_llm(system, user, temperature=0.4, max_tokens=200, use_fast=True)
     parsed = _parse_json(result_text)
 
     if not parsed:
@@ -270,7 +342,7 @@ passes_quality = score >= {threshold}"""
     criteria_text = f"\n\nBewertungskriterien: {criteria}" if criteria else ""
     user = f"Content-Typ: {content_type}{criteria_text}\n\nZu bewerten:\n{content}"
 
-    result = _call_llm(system, user, temperature=0.3, max_tokens=600)
+    result = _call_llm(system, user, temperature=0.3, max_tokens=600, use_fast=True)
     parsed = _parse_json(result)
 
     if not parsed:
@@ -283,3 +355,38 @@ passes_quality = score >= {threshold}"""
 
     parsed["passes"] = parsed.get("passes_quality", parsed.get("score", 0) >= threshold)
     return parsed
+
+
+def proactive(state_context: str) -> list[dict]:
+    """Generiert proaktive Ziele basierend auf dem Agenten-Zustand.
+
+    Returns:
+        List von {"id", "task", "priority", "reasoning"}
+    """
+    soul = _load_soul()
+    result = _call_llm(soul, state_context, temperature=0.6, max_tokens=600)
+    parsed = _parse_json(result)
+    return parsed.get("goals", [])
+
+
+def get_usage_stats() -> dict:
+    """Token-Verbrauch der aktuellen Session."""
+    s = _session_usage
+    billed = s["input_tokens"] - s["cache_read_tokens"] + s["output_tokens"]
+    return {
+        "calls": s["calls"],
+        "input_tokens": s["input_tokens"],
+        "output_tokens": s["output_tokens"],
+        "cache_read_tokens": s["cache_read_tokens"],
+        "cache_write_tokens": s["cache_write_tokens"],
+        "billed_tokens": billed,
+        "cache_savings_pct": round(s["cache_read_tokens"] / max(s["input_tokens"], 1) * 100, 1),
+    }
+
+
+def reset_usage_stats() -> None:
+    """Setzt Session-Zähler zurück (z.B. nach jedem Loop-Zyklus)."""
+    _session_usage.update({
+        "calls": 0, "input_tokens": 0, "output_tokens": 0,
+        "cache_read_tokens": 0, "cache_write_tokens": 0,
+    })

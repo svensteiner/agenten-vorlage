@@ -1,15 +1,23 @@
 {
   "_comment": "Agent-Konfiguration — hier anpassen, NICHT im Code",
 
-  "model": "gpt-4o-mini",
-  "model_brain": "gpt-4o",
-  "model_anthropic": "claude-haiku-4-5-20251001",
+  "model":                 "gpt-4o-mini",
+  "model_fast":            "gpt-4o-mini",
+  "model_smart":           "gpt-4o",
 
-  "quality_threshold": 7,
-  "max_retries": 2,
+  "model_anthropic":       "claude-haiku-4-5-20251001",
+  "model_anthropic_fast":  "claude-haiku-4-5-20251001",
+  "model_anthropic_smart": "claude-sonnet-4-6",
+
+  "quality_threshold":     7,
+  "max_retries":           2,
   "loop_interval_minutes": 60,
-  "dry_run": false,
+  "max_actions_per_day":   50,
 
-  "agent_name": "Agent",
-  "agent_version": "1.0.0"
+  "dry_run":          false,
+  "proactive":        true,
+  "challenge_enabled": false,
+
+  "agent_name":    "Agent",
+  "agent_version": "2.2.0"
 }

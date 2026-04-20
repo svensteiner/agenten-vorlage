@@ -1,12 +1,22 @@
-"""Agent — Autonomer Haupt-Loop (Vorlage v2.0).
+"""Agent — Autonomer Haupt-Loop (Vorlage v2.2).
 
 Vorlage-Standard für alle AI_Studioxyz Agenten.
-ReAct-Zyklus: Observe → Think → Act → Reflect
+ReAct-Zyklus: Observe → Think → [Challenge] → Act → Reflect
 
 NEU in v2.0:
   - Proaktive Goal-Generierung: Agent entwickelt eigene Ziele via Brain
   - MessageBus: Empfängt und sendet Nachrichten an andere Agenten
   - Eingehende Messages werden als Tasks verarbeitet
+
+NEU in v2.2:
+  - Governance: Action-Registry mit Cooldowns + Tageslimits (governance.py)
+    → run_task() prüft can_act() vor jedem ACT-Schritt
+    → gov.record() protokolliert jede Aktion in state/governance.json
+  - Challenge: optionaler adversarialer Plan-Review via zweitem LLM-Call
+    → aktivierbar per "challenge_enabled": true in config.json
+    → blockiert Pläne mit risk_level "high" oder approved=false
+  - Benachrichtigungen: Telegram + Slack als eigenständige Tools (tools/)
+  - --status zeigt jetzt Governance-Übersicht aller registrierten Aktionen
 
 Verwendung:
     python agent.py                    # Einmal ausführen
@@ -36,6 +46,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import brain
+from governance import Governor
 from memory import Memory
 from tools.message_bus import MessageBus
 
@@ -61,9 +72,20 @@ logging.basicConfig(
 logger = logging.getLogger("agent")
 
 
+_REQUIRED_CONFIG_KEYS = {"agent_name", "model"}
+
+
+def validate_config(cfg: dict) -> None:
+    missing = _REQUIRED_CONFIG_KEYS - set(cfg.keys())
+    if missing:
+        logger.warning(f"Config-Felder fehlen (Defaults aktiv): {missing}")
+
+
 def load_config() -> dict:
     if CONFIG_PATH.exists():
-        return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        validate_config(cfg)
+        return cfg
     return {
         "agent_name": AGENT_NAME,
         "loop_interval_minutes": 60,
@@ -75,11 +97,34 @@ def load_config() -> dict:
 
 
 # ── Tool-Registry ──────────────────────────────────────────────────────────
-# Eigene Tools hier registrieren:
-# from tools.web_search import WebSearchTool
-# TOOLS["web_search"] = WebSearchTool()
+# Auto-Discovery lädt alle tools/*.py automatisch. Manuelle Overrides hier möglich.
 
 TOOLS: dict = {}
+
+
+def _load_tools() -> None:
+    """Lädt alle BaseTool-Subklassen aus tools/ automatisch in TOOLS."""
+    import importlib
+    import inspect
+    from tools.base_tool import BaseTool
+    skip = {"base_tool", "message_bus", "__init__"}
+    tools_dir = Path(__file__).parent / "tools"
+    for path in tools_dir.glob("[!_]*.py"):
+        if path.stem in skip:
+            continue
+        try:
+            mod = importlib.import_module(f"tools.{path.stem}")
+            for _, cls in inspect.getmembers(mod, inspect.isclass):
+                if issubclass(cls, BaseTool) and cls is not BaseTool and cls.name != "base_tool":
+                    inst = cls()
+                    if inst.name not in TOOLS:
+                        TOOLS[inst.name] = inst
+                        logger.debug(f"Tool auto-geladen: {inst.name}")
+        except Exception as e:
+            logger.warning(f"Tool-Discovery ({path.stem}): {e}")
+
+
+_load_tools()
 
 
 # ── Proaktive Ziel-Generierung ─────────────────────────────────────────────
@@ -136,17 +181,7 @@ Antworte NUR mit JSON:
 """
 
     try:
-        result = brain.think(
-            task="Generiere proaktive Ziele basierend auf aktuellem Agenten-Zustand",
-            context=state_context
-        )
-        # Brain gibt uns einen Plan — wir wollen aber Goals
-        # Daher direkt den LLM für proaktive Goals aufrufen
-        import brain as b
-        raw = b._call_llm(b._load_soul(), state_context, temperature=0.6, max_tokens=600)
-        parsed = b._parse_json(raw)
-
-        goals_raw = parsed.get("goals", [])
+        goals_raw = brain.proactive(state_context)
         if not goals_raw:
             return []
 
@@ -254,16 +289,41 @@ def get_tasks(mem: Memory, bus: MessageBus) -> list[dict]:
     return tasks
 
 
+def _update_task_status(task_id: str, status: str, extra: dict = None) -> None:
+    """Setzt Status eines Queue-Tasks (pending → in_progress → done/failed)."""
+    tasks_file = Path(__file__).parent / "tasks.json"
+    if not tasks_file.exists():
+        return
+    all_tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
+    for t in all_tasks:
+        if t.get("id") == task_id:
+            t["status"] = status
+            t[f"{status}_at"] = datetime.now().isoformat()
+            if extra:
+                t.update(extra)
+            break
+    tasks_file.write_text(json.dumps(all_tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _recover_stuck_tasks() -> int:
+    """Setzt in_progress-Tasks auf pending zurück (z.B. nach Absturz)."""
+    tasks_file = Path(__file__).parent / "tasks.json"
+    if not tasks_file.exists():
+        return 0
+    all_tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
+    stuck = [t for t in all_tasks if t.get("status") == "in_progress"]
+    if stuck:
+        for t in stuck:
+            t["status"] = "pending"
+            t["recovered_at"] = datetime.now().isoformat()
+        tasks_file.write_text(json.dumps(all_tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.warning(f"State Recovery: {len(stuck)} abgebrochene Task(s) zurückgesetzt")
+    return len(stuck)
+
+
 def mark_done(task: dict, bus: MessageBus) -> None:
     """Markiert Task als erledigt — inkl. Bus-Bestätigung."""
-    tasks_file = Path(__file__).parent / "tasks.json"
-    if tasks_file.exists():
-        all_tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
-        for t in all_tasks:
-            if t.get("id") == task.get("id"):
-                t["status"] = "done"
-                t["completed_at"] = datetime.now().isoformat()
-        tasks_file.write_text(json.dumps(all_tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+    _update_task_status(task.get("id", ""), "done")
 
     # Bus-Nachricht als gelesen markieren
     if task.get("bus_msg_id"):
@@ -272,7 +332,7 @@ def mark_done(task: dict, bus: MessageBus) -> None:
 
 # ── Kern-Loop: Observe → Think → Act → Reflect ────────────────────────────
 
-def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) -> dict:
+def run_task(task: dict, mem: Memory, bus: MessageBus, gov: Governor = None, dry_run: bool = False) -> dict:
     """Führt einen Task durch den vollen ReAct-Zyklus."""
     task_text = task.get("task", str(task))
     task_id = task.get("id", "?")
@@ -307,14 +367,38 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) ->
     logger.info(f"  → Tool: {plan.get('tool', 'keins')}")
 
     if plan.get("needs_human"):
-        logger.warning(f"  → Eskalation: Mensch benötigt")
-        mem.save("escalations", {"task": task_text, "reason": plan.get("reasoning"), "source": task_source})
-        # Eskalation über Bus melden
+        reason = plan.get("reasoning", "")
+        logger.warning(f"  → Eskalation: Mensch benötigt — {reason[:80]}")
+        mem.save("escalations", {"task": task_text, "reason": reason, "source": task_source})
+        # Sofortige Benachrichtigung an Menschen (Telegram/Slack)
+        if "notify" in TOOLS:
+            agent_name = cfg.get("agent_name", AGENT_NAME)
+            TOOLS["notify"].safe_run(
+                f"⚠️ [{agent_name}] Eskalation\n\nAufgabe: {task_text[:200]}\n\nGrund: {reason[:300]}"
+            )
+        # Auch über Bus melden (für andere Agenten)
         bus.send("all", "escalation", {
             "task": task_text[:100],
-            "reason": plan.get("reasoning", "")
+            "reason": reason,
         }, priority="high")
         return {"success": False, "result": "Eskalation", "learning": {}}
+
+    # ── 2.5 CHALLENGE (optional — zweite Meinung vor dem Handeln) ─────────
+    if cfg.get("challenge_enabled", False):
+        review = brain.challenge(plan, context)
+        risk = review.get("risk_level", "low")
+        if not review.get("approved") or risk == "high":
+            logger.warning(f"  → Challenge blockiert Plan (risk={risk}): {review.get('concerns', [])}")
+            if review.get("suggestion"):
+                logger.info(f"  → Vorschlag: {review['suggestion'][:100]}")
+            mem.save("escalations", {
+                "task": task_text,
+                "reason": f"Challenge: {review.get('concerns')}",
+                "source": task_source,
+            })
+            return {"success": False, "result": "Challenge abgelehnt", "learning": {}}
+        if review.get("concerns"):
+            logger.info(f"  → Challenge OK (risk={risk}), Hinweise: {review['concerns']}")
 
     if dry_run:
         logger.info(f"  [DRY RUN] Plan: {json.dumps(plan, ensure_ascii=False)[:200]}")
@@ -324,6 +408,14 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) ->
     tool_name = plan.get("tool")
     tool_input = plan.get("tool_input", task_text)
     tool_result = ""
+
+    # Governance: Cooldown + Tageslimit prüfen
+    if gov is not None:
+        action_key = tool_name or "run_task"
+        ok, reason = gov.can_act(action_key)
+        if not ok:
+            logger.info(f"  → Governance blockiert: {reason}")
+            return {"success": False, "result": f"Blockiert: {reason}", "learning": {}}
 
     for attempt in range(max_retries + 1):
         if attempt > 0:
@@ -344,6 +436,16 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) ->
 
         if act_result.get("success") or act_result.get("next_action") == "escalate":
             break
+
+    # Qualitäts-Check: Ergebnis bewerten (nur wenn Output vorhanden)
+    output = act_result.get("output") or tool_result
+    if output and cfg.get("quality_threshold", 7) > 0:
+        quality = brain.evaluate(output, content_type="agent_output")
+        if not quality.get("passes") and quality.get("improved_version"):
+            act_result["output"] = quality["improved_version"]
+            logger.info(f"  → Qualität: {quality.get('score')}/10 — verbesserte Version übernommen")
+        else:
+            logger.debug(f"  → Qualität: {quality.get('score')}/10")
 
     # ── 4. REFLECT ────────────────────────────────────────────────
     learning = brain.reflect(
@@ -372,6 +474,11 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) ->
             "improve": learning.get("improve_next_time"),
         })
 
+    # Governance: Aktion protokollieren
+    if gov is not None:
+        action_key = tool_name or "run_task"
+        gov.record(action_key, result="success" if success else "failed", details=task_text[:100])
+
     # Erfolgreiche proaktive Aktionen als Metriken tracken
     if task_source == "proactive" and success:
         mem.log_metric("proactive_success", 1.0)
@@ -385,12 +492,57 @@ def run_task(task: dict, mem: Memory, bus: MessageBus, dry_run: bool = False) ->
 
 # ── Haupt-Entrypoints ──────────────────────────────────────────────────────
 
+
+def _write_heartbeat(agent_name: str) -> None:
+    """Schreibt Lebenszeichen-Datei für externes Monitoring."""
+    path = Path(__file__).parent / "state" / "heartbeat.json"
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(json.dumps({
+        "agent": agent_name,
+        "alive_at": datetime.now().isoformat(),
+        "pid": os.getpid(),
+    }, ensure_ascii=False), encoding="utf-8")
+
+def _log_session_summary(mem: Memory, successes: int, failures: int) -> None:
+    """Schreibt Session-Zusammenfassung nach jedem Zyklus."""
+    usage = brain.get_usage_stats()
+    total = successes + failures
+    success_rate = successes / total if total else 0
+
+    if usage["calls"] > 0:
+        cache_info = ""
+        if usage["cache_read_tokens"] > 0:
+            cache_info = f", Cache-Ersparnis: {usage['cache_savings_pct']}%"
+        logger.info(
+            f"Session: {total} Task(s), {successes} ✅ {failures} ❌ | "
+            f"LLM: {usage['calls']} Calls, {usage['billed_tokens']:,} abgerechnet{cache_info}"
+        )
+        mem.log_metric("llm_tokens", usage["billed_tokens"])
+        mem.log_metric("session_success_rate", success_rate)
+
+    # Benachrichtigung bei kritischer Fehlerrate (>50% Failures, mind. 2 Tasks)
+    cfg = load_config()
+    agent_name = cfg.get("agent_name", AGENT_NAME)
+    if failures >= 2 and (failures / max(successes + failures, 1)) > 0.5:
+        if "notify" in TOOLS:
+            usage2 = brain.get_usage_stats()
+            msg = (
+                f"\u26a0\ufe0f [{agent_name}] Hohe Fehlerrate\n"
+                f"{failures} von {successes + failures} Tasks fehlgeschlagen.\n"
+                f"LLM: {usage2.get('calls', 0)} Calls, {usage2.get('billed_tokens', 0):,} Token"
+            )
+            TOOLS["notify"].safe_run(msg)
+
+
 def run_once(task_text: str = None, dry_run: bool = False) -> None:
     """Führt einen vollständigen Agenten-Zyklus aus."""
     cfg = load_config()
     agent_name = cfg.get("agent_name", AGENT_NAME)
     mem = Memory()
     bus = MessageBus(agent_name=agent_name)
+
+    # State Recovery: abgebrochene Tasks aus letzter Session zurücksetzen
+    _recover_stuck_tasks()
 
     # Cleanup alter Bus-Nachrichten
     bus.cleanup(max_age_days=7)
@@ -404,15 +556,40 @@ def run_once(task_text: str = None, dry_run: bool = False) -> None:
         logger.info("Keine Tasks — Agent ist idle.")
         return
 
+    # Tageslimit prüfen (max_actions_per_day in config.json)
+    max_actions = cfg.get("max_actions_per_day", 0)
+    if max_actions > 0:
+        done_today = mem.count_today("actions", success=True)
+        if done_today >= max_actions:
+            logger.info(f"Tageslimit erreicht ({done_today}/{max_actions} Aktionen) — Agent pausiert bis morgen.")
+            return
+        remaining = max_actions - done_today
+        if remaining < len(tasks):
+            tasks = tasks[:remaining]
+            logger.info(f"Tageslimit: noch {remaining} Aktionen möglich — {len(tasks)} Tasks eingeplant.")
+
     logger.info(f"Agent [{agent_name}] startet — {len(tasks)} Task(s)")
 
+    gov = Governor()
+    brain.reset_usage_stats()
+    successes = failures = 0
+
     for task in tasks:
-        result = run_task(task, mem, bus, dry_run=dry_run or cfg.get("dry_run", False))
+        # in_progress markieren vor Ausführung (Crash-Recovery)
+        if task.get("source") == "queue":
+            _update_task_status(task.get("id", ""), "in_progress")
+
+        result = run_task(task, mem, bus, gov=gov, dry_run=dry_run or cfg.get("dry_run", False))
         if result["success"]:
             mark_done(task, bus)
+            successes += 1
             logger.info(f"✅ Task erledigt: {task.get('id', '?')}")
         else:
+            _update_task_status(task.get("id", ""), "failed")
+            failures += 1
             logger.warning(f"⚠️  Task fehlgeschlagen: {task.get('id', '?')}")
+
+    _log_session_summary(mem, successes, failures)
 
 
 def run_loop(interval_minutes: int = None) -> None:
@@ -432,6 +609,7 @@ def run_loop(interval_minutes: int = None) -> None:
     logger.info(f"Dauerbetrieb gestartet — Zyklus alle {interval} Minuten")
 
     while running[0]:
+        _write_heartbeat(cfg.get("agent_name", AGENT_NAME))
         try:
             run_once()
         except Exception as e:
@@ -466,10 +644,23 @@ def main():
         for key, info in summary.items():
             print(f"  {key}: {info['total']} gesamt, {info['today']} heute, letzter: {info['last']}")
 
-        # Proaktive Metriken
-        avg = mem.avg_metric("proactive_success", days=7)
-        if avg is not None:
-            print(f"\n  Proaktive Erfolgsrate (7 Tage): {avg:.0%}")
+        # Token-Kosten der letzten 7 Tage
+        avg_tokens = mem.avg_metric("llm_tokens", days=7)
+        if avg_tokens is not None:
+            print(f"\n  Ø Tokens/Zyklus (7 Tage): {avg_tokens:,.0f}")
+
+        # Verfügbare Tools anzeigen
+        print(f"\n  Tools geladen: {list(TOOLS.keys()) or '(keine)'}")
+
+        avg_proactive = mem.avg_metric("proactive_success", days=7)
+        if avg_proactive is not None:
+            print(f"\n  Proaktive Erfolgsrate (7 Tage): {avg_proactive:.0%}")
+
+        # Governance-Status
+        gov = Governor()
+        gov_summary = gov.summary_text()
+        if "(keine" not in gov_summary:
+            print(f"\n  Governance:\n{gov_summary}")
         return
 
     if args.messages:
