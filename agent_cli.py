@@ -50,31 +50,53 @@ class OnboardingAnswers:
     remember_between_runs: str
 
 
-QUESTIONS = [
-    ("project_name", "Project name", "Name the automation project."),
-    ("customer_or_team", "Customer / Team", "Who is this agent for?"),
-    ("main_problem", "Main problem", "What problem should the agent solve?"),
-    ("success_criteria", "Success criteria", "What does a successful run look like?"),
-    ("non_goals", "Non-goals", "What should the agent not try to do?"),
-    ("role", "Agent role", "What is the agent's role?"),
-    ("language", "Language", "Which language should the agent use?"),
-    ("tone", "Tone", "How should the agent sound?"),
-    ("domain_expertise", "Domain expertise", "What should the agent always know?"),
-    ("hard_limits", "Hard limits", "What must the agent never decide on its own?"),
-    ("trigger", "Trigger", "What starts the workflow?"),
-    ("inputs", "Inputs", "What input data does it need?"),
-    ("steps", "Steps", "What are the steps it should follow?"),
-    ("validation", "Validation", "How should outputs be checked?"),
-    ("escalation", "Escalation", "When should it ask a human?"),
-    ("tools", "Tools", "List the tools or systems it needs, separated by commas."),
-    ("require_approval_for", "Approval needed", "Which actions need approval?"),
-    ("never_do", "Never do", "What actions are forbidden?"),
-    ("retry_policy", "Retry policy", "How should retries work?"),
-    ("quality_threshold", "Quality threshold", "What score or standard is good enough?"),
-    ("keep_forever", "Keep forever", "What should be remembered long-term?"),
-    ("keep_temporarily", "Keep temporarily", "What should be kept only for the current run?"),
-    ("remember_between_runs", "Remember between runs", "What should persist across runs?"),
+BEGINNER_QUESTIONS = [
+    ("project_name", "Projektname", "Wie heißt das Projekt?"),
+    ("main_problem", "Was soll er tun?", "Was soll der Agent ganz konkret erledigen?"),
+    ("customer_or_team", "Für wen?", "Für wen ist der Agent gedacht?"),
+    ("tools", "Welche Tools?", "Welche Systeme oder Dateien braucht er? Schreibe sie mit Kommas getrennt."),
+    ("success_criteria", "Woran merkt man Erfolg?", "Woran merkst du, dass es gut gelaufen ist?"),
+    ("trigger", "Wann starten?", "Was startet den Workflow?"),
+    ("require_approval_for", "Was braucht Freigabe?", "Wofür braucht der Agent immer Freigabe?"),
 ]
+
+ADVANCED_QUESTIONS = [
+    ("role", "Rolle", "Welche Rolle soll der Agent haben?"),
+    ("language", "Sprache", "Welche Sprache soll er verwenden?"),
+    ("tone", "Ton", "Wie soll er klingen?"),
+    ("domain_expertise", "Wissen", "Was sollte der Agent immer wissen?"),
+    ("hard_limits", "Grenzen", "Was darf er niemals alleine entscheiden?"),
+    ("inputs", "Eingaben", "Welche Eingaben bekommt er typischerweise?"),
+    ("steps", "Schritte", "Wie läuft der Standard-Workflow ab?"),
+    ("validation", "Prüfen", "Wie soll das Ergebnis geprüft werden?"),
+    ("escalation", "Hilfe holen", "Wann soll er einen Menschen fragen?"),
+    ("non_goals", "Nicht-Ziele", "Was soll er nicht versuchen?"),
+    ("never_do", "Nie tun", "Welche Aktionen sind tabu?"),
+    ("retry_policy", "Fehler", "Wie soll er mit Fehlern umgehen?"),
+    ("quality_threshold", "Qualität", "Was ist gut genug?"),
+    ("keep_forever", "Merken", "Was soll er sich dauerhaft merken?"),
+    ("keep_temporarily", "Kurz merken", "Was braucht er nur während des Laufs?"),
+    ("remember_between_runs", "Zwischen Läufen merken", "Was soll er zwischen Läufen behalten?"),
+]
+
+DEFAULT_ANSWERS = {
+    "role": "automation agent",
+    "language": "Deutsch",
+    "tone": "klar und freundlich",
+    "domain_expertise": "Projekt- und Prozesswissen kommt aus den Projektdateien.",
+    "hard_limits": "Keine destruktiven Aktionen ohne Freigabe.",
+    "inputs": "Task, Kontext, Projektdateien und ggf. Tool-Ausgaben.",
+    "steps": "Verstehen, planen, prüfen, ausführen, verifizieren.",
+    "validation": "Erst prüfen, dann als erledigt markieren.",
+    "escalation": "Wenn etwas unklar, riskant oder destruktiv ist.",
+    "non_goals": "Keine unnötige Komplexität oder Experimente im Produktivpfad.",
+    "never_do": "Nie ohne Freigabe löschen, überschreiben oder massenhaft ändern.",
+    "retry_policy": "Einmal sauber retryen, dann eskalieren.",
+    "quality_threshold": "7/10",
+    "keep_forever": "Rollenregeln, Prozesse und wichtige Projektkonventionen.",
+    "keep_temporarily": "Zwischenzustände, offene Aufgaben und aktuelle Ergebnisse.",
+    "remember_between_runs": "Letzte Aktionen, Learnings und wiederkehrende Muster.",
+}
 
 
 def _ask(prompt: str, default: str = "") -> str:
@@ -90,14 +112,42 @@ def _slugify(value: str) -> str:
     return cleaned.strip("-") or "agent"
 
 
-def _collect_answers() -> OnboardingAnswers:
+def _collect_answers(mode: str = "beginner") -> OnboardingAnswers:
     values: dict[str, Any] = {}
-    for key, label, prompt in QUESTIONS:
-        if key == "tools":
-            raw = _ask(prompt)
-            values[key] = [item.strip() for item in raw.split(",") if item.strip()]
-        else:
-            values[key] = _ask(prompt)
+
+    sets = [BEGINNER_QUESTIONS]
+    if mode == "full":
+        sets.append(ADVANCED_QUESTIONS)
+
+    for question_set in sets:
+        for key, label, prompt in question_set:
+            if key == "tools":
+                raw = _ask(f"{label} - {prompt}")
+                values[key] = [item.strip() for item in raw.split(",") if item.strip()]
+            else:
+                values[key] = _ask(f"{label} - {prompt}")
+
+    if mode != "full":
+        refine = _ask("Möchtest du noch optionale Feindetails ergänzen? (j/n)", "n").lower()
+        if refine in {"j", "ja", "y", "yes"}:
+            for key, label, prompt in ADVANCED_QUESTIONS:
+                if key in values:
+                    continue
+                values[key] = _ask(f"{label} - {prompt}")
+
+    for key, default in DEFAULT_ANSWERS.items():
+        values.setdefault(key, default)
+
+    values.setdefault("customer_or_team", "")
+    values.setdefault("success_criteria", "")
+    values.setdefault("main_problem", "")
+    values.setdefault("trigger", "")
+    values.setdefault("tools", [])
+    values.setdefault("require_approval_for", "Löschen, Überschreiben, Massenänderungen")
+
+    if isinstance(values.get("tools"), str):
+        values["tools"] = [item.strip() for item in str(values["tools"]).split(",") if item.strip()]
+
     return OnboardingAnswers(**values)
 
 
@@ -312,7 +362,12 @@ def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
 def cmd_setup(args: argparse.Namespace) -> int:
     print("\nAgent setup")
     print("-----------")
-    answers = _collect_answers()
+    if args.full:
+        print("Vollständiger Modus: alle Fragen für mehr Präzision.\n")
+        answers = _collect_answers(mode="full")
+    else:
+        print("Kurzer Einstieg: nur die wichtigsten Fragen. Du kannst danach Feindetails ergänzen.\n")
+        answers = _collect_answers(mode="beginner")
     output_root = Path(args.output or DEFAULT_OUTPUT_ROOT)
     project_slug = _slugify(answers.project_name)
     target_dir = output_root / project_slug
@@ -360,11 +415,13 @@ def build_parser() -> argparse.ArgumentParser:
     setup = sub.add_parser("setup", help="Interactive onboarding that generates a new project pack")
     setup.add_argument("--output", help="Output root for generated agent packs")
     setup.add_argument("--force", action="store_true", help="Overwrite existing output without asking")
+    setup.add_argument("--full", action="store_true", help="Ask the full advanced question set")
     setup.set_defaults(func=cmd_setup)
 
     init_cmd = sub.add_parser("init", help="Alias for setup")
     init_cmd.add_argument("--output", help="Output root for generated agent packs")
     init_cmd.add_argument("--force", action="store_true", help="Overwrite existing output without asking")
+    init_cmd.add_argument("--full", action="store_true", help="Ask the full advanced question set")
     init_cmd.set_defaults(func=cmd_setup)
 
     run = sub.add_parser("run", help="Run the current agent implementation")

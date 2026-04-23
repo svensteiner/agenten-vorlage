@@ -12,76 +12,35 @@ The idea is simple:
 ## Purpose
 
 Use this onboarding flow whenever we create a new project pack.
-It helps us avoid random prompt sprawl and forces us to define the agent clearly before implementation.
+It keeps the start simple for beginners and still leaves room for precise details later.
 
-## Step 1: Define the project
+## Simple Start
 
-Ask these first:
+The default wizard asks only the essentials:
 
 - What is the project called?
-- What problem does the agent solve?
-- Who is the owner or primary user?
+- What should the agent do?
+- Who is it for?
+- Which tools or files does it need?
 - What does success look like?
-- What should the agent never do?
+- What starts the workflow?
+- What needs approval?
 
-## Step 2: Define the agent identity
+This is enough to create a good first version of the agent.
 
-Ask these next:
+## Optional Detail
+
+If you want a sharper project pack, the wizard can ask more questions after that:
 
 - What is the agent's role?
-- Which company, team, or customer does it belong to?
-- What language should it use?
-- Should it sound formal, direct, friendly, or technical?
-- What knowledge should it always assume?
+- Which language should it use?
+- How should it sound?
+- What should it always know?
+- What must it never decide alone?
+- How should it retry after errors?
+- What should it remember?
 
 This section becomes the core of `project/SOUL.md`.
-
-## Step 3: Define the workflow
-
-Ask:
-
-- What are the recurring tasks?
-- In what order should the agent do them?
-- Which steps are mandatory?
-- Which steps are optional?
-- When should it stop and ask a human?
-
-This section becomes `project/workflows/`.
-
-## Step 4: Define the tools
-
-Ask:
-
-- Which systems does the agent need to access?
-- Which files should it read or write?
-- Which API integrations are needed?
-- Which actions are safe to automate?
-- Which actions need explicit confirmation?
-
-This section becomes `project/tools/` and `project/policies/`.
-
-## Step 5: Define the memory
-
-Ask:
-
-- What should the agent remember across runs?
-- What should be written to project memory?
-- Which facts change often?
-- Which facts are stable?
-
-This section becomes `project/memory/` and the memory-related parts of `config.json`.
-
-## Step 6: Define quality and safety
-
-Ask:
-
-- What counts as a good result?
-- What is the minimum quality threshold?
-- What should be retried automatically?
-- What should always be escalated?
-- What actions are destructive or expensive?
-
-This section becomes `project/policies/`, `project/config.json`, and governance rules.
 
 ## Output mapping
 
@@ -103,14 +62,14 @@ Use this exact prompt flow when onboarding a new project:
 ```text
 I want to create a new automation agent.
 
-Ask me the minimum set of questions needed to define:
+Ask me the minimum set of beginner-friendly questions needed to define:
 - the project name
-- the agent identity
-- the target workflow
-- the required tools
-- the approval rules
-- the quality threshold
-- the memory the agent should keep
+- what the agent should do
+- who it is for
+- which tools it needs
+- what success looks like
+- what needs approval
+- what it should remember
 
 After I answer, summarize the project as:
 1. agent identity
@@ -126,6 +85,11 @@ If you want the repository to generate a new project pack after the interview, r
 ```bash
 python agent_cli.py setup
 ```
+
+For more detail, use:
+
+```bash
+python agent_cli.py setup --full
 ```
 
 ## Recommended artifact

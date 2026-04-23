@@ -1,30 +1,31 @@
 # Project Onboarding Template
 
 Fill this out before implementing a new automation agent.
+Use short, simple answers. If something is unknown, leave it blank for now.
 
 ## Project
 
 - Project name:
-- Customer or team:
-- Main problem:
-- Success criteria:
-- Non-goals:
+- Who is it for:
+- What should it do:
+- What does success look like:
+- What should it not do:
 
 ## Agent identity
 
 - Role:
 - Language:
 - Tone:
-- Domain expertise:
-- Hard limits:
+- What it should already know:
+- What it must never decide alone:
 
 ## Workflow
 
-- Trigger:
-- Inputs:
-- Steps:
-- Validation:
-- Escalation:
+- What starts it:
+- What does it need:
+- What are the steps:
+- How do we check the result:
+- When should it ask for help:
 
 ## Tools
 
@@ -34,7 +35,7 @@ Fill this out before implementing a new automation agent.
 
 ## Safety
 
-- Require approval for:
+- Needs approval for:
 - Never do:
 - Retry policy:
 - Quality threshold:
@@ -44,4 +45,3 @@ Fill this out before implementing a new automation agent.
 - Keep forever:
 - Keep temporarily:
 - Remember between runs:
-

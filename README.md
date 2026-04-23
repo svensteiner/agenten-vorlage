@@ -120,7 +120,7 @@ python agent_cli.py status
 python agent_cli.py run
 ```
 
-On Windows, `SETUP.bat` starts the onboarding wizard.
+`setup` starts a beginner-friendly wizard. On Windows, `SETUP.bat` starts the same flow.
 
 ## Recommended next step
 
