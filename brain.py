@@ -124,6 +124,12 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
         return ""
 
 
+def complete(system: str, user: str, temperature: float = 0.7, max_tokens: int = 1000,
+             use_fast: bool = False) -> str:
+    """Public text-completion helper for orchestration layers and subagents."""
+    return _call_llm(system, user, temperature=temperature, max_tokens=max_tokens, use_fast=use_fast)
+
+
 def _parse_json(text: str) -> dict:
     """Extrahiert JSON aus LLM-Antwort (auch wenn in Markdown-Block)."""
     # JSON-Block aus Markdown extrahieren

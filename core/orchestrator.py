@@ -9,6 +9,7 @@ from .dispatcher import Dispatcher, DispatchResult
 from .governance import GovernanceDecision, GovernancePolicy
 from .memory import MemoryStore
 from .planner import Plan, Planner
+from .subagents import SubagentManager
 from .runtime import RuntimeStore
 from .verifier import VerificationResult, Verifier
 
@@ -43,8 +44,9 @@ class AgentOrchestrator:
         self.dispatcher = dispatcher or Dispatcher()
         self.verifier = verifier or Verifier()
         self.governance = governance or GovernancePolicy()
-        self.memory = MemoryStore(self.project_root)
-        self.runtime = RuntimeStore(self.project_root / "runtime")
+        self.subagents = SubagentManager(self.project_root)
+        self.memory = MemoryStore(self.project_root / "state")
+        self.runtime = RuntimeStore(self.project_root / "state" / "runtime")
 
     def run(self, task: str, *, tools: dict[str, Any] | None = None) -> RunResult:
         context = self.context_builder.build()
@@ -63,6 +65,7 @@ class AgentOrchestrator:
         dispatch_results: list[DispatchResult] = []
         verification_results: list[VerificationResult] = []
         outputs: list[str] = []
+        subagent_runs: list[dict[str, Any]] = []
         success = True
 
         for step in plan.steps:
@@ -76,6 +79,21 @@ class AgentOrchestrator:
                     context=context,
                     metadata={"status": "step_blocked", "step": step.id},
                 )
+
+            selected_subagent = self.subagents.select(
+                task,
+                context=context,
+                workflow_hint=plan.workflow_hint or "",
+            )
+            if selected_subagent is not None and step.action in {"inspect", "execute_workflow", "execute"}:
+                subagent_output = self.subagents.run(
+                    selected_subagent,
+                    task=task,
+                    context=context,
+                    extra_context="\n".join(plan.notes),
+                )
+                subagent_runs.append({"step": step.id, **subagent_output})
+                outputs.append(subagent_output["output"])
 
             dispatch = self.dispatcher.dispatch(step, tools=tools)
             dispatch_results.append(dispatch)
@@ -109,6 +127,8 @@ class AgentOrchestrator:
             metadata={
                 "dispatch_count": len(dispatch_results),
                 "verification_count": len(verification_results),
+                "subagent_count": len(subagent_runs),
+                "subagents": subagent_runs,
                 "outputs": outputs,
             },
         )
