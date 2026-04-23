@@ -12,9 +12,11 @@ system easier to extend.
 ## Where to start
 
 - Architecture doc: [docs/architecture.md](docs/architecture.md)
+- Onboarding doc: [docs/onboarding.md](docs/onboarding.md)
 - Core runtime: [`core/`](core/)
 - Project-specific configuration: [`project/`](project/)
 - Current agent entrypoint: [`agent.py`](agent.py)
+- CLI entrypoint: [`agent_cli.py`](agent_cli.py)
 - Reserved subagents area: [`project/agents/`](project/agents/)
 
 ## Architecture
@@ -107,6 +109,18 @@ Runtime data is operational, not domain-specific:
 
 The new `core/` and `project/` folders are already in the repo as the target structure.
 The existing `agent.py` still runs the current implementation.
+
+## CLI
+
+Use the template CLI for setup and status:
+
+```bash
+python agent_cli.py setup
+python agent_cli.py status
+python agent_cli.py run
+```
+
+On Windows, `SETUP.bat` starts the onboarding wizard.
 
 ## Recommended next step
 

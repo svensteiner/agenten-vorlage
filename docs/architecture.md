@@ -109,3 +109,7 @@ If a behavior is specific to one project, it belongs in `project/`.
 - We can add new project packs without rewriting the runtime.
 - We can test the core separately from the domain layer.
 - We can keep safety and quality rules consistent across projects.
+
+## Onboarding
+
+See [docs/onboarding.md](onboarding.md) for the guided interview that turns a new project into an actual agent pack.
