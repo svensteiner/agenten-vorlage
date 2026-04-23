@@ -1,0 +1,12 @@
+{
+  "project_name": "automation-project",
+  "agent_name": "automation-agent",
+  "mode": "development",
+  "quality_threshold": 7,
+  "max_retries": 2,
+  "max_actions_per_day": 50,
+  "challenge_enabled": true,
+  "proactive": true,
+  "memory_scope": ["core", "project"],
+  "human_approval_required": ["delete", "overwrite", "bulk_change"]
+}

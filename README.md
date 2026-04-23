@@ -1,210 +1,113 @@
-# 🤖 Agent Vorlage
+# Agent Template
 
-**Wiederverwendbares Template für autonome KI-Agenten.**
+Reusable template for automation agents.
 
-Jeder Agent den wir für Kunden bauen, basiert auf dieser Vorlage.
-Einmal verstehen — überall einsetzen.
+This repository is designed to be copied onto different automation projects.
+The reusable core stays generic. The project pack holds the domain-specific logic.
 
----
+The structure is also inspired by Google ADK sample-agent repositories and CLI-driven
+agent kits, where reusable agent packs, subagents, and workflow folders make the
+system easier to extend.
 
-## Was ist ein Agent?
+## Where to start
 
-Ein Agent ist ein KI-System das **autonom** Aufgaben erledigt:
+- Architecture doc: [docs/architecture.md](docs/architecture.md)
+- Core runtime: [`core/`](core/)
+- Project-specific configuration: [`project/`](project/)
+- Current agent entrypoint: [`agent.py`](agent.py)
+- Reserved subagents area: [`project/agents/`](project/agents/)
 
-```
-Observe → Think → Act → Reflect → (wiederholen)
-```
+## Architecture
 
-Kein manuelles Eingreifen. Kein Copy-Paste von ChatGPT.
-Der Agent läuft, lernt, verbessert sich.
+```mermaid
+flowchart TD
+  U[User / Trigger] --> O[Orchestrator]
 
----
+  subgraph ProjectPack[Project Pack]
+    S[SOUL / AGENTS spec]
+    T[Tools]
+    W[Workflows]
+    P[Policies]
+    D[Domain memory]
+  end
 
-## Struktur
+  subgraph Core[Reusable Core]
+    C[Context Builder]
+    PL[Planner]
+    G[Guardrails / Governance]
+    DP[Dispatcher]
+    M[Memory / State]
+    V[Verifier]
+  end
 
-```
-agent-vorlage/
-├── SOUL.md              ← Wer ist der Agent? Was weiß er?
-├── agent.py             ← Haupt-Loop (Observe→Think→[Challenge]→Act→Reflect)
-├── brain.py             ← LLM-Intelligenz (think/act/reflect/evaluate/challenge)
-├── memory.py            ← Persistenter Speicher (JSON)
-├── governance.py        ← Action-Cooldowns + Tageslimits
-├── tools/
-│   ├── base_tool.py     ← Basisklasse (alle Tools erben davon)
-│   ├── notify.py        ← Telegram + Slack Benachrichtigungen
-│   ├── file_tool.py     ← Lesen/Schreiben von Dateien
-│   ├── web_search.py    ← Web-Suche (Beispiel)
-│   └── message_bus.py   ← Agent-zu-Agent Kommunikation
-├── config.json          ← Einstellungen (Modell, Schwellenwerte)
-├── .env                 ← API Keys (nicht ins Git!)
-├── .env.example         ← Vorlage für .env
-├── tasks.json           ← Runtime: Task-Queue (nicht ins Git!)
-├── tasks.json.example   ← Schema-Vorlage für tasks.json
-├── state/               ← Auto-erstellt: Memory + Governance
-└── logs/                ← Auto-erstellt: Log-Dateien
-```
+  S --> C
+  T --> DP
+  W --> PL
+  P --> G
+  D --> C
 
-### Die 3 Schichten
-
-```
-┌──────────────────────────────────────┐
-│  SOUL.md                             │  ← Was der Agent weiß und wie er denkt
-│  (Identität + Domain-Wissen)         │
-└──────────────────────────────────────┘
-              ↓
-┌──────────────────────────────────────┐
-│  brain.py                            │  ← LLM-Intelligenz
-│  think() → act() → reflect()         │     OpenAI / Anthropic
-│  evaluate()                          │
-└──────────────────────────────────────┘
-              ↓
-┌──────────────────────────────────────┐
-│  agent.py + tools/                   │  ← Ausführung + Fähigkeiten
-│  Observe → Think → Act → Reflect     │
-│  Memory, Loop, Logging               │
-└──────────────────────────────────────┘
+  U --> O
+  O --> C
+  C --> PL
+  PL --> G
+  G --> DP
+  DP --> V
+  DP --> M
+  V --> O
+  M --> C
 ```
 
----
+## What each layer does
 
-## Schnellstart (5 Minuten)
+### Project Pack
 
-### 1. Setup
+The project pack holds everything that is specific to one automation:
 
-```bash
-# Repo klonen
-git clone https://github.com/[user]/agent-vorlage
-cd agent-vorlage
+- `SOUL.md` for identity, goals, and quality standards
+- `AGENTS.md` for operating instructions
+- `workflows/` for repeatable playbooks
+- `tools/` for project-specific capabilities
+- `policies/` for approval and safety rules
+- `knowledge/` for business facts and conventions
+- `memory/` for durable learnings
 
-# Dependencies installieren
-pip install -r requirements.txt
+### Reusable Core
 
-# .env anlegen
-cp .env.example .env
-# → OPENAI_API_KEY eintragen
-```
+The core stays the same across projects:
 
-### 2. SOUL.md anpassen
+- `Context Builder` loads project rules and knowledge
+- `Planner` breaks tasks into steps
+- `Governance` checks risk and approvals
+- `Dispatcher` executes tools and subagents
+- `Memory` stores task history and learnings
+- `Verifier` checks whether the result is good enough
+- `Orchestrator` coordinates the full run
 
-Öffne `SOUL.md` und fülle aus:
-- Wer ist der Agent? (Rolle, Unternehmen)
-- Was weiß er? (Domain-Wissen)
-- Was darf er alleine? (Autonome Entscheidungen)
-- Was ist "gut genug"? (Qualitätsstandards)
+### Runtime
 
-### 3. Starten
+Runtime data is operational, not domain-specific:
 
-```bash
-python agent.py --task "Mache XYZ"    # Einmaliger Task
-python agent.py --loop                 # Dauerbetrieb
-python agent.py --dry-run             # Vorschau
-python agent.py --status              # Memory anzeigen
-```
+- task queue
+- heartbeat
+- logs
+- crash recovery
 
-Oder auf Windows:
-```
-START.bat           ← Einmaliger Lauf
-DAUERLAUF.bat       ← Kontinuierlich
-```
+## Execution flow
 
----
+1. A trigger arrives.
+2. The orchestrator loads the current context.
+3. The planner drafts the work plan.
+4. Governance checks whether the task is allowed.
+5. The dispatcher runs the approved step.
+6. The verifier checks the result.
+7. Memory stores the outcome and the learning.
+8. The orchestrator either finishes, retries, or escalates.
 
-## Eigene Tools hinzufügen
+## Current status
 
-```python
-# tools/mein_tool.py
-from tools.base_tool import BaseTool
+The new `core/` and `project/` folders are already in the repo as the target structure.
+The existing `agent.py` still runs the current implementation.
 
-class MeinTool(BaseTool):
-    name = "mein_tool"
-    description = "Macht XYZ — wird vom Brain automatisch ausgewählt"
+## Recommended next step
 
-    def run(self, input: str) -> str:
-        # Eigene Logik
-        return "Ergebnis"
-```
-
-Fertig. Der Agent lädt alle Tools aus `tools/` **automatisch** — keine manuelle Registrierung nötig.
-
----
-
-## Brain-Funktionen
-
-```python
-import brain
-
-# Aufgabe verstehen + planen
-plan = brain.think("Erstelle einen LinkedIn Post über KI-Trends")
-# → {"plan": [...], "tool": "linkedin_poster", "tool_input": "..."}
-
-# Ergebnis bewerten
-result = brain.act(plan, tool_result="Post erstellt")
-# → {"success": True, "next_action": "done"}
-
-# Aus Ergebnis lernen
-learning = brain.reflect("Post erstellt", "500 Impressionen", "1000 Impressionen erwartet")
-# → {"insight": "Posts morgens performen besser"}
-
-# Qualität prüfen
-score = brain.evaluate("Post-Text hier...", content_type="linkedin_post")
-# → {"score": 8, "passes": True, "feedback": [...]}
-```
-
----
-
-## Memory-Nutzung
-
-```python
-from memory import Memory
-mem = Memory()
-
-# Aktion speichern
-mem.save("actions", {"type": "post", "platform": "linkedin", "success": True})
-
-# Heute schon gemacht?
-if mem.done_today("actions", type="post", platform="linkedin"):
-    print("Heute schon gepostet — überspringe")
-
-# Letzten 10 Learnings laden
-learnings = mem.load("learnings", limit=10)
-
-# Metriken loggen
-mem.log_metric("engagement_rate", 4.2, unit="%")
-avg = mem.avg_metric("engagement_rate", days=7)
-```
-
----
-
-## Für Kunden deployen
-
-### Was der Kunde bekommt
-
-1. **Angepasste SOUL.md** — Domänen-Wissen des Kunden
-2. **Konfiguriertes agent.py** — Aufgaben die der Agent erledigt
-3. **Custom Tools** — API-Verbindungen zum Kunden-System
-4. **Windows-freundlich** — START.bat, DAUERLAUF.bat
-5. **Transparente Logs** — Was der Agent wann gemacht hat
-
-### Pricing-Idee
-
-| Paket | Was | Preis |
-|-------|-----|-------|
-| Starter Agent | 1 Aufgabentyp, 1 Tool, Setup | ab 1.500 € |
-| Business Agent | 3-5 Aufgaben, 3 Tools, Memory | ab 3.500 € |
-| Autonome Company | Multi-Agent-System (CMO+CTO+...) | ab 8.000 € |
-| Wartung | Monatliches Monitoring + Updates | 299 €/Mo |
-
----
-
-## Technologie
-
-- **Python 3.11+**
-- **LLM:** OpenAI GPT-4o-mini (Standard) oder Anthropic Claude
-- **Persistenz:** JSON-Dateien (kein DB-Setup nötig)
-- **Deployment:** Windows Task Scheduler / Linux Cron / Docker
-
----
-
-## Lizenz
-
-Intern — AI_Studioxyz. Nicht öffentlich teilen ohne Genehmigung.
+Move `agent.py` to the new orchestrator gradually so the old behavior stays available while we migrate.
