@@ -86,7 +86,7 @@ DEFAULT_ANSWERS = {
     "domain_expertise": "Projekt- und Prozesswissen kommt aus den Projektdateien.",
     "hard_limits": "Keine destruktiven Aktionen ohne Freigabe.",
     "inputs": "Task, Kontext, Projektdateien und ggf. Tool-Ausgaben.",
-    "steps": "Verstehen, planen, prüfen, ausführen, verifizieren.",
+    "steps": "1. Verstehen\n2. Ausführen\n3. Prüfen",
     "validation": "Erst prüfen, dann als erledigt markieren.",
     "escalation": "Wenn etwas unklar, riskant oder destruktiv ist.",
     "non_goals": "Keine unnötige Komplexität oder Experimente im Produktivpfad.",
@@ -152,59 +152,43 @@ def _collect_answers(mode: str = "beginner") -> OnboardingAnswers:
 
 
 def _render_soul(ans: OnboardingAnswers) -> str:
-    tools_lines = "\n".join(f"- {tool}" for tool in ans.tools) if ans.tools else "- [add tools]"
-    return dedent(
-        f"""\
-        # {ans.project_name} - SOUL
-
-        ## Identity
-
-        - Project: {ans.project_name}
-        - Customer / Team: {ans.customer_or_team}
-        - Role: {ans.role}
-        - Language: {ans.language}
-        - Tone: {ans.tone}
-
-        ## Mission
-
-        - Main problem: {ans.main_problem}
-        - Success criteria: {ans.success_criteria}
-        - Non-goals: {ans.non_goals}
-
-        ## Domain knowledge
-
-        - Expertise: {ans.domain_expertise}
-
-        ## Boundaries
-
-        - Hard limits: {ans.hard_limits}
-        - Approval required for: {ans.require_approval_for}
-        - Never do: {ans.never_do}
-
-        ## Workflow
-
-        - Trigger: {ans.trigger}
-        - Inputs: {ans.inputs}
-        - Steps: {ans.steps}
-        - Validation: {ans.validation}
-        - Escalation: {ans.escalation}
-
-        ## Tools
-
-        {tools_lines}
-
-        ## Quality
-
-        - Retry policy: {ans.retry_policy}
-        - Quality threshold: {ans.quality_threshold}
-
-        ## Memory
-
-        - Keep forever: {ans.keep_forever}
-        - Keep temporarily: {ans.keep_temporarily}
-        - Remember between runs: {ans.remember_between_runs}
-        """
-    ).strip() + "\n"
+    workflow_steps = _split_items(ans.steps, ["Verstehen", "Ausführen", "Prüfen"])
+    workflow_summary = " -> ".join(workflow_steps)
+    tools_summary = ", ".join(ans.tools) if ans.tools else "[none]"
+    return (
+        f"# {ans.project_name} - SOUL\n\n"
+        "## Identity\n"
+        f"- Project: {ans.project_name}\n"
+        f"- Customer / Team: {ans.customer_or_team}\n"
+        f"- Role: {ans.role}\n"
+        f"- Language: {ans.language}\n"
+        f"- Tone: {ans.tone}\n\n"
+        "## Mission\n"
+        f"- Main problem: {ans.main_problem}\n"
+        f"- Success criteria: {ans.success_criteria}\n"
+        f"- Non-goals: {ans.non_goals}\n\n"
+        "## Domain knowledge\n"
+        f"- Expertise: {ans.domain_expertise}\n\n"
+        "## Boundaries\n"
+        f"- Hard limits: {ans.hard_limits}\n"
+        f"- Approval required for: {ans.require_approval_for}\n"
+        f"- Never do: {ans.never_do}\n\n"
+        "## Workflow\n"
+        f"- Trigger: {ans.trigger}\n"
+        f"- Inputs: {ans.inputs}\n"
+        f"- Steps: {workflow_summary}\n"
+        f"- Validation: {ans.validation}\n"
+        f"- Escalation: {ans.escalation}\n\n"
+        "## Tools\n"
+        f"- Tools: {tools_summary}\n\n"
+        "## Quality\n"
+        f"- Retry policy: {ans.retry_policy}\n"
+        f"- Quality threshold: {ans.quality_threshold}\n\n"
+        "## Memory\n"
+        f"- Keep forever: {ans.keep_forever}\n"
+        f"- Keep temporarily: {ans.keep_temporarily}\n"
+        f"- Remember between runs: {ans.remember_between_runs}\n"
+    )
 
 
 def _render_config(ans: OnboardingAnswers) -> dict[str, Any]:
@@ -228,73 +212,57 @@ def _render_config(ans: OnboardingAnswers) -> dict[str, Any]:
 
 
 def _render_workflow(ans: OnboardingAnswers) -> str:
-    return dedent(
-        f"""\
-        # Main Workflow
-
-        ## Trigger
-
-        {ans.trigger}
-
-        ## Inputs
-
-        {ans.inputs}
-
-        ## Steps
-
-        {ans.steps}
-
-        ## Validation
-
-        {ans.validation}
-
-        ## Escalation
-
-        {ans.escalation}
-        """
-    ).strip() + "\n"
+    workflow_steps = _split_items(ans.steps, ["Verstehen", "Ausführen", "Prüfen"])
+    steps_block = "\n".join(f"- {step}" for step in workflow_steps)
+    return (
+        "# Main Workflow\n\n"
+        "## Trigger\n\n"
+        f"{ans.trigger}\n\n"
+        "## Inputs\n\n"
+        f"{ans.inputs}\n\n"
+        "## Steps\n\n"
+        f"{steps_block}\n\n"
+        "## Validation\n\n"
+        f"{ans.validation}\n\n"
+        "## Escalation\n\n"
+        f"{ans.escalation}\n"
+    )
 
 
 def _render_project_brief(ans: OnboardingAnswers) -> str:
-    tools = "\n".join(f"- {tool}" for tool in ans.tools) if ans.tools else "- none"
-    return dedent(
-        f"""\
-        # Project Brief
-
-        ## Summary
-        - Project: {ans.project_name}
-        - Customer / Team: {ans.customer_or_team}
-        - Main problem: {ans.main_problem}
-        - Success criteria: {ans.success_criteria}
-
-        ## Agent
-        - Role: {ans.role}
-        - Language: {ans.language}
-        - Tone: {ans.tone}
-        - Domain expertise: {ans.domain_expertise}
-
-        ## Workflow
-        - Trigger: {ans.trigger}
-        - Inputs: {ans.inputs}
-        - Steps: {ans.steps}
-        - Validation: {ans.validation}
-        - Escalation: {ans.escalation}
-
-        ## Tools
-        {tools}
-
-        ## Safety
-        - Approval required for: {ans.require_approval_for}
-        - Never do: {ans.never_do}
-        - Retry policy: {ans.retry_policy}
-        - Quality threshold: {ans.quality_threshold}
-
-        ## Memory
-        - Keep forever: {ans.keep_forever}
-        - Keep temporarily: {ans.keep_temporarily}
-        - Remember between runs: {ans.remember_between_runs}
-        """
-    ).strip() + "\n"
+    workflow_steps = _split_items(ans.steps, ["Verstehen", "Ausführen", "Prüfen"])
+    steps_summary = " -> ".join(workflow_steps)
+    tools_summary = ", ".join(ans.tools) if ans.tools else "none"
+    return (
+        "# Project Brief\n\n"
+        "## Summary\n"
+        f"- Project: {ans.project_name}\n"
+        f"- Customer / Team: {ans.customer_or_team}\n"
+        f"- Main problem: {ans.main_problem}\n"
+        f"- Success criteria: {ans.success_criteria}\n\n"
+        "## Agent\n"
+        f"- Role: {ans.role}\n"
+        f"- Language: {ans.language}\n"
+        f"- Tone: {ans.tone}\n"
+        f"- Domain expertise: {ans.domain_expertise}\n\n"
+        "## Workflow\n"
+        f"- Trigger: {ans.trigger}\n"
+        f"- Inputs: {ans.inputs}\n"
+        f"- Steps: {steps_summary}\n"
+        f"- Validation: {ans.validation}\n"
+        f"- Escalation: {ans.escalation}\n\n"
+        "## Tools\n"
+        f"- Tools: {tools_summary}\n\n"
+        "## Safety\n"
+        f"- Approval required for: {ans.require_approval_for}\n"
+        f"- Never do: {ans.never_do}\n"
+        f"- Retry policy: {ans.retry_policy}\n"
+        f"- Quality threshold: {ans.quality_threshold}\n\n"
+        "## Memory\n"
+        f"- Keep forever: {ans.keep_forever}\n"
+        f"- Keep temporarily: {ans.keep_temporarily}\n"
+        f"- Remember between runs: {ans.remember_between_runs}\n"
+    )
 
 
 def _split_items(text: str, fallback: list[str]) -> list[str]:
@@ -311,6 +279,12 @@ def _render_manifest(ans: OnboardingAnswers) -> dict[str, Any]:
             "Verify the result",
         ],
     )
+    if workflow_steps == ["1. Verstehen", "2. Ausführen", "3. Prüfen"]:
+        workflow_steps = [
+            "Verstehen",
+            "Ausführen",
+            "Prüfen",
+        ]
     return {
         "project_name": ans.project_name,
         "purpose": ans.main_problem,
