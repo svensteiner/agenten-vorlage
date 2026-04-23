@@ -64,6 +64,8 @@ class ContextBuilder:
         if not directory.exists():
             return result
         for path in sorted(directory.glob("*.md")):
+            if path.stem.lower() == "readme":
+                continue
             result[path.stem] = path.read_text(encoding="utf-8")
         return result
 
@@ -72,8 +74,12 @@ class ContextBuilder:
         if not directory.exists():
             return result
         for path in sorted(directory.glob("**/AGENT.md")):
+            if path.stem.lower() == "agent" and path.parent.name.lower() == "readme":
+                continue
             result[path.parent.name] = path.read_text(encoding="utf-8")
         for path in sorted(directory.glob("**/AGENTS.md")):
+            if path.stem.lower() == "agents" and path.parent.name.lower() == "readme":
+                continue
             if path.parent.name not in result:
                 result[path.parent.name] = path.read_text(encoding="utf-8")
         return result
@@ -83,5 +89,7 @@ class ContextBuilder:
         if not directory.exists():
             return result
         for path in sorted(directory.glob("*.md")):
+            if path.stem.lower() == "readme":
+                continue
             result[path.stem] = path.read_text(encoding="utf-8")
         return result
