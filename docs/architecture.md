@@ -59,6 +59,7 @@ The project pack holds all domain-specific material:
 
 - `SOUL.md` for identity, goals, and quality standards
 - `AGENTS.md` for instructions and operating rules
+- `manifest.json` for the structured blueprint that powers the planner
 - `workflows/` for repeatable task playbooks
 - `tools/` for project-specific capabilities
 - `policies/` for approvals, write limits, and safety rules

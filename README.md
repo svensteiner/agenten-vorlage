@@ -67,6 +67,7 @@ The project pack holds everything that is specific to one automation:
 
 - `SOUL.md` for identity, goals, and quality standards
 - `AGENTS.md` for operating instructions
+- `manifest.json` for the structured agent blueprint
 - `workflows/` for repeatable playbooks
 - `tools/` for project-specific capabilities
 - `policies/` for approval and safety rules

@@ -1,0 +1,31 @@
+{
+  "project_name": "automation-project",
+  "purpose": "Automation template for reusable project-specific agents.",
+  "customer_or_team": "template-users",
+  "success_criteria": "The agent can be configured quickly and execute safe automation tasks.",
+  "trigger": "A task is submitted via CLI or queue.",
+  "approval_required_for": ["delete", "overwrite", "bulk changes"],
+  "tools": ["file", "notify", "web_search"],
+  "agent": {
+    "role": "automation agent",
+    "language": "Deutsch",
+    "tone": "klar und freundlich",
+    "domain_expertise": "Project and process knowledge comes from the project pack.",
+    "hard_limits": "No destructive actions without approval."
+  },
+  "workflow": {
+    "name": "main",
+    "steps": [
+      "Understand the request",
+      "Use the approved tool or subagent",
+      "Verify the result"
+    ],
+    "validation": "Verify the output before marking the task complete.",
+    "escalation": "Ask a human if the task is unclear or risky."
+  },
+  "memory": {
+    "forever": "Roles, processes, and important project conventions.",
+    "temporary": "Intermediate states and open tasks.",
+    "between_runs": "Recent actions, learnings, and recurring patterns."
+  }
+}

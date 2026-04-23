@@ -297,6 +297,49 @@ def _render_project_brief(ans: OnboardingAnswers) -> str:
     ).strip() + "\n"
 
 
+def _split_items(text: str, fallback: list[str]) -> list[str]:
+    items = [item.strip() for item in text.replace("\n", ",").split(",") if item.strip()]
+    return items or fallback
+
+
+def _render_manifest(ans: OnboardingAnswers) -> dict[str, Any]:
+    workflow_steps = _split_items(
+        ans.steps,
+        [
+            "Understand the request",
+            "Use the approved tool or subagent",
+            "Verify the result",
+        ],
+    )
+    return {
+        "project_name": ans.project_name,
+        "purpose": ans.main_problem,
+        "customer_or_team": ans.customer_or_team,
+        "success_criteria": ans.success_criteria,
+        "trigger": ans.trigger,
+        "approval_required_for": _split_items(ans.require_approval_for, ["delete", "overwrite", "bulk changes"]),
+        "tools": ans.tools,
+        "agent": {
+            "role": ans.role,
+            "language": ans.language,
+            "tone": ans.tone,
+            "domain_expertise": ans.domain_expertise,
+            "hard_limits": ans.hard_limits,
+        },
+        "workflow": {
+            "name": "main",
+            "steps": workflow_steps,
+            "validation": ans.validation,
+            "escalation": ans.escalation,
+        },
+        "memory": {
+            "forever": ans.keep_forever,
+            "temporary": ans.keep_temporarily,
+            "between_runs": ans.remember_between_runs,
+        },
+    }
+
+
 def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
     project_dir = target_dir / "project"
     docs_dir = target_dir / "docs"
@@ -321,6 +364,10 @@ def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
 
     (project_dir / "SOUL.md").write_text(_render_soul(ans), encoding="utf-8")
     (project_dir / "config.json").write_text(json.dumps(_render_config(ans), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (project_dir / "manifest.json").write_text(
+        json.dumps(_render_manifest(ans), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     (project_dir / "AGENTS.md").write_text(
         dedent(
             f"""\

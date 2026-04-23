@@ -15,6 +15,7 @@ import json
 class ProjectContext:
     project_root: Path
     project_name: str = "default-project"
+    manifest: dict[str, Any] = field(default_factory=dict)
     soul_text: str = ""
     agents_text: str = ""
     config: dict[str, Any] = field(default_factory=dict)
@@ -35,6 +36,7 @@ class ContextBuilder:
         project_dir = self.project_root / "project"
         context = ProjectContext(project_root=self.project_root)
         context.project_name = self._load_project_name(project_dir)
+        context.manifest = self._read_json(project_dir / "manifest.json")
         context.soul_text = self._read_text(project_dir / "SOUL.md")
         context.agents_text = self._read_text(project_dir / "AGENTS.md")
         context.config = self._read_json(project_dir / "config.json")
@@ -47,6 +49,9 @@ class ContextBuilder:
 
     def _load_project_name(self, project_dir: Path) -> str:
         config = self._read_json(project_dir / "config.json")
+        manifest = self._read_json(project_dir / "manifest.json")
+        if manifest.get("project_name"):
+            return str(manifest["project_name"])
         return str(config.get("project_name", self.project_root.name))
 
     def _read_text(self, path: Path) -> str:

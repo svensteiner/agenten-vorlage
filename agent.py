@@ -114,6 +114,7 @@ def _show_status() -> None:
     print(f"\n=== Core Status [{ctx.project_name}] ===")
     print(f"Project root: {ctx.project_root}")
     print(f"Agent name: {cfg.get('agent_name')}")
+    print(f"Manifest workflow: {ctx.manifest.get('workflow', {}).get('name', '(keine)')}")
     print(f"Workflows: {list(ctx.workflows.keys()) or '(keine)'}")
     print(f"Policies: {list(ctx.policies.keys()) or '(keine)'}")
     print(f"Knowledge: {list(ctx.knowledge.keys()) or '(keine)'}")

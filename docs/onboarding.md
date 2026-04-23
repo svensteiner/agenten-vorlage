@@ -98,6 +98,7 @@ After the interview, create a short project brief in markdown and use it to gene
 
 - `project/SOUL.md`
 - `project/config.json`
+- `project/manifest.json`
 - `project/workflows/example_automation.md`
 - `project/tools/`
 - `project/policies/`

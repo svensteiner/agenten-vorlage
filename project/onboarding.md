@@ -10,6 +10,8 @@ Use short, simple answers. If something is unknown, leave it blank for now.
 - What should it do:
 - What does success look like:
 - What should it not do:
+- Trigger:
+- Which tools does it need:
 
 ## Agent identity
 
@@ -26,6 +28,8 @@ Use short, simple answers. If something is unknown, leave it blank for now.
 - What are the steps:
 - How do we check the result:
 - When should it ask for help:
+
+The answers in this section should also be reflected in `project/manifest.json`.
 
 ## Tools
 
