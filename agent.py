@@ -137,7 +137,26 @@ def _run_single(task_text: str) -> None:
     print(f"Success: {result.success}")
     if result.plan:
         print(f"Workflow hint: {result.plan.workflow_hint or '(keine)'}")
-        print(f"Steps: {[step.action for step in result.plan.steps]}")
+        print(f"Plan confidence: {result.plan.confidence:.2f}")
+        print(
+            "Steps: "
+            + str([
+                {
+                    "action": step.action,
+                    "tool": step.tool,
+                    "requires_human": step.requires_human,
+                }
+                for step in result.plan.steps
+            ])
+        )
+    if result.verification:
+        print(
+            "Verification: "
+            f"{result.verification.score}/10 "
+            f"({'passed' if result.verification.passed else 'failed'})"
+        )
+    if result.governance and result.governance.requires_approval:
+        print(f"Governance: approval required - {result.governance.reason}")
     if result.metadata.get("outputs"):
         print("Outputs:")
         for line in result.metadata["outputs"]:

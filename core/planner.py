@@ -1,7 +1,12 @@
 """Planning primitives for automation tasks."""
 
 from dataclasses import dataclass, field
+import json
+from pathlib import Path
+import re
 from typing import Any
+
+import brain
 
 from .context import ProjectContext
 
@@ -30,13 +35,32 @@ class Plan:
 class Planner:
     """Turns a task into a small executable plan.
 
-    The initial implementation is intentionally conservative. Real planning
-    logic can be added by project packs or by plugging in an LLM-powered brain.
+    The planner prefers an LLM-generated plan when a model is configured, then
+    falls back to deterministic rules so the template remains runnable offline.
     """
 
-    def draft(self, task: str, context: str = "", project: ProjectContext | None = None) -> Plan:
+    def draft(
+        self,
+        task: str,
+        context: str = "",
+        project: ProjectContext | None = None,
+        tools: dict[str, Any] | None = None,
+    ) -> Plan:
+        llm_plan = self._draft_with_llm(task, context=context, project=project, tools=tools)
+        if llm_plan and llm_plan.steps:
+            return llm_plan
+        return self._draft_with_rules(task, context=context, project=project, tools=tools)
+
+    def _draft_with_rules(
+        self,
+        task: str,
+        context: str = "",
+        project: ProjectContext | None = None,
+        tools: dict[str, Any] | None = None,
+    ) -> Plan:
         plan = Plan(task=task)
         normalized = task.lower()
+        tools = tools or {}
 
         manifest = (project.manifest if project else {}) or {}
         workflow_manifest = manifest.get("workflow", {}) if isinstance(manifest, dict) else {}
@@ -65,11 +89,15 @@ class Planner:
                     action = "verify"
                 else:
                     action = "execute"
+                tool_name, tool_input = self._guess_tool(task, step_text, tools)
                 plan.steps.append(
                     PlanStep(
                         id=f"step_{index}",
                         action=action,
                         description=step_text,
+                        tool=tool_name,
+                        input=tool_input,
+                        requires_human=self._looks_risky(task, step_text),
                         metadata={"workflow": plan.workflow_hint or "main", "source": "manifest"},
                     )
                 )
@@ -113,5 +141,210 @@ class Planner:
             plan.notes.append(f"Purpose: {manifest['purpose']}")
         if manifest.get("success_criteria"):
             plan.notes.append(f"Success: {manifest['success_criteria']}")
-        plan.confidence = 0.7 if workflow_steps else (0.5 if plan.workflow_hint else 0.3)
+        plan.confidence = 0.74 if workflow_steps else (0.55 if plan.workflow_hint else 0.35)
         return plan
+
+    def _draft_with_llm(
+        self,
+        task: str,
+        context: str = "",
+        project: ProjectContext | None = None,
+        tools: dict[str, Any] | None = None,
+    ) -> Plan | None:
+        tools = tools or {}
+        tool_specs = [
+            {
+                "name": name,
+                "description": getattr(tool, "description", ""),
+            }
+            for name, tool in sorted(tools.items())
+        ]
+        manifest = (project.manifest if project else {}) or {}
+        system = "\n\n".join(
+            part
+            for part in [
+                project.soul_text if project else "",
+                "You are the planning layer of an automation agent. Return only valid JSON.",
+            ]
+            if part
+        )
+        user = {
+            "task": task,
+            "context": context,
+            "project": {
+                "name": project.project_name if project else "",
+                "manifest": manifest,
+                "workflows": list((project.workflows if project else {}).keys()),
+                "approval_required_for": manifest.get("approval_required_for", []),
+            },
+            "available_tools": tool_specs,
+            "required_schema": {
+                "workflow_hint": "string or null",
+                "confidence": "0.0-1.0",
+                "steps": [
+                    {
+                        "id": "step_1",
+                        "action": "inspect | execute | verify | notify | use_tool",
+                        "description": "specific instruction",
+                        "tool": "one available tool name or null",
+                        "input": "exact tool input or null",
+                        "requires_human": False,
+                    }
+                ],
+                "notes": ["short note"],
+            },
+            "rules": [
+                "Use a tool when the task requires external state, files, notification, or web data.",
+                "Do not invent tool names.",
+                "Mark requires_human=true for delete, overwrite, bulk changes, secrets, payments, or irreversible actions.",
+                "Keep the plan to 2-5 concrete steps.",
+            ],
+        }
+        raw = brain.complete(system, json.dumps(user, ensure_ascii=False), temperature=0.2, max_tokens=900)
+        parsed = self._parse_json(raw)
+        if not parsed:
+            return None
+
+        plan = Plan(
+            task=task,
+            workflow_hint=parsed.get("workflow_hint") or manifest.get("workflow", {}).get("name"),
+            confidence=float(parsed.get("confidence") or 0.78),
+            notes=[str(note) for note in parsed.get("notes", []) if str(note).strip()],
+        )
+        available = set(tools)
+        for index, item in enumerate(parsed.get("steps", []), start=1):
+            tool_name = item.get("tool")
+            if tool_name not in available:
+                tool_name = None
+            description = str(item.get("description") or item.get("action") or f"Step {index}").strip()
+            plan.steps.append(
+                PlanStep(
+                    id=str(item.get("id") or f"step_{index}"),
+                    action=str(item.get("action") or "execute"),
+                    description=description,
+                    tool=tool_name,
+                    input=item.get("input") if item.get("input") is not None else None,
+                    requires_human=bool(item.get("requires_human")) or self._looks_risky(task, description),
+                    metadata={"source": "llm"},
+                )
+            )
+        if not plan.notes and project and project.soul_text:
+            plan.notes.append("Project soul loaded.")
+        self._sanitize_plan(plan, task=task, project=project)
+        return plan if plan.steps else None
+
+    def _sanitize_plan(self, plan: Plan, *, task: str, project: ProjectContext | None) -> None:
+        """Remove common LLM planning artifacts before execution."""
+        wants_notification = self._mentions_any(
+            task,
+            ["benachrichtig", "notify", "slack", "telegram", "meldung", "send notification"],
+        )
+        sanitized: list[PlanStep] = []
+
+        for step in plan.steps:
+            if step.tool == "notify" and not wants_notification:
+                continue
+
+            if step.tool == "file" and step.input:
+                step.input = self._repair_project_file_input(step.input, project)
+                ok, reason = self._file_input_is_plausible(step.input, project)
+                if not ok:
+                    step.tool = None
+                    step.input = None
+                    if step.action == "use_tool":
+                        step.action = "inspect"
+
+            sanitized.append(step)
+
+        non_verify = [step for step in sanitized if step.action != "verify"]
+        verify = [step for step in sanitized if step.action == "verify"]
+        plan.steps = non_verify + verify
+
+    def _file_input_is_plausible(self, tool_input: str, project: ProjectContext | None) -> tuple[bool, str]:
+        if ":" not in tool_input:
+            return False, "file input has no operation prefix"
+        op, rest = tool_input.split(":", 1)
+        op = op.strip().lower()
+        path_text = rest.split("|", 1)[0].strip()
+        if op in {"write", "append"}:
+            return True, ""
+        if op not in {"read", "list"}:
+            return False, f"unknown file operation '{op}'"
+        if not path_text:
+            return True, ""
+        root = project.project_root if project else Path.cwd()
+        target = (root / path_text).resolve()
+        try:
+            target.relative_to(root.resolve())
+        except ValueError:
+            return False, "path points outside the project"
+        if not target.exists():
+            return False, f"path does not exist: {path_text}"
+        return True, ""
+
+    def _repair_project_file_input(self, tool_input: str, project: ProjectContext | None) -> str:
+        if project is None or ":" not in tool_input:
+            return tool_input
+        op, rest = tool_input.split(":", 1)
+        op = op.strip().lower()
+        if op not in {"read", "list"}:
+            return tool_input
+        path_text = rest.split("|", 1)[0].strip()
+        if not path_text or "/" in path_text or "\\" in path_text:
+            return tool_input
+        root = project.project_root.resolve()
+        if (root / path_text).exists():
+            return tool_input
+        project_path = root / "project" / path_text
+        if project_path.exists():
+            return f"{op}:project/{path_text}"
+        return tool_input
+
+    def _mentions_any(self, text: str, needles: list[str]) -> bool:
+        lowered = text.lower()
+        return any(needle in lowered for needle in needles)
+
+    def _guess_tool(self, task: str, step_text: str, tools: dict[str, Any]) -> tuple[str | None, str | None]:
+        text = f"{task} {step_text}".lower()
+        if "web_search" in tools and any(word in text for word in ["such", "recherch", "web", "aktuell", "latest"]):
+            return "web_search", task
+        if "notify" in tools and any(word in text for word in ["benachrichtig", "notify", "slack", "telegram", "meldung"]):
+            return "notify", task
+        if "file" in tools:
+            match = re.search(r"(?P<op>lies|read|liste|list)\s+(?P<path>[\w./\\-]+)", text)
+            if match:
+                op = "read" if match.group("op") in {"lies", "read"} else "list"
+                return "file", f"{op}:{match.group('path')}"
+        return None, None
+
+    def _looks_risky(self, task: str, step_text: str) -> bool:
+        text = f"{task} {step_text}".lower()
+        risky_terms = [
+            "delete",
+            "löschen",
+            "lösch",
+            "loeschen",
+            "loesch",
+            "overwrite",
+            "überschreib",
+            "ueberschreib",
+            "bulk",
+            "massen",
+            "secret",
+            "api key",
+            "zahlung",
+            "payment",
+            "deploy production",
+        ]
+        return any(term in text for term in risky_terms)
+
+    def _parse_json(self, text: str) -> dict[str, Any]:
+        if not text:
+            return {}
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+        if match:
+            text = match.group(1)
+        try:
+            return json.loads(text.strip())
+        except (json.JSONDecodeError, TypeError):
+            return {}

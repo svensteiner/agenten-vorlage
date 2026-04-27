@@ -50,8 +50,9 @@ class AgentOrchestrator:
 
     def run(self, task: str, *, tools: dict[str, Any] | None = None) -> RunResult:
         context = self.context_builder.build()
-        plan = self.planner.draft(task, context=task, project=context)
-        governance = self.governance.allow(task)
+        tools = tools or {}
+        plan = self.planner.draft(task, context=task, project=context, tools=tools)
+        governance = self.governance.allow(task, context=context, text=task)
         if not governance.allowed:
             return RunResult(
                 task=task,
@@ -69,7 +70,13 @@ class AgentOrchestrator:
         success = True
 
         for step in plan.steps:
-            step_gov = self.governance.allow(step.action, risk="high" if step.requires_human else "low")
+            step_gov = self.governance.allow(
+                step.action,
+                risk="high" if step.requires_human else "low",
+                context=context,
+                tool=step.tool,
+                text=" ".join(part for part in [step.description, step.input or ""] if part),
+            )
             if not step_gov.allowed:
                 return RunResult(
                     task=task,
@@ -85,6 +92,7 @@ class AgentOrchestrator:
                 context=context,
                 workflow_hint=plan.workflow_hint or "",
             )
+            subagent_output = None
             if selected_subagent is not None and step.action in {"inspect", "execute_workflow", "execute"}:
                 subagent_output = self.subagents.run(
                     selected_subagent,
@@ -94,16 +102,29 @@ class AgentOrchestrator:
                 )
                 subagent_runs.append({"step": step.id, **subagent_output})
                 outputs.append(subagent_output["output"])
+                if not step.tool:
+                    continue
+
+            if step.action == "verify" and not step.tool:
+                continue
 
             dispatch = self.dispatcher.dispatch(step, tools=tools)
             dispatch_results.append(dispatch)
             outputs.append(dispatch.output)
-            verification = self.verifier.verify(dispatch.output)
-            verification_results.append(verification)
 
-            if not (dispatch.success and verification.passed):
+            if not dispatch.success:
                 success = False
                 break
+
+        if outputs and success:
+            final_verification = self.verifier.verify(
+                "\n".join(outputs),
+                task=task,
+                step="final result",
+                context=context,
+            )
+            verification_results.append(final_verification)
+            success = final_verification.passed
 
         self.memory.save(
             "runs",
@@ -111,6 +132,16 @@ class AgentOrchestrator:
                 "task": task,
                 "success": success,
                 "workflow": plan.workflow_hint or "",
+                "plan_confidence": plan.confidence,
+                "steps": [
+                    {
+                        "id": step.id,
+                        "action": step.action,
+                        "tool": step.tool,
+                        "requires_human": step.requires_human,
+                    }
+                    for step in plan.steps
+                ],
                 "output": "\n".join(outputs),
             },
         )

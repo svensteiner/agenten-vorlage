@@ -24,8 +24,22 @@ class Dispatcher:
         if step.tool and step.tool in tools:
             output = tools[step.tool].safe_run(step.input or "")
             return DispatchResult(success=not output.startswith("FEHLER"), output=output, tool=step.tool)
+        if step.tool and step.tool not in tools:
+            return DispatchResult(
+                success=False,
+                output=f"FEHLER: Tool '{step.tool}' is not available.",
+                tool=step.tool,
+                metadata={"step": step.id},
+            )
+        if step.action in {"use_tool", "notify"} and not step.tool:
+            return DispatchResult(
+                success=False,
+                output=f"FEHLER: Step '{step.id}' requires a tool but none was selected.",
+                metadata={"step": step.id, "action": step.action},
+            )
         return DispatchResult(
             success=True,
             output=f"Planned step recorded: {step.description}",
             tool=step.tool,
+            metadata={"step": step.id, "action": step.action},
         )
