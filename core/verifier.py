@@ -42,6 +42,15 @@ class Verifier:
                 feedback=["Output looks like an error or blocked operation."],
                 metadata={"mode": "heuristic"},
             )
+        placeholder_feedback = self._placeholder_feedback(output)
+        if placeholder_feedback:
+            return VerificationResult(
+                passed=False,
+                score=4,
+                feedback=placeholder_feedback,
+                improved_output=self._remove_placeholder_lines(output),
+                metadata={"mode": "heuristic", "reason": "placeholder"},
+            )
 
         configured_threshold = threshold
         if context and context.config.get("quality_threshold"):
@@ -75,6 +84,8 @@ class Verifier:
             "The output must be relevant to the task and step.",
             "It must not contain unresolved tool errors.",
             "It must be concrete enough for the next agent step.",
+            "It must not contain placeholders like '[fill in]' or invented facts.",
+            "If evidence is incomplete, it should say what is missing instead of fabricating details.",
         ]
         if task:
             parts.append(f"Task: {task}")
@@ -88,6 +99,30 @@ class Verifier:
         lowered = output.lower()
         markers = ["fehler", "error", "exception", "traceback", "blocked", "sicherheitsfehler"]
         return any(marker in lowered for marker in markers)
+
+    def _placeholder_feedback(self, output: str) -> list[str]:
+        lowered = output.lower()
+        markers = [
+            "[fill in]",
+            "[missing",
+            "tbd",
+            "todo:",
+            "lorem ipsum",
+            "platzhalter",
+        ]
+        if any(marker in lowered for marker in markers):
+            return ["Output contains placeholders or unresolved template text."]
+        return []
+
+    def _remove_placeholder_lines(self, output: str) -> str:
+        markers = ["[fill in]", "[missing", "tbd", "todo:", "lorem ipsum", "platzhalter"]
+        lines = []
+        for line in output.splitlines():
+            lowered = line.lower()
+            if any(marker in lowered for marker in markers):
+                continue
+            lines.append(line)
+        return "\n".join(lines).strip() or output
 
     def _heuristic_score(self, output: str, *, task: str, step: str) -> int:
         score = 6
