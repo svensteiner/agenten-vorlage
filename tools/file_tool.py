@@ -58,7 +58,9 @@ class FileTool(BaseTool):
 
     def _safe_path(self, path_str: str) -> Path:
         target = (_AGENT_ROOT / path_str).resolve()
-        if not str(target).startswith(str(_AGENT_ROOT)):
+        try:
+            target.relative_to(_AGENT_ROOT)
+        except ValueError:
             raise ValueError(f"Pfad außerhalb des Agent-Verzeichnisses: {path_str}")
         if target.name in _BLOCKED_NAMES:
             raise ValueError(f"Datei ist gesperrt: {target.name}")

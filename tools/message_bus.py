@@ -98,7 +98,14 @@ class MessageBus:
         ]
         # Sortiere: urgent zuerst, dann nach Timestamp
         priority_order = {"urgent": 0, "high": 1, "normal": 2, "low": 3}
-        result.sort(key=lambda m: (priority_order.get(m.get("priority", "normal"), 2), m.get("timestamp", "")))
+        result.sort(
+            key=lambda m: (
+                priority_order.get(m.get("priority", "normal"), 2),
+                m.get("timestamp", ""),
+            ),
+            reverse=True,
+        )
+        result.sort(key=lambda m: priority_order.get(m.get("priority", "normal"), 2))
         return result
 
     def receive_all(self) -> list[dict]:

@@ -89,7 +89,10 @@ class Planner:
                     action = "verify"
                 else:
                     action = "execute"
-                tool_name, tool_input = self._guess_tool(task, step_text, tools)
+                if action == "execute":
+                    tool_name, tool_input = self._guess_tool(task, step_text, tools)
+                else:
+                    tool_name, tool_input = None, None
                 plan.steps.append(
                     PlanStep(
                         id=f"step_{index}",
@@ -305,15 +308,16 @@ class Planner:
         return any(needle in lowered for needle in needles)
 
     def _guess_tool(self, task: str, step_text: str, tools: dict[str, Any]) -> tuple[str | None, str | None]:
-        text = f"{task} {step_text}".lower()
-        if "web_search" in tools and any(word in text for word in ["such", "recherch", "web", "aktuell", "latest"]):
+        original_text = f"{task} {step_text}"
+        lowered = original_text.lower()
+        if "web_search" in tools and any(word in lowered for word in ["such", "recherch", "web", "aktuell", "latest"]):
             return "web_search", task
-        if "notify" in tools and any(word in text for word in ["benachrichtig", "notify", "slack", "telegram", "meldung"]):
+        if "notify" in tools and any(word in lowered for word in ["benachrichtig", "notify", "slack", "telegram", "meldung"]):
             return "notify", task
         if "file" in tools:
-            match = re.search(r"(?P<op>lies|read|liste|list)\s+(?P<path>[\w./\\-]+)", text)
+            match = re.search(r"(?P<op>lies|read|liste|list)\s+(?P<path>[\w./\\-]+)", original_text, re.I)
             if match:
-                op = "read" if match.group("op") in {"lies", "read"} else "list"
+                op = "read" if match.group("op").lower() in {"lies", "read"} else "list"
                 return "file", f"{op}:{match.group('path')}"
         return None, None
 

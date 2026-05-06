@@ -3,6 +3,7 @@ state/
 logs/
 .env
 tasks.json
+.claude/
 
 # Python
 __pycache__/
