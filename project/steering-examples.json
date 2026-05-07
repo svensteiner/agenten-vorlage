@@ -1,0 +1,37 @@
+[
+  {
+    "input": "Erstelle eine Marktanalyse für Sektor X",
+    "description": "Thematische Marktanalyse mit Angle",
+    "expected_skill": "market-research",
+    "expected_subagent": "researcher",
+    "notes": "Scope klären, dann Daten sammeln, dann Report"
+  },
+  {
+    "input": "Bereite mich auf das Meeting mit [Kunde] vor",
+    "description": "Meeting-Vorbereitung mit Profil und News",
+    "expected_skill": "meeting-prep",
+    "expected_subagent": "researcher",
+    "notes": "Profil + aktuelle News + offene Punkte aus letztem Meeting"
+  },
+  {
+    "input": "Prüfe diesen Bericht auf Fehler und Inkonsistenzen",
+    "description": "Dokument-Audit / Qualitätsprüfung",
+    "expected_skill": null,
+    "expected_subagent": "verifier",
+    "notes": "Kein Skill nötig, direkt an verifier-subagent"
+  },
+  {
+    "input": "Fasse die Ergebnisse zusammen und schreibe einen Report",
+    "description": "Report-Erstellung aus vorhandenen Daten",
+    "expected_skill": null,
+    "expected_subagent": "reporter",
+    "notes": "reporter-subagent übernimmt, kein Tool-Call nötig"
+  },
+  {
+    "input": "Recherchiere aktuelle Informationen zu [Thema]",
+    "description": "Web-Recherche mit Quellenangabe",
+    "expected_skill": null,
+    "expected_subagent": "researcher",
+    "notes": "web_search Tool benutzen, alle Quellen zitieren"
+  }
+]

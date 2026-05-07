@@ -171,6 +171,8 @@ class Planner:
             ]
             if part
         )
+        skill_hints = self._build_skill_hints(task, project)
+        steering = self._build_steering_hints(task, project)
         user = {
             "task": task,
             "context": context,
@@ -178,16 +180,20 @@ class Planner:
                 "name": project.project_name if project else "",
                 "manifest": manifest,
                 "workflows": list((project.workflows if project else {}).keys()),
+                "skills": list((project.skills if project else {}).keys()),
                 "approval_required_for": manifest.get("approval_required_for", []),
             },
             "available_tools": tool_specs,
+            "skill_hint": skill_hints,
+            "steering_examples": steering,
             "required_schema": {
                 "workflow_hint": "string or null",
+                "skill_hint": "matching skill name or null",
                 "confidence": "0.0-1.0",
                 "steps": [
                     {
                         "id": "step_1",
-                        "action": "inspect | execute | verify | notify | use_tool",
+                        "action": "inspect | execute | verify | notify | use_tool | use_skill",
                         "description": "specific instruction",
                         "tool": "one available tool name or null",
                         "input": "exact tool input or null",
@@ -198,9 +204,11 @@ class Planner:
             },
             "rules": [
                 "Use a tool when the task requires external state, files, notification, or web data.",
+                "If a matching skill is available, include a 'use_skill' step before execution.",
                 "Do not invent tool names.",
                 "Mark requires_human=true for delete, overwrite, bulk changes, secrets, payments, or irreversible actions.",
                 "Keep the plan to 2-5 concrete steps.",
+                "Only write-enabled subagents (leaf writers) may produce persistent output.",
             ],
         }
         raw = brain.complete(system, json.dumps(user, ensure_ascii=False), temperature=0.2, max_tokens=900)
@@ -214,6 +222,8 @@ class Planner:
             confidence=float(parsed.get("confidence") or 0.78),
             notes=[str(note) for note in parsed.get("notes", []) if str(note).strip()],
         )
+        if parsed.get("skill_hint"):
+            plan.notes.append(f"Skill: {parsed['skill_hint']}")
         available = set(tools)
         for index, item in enumerate(parsed.get("steps", []), start=1):
             tool_name = item.get("tool")
@@ -341,6 +351,37 @@ class Planner:
             "deploy production",
         ]
         return any(term in text for term in risky_terms)
+
+    def _build_skill_hints(self, task: str, project: ProjectContext | None) -> dict[str, str] | None:
+        if not project or not project.skills:
+            return None
+        task_lower = task.lower()
+        for skill in project.skills.values():
+            for trigger in skill.triggers:
+                if trigger.lower() in task_lower:
+                    return {
+                        "name": skill.name,
+                        "description": skill.description,
+                        "output": skill.output,
+                    }
+        return None
+
+    def _build_steering_hints(self, task: str, project: ProjectContext | None) -> list[dict[str, Any]]:
+        if not project or not project.steering_examples:
+            return []
+        task_lower = task.lower()
+        matches: list[dict[str, Any]] = []
+        for example in project.steering_examples:
+            example_input = str(example.get("input", "")).lower()
+            keywords = [w for w in example_input.split() if len(w) > 3]
+            if any(kw in task_lower for kw in keywords):
+                matches.append({
+                    "input": example.get("input"),
+                    "expected_skill": example.get("expected_skill"),
+                    "expected_subagent": example.get("expected_subagent"),
+                    "notes": example.get("notes"),
+                })
+        return matches[:3]
 
     def _parse_json(self, text: str) -> dict[str, Any]:
         if not text:

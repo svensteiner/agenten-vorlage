@@ -1,0 +1,40 @@
+# Connectors — MCP-Server-Deklarationen
+#
+# Deklariere hier alle externen Datenquellen die dieser Agent nutzen darf.
+# Jeder Connector braucht eine Umgebungsvariable für die URL.
+#
+# Format:
+#   - name: connector-name
+#     url_env: ENV_VAR_NAME        # Umgebungsvariable mit der MCP-Server-URL
+#     description: "Was dieser Connector liefert"
+#     tools_enabled: ["tool1", "tool2"]   # Optional: nur diese Tools freischalten
+#     required: true/false                 # Pflicht oder optional?
+#
+# Governance-Regel: Nur Connectors die hier deklariert sind dürfen benutzt werden.
+# Neue Connectors erfordern eine Änderung in dieser Datei (Approval-Gate).
+
+connectors: []
+
+# Beispiele (auskommentiert):
+#
+# connectors:
+#   - name: web-search
+#     url_env: WEB_SEARCH_MCP_URL
+#     description: "Allgemeine Web-Suche"
+#     required: false
+#
+#   - name: capiq
+#     url_env: CAPIQ_MCP_URL
+#     description: "Capital IQ — Finanzdaten, Multiples, Filings"
+#     tools_enabled: ["search", "get_company", "get_multiples"]
+#     required: false
+#
+#   - name: factset
+#     url_env: FACTSET_MCP_URL
+#     description: "FactSet — Marktdaten und Konsensschätzungen"
+#     required: false
+#
+#   - name: bloomberg
+#     url_env: BLOOMBERG_MCP_URL
+#     description: "Bloomberg — Echtzeit-Marktdaten"
+#     required: false
