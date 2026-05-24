@@ -33,6 +33,22 @@ class GovernancePolicy:
     ) -> GovernanceDecision:
         combined = " ".join(part for part in [action, tool or "", text] if part).lower()
         approval_terms = self._approval_terms(context)
+        matched_terms = self._matched_approval_terms(approval_terms, combined)
+        would_gate = risk == "high" or bool(matched_terms)
+
+        # Full-autonomy mode (default): never block. Risky actions are still
+        # flagged in metadata so the run leaves an audit trail.
+        if not self._approval_required(context):
+            return GovernanceDecision(
+                allowed=True,
+                metadata={
+                    "gate": "disabled",
+                    "flagged": would_gate,
+                    "risk": risk,
+                    "tool": tool,
+                    "matched_terms": matched_terms,
+                },
+            )
 
         if risk == "high":
             return GovernanceDecision(
@@ -41,7 +57,6 @@ class GovernancePolicy:
                 requires_approval=True,
                 metadata={"risk": risk, "tool": tool},
             )
-        matched_terms = self._matched_approval_terms(approval_terms, combined)
         if matched_terms:
             return GovernanceDecision(
                 allowed=False,
@@ -50,6 +65,16 @@ class GovernancePolicy:
                 metadata={"matched_terms": matched_terms, "tool": tool},
             )
         return GovernanceDecision(allowed=True)
+
+    def _approval_required(self, context: ProjectContext | None) -> bool:
+        """Whether the human-approval gate is active.
+
+        Defaults to False so the template runs fully autonomously. Set
+        "require_human_approval": true in project/config.json to re-enable gates.
+        """
+        if context is None:
+            return False
+        return bool(context.config.get("require_human_approval", False))
 
     def record(self, action: str, outcome: str, details: str = "") -> None:
         self._history.append(

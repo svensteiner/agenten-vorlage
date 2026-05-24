@@ -11,8 +11,11 @@
 
   "quality_threshold":     7,
   "max_retries":           2,
-  "loop_interval_minutes": 60,
-  "max_actions_per_day":   50,
+  "loop_interval_minutes": 15,
+  "max_actions_per_day":   1000,
+
+  "autonomy_level":         "max",
+  "require_human_approval": false,
 
   "dry_run":          false,
   "proactive":        true,
