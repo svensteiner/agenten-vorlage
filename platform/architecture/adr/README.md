@@ -22,5 +22,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0007](ADR-0007-client-configuration-surface.md) | Client configuration surface (local settings UI) | Accepted |
 | [0008](ADR-0008-canonical-principal-acl-model.md) | Normalize every source ACL into one canonical principal model | Accepted |
 | [0009](ADR-0009-hybrid-retrieval-and-chunking.md) | Hybrid permission-filtered retrieval with structure-aware chunking | Accepted |
+| [0010](ADR-0010-storage-topology-and-tenancy.md) | Storage topology & tenancy: five-store data plane, pgvector-default vector layer, tenant = customer org | Accepted |
 
 New ADRs are added by later cycles as decisions are made.

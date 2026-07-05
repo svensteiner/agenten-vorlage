@@ -32,7 +32,7 @@ is stable.
 | [security/](security/) | Identity, isolation, data protection, threat model | **Seeded** |
 | [rag/](rag/) | Retrieval-augmented generation pipeline | **Seeded** |
 | [permissions/](permissions/) | Authorization, ACL propagation, row/document-level access | **Seeded** |
-| [storage/](storage/) | Object, vector, relational, cache storage | Planned |
+| [storage/](storage/) | Object, vector, relational, cache storage | **Seeded** |
 | [metadata/](metadata/) | Catalog, lineage, classification, tagging | Planned |
 | [workers/](workers/) | Ingestion, embedding, and job orchestration | Planned |
 | [api/](api/) | External API surface, contracts, versioning | Planned |

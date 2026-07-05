@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 4 (RAG retrieval pipeline deep dive)
+- **Current cycle:** 5 (Storage & tenancy deep dive)
 - **Last updated:** 2026-07-05
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 40 %** (Ende Zyklus 4) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 49 %** (Ende Zyklus 5) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -21,7 +21,7 @@
 | Security-Architektur | 10 % | 80 % | 8.0 |
 | Permissions Deep Dive (Z3) | 12 % | 90 % | 10.8 |
 | RAG Deep Dive (Z4) | 12 % | 85 % | 10.2 |
-| Storage & Tenancy | 10 % | 0 % | 0.0 |
+| Storage & Tenancy (Z5) | 10 % | 90 % | 9.0 |
 | Workers & Connectors | 10 % | 0 % | 0.0 |
 | Metadata / Katalog / Lineage | 6 % | 0 % | 0.0 |
 | Governance / Audit / Kosten | 8 % | 0 % | 0.0 |
@@ -29,9 +29,9 @@
 | Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 40 %** |
+| **Summe** | **100 %** | — | **≈ 49 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · **Z4 ≈ 40 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · **Z5 ≈ 49 %**.
 
 ---
 
@@ -48,6 +48,43 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 5 (2026-07-05) — Storage & tenancy deep dive
+- Wrote **[storage/00-storage-architecture.md](storage/00-storage-architecture.md)** — the
+  data-plane payoff. Turns the Cycle 3+4 hard requirements (S1 set-overlap filtering,
+  S2 hybrid-under-one-filter, S3 versioned upsert/delete, S4 isolation-by-construction,
+  S5 in-boundary+BYOK, S6 rich metadata, S7 append-only audit) into a selected topology:
+  the **five-store data plane** (object / vector+keyword / relational-source-of-truth /
+  cache / append-only audit), each assigned by scaling axis, consistency, and blast radius.
+- **Resolved open question #1 (FINAL):** vector layer = **pgvector-in-Postgres as default**
+  (co-locates vector + `text[]` ACL arrays w/ GIN `&&` + `tsvector` full-text + metadata in
+  one transaction → both hybrid halves share one filter, ACL denormalization is drift-free),
+  **graduating** per-tenant to Qdrant / Elasticsearch on *measured* thresholds. Confirms &
+  finalizes [ADR-0009 §6](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md)'s
+  provisional lean. Introduced the **`VectorIndex` port with no unfiltered-search method** —
+  filter-during-retrieval ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md))
+  becomes *structurally* impossible to bypass, and vector lock-in (R7) is bounded to one adapter.
+- **Resolved open question #5 (FINAL):** **a tenant = one customer organization** (isolation
+  & governance boundary); departments/domains are ACL/`visibility` scopes and packs *within*
+  a tenant — aligns the storage isolation primitive with the CPI identity namespace.
+- Specified **two isolation tiers** per store (Shared: namespace/schema/prefix + RLS +
+  unconditional `tenant_id`, two independent controls; Isolated: dedicated cluster/DB/bucket +
+  BYOK), **envelope encryption w/ per-tenant DEKs + crypto-erasure**, the
+  **ACL-denormalization coherence** rules (same-transaction at pgvector tier; transactional
+  outbox at dedicated-engine tier; query-time principal precedence covers the residual gap),
+  **re-embed migrations** (blue/green from the parsed object-store artifact — no source re-hit),
+  and **right-to-erasure** propagation across all five stores (audit retained as event).
+- Recorded **[ADR-0010](architecture/adr/ADR-0010-storage-topology-and-tenancy.md)**.
+- Updated indexes: ADR index, `storage/README.md` (stub → real), `platform/README.md`
+  domain map (storage → **Seeded**).
+- **Directly de-risks:** R4 (cross-tenant → namespace **and** predicate, two controls;
+  per-tenant DEK), R5 (cost → pgvector-default + object tiering + quantization levers),
+  R7 (vector lock-in → `VectorIndex` port, one adapter per engine).
+- ⏳ **Handed to downstream cycles:** the **transactional-outbox relay** + **re-embed/re-sync
+  jobs** → [Workers](workers/) (Cycle 6, must honor the §7 coherence bound and the freshness
+  SLA); **retention + legal-hold tombstone + per-tenant cost metering + erasure ratification**
+  → [Governance](governance/) (Cycle 7); **per-tier topology, graduation thresholds, backup/DR**
+  → [Deployment](deployment/); **catalog + lineage schema** detail → [Metadata](metadata/).
 
 ### Cycle 4 (2026-07-05) — RAG retrieval pipeline deep dive
 - Wrote **[rag/00-retrieval-pipeline.md](rag/00-retrieval-pipeline.md)** — the query-plane
@@ -164,19 +201,20 @@
 | ADR-0004 | Enforce end-user permissions at query time | Safe for Finance/HR/Legal/Audit; fail closed |
 | ADR-0008 | Normalize every source ACL into one canonical principal model | One filterable predicate; new source = connector + conformance test, not a redesign |
 | ADR-0009 | Hybrid permission-filtered retrieval + structure-aware chunking | Exact-token + semantic recall; safety stays one index predicate; new domain = parser, not a pipeline change |
+| ADR-0010 | Five-store data plane; pgvector-default vector layer (graduate on measured need) behind a filter-only `VectorIndex` port; tenant = customer org | Meets every S1–S7 requirement; ACL stays a single-store `WHERE`; unfiltered search is unrepresentable; lock-in bounded to one adapter |
 
 ---
 
 ## 3. Open questions (need a decision in an upcoming cycle)
 
-1. **Vector store choice** — self-hosted (pgvector, Qdrant, Milvus, Weaviate, Elastic)
-   vs. managed private. Drives Storage + Deployment. **Provisional (Cycle 4,
-   [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md) §6 /
-   [RAG §9](rag/00-retrieval-pipeline.md)):** pgvector for small tenants (co-located
-   vectors + ACL arrays + full-text + native set-overlap) graduating to a dedicated engine
-   (Qdrant / Elasticsearch) at scale. **Hard requirements now fixed:** efficient principal
-   **set-overlap filtering** + **hybrid search under one metadata filter** + per-tenant
-   isolation + versioned upsert. **[Storage](storage/) (Cycle 5) owns the final selection.**
+1. ✅ **DECIDED (Cycle 5, [ADR-0010](architecture/adr/ADR-0010-storage-topology-and-tenancy.md)).**
+   ~~Vector store choice~~ — **pgvector-in-Postgres is the default** (co-locates vector +
+   `text[]` ACL arrays w/ GIN `&&` + `tsvector` + metadata in one transactional store),
+   **graduating per-tenant** to Qdrant / Elasticsearch on *measured* thresholds (chunk count,
+   QPS/SLA, keyword dominance, isolation mandate). All engines sit behind a **`VectorIndex`
+   port that has no unfiltered-search method**. See [Storage §3](storage/00-storage-architecture.md).
+   Remaining sub-question deferred to [Workers](workers/): the transactional-outbox relay
+   that keeps the denormalized chunk-ACL coherent at the dedicated-engine tier.
 2. ✅ **DECIDED (Cycle 3, [ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)).**
    ~~Permission normalization model~~ — canonical four-noun model + CPI, normalize at
    ingestion, enforce one predicate at query time. Remaining sub-question deferred to
@@ -189,8 +227,12 @@
    text normalization** (not per-domain models) + versioned re-embed on model upgrade. See
    [RAG §2–§3](rag/00-retrieval-pipeline.md). Remaining sub-question deferred to Workers:
    the exact per-content-type parser fidelity (OCR layout, SAP table serialization).
-5. **Tenancy granularity** — is a "tenant" a customer, a department, or a domain?
-   Affects isolation tiers and cost model.
+5. ✅ **DECIDED (Cycle 5, [ADR-0010](architecture/adr/ADR-0010-storage-topology-and-tenancy.md)).**
+   ~~Tenancy granularity~~ — **a tenant = one customer organization** (isolation & governance
+   boundary owning its data, identity namespace, policies, cost envelope). Departments and
+   domains are ACL/`visibility` scopes and packs *within* a tenant, not separate tenants —
+   this keeps the CPI identity namespace and nested-group resolution intact. See
+   [Storage §5](storage/00-storage-architecture.md).
 6. **Agent framework** — extend the existing `core/` planner/verifier into the
    distributed orchestrator, or adopt a framework? (Relates to ADR-0002.)
 7. **Freshness SLA** — acceptable staleness window between a source change (content or
@@ -208,10 +250,10 @@
 | R1 | **Permission-model mismatch** — source ACLs can't be faithfully normalized → leak | **Critical** | ✅ *Design mitigated (Cycle 3):* canonical model + `acl_confidence` gate (approximate→deny) + per-connector conformance suite + quarantine tier. Residual: correct **implementation** of each connector's `map_acl`. |
 | R2 | **Prompt injection via retrieved content** | **Critical** | ✅ *Design mitigated (Cycle 4, [RAG §6.1, §7](rag/00-retrieval-pipeline.md)):* retrieved text delivered inside a data boundary (not instructions), retrieved content cannot alter tool/routing/citation policy, verifier enforces grounding + guardrails as the backstop. Residual: implementation hardening of the verifier + red-team corpus. |
 | R3 | **Stale permissions** — user loses access but index still serves it | High | Short TTL query-time re-check; change-driven re-sync; query-time precedence |
-| R4 | **Cross-tenant leakage** via a filtering bug | High | Isolate by namespace/cluster, not just `tenant_id` filter; fail closed |
+| R4 | **Cross-tenant leakage** via a filtering bug | High | ✅ *Design mitigated (Cycle 5, [Storage §5.2](storage/00-storage-architecture.md)):* Shared tier uses **two independent controls** (per-tenant namespace/schema **and** an unconditional `tenant_id` predicate); Isolated tier = dedicated cluster/DB/bucket + per-tenant DEK; the `VectorIndex` port takes a `tenant` on every call (cross-tenant query unrepresentable). Residual: correct namespace provisioning per tenant. |
 | R5 | **Cost blow-up** — inference + storage at 10× data/tenants | High | Gateway budgets, model tiering, tenant cost model, storage tiers |
 | R6 | **Connector fragility** — source API changes break ingestion/permissions | Medium | Connector contract + conformance test suite; versioned connectors |
-| R7 | **Vendor lock-in** at model or vector layer | Medium | Gateway indirection (models); abstraction over vector store |
+| R7 | **Vendor lock-in** at model or vector layer | Medium | ✅ *Design mitigated (Cycle 5, [Storage §3.4](storage/00-storage-architecture.md)):* the **`VectorIndex` port** confines each engine to one adapter; a tenant migration is a re-index through the port, not a pipeline rewrite (the vector-layer analogue of the Model Gateway). Models already covered by [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md). |
 | R8 | **Ingestion backlog** starves freshness | Medium | Queue backpressure, autoscaling workers, prioritization by domain |
 
 ---
@@ -220,9 +262,9 @@
 
 - ✅ `rag/` — retrieval pipeline (chunking, hybrid search, reranking, grounding, verifier). **Seeded (Cycle 4).**
 - ✅ `permissions/` — canonical ACL model + per-source mapping. **Seeded (Cycle 3).**
-- `storage/` — vector/object/relational/cache choices + isolation tiers. **Empty. Highest value now.** Hard inputs from Cycles 3+4: must support principal **set-overlap filtering** AND **hybrid (vector+keyword) search under one metadata filter** + versioned upsert (see [RAG §9](rag/00-retrieval-pipeline.md)); resolves open Q#1 (provisional) + Q#5.
-- `metadata/` — catalog, lineage, classification schema. **Empty.**
-- `workers/` — ingestion/embedding job orchestration, queue design. **Empty.**
+- ✅ `storage/` — five-store data plane, pgvector-default vector layer + `VectorIndex` port, tenancy definition, isolation tiers, encryption/BYOK, coherence, migrations, erasure. **Seeded (Cycle 5).** Resolved open Q#1 (final) + Q#5 (final); mitigated R4/R5/R7 by design.
+- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Metadata specifies the schema.)
+- `workers/` — ingestion/embedding job orchestration, queue design. **Empty. Highest value now.** Hard inputs from Cycle 5: the transactional-outbox relay (§7 coherence), re-embed/re-sync jobs from the parsed object artifact, backpressure (R8).
 - `api/` — external API surface, contracts, versioning. **Empty.**
 - `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty.**
 - `governance/` — model governance, audit usage, compliance mapping, cost. **Empty.**
@@ -267,23 +309,25 @@ Structure-aware chunking, universal embedding space, hybrid search consuming the
 filter, reranking, grounding/citation, verifier contract. Decided open question #4; mitigated
 R2 by design; provisional answer to #1.
 
-### ▶ Cycle 5 (do next): **Storage & tenancy deep dive**
-Write `storage/00-storage-architecture.md`: vector/object/relational/cache selection,
-isolation tiers (namespace vs. cluster), encryption/BYOK, versioning & deletion.
-**Hard inputs from Cycles 3+4** (these are now *selection criteria*, not nice-to-haves):
-the vector + keyword layer MUST support (a) efficient principal **set-overlap filtering**
-(allow/deny arrays), and (b) **hybrid (vector+keyword) search under one shared metadata
-filter**, and (c) **versioned upsert/delete** for re-embed migrations. Confirm or supersede
-[ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md) §6's provisional
-pgvector→dedicated-engine lean. Resolves open questions 1 (final) and 5. *Why next:* RAG and
-Permissions have both handed Storage hard, concrete requirements; it is now the bottleneck
-that unblocks Workers + Deployment.
+### ✅ Cycle 5 (DONE — see §1): **Storage & tenancy deep dive**
+Wrote `storage/00-storage-architecture.md` + [ADR-0010](architecture/adr/ADR-0010-storage-topology-and-tenancy.md).
+Five-store data plane, pgvector-default vector layer behind a filter-only `VectorIndex` port,
+tenant = customer org, isolation tiers, encryption/BYOK, ACL-denormalization coherence,
+re-embed migrations, erasure. Resolved open questions 1 (final) and 5 (final); mitigated
+R4/R5/R7 by design.
 
-### Cycle 6: **Ingestion workers & connectors**
+### ▶ Cycle 6 (do next): **Ingestion workers & connectors**
 Write `workers/00-ingestion-architecture.md` + `workers/01-connector-framework.md`:
 queue design, worker scaling, connector contract, change detection, freshness SLA
 (open question 7), backpressure (R8). **Consumes Cycle 3:** the connector contract must
 include `map_acl` + `list_principal_changes` + the permission-conformance suite as gates.
+**Consumes Cycle 5:** implement the **transactional-outbox relay** that keeps the
+denormalized chunk-ACL coherent at the dedicated-engine tier ([Storage §7](storage/00-storage-architecture.md)),
+and the **re-embed/re-sync jobs** that read the parsed artifact from the object store
+(no source re-hit, [Storage §8](storage/00-storage-architecture.md)). *Why next:* Storage
+has now fixed the write-side contract (versioned upsert, coherence bound, migration shape);
+Workers is the last piece before the ingestion plane is fully specified and unblocks
+Deployment topology.
 
 ### Cycle 7: **Governance, audit & cost**
 Write `governance/00-governance-and-audit.md`: model governance, audit-log usage,
