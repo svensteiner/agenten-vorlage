@@ -37,7 +37,7 @@ is stable.
 | [workers/](workers/) | Ingestion, embedding, and job orchestration | **Seeded** |
 | [api/](api/) | External API surface, contracts, versioning | Planned |
 | [deployment/](deployment/) | Topology, environments, CI/CD, DR | Planned |
-| [governance/](governance/) | Model governance, audit, compliance, cost | Planned |
+| [governance/](governance/) | Model governance, audit, compliance, cost | **Seeded** |
 
 ## Documentation contract
 

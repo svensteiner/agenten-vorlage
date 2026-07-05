@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 6 (Ingestion workers & connectors)
-- **Last updated:** 2026-07-05
+- **Current cycle:** 7 (Governance, audit & cost)
+- **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 58 %** (Ende Zyklus 6) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 65 %** (Ende Zyklus 7) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -24,14 +24,14 @@
 | Storage & Tenancy (Z5) | 10 % | 90 % | 9.0 |
 | Workers & Connectors (Z6) | 10 % | 90 % | 9.0 |
 | Metadata / Katalog / Lineage | 6 % | 0 % | 0.0 |
-| Governance / Audit / Kosten | 8 % | 0 % | 0.0 |
+| Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge | 5 % | 0 % | 0.0 |
 | Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 58 %** |
+| **Summe** | **100 %** | — | **≈ 65 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · **Z6 ≈ 58 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · **Z7 ≈ 65 %**.
 
 ---
 
@@ -48,6 +48,52 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 7 (2026-07-06) — Governance, audit & cost
+- Wrote **[governance/00-governance-and-audit.md](governance/00-governance-and-audit.md)** —
+  the **policy plane**. Governance owns *policy, not mechanism*: it adds **no hot-path runtime
+  component**, only a versioned (itself-audited) policy store + a reporting/metering surface over
+  the existing [audit store](storage/00-storage-architecture.md); every enforcement point already
+  exists (Model Gateway, retrieval filter/redactor, worker scheduler). Closes the three
+  ratifications the upstream cycles queued (G1–G3) plus audit usage (G4), cost/R5 (G5), model
+  governance (G6), and compliance mapping (G7).
+- **Ratified freshness SLA (closes open Q#7):** contractual per-tier numbers — principal change
+  **≤5 min** (Standard) / **≤2 min** (Isolated); restrictive resource-ACL **≤15 / ≤5 min**;
+  widening ≤60 / ≤15 min; public best-effort. A breach = alarm **+** recorded governance incident
+  (contractual reporting event for Isolated). Made affordable by the fact that query-time principal
+  precedence ([Storage §7](storage/00-storage-architecture.md)) already closes offboarding
+  independent of the re-tag — the tight number is really an SLA on cache-TTL+invalidation.
+- **Ratified label→action policy:** platform-owned default matrix (`public`/`internal`/
+  `confidential`/`pii`/`legal_hold`/`restricted:<class>`) mapping each label to retrieval / prompt /
+  routing / egress, composing **most-restrictive-wins**; tenants may **tighten, never loosen**;
+  labels can only subtract capability ([Permissions §7](permissions/00-authorization-model.md)
+  invariant preserved).
+- **Ratified retention / erasure / legal-hold:** per-store schedule (audit ≥1 yr hot / ≥7 yr cold;
+  raw object 90 d→archival; DLQ 30 d; cache 5–15 min); right-to-erasure as an SLA-bound DSAR
+  workflow using [Storage §9](storage/00-storage-architecture.md) propagation, **erasure recorded as
+  an audit event**, **audit trail itself exempt**; precedence **legal-hold > erasure > retention**.
+- **Cost model & R5 (design-mitigated):** every cost-bearing event carries `tenant_id`; per-tenant→
+  pack→workload attribution; budget envelopes degrade **capability before safety** (80–100 % →
+  cheaper tier + defer P2 + tighten cache; 100 % → block new P2, queue P1, alert). **A budget cap
+  can never relax a permission, skip the ACL filter, or throttle a P0 revocation** — fail-closed on
+  spend.
+- **Audit-as-evidence:** *a promise the audit log can't evidence is not a governable promise* —
+  the SLA, labels, erasure, and budgets are each proven by their event type; audit read access is
+  role-gated + itself audited; hash-chain verified on schedule.
+- **Model governance:** approved-model registry + **eval-before-promotion** gate (grounding, refusal
+  calibration, jailbreak resistance, pack task accuracy) + per-tenant version pinning/rollback + model
+  version in every retrieval audit event. **Compliance map** binds existing controls to GDPR / SOX /
+  ISO 27001-SOC 2 / sector per domain, each cell evidence-backed.
+- Recorded **[ADR-0012](architecture/adr/ADR-0012-governance-audit-and-cost.md)**.
+- Updated indexes: ADR index, `governance/README.md` (stub → real), `platform/README.md` domain
+  map (governance → **Seeded**).
+- **Directly de-risks:** R5 (cost → metering + attribution + budget envelopes + safety-preserving
+  degradation ladder); **closes the SLA-number half of R3** and the label-policy dependency.
+- **Closed open question #7** (freshness SLA — ratified) — see §3.
+- ⏳ **Handed to downstream cycles:** actual prices / budget-envelope sizes / per-tier SLA capacity
+  sizing / data residency → [Deployment](deployment/); classification schema the label policy
+  consumes → [Metadata](metadata/); the client-facing surface for budgets / DSAR / audit export →
+  [API](api/). Open Q#3 (model hosting) feeds the approved-model registry when decided.
 
 ### Cycle 6 (2026-07-05) — Ingestion workers & connectors
 - Wrote **[workers/00-ingestion-architecture.md](workers/00-ingestion-architecture.md)** — the
@@ -240,6 +286,7 @@
 | ADR-0009 | Hybrid permission-filtered retrieval + structure-aware chunking | Exact-token + semantic recall; safety stays one index predicate; new domain = parser, not a pipeline change |
 | ADR-0010 | Five-store data plane; pgvector-default vector layer (graduate on measured need) behind a filter-only `VectorIndex` port; tenant = customer org | Meets every S1–S7 requirement; ACL stays a single-store `WHERE`; unfiltered search is unrepresentable; lock-in bounded to one adapter |
 | ADR-0011 | Ingestion = staged-DAG workers; at-least-once + idempotent version-keyed writes; priority classes (P0 revoke > P1 delta > P2 backfill); outbox coherence relay; conformance-gated connector contract | Resumable/scalable/contained ingestion; backlog can't starve a revocation (R8); new source = connector + suite, not redesign; write path fail-closed |
+| ADR-0012 | Governance = policy plane (no hot-path component); ratified per-tier freshness SLA + label→action matrix + retention/erasure; audit-as-evidence; per-tenant budgets that degrade capability-before-safety; eval-gated model registry; per-domain compliance map | Promises become contractual & provable; cost control (R5) can never regress into a safety leak; new domain inherits a control map, not a redesign |
 
 ---
 
@@ -259,6 +306,12 @@
    connector cycles: the exact `map_acl` fidelity achievable per SAP module.
 3. **Model hosting** — in-boundary OSS models vs. contractually-private managed
    endpoints (or both, by tenant tier). Drives cost, latency, and compliance posture.
+   **Cycle 7 note:** Governance built the **approved-model registry + eval-before-promotion
+   gate** ([Governance §8](governance/00-governance-and-audit.md)) that *any* hosting choice
+   flows through; the label→trust routing matrix ([Governance §4](governance/00-governance-and-audit.md))
+   already expresses the compliance side. The still-open decision is the concrete
+   *in-boundary-vs-managed-private posture per tenant tier* — feed it into the registry when
+   decided (may warrant its own ADR; [ADR-0012 revisit-when](architecture/adr/ADR-0012-governance-audit-and-cost.md)).
 4. ✅ **DECIDED (Cycle 4, [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md)).**
    ~~Chunking & embedding strategy~~ — **structure-aware chunking** (heading/clause/table-row/
    per-email-message; mixed-ACL invariant) + **universal embedding space with per-domain
@@ -273,15 +326,16 @@
    [Storage §5](storage/00-storage-architecture.md).
 6. **Agent framework** — extend the existing `core/` planner/verifier into the
    distributed orchestrator, or adopt a framework? (Relates to ADR-0002.)
-7. **Freshness SLA** — acceptable staleness window between a source change (content or
-   ACL) and the index reflecting it. **Provisional (Cycle 3):** principal changes ≤5 min,
-   restricted resource-ACL changes ≤15 min, public best-effort. **Cycle 6 update:** the
-   Workers priority-class model ([workers §4.2](workers/00-ingestion-architecture.md)) and the
-   outbox relay-lag / queue-lag alarms ([workers §5, §10](workers/00-ingestion-architecture.md))
-   now *implement and measure* these targets — a breach is an alarm, not a surprise, and the
-   cost check (reserved P0 capacity + relay poll frequency) is a Deployment tuning knob, not a
-   redesign. **Still pending [Governance](governance/) ratification of the actual numbers**
-   (Cycle 7).
+7. ✅ **DECIDED (Cycle 7, [ADR-0012](architecture/adr/ADR-0012-governance-audit-and-cost.md)).**
+   ~~Freshness SLA~~ — **ratified as contractual per-tier numbers**
+   ([Governance §3](governance/00-governance-and-audit.md)): principal change ≤5 min
+   (Standard) / ≤2 min (Isolated); restrictive resource-ACL ≤15 / ≤5 min; widening ≤60 / ≤15 min;
+   public best-effort. A breach is an alarm **and** a recorded governance incident (contractual
+   reporting event for Isolated tenants). Workers already *implements and measures* these
+   ([workers §4.2, §10](workers/00-ingestion-architecture.md)); Governance fixed the promise +
+   consequences. Remaining sub-question deferred to [Deployment](deployment/): the
+   reserved-P0-capacity / relay-poll-frequency **sizing** that meets each ratified number at cost
+   (a tuning knob, not a redesign).
 
 ---
 
@@ -293,7 +347,7 @@
 | R2 | **Prompt injection via retrieved content** | **Critical** | ✅ *Design mitigated (Cycle 4, [RAG §6.1, §7](rag/00-retrieval-pipeline.md)):* retrieved text delivered inside a data boundary (not instructions), retrieved content cannot alter tool/routing/citation policy, verifier enforces grounding + guardrails as the backstop. Residual: implementation hardening of the verifier + red-team corpus. |
 | R3 | **Stale permissions** — user loses access but index still serves it | High | ✅ *Design mitigated (Cycles 3+6):* query-time principal precedence ([Permissions §8](permissions/00-authorization-model.md)) closes offboarding regardless of chunk lag; the write half — **change-driven content/ACL re-sync at P0/P1** + the **outbox relay bounded by the freshness SLA** ([workers §5, §7](workers/00-ingestion-architecture.md)) — closes the resource-re-tag case; relay/queue lag is alarmed (§10). Residual: SLA number ratification (Q#7). |
 | R4 | **Cross-tenant leakage** via a filtering bug | High | ✅ *Design mitigated (Cycle 5, [Storage §5.2](storage/00-storage-architecture.md)):* Shared tier uses **two independent controls** (per-tenant namespace/schema **and** an unconditional `tenant_id` predicate); Isolated tier = dedicated cluster/DB/bucket + per-tenant DEK; the `VectorIndex` port takes a `tenant` on every call (cross-tenant query unrepresentable). Residual: correct namespace provisioning per tenant. |
-| R5 | **Cost blow-up** — inference + storage at 10× data/tenants | High | Gateway budgets, model tiering, tenant cost model, storage tiers |
+| R5 | **Cost blow-up** — inference + storage at 10× data/tenants | High | ✅ *Design mitigated (Cycle 7, [Governance §7](governance/00-governance-and-audit.md)):* per-tenant **metering + attribution** (every cost event carries `tenant_id`, assembled tenant→pack→workload), **budget envelopes**, and a **graceful-degradation ladder** that degrades *capability before safety* (cheaper model tier + defer P2 + tighten cache; then block new P2, queue P1) — **a budget cap can never relax a permission, skip the ACL filter, or throttle a P0 revocation**. Upstream levers (model tiering [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md), quantization/tiering [Storage §10](storage/00-storage-architecture.md), embed batching [Workers §4.3](workers/00-ingestion-architecture.md)) now have an owner that pulls them. Residual: actual **prices + envelope sizes** per tier ([Deployment](deployment/), empirical). |
 | R6 | **Connector fragility** — source API changes break ingestion/permissions | Medium | ✅ *Design mitigated (Cycle 6, [connector §3, §5](workers/01-connector-framework.md)):* independently-versioned connectors + a **schema-validated** return boundary (malformed ACL → DLQ, never the store) + the **conformance suite as a production canary** that **auto-quarantines** a source on semantic drift. Residual: implementation of each connector's change-detection. |
 | R7 | **Vendor lock-in** at model or vector layer | Medium | ✅ *Design mitigated (Cycle 5, [Storage §3.4](storage/00-storage-architecture.md)):* the **`VectorIndex` port** confines each engine to one adapter; a tenant migration is a re-index through the port, not a pipeline rewrite (the vector-layer analogue of the Model Gateway). Models already covered by [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md). |
 | R8 | **Ingestion backlog** starves freshness | Medium | ✅ *Design mitigated (Cycle 6, [workers §4, §10](workers/00-ingestion-architecture.md)):* **strict priority classes** (P0 revoke > P1 delta > P2 backfill) with **fairness guards** so a backfill can't starve a revocation; bounded-lease backpressure; per-tenant weighted-fair scheduling; **queue-lag alarms** make a looming SLA breach loud, not silent. Residual: autoscaling tuning ([Deployment](deployment/)). |
@@ -306,10 +360,10 @@
 - ✅ `permissions/` — canonical ACL model + per-source mapping. **Seeded (Cycle 3).**
 - ✅ `storage/` — five-store data plane, pgvector-default vector layer + `VectorIndex` port, tenancy definition, isolation tiers, encryption/BYOK, coherence, migrations, erasure. **Seeded (Cycle 5).** Resolved open Q#1 (final) + Q#5 (final); mitigated R4/R5/R7 by design.
 - ✅ `workers/` — staged-DAG ingestion, `IngestionTask` queue + idempotent version-keyed writes, priority classes (R8), outbox coherence relay, re-embed migrations, change-driven re-sync, DLQ, least-privilege posture, connector contract + conformance gate. **Seeded (Cycle 6).** Mitigated R8/R6/R3-write by design; strengthened Q#7.
-- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Workers emits lineage at persist; Metadata specifies the schema.) **Highest doc value now, jointly with Governance.**
-- `api/` — external API surface, contracts, versioning. **Empty.**
-- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty.**
-- `governance/` — model governance, audit usage, compliance mapping, cost. **Empty. Now unblocked** — Cycles 3/5/6 have queued 3 ratifications for it (freshness SLA Q#7, label policy, retention/erasure/cost).
+- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Workers emits lineage at persist; Metadata specifies the schema; Governance §4 consumes the classification schema.) **Highest doc value now.**
+- `api/` — external API surface, contracts, versioning. **Empty.** (Governance handed it the budget / DSAR / audit-export surface.)
+- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now heavily loaded** — Cycles 5/6/7 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency).
+- ✅ `governance/` — policy plane: ratified freshness SLA + label→action matrix + retention/erasure, audit usage (retention/access/evidence), per-tenant cost model & budgets (R5), model governance, compliance map. **Seeded (Cycle 7).** Closed open Q#7; mitigated R5 by design.
 
 ---
 
@@ -366,31 +420,41 @@ outbox coherence relay ([Storage §7](storage/00-storage-architecture.md)), re-e
 migrations, change-driven re-sync, DLQ, least-privilege posture, six-method connector
 contract, conformance gate + canary. Mitigated R8/R6/R3-write by design; strengthened Q#7.
 
-### ▶ Cycle 7 (do next): **Governance, audit & cost**
-Write `governance/00-governance-and-audit.md`: model governance, audit-log usage,
-compliance mapping (per domain), cost model and budgets (R5). *Why next:* three upstream
-cycles have now **queued ratifications that only Governance can close**, and it is the last
-cross-cutting concern before the platform's *policy* surface is specified. **Ratify:**
-(1) the **freshness SLA** (open question #7) — Cycle 6 implemented and instrumented the
-≤5/≤15 min targets ([workers §4.2, §10](workers/00-ingestion-architecture.md)); Governance
-fixes the contractual numbers per tenant tier; (2) the **sensitivity-label policy**
-([Permissions §7](permissions/00-authorization-model.md)); (3) **retention + legal-hold
-tombstone + right-to-erasure ratification + per-tenant cost metering**
-([Storage §9, §10](storage/00-storage-architecture.md)) — including the **DLQ / ingest-cost**
-attribution handed up by Cycle 6 ([workers §8, §10](workers/00-ingestion-architecture.md)).
-The audit *store* exists ([Storage §4.4](storage/00-storage-architecture.md)) and both read-
-([RAG §7.3](rag/00-retrieval-pipeline.md)) and write-side ([workers §9](workers/00-ingestion-architecture.md))
-events are emitted into it — Governance specifies how audit is *used* (compliance mapping,
-retention, access).
+### ✅ Cycle 7 (DONE — see §1): **Governance, audit & cost**
+Wrote `governance/00-governance-and-audit.md` + [ADR-0012](architecture/adr/ADR-0012-governance-audit-and-cost.md).
+Policy plane (no hot-path component): ratified freshness SLA per tier (closed Q#7), label→action
+matrix, retention/erasure/legal-hold; audit-as-evidence (retention/access/hash-chain); per-tenant
+cost model + budgets that degrade capability-before-safety (mitigated R5 by design); eval-gated
+model registry; per-domain compliance map. Handed Deployment the prices/envelopes/SLA-capacity
+sizing, Metadata the classification schema, and API the budget/DSAR/audit-export surface.
+
+### ▶ Cycle 8 (do next): **Metadata — catalog, lineage & classification schema**
+Write `metadata/00-catalog-and-lineage.md`. *Why next:* it is now the **last un-seeded
+cross-cutting store concern** and three cycles feed directly into it — Storage *holds* catalog +
+lineage + classification ([Storage §4.2](storage/00-storage-architecture.md)), Workers *emits*
+lineage at the persist stage ([Workers §2, §9](workers/00-ingestion-architecture.md)), and
+Governance's label→action policy *consumes* the classification schema
+([Governance §4](governance/00-governance-and-audit.md)). Specify: the **catalog schema**
+(document/item/chunk/version), the **lineage graph** (source→artifact→chunk→vector, + the erasure
+tombstone [Storage §9](storage/00-storage-architecture.md)), the **classification/label schema**
+(the vocabulary the ACL `labels` and the Governance matrix key off, [Permissions §2.2](permissions/00-authorization-model.md)),
+and how catalog/lineage back **audit evidence** ([Governance §6.3](governance/00-governance-and-audit.md))
+and **re-embed migrations** ([Workers §6](workers/00-ingestion-architecture.md)). No new ADR
+expected unless a cross-component schema decision emerges.
 
 ### Later (backlog)
-- `api/` — external API contracts & versioning.
-- `deployment/` — reference topology, environments, CI/CD, DR/BCP.
-- `metadata/` — catalog & lineage schema (partially informed by permissions + storage).
+- `deployment/` — reference topology, environments, CI/CD, DR/BCP. **Now the most heavily-loaded
+  backlog item:** per-tier storage topology + graduation thresholds ([Storage §3.3](storage/00-storage-architecture.md)),
+  broker choice + worker autoscaling ([Workers §3.2, §13](workers/00-ingestion-architecture.md)),
+  SLA-capacity sizing + prices/envelopes + region/residency ([Governance §3, §7](governance/00-governance-and-audit.md)).
+- `api/` — external API contracts & versioning (incl. the budget / DSAR / audit-export surface
+  Governance handed up).
 - Per-domain **pack specifications** (Finance, HR, Legal, ...) once the core deep dives
-  are stable — proving the "new domain = pack, not redesign" bet.
+  are stable — proving the "new domain = pack, not redesign" bet; each pack now **inherits** a
+  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)).
 - Reconcile `platform/` architecture with the existing `core/` code
   (ADR-0002 implementation path).
+- Resolve open Q#3 (model hosting) → feed the approved-model registry ([Governance §8](governance/00-governance-and-audit.md)).
 
 ---
 

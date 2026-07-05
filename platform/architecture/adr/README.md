@@ -24,5 +24,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0009](ADR-0009-hybrid-retrieval-and-chunking.md) | Hybrid permission-filtered retrieval with structure-aware chunking | Accepted |
 | [0010](ADR-0010-storage-topology-and-tenancy.md) | Storage topology & tenancy: five-store data plane, pgvector-default vector layer, tenant = customer org | Accepted |
 | [0011](ADR-0011-ingestion-workers-and-connector-framework.md) | Ingestion plane: staged-DAG workers, at-least-once + idempotent writes, conformance-gated connector contract | Accepted |
+| [0012](ADR-0012-governance-audit-and-cost.md) | Governance plane: ratified SLA/label/retention policy, audit-as-evidence, safety-preserving cost model | Accepted |
 
 New ADRs are added by later cycles as decisions are made.
