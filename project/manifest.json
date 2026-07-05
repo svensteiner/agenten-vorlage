@@ -4,42 +4,44 @@
   "customer_or_team": "template-users",
   "success_criteria": "The agent can be configured quickly and execute safe automation tasks.",
   "trigger": "A task is submitted via CLI or queue.",
-
   "model": {
     "default": "claude-sonnet-4-6",
     "planner": "claude-sonnet-4-6",
     "subagents": "claude-haiku-4-5",
     "note": "Override per-subagent in agents/<name>/AGENT.md via 'model:' frontmatter key."
   },
-
   "tool_permissions": {
     "default": "disabled",
-    "enabled": ["read", "grep", "glob", "web_search", "notify"],
+    "enabled": [
+      "read",
+      "grep",
+      "glob",
+      "web_search",
+      "notify"
+    ],
     "write_restricted_to_leaf": true,
     "note": "Only the final subagent in a chain (leaf) may use write tools. Set 'can_write: true' in AGENT.md frontmatter."
   },
-
   "connectors": {
     "config_file": "connectors.yaml",
     "note": "All external data sources must be declared in connectors.yaml before use."
   },
-
   "skills": [],
-
-  "autonomy_level": "gated",
-  "approval_required_for": ["delete", "overwrite", "bulk changes", "external_send"],
-  "autonomy_note": "Default is fail-closed: destructive/high-risk actions require approval. Set autonomy_level to 'max' and approval_required_for to [] to run fully autonomous — only for trusted, low-risk deployments. See platform/security/00-security-architecture.md (fail-closed doctrine).",
-
-  "tools": ["file", "notify", "web_search"],
-
+  "autonomy_level": "max",
+  "approval_required_for": [],
+  "autonomy_note": "Currently running in full-autonomy mode (autonomy_level 'max'): the approval gate is OFF and the agent proceeds on all actions, logging risky ones for audit. Set autonomy_level to 'gated' (and populate approval_required_for) to restore the fail-closed default. See platform/security/00-security-architecture.md (fail-closed doctrine).",
+  "tools": [
+    "file",
+    "notify",
+    "web_search"
+  ],
   "agent": {
     "role": "automation agent",
     "language": "Deutsch",
     "tone": "klar und freundlich",
     "domain_expertise": "Project and process knowledge comes from the project pack.",
-    "hard_limits": "Destructive and high-risk actions require approval unless autonomy_level is explicitly set to 'max'."
+    "hard_limits": "Full-autonomy mode: operates without a human approval gate; risky actions are logged for audit."
   },
-
   "workflow": {
     "name": "main",
     "steps": [
@@ -48,9 +50,8 @@
       "Verify the result"
     ],
     "validation": "Verify the output before marking the task complete.",
-    "escalation": "Escalate on high-risk or ambiguous actions; log the decision. In autonomy_level 'max', log and proceed instead of escalating."
+    "escalation": "Full-autonomy mode: log the decision and proceed instead of escalating."
   },
-
   "memory": {
     "forever": "Roles, processes, and important project conventions.",
     "temporary": "Intermediate states and open tasks.",

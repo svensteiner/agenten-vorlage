@@ -19,5 +19,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0004](ADR-0004-permission-faithful-retrieval.md) | Enforce end-user permissions at query time | Accepted |
 | [0005](ADR-0005-template-consolidation-council.md) | Template consolidation: one core, harvest the v3.0 fork | Accepted |
 | [0006](ADR-0006-fail-closed-autonomy-default.md) | Fail-closed autonomy is the template default | Accepted |
+| [0007](ADR-0007-client-configuration-surface.md) | Client configuration surface (local settings UI) | Accepted |
 
 New ADRs are added by later cycles as decisions are made.
