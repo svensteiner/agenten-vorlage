@@ -20,5 +20,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0005](ADR-0005-template-consolidation-council.md) | Template consolidation: one core, harvest the v3.0 fork | Accepted |
 | [0006](ADR-0006-fail-closed-autonomy-default.md) | Fail-closed autonomy is the template default | Accepted |
 | [0007](ADR-0007-client-configuration-surface.md) | Client configuration surface (local settings UI) | Accepted |
+| [0008](ADR-0008-canonical-principal-acl-model.md) | Normalize every source ACL into one canonical principal model | Accepted |
 
 New ADRs are added by later cycles as decisions are made.

@@ -31,7 +31,7 @@ is stable.
 | [architecture/](architecture/) | Vision, high-level structure, ADR log | **Seeded** |
 | [security/](security/) | Identity, isolation, data protection, threat model | **Seeded** |
 | [rag/](rag/) | Retrieval-augmented generation pipeline | Planned |
-| [permissions/](permissions/) | Authorization, ACL propagation, row/document-level access | Planned |
+| [permissions/](permissions/) | Authorization, ACL propagation, row/document-level access | **Seeded** |
 | [storage/](storage/) | Object, vector, relational, cache storage | Planned |
 | [metadata/](metadata/) | Catalog, lineage, classification, tagging | Planned |
 | [workers/](workers/) | Ingestion, embedding, and job orchestration | Planned |
