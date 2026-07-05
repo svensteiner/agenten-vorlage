@@ -1,11 +1,16 @@
 """Governance rules for reusable automation agents."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .context import ProjectContext
+
+if TYPE_CHECKING:
+    from .subagents import SubagentSpec
 
 
 @dataclass
@@ -17,7 +22,7 @@ class GovernanceDecision:
 
 
 class GovernancePolicy:
-    """Policy layer for cooldowns, approval gates, and risk checks."""
+    """Policy layer for cooldowns, approval gates, risk checks, and leaf-write enforcement."""
 
     def __init__(self) -> None:
         self._history: list[dict[str, Any]] = []
@@ -69,12 +74,88 @@ class GovernancePolicy:
     def _approval_required(self, context: ProjectContext | None) -> bool:
         """Whether the human-approval gate is active.
 
-        Defaults to False so the template runs fully autonomously. Set
-        "require_human_approval": true in project/config.json to re-enable gates.
+        Fail-closed by default: the gate is ON unless the deployment explicitly
+        opts into full autonomy. Opt in by setting "autonomy_level": "max" in
+        project/manifest.json (trusted, low-risk deployments only), or by setting
+        "require_human_approval": false in project/config.json.
+        See platform/security/00-security-architecture.md (fail-closed doctrine).
         """
         if context is None:
+            return True
+        manifest = context.manifest if isinstance(context.manifest, dict) else {}
+        if str(manifest.get("autonomy_level", "")).lower() == "max":
             return False
-        return bool(context.config.get("require_human_approval", False))
+        return bool(context.config.get("require_human_approval", True))
+
+    def allow_write(
+        self,
+        subagent: "SubagentSpec | None",
+        *,
+        context: ProjectContext | None = None,
+        is_leaf: bool = False,
+    ) -> GovernanceDecision:
+        """Enforce the leaf-write pattern: only the final subagent in a chain may write.
+
+        The pattern from Anthropic's financial-services templates: read-only subagents
+        gather and process data; a single leaf subagent is the only one allowed to
+        produce persistent output. This prevents uncoordinated writes from multiple
+        agents and makes the write surface auditable.
+        """
+        manifest = (context.manifest if context else {}) or {}
+        tool_perms = manifest.get("tool_permissions", {}) if isinstance(manifest, dict) else {}
+        write_restricted = tool_perms.get("write_restricted_to_leaf", True)
+
+        if not write_restricted:
+            return GovernanceDecision(allowed=True, reason="write_restricted_to_leaf disabled in manifest.")
+
+        if subagent is None:
+            return GovernanceDecision(allowed=True, reason="No subagent — orchestrator write allowed.")
+
+        if subagent.can_write:
+            return GovernanceDecision(allowed=True, reason=f"{subagent.name} is declared as leaf writer.")
+
+        if is_leaf:
+            return GovernanceDecision(allowed=True, reason=f"{subagent.name} is the leaf in this chain.")
+
+        return GovernanceDecision(
+            allowed=False,
+            reason=(
+                f"{subagent.name} is not a leaf writer. "
+                "Set 'can_write: true' in AGENT.md frontmatter to allow writes."
+            ),
+            requires_approval=False,
+            metadata={"subagent": subagent.name, "pattern": "leaf-write"},
+        )
+
+    def allow_connector(
+        self,
+        connector_name: str,
+        *,
+        context: ProjectContext | None = None,
+    ) -> GovernanceDecision:
+        """Only connectors declared in connectors.yaml may be used."""
+        if context is None:
+            return GovernanceDecision(
+                allowed=False,
+                reason="No project context — cannot verify connector declaration.",
+            )
+        declared = {c.name for c in context.connectors}
+        if not declared:
+            return GovernanceDecision(
+                allowed=True,
+                reason="No connectors declared — connector check skipped.",
+            )
+        if connector_name in declared:
+            return GovernanceDecision(allowed=True, reason=f"Connector '{connector_name}' is declared.")
+        return GovernanceDecision(
+            allowed=False,
+            reason=(
+                f"Connector '{connector_name}' is not declared in connectors.yaml. "
+                "Add it there before using it."
+            ),
+            requires_approval=True,
+            metadata={"connector": connector_name, "declared": sorted(declared)},
+        )
 
     def record(self, action: str, outcome: str, details: str = "") -> None:
         self._history.append(
