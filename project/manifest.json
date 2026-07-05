@@ -27,6 +27,29 @@
     "note": "All external data sources must be declared in connectors.yaml before use."
   },
   "skills": [],
+
+  "workers": {
+    "reader": {
+      "description": "Liest und recherchiert; kein Schreibzugriff.",
+      "tools": ["file_read", "web_search"],
+      "trust_level": "low"
+    },
+    "compute": {
+      "description": "Verarbeitet Daten; keine externen Tools.",
+      "tools": [],
+      "trust_level": "medium"
+    },
+    "writer": {
+      "description": "Einziger Worker mit Schreibrecht (Leaf-Writer).",
+      "tools": ["file_write", "notify"],
+      "trust_level": "high"
+    }
+  },
+  "handoffs": {
+    "allowlist": ["reader", "compute", "writer"],
+    "max_payload_chars": 2000
+  },
+
   "autonomy_level": "max",
   "approval_required_for": [],
   "autonomy_note": "Currently running in full-autonomy mode (autonomy_level 'max'): the approval gate is OFF and the agent proceeds on all actions, logging risky ones for audit. Set autonomy_level to 'gated' (and populate approval_required_for) to restore the fail-closed default. See platform/security/00-security-architecture.md (fail-closed doctrine).",
