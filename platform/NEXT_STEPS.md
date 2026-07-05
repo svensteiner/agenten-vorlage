@@ -3,7 +3,7 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 1 (foundation established)
+- **Current cycle:** 2 (branch consolidation via design council)
 - **Last updated:** 2026-07-05
 - **Documentation root:** `platform/` — the single source of truth.
 
@@ -22,6 +22,22 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 2 (2026-07-05) — Branch consolidation (design council)
+- Convened a **5-member design council** (Enterprise Architect, Senior Engineer,
+  Security & Governance, QA & Test, Redundancy & Consistency) to reconcile 4 divergent
+  template branches into "the perfect agent template."
+- **Decision → [ADR-0005](architecture/adr/ADR-0005-template-consolidation-council.md):**
+  keep `core/`+`project/` as base, **merged `tender-feistel`** (skills, connectors,
+  steering examples, leaf-write governance, financial-services patterns), and defined a
+  **harvest plan** for the v3.0 (`kind-keller`) fork instead of merging it wholesale.
+- **Security fix → [ADR-0006](architecture/adr/ADR-0006-fail-closed-autonomy-default.md):**
+  reverted the fail-open full-autonomy default to **fail-closed-by-default**
+  (`core/governance.py._approval_required` now defaults True; autonomy is explicit opt-in
+  via `autonomy_level: "max"`).
+- Merge landed on `main`, core modules import clean, existing tests pass.
+- ⏳ **Not yet merged:** the v3.0 asset harvest (see §6 Cycle 2b) and the other
+  contained branches are superseded.
 
 ### Cycle 1 (2026-07-05) — Foundation
 - Established `platform/` as the documentation root with a per-concern folder layout
@@ -103,7 +119,31 @@
 
 Ordered by **architectural leverage** (unblocks the most, de-risks the most).
 
-### ▶ Cycle 2 (do next): **Permissions & Identity deep dive**
+### ▶ Cycle 2b (do next): **Harvest v3.0 assets onto the core** ([ADR-0005](architecture/adr/ADR-0005-template-consolidation-council.md))
+Port from `claude/kind-keller-601f08` (cherry-pick/port, **never** a wholesale merge —
+it deletes core/project/platform). Ordered by value/coupling:
+1. **`deploy.sh` + `deploy.ps1`** → `scripts/` — nearly standalone; repoint validation
+   at `project/manifest.json`. (Low coupling, high value.)
+2. **`check.py`** → `core/check.py` or `tools/check.py` — adapt to validate
+   `project/manifest.json` + `connectors.yaml`; keep `--json`/CI exit codes.
+3. **Least-privilege worker + allowlisted handoff** → `core/workers.py`,
+   `core/handoff.py` — port the *concepts* (WorkerRegistry, frozenset allowlist, schema
+   + payload cap) wired to the existing orchestrator, not the flat files. Reconcile the
+   two permission models (worker trust-level ↔ tender leaf-write) into ONE governance API.
+4. **127-test suite** → `tests/` — `test_governance`/`test_brain` need retargeting to
+   `core.*` (kind's target the flat Governor, not `GovernancePolicy`); `test_workers`/
+   `test_handoff`/`test_check` come only with their ported modules; **`test_agent.py`
+   must be rewritten** against `core/orchestrator`. Add `pytest.ini` + `requirements-dev.txt`,
+   enforce `--cov=core --cov-fail-under=80` in CI.
+5. **Onboarding UX polish** — fold kind's plain-German beginner prompts + end-to-end
+   self-test into `agent_cli.py`; add Python-check/pip-install robustness to the `.bat`
+   launchers. Then **delete** the superseded branch content.
+6. **Deeper governance hardening** (from ADR-0006 follow-up): run the high-risk hard
+   block *before* the autonomy shortcut; make escalation a deterministic policy decision,
+   not an LLM `needs_human` flag.
+**Effort: M (~1–2 focused days).** Do NOT push a broken tree — gate on tests green.
+
+### Cycle 3: **Permissions & Identity deep dive**
 Write `permissions/00-authorization-model.md`. Define the **canonical principal/ACL
 model** and how SharePoint, SAP, email, and file-share ACLs map into it; specify
 query-time enforcement, delegated access, caching/TTL, and the per-connector

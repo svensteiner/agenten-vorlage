@@ -17,5 +17,7 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0002](ADR-0002-reuse-existing-template-core.md) | Reuse the template's core/project split as the tenancy seed | Accepted |
 | [0003](ADR-0003-model-gateway-indirection.md) | All inference goes through a Model Gateway | Accepted |
 | [0004](ADR-0004-permission-faithful-retrieval.md) | Enforce end-user permissions at query time | Accepted |
+| [0005](ADR-0005-template-consolidation-council.md) | Template consolidation: one core, harvest the v3.0 fork | Accepted |
+| [0006](ADR-0006-fail-closed-autonomy-default.md) | Fail-closed autonomy is the template default | Accepted |
 
 New ADRs are added by later cycles as decisions are made.
