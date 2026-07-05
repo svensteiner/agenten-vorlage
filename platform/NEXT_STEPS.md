@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 7 (Governance, audit & cost)
+- **Current cycle:** 8 (Metadata — catalog, lineage & classification schema)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 65 %** (Ende Zyklus 7) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 71 %** (Ende Zyklus 8) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -23,15 +23,15 @@
 | RAG Deep Dive (Z4) | 12 % | 85 % | 10.2 |
 | Storage & Tenancy (Z5) | 10 % | 90 % | 9.0 |
 | Workers & Connectors (Z6) | 10 % | 90 % | 9.0 |
-| Metadata / Katalog / Lineage | 6 % | 0 % | 0.0 |
+| Metadata / Katalog / Lineage (Z8) | 6 % | 90 % | 5.4 |
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge | 5 % | 0 % | 0.0 |
 | Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 65 %** |
+| **Summe** | **100 %** | — | **≈ 71 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · **Z7 ≈ 65 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · **Z8 ≈ 71 %**.
 
 ---
 
@@ -48,6 +48,58 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 8 (2026-07-06) — Metadata: catalog, lineage & classification schema
+- Wrote **[metadata/00-catalog-and-lineage.md](metadata/00-catalog-and-lineage.md)** — the
+  **connective-tissue schema**. Five prior cycles referred to the same nouns (`resource_id`,
+  `source_item_version`, `labels`, `embed_model`, "lineage tombstone", "catalog row") but **no
+  document owned their definitions**; this cycle canonicalizes them so the four consumers
+  (Storage holds, Workers emits, RAG/citation + Governance/evidence read) share **one contract
+  instead of four component-local shapes**. Adds **no new store** (metadata lives in the
+  relational source of truth, [Storage §4.2](storage/00-storage-architecture.md)) and **no
+  hot-path component** (lineage is a byproduct of the persist write already done).
+- **Canonical catalog:** four-level hierarchy **Document → Item → Chunk → Version**, keyed on
+  `resource_id` + `source_item_version`. The **Item** level is defined as the finest source unit
+  carrying *one* ACL — that is where [RAG §2.2](rag/00-retrieval-pipeline.md)'s mixed-ACL
+  invariant lives (per-message emails, per-sheet workbooks). `resource_id` = the platform-wide
+  join key; `source_item_version` = the coherence key; `superseded_by` = version history
+  (Principle 8). A denormalized chunk projection (labels, ACL arrays, `embed_model`,
+  `section_path`) keeps retrieval + citation single-store reads.
+- **Closed classification vocabulary** (M3): `sensitivity ∈ {public,internal,confidential,
+  restricted:<class>}`, `pii ∈ {true,false}+pii_class:<type>`, `legal_hold ∈ {true,false}+
+  matter:<id>`. **An unregistered label is a write-boundary schema violation → DLQ, never
+  stored** — this is what makes the [Governance §4](governance/00-governance-and-audit.md) matrix
+  *total* (every label a chunk can carry has a defined action). Unlabeled defaults to `internal`,
+  never `public` (fail-closed classification).
+- **Explicit lineage graph** (M2) `source→raw→parsed→chunk→vector`, emitted at persist carrying
+  the ingestion `job_trace_id`, **traversable both directions**: forward = erasure-completeness +
+  re-embed; backward = audit/citation evidence. The `re_embedded_from` edge is itself the proof a
+  re-embed was source-independent ([Workers §6](workers/00-ingestion-architecture.md)).
+- **Content-free erasure/legal-hold tombstone** (M4) — the concrete shape of
+  [Storage §9](storage/00-storage-architecture.md)'s "lineage tombstone" + the
+  [Governance §5](governance/00-governance-and-audit.md) legal balance (`legal_hold > erasure >
+  retention`; audit retained, content erased). "No silent orphans" becomes a **provable graph
+  walk**, not an assertion.
+- **Metadata as the audit-evidence base** (M5): every Governance promise resolves to a catalog
+  column or a lineage traversal addressable by the `resource_id`/`job_trace_id` an audit event
+  already carries — [Governance §6.3](governance/00-governance-and-audit.md)'s "can the log prove
+  it?" is answered by a query, not a reconstruction. Hence metadata lives transactionally with the
+  ACL of record, not in a lagging analytics copy.
+- **Anti-drift discipline** (M6): a `schema_version` + write-boundary validation (violation → DLQ,
+  same mechanism as a malformed `map_acl`) + additive-with-migration evolution — a shared change
+  can't become a silent cross-component break. Integrity invariants: every chunk has a live
+  lineage path or a tombstone; version monotonicity; label ⊆ registry; no cross-tenant edge (R4).
+- Recorded **[ADR-0013](architecture/adr/ADR-0013-canonical-metadata-lineage-schema.md)**.
+- Updated indexes: ADR index, `metadata/README.md` (stub → real), `platform/README.md` domain map
+  (metadata → **Seeded**).
+- **Directly strengthens (no new risk owned):** R1 (quarantine now auditable via `acl_confidence`
+  in the catalog + orphan check), R3 (re-sync is addressable because identifiers are canonical),
+  and makes Governance's erasure/retention/label promises **provable** (the evidence is a
+  traversal). Closes the **last un-seeded cross-cutting store concern** (§5).
+- ⏳ **Handed to downstream cycles:** the catalog-browse / lineage / DSAR-status client surface →
+  [API](api/); catalog partitioning + cold-lineage archival + the lineage-integrity-check schedule
+  → [Deployment](deployment/); each domain pack registers its `restricted:<class>` /
+  `pii_class:<type>` values in the classification registry ([Metadata §4.1](metadata/00-catalog-and-lineage.md)).
 
 ### Cycle 7 (2026-07-06) — Governance, audit & cost
 - Wrote **[governance/00-governance-and-audit.md](governance/00-governance-and-audit.md)** —
@@ -287,6 +339,7 @@
 | ADR-0010 | Five-store data plane; pgvector-default vector layer (graduate on measured need) behind a filter-only `VectorIndex` port; tenant = customer org | Meets every S1–S7 requirement; ACL stays a single-store `WHERE`; unfiltered search is unrepresentable; lock-in bounded to one adapter |
 | ADR-0011 | Ingestion = staged-DAG workers; at-least-once + idempotent version-keyed writes; priority classes (P0 revoke > P1 delta > P2 backfill); outbox coherence relay; conformance-gated connector contract | Resumable/scalable/contained ingestion; backlog can't starve a revocation (R8); new source = connector + suite, not redesign; write path fail-closed |
 | ADR-0012 | Governance = policy plane (no hot-path component); ratified per-tier freshness SLA + label→action matrix + retention/erasure; audit-as-evidence; per-tenant budgets that degrade capability-before-safety; eval-gated model registry; per-domain compliance map | Promises become contractual & provable; cost control (R5) can never regress into a safety leak; new domain inherits a control map, not a redesign |
+| ADR-0013 | Canonical metadata: four-level catalog (Doc→Item→Chunk→Version) + explicit bidirectional lineage graph + closed classification vocabulary + content-free erasure tombstone; held in the relational SoT, no new store; versioned + write-boundary-validated | Four consumers share one contract not four shapes; the Governance label matrix becomes total; erasure-completeness & audit-evidence become provable queries; new domain/artifact type = additive registration, not a schema redesign |
 
 ---
 
@@ -360,9 +413,9 @@
 - ✅ `permissions/` — canonical ACL model + per-source mapping. **Seeded (Cycle 3).**
 - ✅ `storage/` — five-store data plane, pgvector-default vector layer + `VectorIndex` port, tenancy definition, isolation tiers, encryption/BYOK, coherence, migrations, erasure. **Seeded (Cycle 5).** Resolved open Q#1 (final) + Q#5 (final); mitigated R4/R5/R7 by design.
 - ✅ `workers/` — staged-DAG ingestion, `IngestionTask` queue + idempotent version-keyed writes, priority classes (R8), outbox coherence relay, re-embed migrations, change-driven re-sync, DLQ, least-privilege posture, connector contract + conformance gate. **Seeded (Cycle 6).** Mitigated R8/R6/R3-write by design; strengthened Q#7.
-- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Workers emits lineage at persist; Metadata specifies the schema; Governance §4 consumes the classification schema.) **Highest doc value now.**
-- `api/` — external API surface, contracts, versioning. **Empty.** (Governance handed it the budget / DSAR / audit-export surface.)
-- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now heavily loaded** — Cycles 5/6/7 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency).
+- ✅ `metadata/` — canonical four-level catalog (Doc→Item→Chunk→Version), bidirectional lineage graph, closed classification/label vocabulary, content-free erasure tombstone, metadata-as-audit-evidence, schema versioning/validation. **Seeded (Cycle 8).** Closed the last un-seeded cross-cutting store concern; made Governance's label matrix total and its erasure/audit promises provable.
+- `api/` — external API surface, contracts, versioning. **Empty. Now the next doc-track item.** Governance handed it the budget / DSAR / audit-export surface; Metadata handed it the catalog-browse / lineage / DSAR-status surface.
+- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now heavily loaded** — Cycles 5/6/7/8 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency, catalog partitioning + lineage archival + integrity-check schedule).
 - ✅ `governance/` — policy plane: ratified freshness SLA + label→action matrix + retention/erasure, audit usage (retention/access/evidence), per-tenant cost model & budgets (R5), model governance, compliance map. **Seeded (Cycle 7).** Closed open Q#7; mitigated R5 by design.
 
 ---
@@ -428,27 +481,36 @@ cost model + budgets that degrade capability-before-safety (mitigated R5 by desi
 model registry; per-domain compliance map. Handed Deployment the prices/envelopes/SLA-capacity
 sizing, Metadata the classification schema, and API the budget/DSAR/audit-export surface.
 
-### ▶ Cycle 8 (do next): **Metadata — catalog, lineage & classification schema**
-Write `metadata/00-catalog-and-lineage.md`. *Why next:* it is now the **last un-seeded
-cross-cutting store concern** and three cycles feed directly into it — Storage *holds* catalog +
-lineage + classification ([Storage §4.2](storage/00-storage-architecture.md)), Workers *emits*
-lineage at the persist stage ([Workers §2, §9](workers/00-ingestion-architecture.md)), and
-Governance's label→action policy *consumes* the classification schema
-([Governance §4](governance/00-governance-and-audit.md)). Specify: the **catalog schema**
-(document/item/chunk/version), the **lineage graph** (source→artifact→chunk→vector, + the erasure
-tombstone [Storage §9](storage/00-storage-architecture.md)), the **classification/label schema**
-(the vocabulary the ACL `labels` and the Governance matrix key off, [Permissions §2.2](permissions/00-authorization-model.md)),
-and how catalog/lineage back **audit evidence** ([Governance §6.3](governance/00-governance-and-audit.md))
-and **re-embed migrations** ([Workers §6](workers/00-ingestion-architecture.md)). No new ADR
-expected unless a cross-component schema decision emerges.
+### ✅ Cycle 8 (DONE — see §1): **Metadata — catalog, lineage & classification schema**
+Wrote `metadata/00-catalog-and-lineage.md` + [ADR-0013](architecture/adr/ADR-0013-canonical-metadata-lineage-schema.md).
+Four-level catalog (Doc→Item→Chunk→Version), bidirectional lineage graph, closed classification
+vocabulary (makes the Governance matrix total), content-free erasure tombstone, metadata-as-audit-
+evidence, schema versioning/validation. Held in the relational SoT — no new store, no hot-path
+component. Closed the last un-seeded cross-cutting store concern; strengthened R1/R3 and made
+Governance's erasure/retention/label promises provable. A cross-component schema decision *did*
+emerge → ADR-0013.
+
+### ▶ Cycle 9 (do next): **API — external surface, contracts & versioning**
+Write `api/00-api-surface.md`. *Why next:* it is now the **last major un-seeded platform surface**
+and three cycles have queued concrete client-facing needs onto it — Governance handed up the
+**budget / DSAR / audit-export** surface ([Governance §5, §7](governance/00-governance-and-audit.md)),
+Metadata handed up the **catalog-browse / lineage / DSAR-status** surface
+([Metadata §11](metadata/00-catalog-and-lineage.md)), and RAG/Permissions define the **query
+endpoint** whose request must carry the subject token that drives query-time enforcement
+([Permissions §3](permissions/00-authorization-model.md), [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)).
+Specify: the **query/answer contract** (subject identity in, cited/verified answer out), the
+**admin/config surface** (tenant policy, budgets, model pinning — the Governance policy store's
+API), the **DSAR/erasure + audit-export** endpoints, **versioning + deprecation policy**,
+**pagination/filtering/rate-limiting** (reuse the [api-design skill](../project/skills/) patterns),
+and the **API-response envelope**. Likely warrants an ADR if a contract-shape decision (e.g.
+sync-vs-streaming answer, tenancy in the URL vs. the token) proves cross-component.
 
 ### Later (backlog)
 - `deployment/` — reference topology, environments, CI/CD, DR/BCP. **Now the most heavily-loaded
   backlog item:** per-tier storage topology + graduation thresholds ([Storage §3.3](storage/00-storage-architecture.md)),
   broker choice + worker autoscaling ([Workers §3.2, §13](workers/00-ingestion-architecture.md)),
-  SLA-capacity sizing + prices/envelopes + region/residency ([Governance §3, §7](governance/00-governance-and-audit.md)).
-- `api/` — external API contracts & versioning (incl. the budget / DSAR / audit-export surface
-  Governance handed up).
+  SLA-capacity sizing + prices/envelopes + region/residency ([Governance §3, §7](governance/00-governance-and-audit.md)),
+  catalog partitioning + lineage archival + integrity-check schedule ([Metadata §7, §11](metadata/00-catalog-and-lineage.md)).
 - Per-domain **pack specifications** (Finance, HR, Legal, ...) once the core deep dives
   are stable — proving the "new domain = pack, not redesign" bet; each pack now **inherits** a
   compliance-map row ([Governance §9](governance/00-governance-and-audit.md)).
