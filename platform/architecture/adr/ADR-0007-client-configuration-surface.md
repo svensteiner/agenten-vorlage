@@ -33,6 +33,11 @@ Ship a **local web-based settings surface** (`control_panel.py`, launched via
   runtime never disagree.
 - **Safety UX:** switching to full-autonomy shows an inline warning; "Gated" is the
   presented-safe default (per ADR-0006).
+- **Connector management:** the panel also edits `project/connectors.yaml` — the
+  governance allowlist ([ADR-0004](ADR-0004-permission-faithful-retrieval.md) at template
+  scale). Adding/removing a data source is done in the UI; security-relevant fields the UI
+  doesn't render (`tools_enabled`, `required`) are **preserved** on save, never silently
+  dropped.
 
 ## Consequences
 

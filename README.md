@@ -13,7 +13,10 @@ system easier to extend.
 
 - **Settings UI (for clients):** double-click `EINSTELLUNGEN.bat` (or run
   `python control_panel.py`) — opens a browser page to configure autonomy, models,
-  and limits without editing any JSON. See [`control_panel.py`](control_panel.py).
+  limits, and data-source connectors without editing any JSON/YAML.
+  See [`control_panel.py`](control_panel.py).
+- **Validate the project pack:** `python tools/check.py` (add `--strict` / `--json` for CI).
+- **Deploy:** `scripts/deploy.sh` (Linux/macOS) or `scripts\deploy.ps1` (Windows).
 - Architecture doc: [docs/architecture.md](docs/architecture.md)
 - Onboarding doc: [docs/onboarding.md](docs/onboarding.md)
 - Core runtime: [`core/`](core/)

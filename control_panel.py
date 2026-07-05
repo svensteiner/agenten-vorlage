@@ -30,6 +30,7 @@ from typing import Any
 ROOT = Path(__file__).parent
 CONFIG_PATH = ROOT / "config.json"
 MANIFEST_PATH = ROOT / "project" / "manifest.json"
+CONNECTORS_PATH = ROOT / "project" / "connectors.yaml"
 
 # Destructive actions gated when autonomy_level is "gated".
 DEFAULT_APPROVAL_ACTIONS = ["delete", "overwrite", "bulk changes", "external_send"]
@@ -231,10 +232,122 @@ def save_settings(incoming: dict[str, Any]) -> dict[str, Any]:
     return load_settings()
 
 
+# --- Connectors (project/connectors.yaml) -----------------------------------
+# The declared connector list IS the governance allowlist: only sources listed
+# here may be used. Adding/removing here changes what the agent may reach.
+def load_connectors() -> list[dict[str, str]]:
+    if not CONNECTORS_PATH.exists():
+        return []
+    text = CONNECTORS_PATH.read_text(encoding="utf-8")
+    try:
+        import yaml
+
+        data = yaml.safe_load(text) or {}
+    except ImportError:
+        return _parse_connectors_fallback(text)
+    items = data.get("connectors") or []
+    result = []
+    for c in items:
+        if not isinstance(c, dict) or not c.get("name"):
+            continue
+        entry = {
+            "name": str(c.get("name", "")).strip(),
+            "url_env": str(c.get("url_env", "")).strip(),
+            "description": str(c.get("description", "")).strip(),
+        }
+        # Preserve security-relevant fields the UI doesn't edit, so a UI save
+        # never silently drops tool-scoping or required-ness.
+        if "tools_enabled" in c:
+            entry["tools_enabled"] = c["tools_enabled"]
+        if "required" in c:
+            entry["required"] = bool(c["required"])
+        result.append(entry)
+    return result
+
+
+def _parse_connectors_fallback(text: str) -> list[dict[str, str]]:
+    """Very small YAML reader for the connectors list when PyYAML is absent."""
+    items: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- name:"):
+            if current:
+                items.append(current)
+            current = {"name": stripped.split(":", 1)[1].strip().strip("\"'"), "url_env": "", "description": ""}
+        elif current is not None and ":" in stripped and not stripped.startswith("-"):
+            key, _, val = stripped.partition(":")
+            key = key.strip()
+            if key in ("url_env", "description"):
+                current[key] = val.strip().strip("\"'")
+    if current:
+        items.append(current)
+    return items
+
+
+def validate_connectors(items: Any) -> list[dict[str, str]]:
+    if not isinstance(items, list):
+        raise ValueError("Connectors müssen eine Liste sein.")
+    clean: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            raise ValueError("Ungültiger Connector-Eintrag.")
+        name = str(item.get("name", "")).strip()
+        if not name:
+            raise ValueError("Jeder Connector braucht einen Namen.")
+        if name in seen:
+            raise ValueError(f"Doppelter Connector-Name: '{name}'.")
+        seen.add(name)
+        entry = {
+            "name": name,
+            "url_env": str(item.get("url_env", "")).strip(),
+            "description": str(item.get("description", "")).strip(),
+        }
+        if item.get("tools_enabled"):
+            entry["tools_enabled"] = list(item["tools_enabled"])
+        if "required" in item:
+            entry["required"] = bool(item["required"])
+        clean.append(entry)
+    return clean
+
+
+def save_connectors(items: Any) -> list[dict[str, str]]:
+    clean = validate_connectors(items)
+    CONNECTORS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CONNECTORS_PATH.write_text(_dump_connectors(clean), encoding="utf-8")
+    return clean
+
+
+def _dump_connectors(items: list[dict[str, str]]) -> str:
+    header = (
+        "# Declared external data sources (MCP servers / APIs).\n"
+        "# This list is the governance allowlist — only connectors here may be used.\n"
+        "# Managed via the settings UI (control_panel.py) or by hand.\n"
+    )
+    if not items:
+        return header + "connectors: []\n"
+    lines = [header, "connectors:"]
+    for c in items:
+        lines.append(f"  - name: {c['name']}")
+        if c.get("url_env"):
+            lines.append(f"    url_env: {c['url_env']}")
+        if c.get("description"):
+            lines.append(f"    description: \"{c['description']}\"")
+        if c.get("tools_enabled"):
+            tools = ", ".join(str(t) for t in c["tools_enabled"])
+            lines.append(f"    tools_enabled: [{tools}]")
+        if "required" in c:
+            lines.append(f"    required: {str(c['required']).lower()}")
+    return "\n".join(lines) + "\n"
+
+
 # --- HTML rendering ---------------------------------------------------------
 def render_page() -> str:
-    return _PAGE_TEMPLATE.replace("__SPEC__", json.dumps(SETTINGS_SPEC, ensure_ascii=False)).replace(
-        "__VALUES__", json.dumps(load_settings(), ensure_ascii=False)
+    return (
+        _PAGE_TEMPLATE.replace("__SPEC__", json.dumps(SETTINGS_SPEC, ensure_ascii=False))
+        .replace("__VALUES__", json.dumps(load_settings(), ensure_ascii=False))
+        .replace("__CONNECTORS__", json.dumps(load_connectors(), ensure_ascii=False))
     )
 
 
@@ -287,6 +400,14 @@ _PAGE_TEMPLATE = """<!doctype html>
   <p class="sub">Konfiguriere den Agenten ohne Code. Änderungen werden in <code>config.json</code>
      und <code>project/manifest.json</code> gespeichert.</p>
   <form id="form"></form>
+
+  <div class="group">
+    <h2>Datenquellen (Connectors)</h2>
+    <div class="help" style="margin-bottom:14px">Nur hier deklarierte Quellen darf der Agent
+      nutzen (Allowlist). Das Secret kommt über die genannte Umgebungsvariable, nie im Klartext.</div>
+    <div id="connectors"></div>
+    <button type="button" class="secondary" style="margin-top:12px" onclick="addConnector()">+ Connector hinzufügen</button>
+  </div>
 </div>
 <div class="bar">
   <span id="status"></span>
@@ -296,6 +417,7 @@ _PAGE_TEMPLATE = """<!doctype html>
 <script>
 const SPEC = __SPEC__;
 const VALUES = __VALUES__;
+let CONNECTORS = __CONNECTORS__;
 
 function field(f) {
   const v = VALUES[f.key];
@@ -338,6 +460,22 @@ function collect() {
   return out;
 }
 
+function esc(s){ return (s??'').toString().replace(/"/g,'&quot;'); }
+
+function renderConnectors() {
+  const box = document.getElementById("connectors");
+  if (!CONNECTORS.length) { box.innerHTML = `<div class="help">Noch keine Datenquellen deklariert.</div>`; return; }
+  box.innerHTML = CONNECTORS.map((c, i) => `
+    <div class="field" style="display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;align-items:end">
+      <div><label>Name</label><input type="text" value="${esc(c.name)}" oninput="CONNECTORS[${i}].name=this.value"></div>
+      <div><label>Umgebungsvariable (url_env)</label><input type="text" value="${esc(c.url_env)}" oninput="CONNECTORS[${i}].url_env=this.value"></div>
+      <button type="button" class="secondary" title="Entfernen" onclick="removeConnector(${i})">✕</button>
+      <div style="grid-column:1/3"><label>Beschreibung</label><input type="text" value="${esc(c.description)}" oninput="CONNECTORS[${i}].description=this.value"></div>
+    </div>`).join("");
+}
+function addConnector(){ CONNECTORS.push({name:"",url_env:"",description:""}); renderConnectors(); }
+function removeConnector(i){ CONNECTORS.splice(i,1); renderConnectors(); }
+
 async function save() {
   const status = document.getElementById("status");
   status.className = ""; status.textContent = "Speichere…";
@@ -347,12 +485,19 @@ async function save() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Unbekannter Fehler");
     Object.assign(VALUES, data.values);
+    const cres = await fetch("/api/connectors", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({connectors: CONNECTORS})});
+    const cdata = await cres.json();
+    if (!cres.ok) throw new Error(cdata.error || "Connector-Fehler");
+    CONNECTORS = cdata.connectors;
+    renderConnectors();
     status.className = "ok"; status.textContent = "✓ Gespeichert";
   } catch (e) {
     status.className = "err"; status.textContent = "✗ " + e.message;
   }
 }
 render();
+renderConnectors();
 </script>
 </body>
 </html>
@@ -374,18 +519,25 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/config":
             body = json.dumps({"values": load_settings()}, ensure_ascii=False).encode("utf-8")
             self._send(200, body, "application/json; charset=utf-8")
+        elif self.path == "/api/connectors":
+            body = json.dumps({"connectors": load_connectors()}, ensure_ascii=False).encode("utf-8")
+            self._send(200, body, "application/json; charset=utf-8")
         else:
             self._send(404, b"not found", "text/plain")
 
     def do_POST(self) -> None:  # noqa: N802
-        if self.path != "/api/config":
+        if self.path not in ("/api/config", "/api/connectors"):
             self._send(404, b"not found", "text/plain")
             return
         try:
             length = int(self.headers.get("Content-Length", 0))
             incoming = json.loads(self.rfile.read(length) or b"{}")
-            values = save_settings(incoming)
-            body = json.dumps({"ok": True, "values": values}, ensure_ascii=False).encode("utf-8")
+            if self.path == "/api/connectors":
+                connectors = save_connectors(incoming.get("connectors", []))
+                body = json.dumps({"ok": True, "connectors": connectors}, ensure_ascii=False).encode("utf-8")
+            else:
+                values = save_settings(incoming)
+                body = json.dumps({"ok": True, "values": values}, ensure_ascii=False).encode("utf-8")
             self._send(200, body, "application/json; charset=utf-8")
         except ValueError as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode("utf-8")

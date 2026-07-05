@@ -23,6 +23,22 @@
 
 ## 1. Completed work
 
+### Cycle 2b (2026-07-05) — v3.0 harvest + client settings UI
+- **Client settings UI** ([ADR-0007](architecture/adr/ADR-0007-client-configuration-surface.md)):
+  `control_panel.py` + `EINSTELLUNGEN.bat` — browser page (stdlib only) to set autonomy,
+  models, limits **and manage connectors** (`connectors.yaml` allowlist) with validation;
+  syncs `config.json` + `project/manifest.json`. End-to-end tested.
+- **Harvested v3.0 assets onto the core** ([ADR-0005](architecture/adr/ADR-0005-template-consolidation-council.md)):
+  `core/workers.py` (least-privilege WorkerRegistry), `core/handoff.py` (allowlisted
+  router), `tools/check.py` (project-pack validator, CI exit codes),
+  `scripts/deploy.{sh,ps1}`, `pytest.ini`, `requirements-dev.txt`. Added `workers`/
+  `handoffs` config to `project/manifest.json`.
+- **Tests:** 62 green (23 workers + 24 handoff + 11 check + 4 tools).
+- ⏳ **Still staged (not done):** wiring `WorkerRegistry`/`HandoffRouter` INTO
+  `core/orchestrator` at runtime; rewriting v3.0's `test_agent.py` against `core/`;
+  retargeting `test_brain`/`test_governance`; coverage gate `--cov=core --cov-fail-under=80`;
+  deeper governance hardening (high-risk block before autonomy shortcut, per ADR-0006).
+
 ### Cycle 2 (2026-07-05) — Branch consolidation (design council)
 - Convened a **5-member design council** (Enterprise Architect, Senior Engineer,
   Security & Governance, QA & Test, Redundancy & Consistency) to reconcile 4 divergent
@@ -119,29 +135,25 @@
 
 Ordered by **architectural leverage** (unblocks the most, de-risks the most).
 
-### ▶ Cycle 2b (do next): **Harvest v3.0 assets onto the core** ([ADR-0005](architecture/adr/ADR-0005-template-consolidation-council.md))
-Port from `claude/kind-keller-601f08` (cherry-pick/port, **never** a wholesale merge —
-it deletes core/project/platform). Ordered by value/coupling:
-1. **`deploy.sh` + `deploy.ps1`** → `scripts/` — nearly standalone; repoint validation
-   at `project/manifest.json`. (Low coupling, high value.)
-2. **`check.py`** → `core/check.py` or `tools/check.py` — adapt to validate
-   `project/manifest.json` + `connectors.yaml`; keep `--json`/CI exit codes.
-3. **Least-privilege worker + allowlisted handoff** → `core/workers.py`,
-   `core/handoff.py` — port the *concepts* (WorkerRegistry, frozenset allowlist, schema
-   + payload cap) wired to the existing orchestrator, not the flat files. Reconcile the
-   two permission models (worker trust-level ↔ tender leaf-write) into ONE governance API.
-4. **127-test suite** → `tests/` — `test_governance`/`test_brain` need retargeting to
-   `core.*` (kind's target the flat Governor, not `GovernancePolicy`); `test_workers`/
-   `test_handoff`/`test_check` come only with their ported modules; **`test_agent.py`
-   must be rewritten** against `core/orchestrator`. Add `pytest.ini` + `requirements-dev.txt`,
-   enforce `--cov=core --cov-fail-under=80` in CI.
-5. **Onboarding UX polish** — fold kind's plain-German beginner prompts + end-to-end
-   self-test into `agent_cli.py`; add Python-check/pip-install robustness to the `.bat`
-   launchers. Then **delete** the superseded branch content.
-6. **Deeper governance hardening** (from ADR-0006 follow-up): run the high-risk hard
-   block *before* the autonomy shortcut; make escalation a deterministic policy decision,
-   not an LLM `needs_human` flag.
-**Effort: M (~1–2 focused days).** Do NOT push a broken tree — gate on tests green.
+### ✅ Cycle 2b (DONE — see §1): harvested deploy scripts, `tools/check.py`,
+`core/workers.py`, `core/handoff.py`, tests (62 green), and shipped the client settings
+UI with connector management. Remaining harvest work moved to Cycle 2c below.
+
+### ▶ Cycle 2c (do next): **Wire the harvested modules into the runtime + finish tests**
+1. **Wire `WorkerRegistry` + `HandoffRouter` into `core/orchestrator`/`dispatcher`** so
+   the ported modules actually scope tools and route handoffs at runtime (currently they
+   are available + configured + unit-tested, but not yet called by the loop). Reconcile
+   worker trust-level ↔ tender leaf-write into ONE governance API.
+2. **Finish the test port:** rewrite v3.0's `test_agent.py` against `core/orchestrator`;
+   retarget `test_brain`/`test_governance` to the `core/` modules; enforce
+   `--cov=core --cov-fail-under=80` in CI (GitHub Actions).
+3. **Deeper governance hardening** (ADR-0006 follow-up): run the high-risk hard block
+   *before* the autonomy shortcut; make escalation a deterministic policy decision, not an
+   LLM `needs_human` flag.
+4. **Onboarding UX polish** — fold kind's plain-German beginner prompts + self-test into
+   `agent_cli.py`; add Python-check/pip-install robustness to the `.bat` launchers. Then
+   **delete** the superseded `kind-keller` branch content.
+**Do NOT push a broken tree — gate on tests green.**
 
 ### Cycle 3: **Permissions & Identity deep dive**
 Write `permissions/00-authorization-model.md`. Define the **canonical principal/ACL
