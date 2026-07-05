@@ -34,7 +34,7 @@ is stable.
 | [permissions/](permissions/) | Authorization, ACL propagation, row/document-level access | **Seeded** |
 | [storage/](storage/) | Object, vector, relational, cache storage | **Seeded** |
 | [metadata/](metadata/) | Catalog, lineage, classification, tagging | Planned |
-| [workers/](workers/) | Ingestion, embedding, and job orchestration | Planned |
+| [workers/](workers/) | Ingestion, embedding, and job orchestration | **Seeded** |
 | [api/](api/) | External API surface, contracts, versioning | Planned |
 | [deployment/](deployment/) | Topology, environments, CI/CD, DR | Planned |
 | [governance/](governance/) | Model governance, audit, compliance, cost | Planned |

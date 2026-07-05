@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 5 (Storage & tenancy deep dive)
+- **Current cycle:** 6 (Ingestion workers & connectors)
 - **Last updated:** 2026-07-05
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 49 %** (Ende Zyklus 5) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 58 %** (Ende Zyklus 6) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -22,16 +22,16 @@
 | Permissions Deep Dive (Z3) | 12 % | 90 % | 10.8 |
 | RAG Deep Dive (Z4) | 12 % | 85 % | 10.2 |
 | Storage & Tenancy (Z5) | 10 % | 90 % | 9.0 |
-| Workers & Connectors | 10 % | 0 % | 0.0 |
+| Workers & Connectors (Z6) | 10 % | 90 % | 9.0 |
 | Metadata / Katalog / Lineage | 6 % | 0 % | 0.0 |
 | Governance / Audit / Kosten | 8 % | 0 % | 0.0 |
 | API-Surface & Verträge | 5 % | 0 % | 0.0 |
 | Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 49 %** |
+| **Summe** | **100 %** | — | **≈ 58 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · **Z5 ≈ 49 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · **Z6 ≈ 58 %**.
 
 ---
 
@@ -48,6 +48,43 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 6 (2026-07-05) — Ingestion workers & connectors
+- Wrote **[workers/00-ingestion-architecture.md](workers/00-ingestion-architecture.md)** — the
+  write-plane engine. Turns the Cycle 3–5 write-side obligations (W1 idempotent version-keyed
+  writes, W2 ACL-denorm coherence, W3 change-driven re-sync, W4 source-independent re-embed,
+  W5 mixed-ACL invariant at write time, W6 least-privilege per-tenant execution, W7 backpressure)
+  into a selected shape: a **staged DAG** (fetch → parse → map_acl → chunk → embed → persist),
+  each stage reading/writing a durable artifact so failures resume without re-hitting the source.
+- Wrote **[workers/01-connector-framework.md](workers/01-connector-framework.md)** — the
+  source-specific boundary: a **six-method `Connector` port** (`list_items`, `fetch`, `map_acl`,
+  `subscribe_changes`, `list_principal_changes`, `capabilities`); per-source `map_acl` duties
+  (R1 implementation); versioning + fault isolation (R6); and the **permission-conformance suite
+  as the production gate** ([Permissions §11](permissions/00-authorization-model.md)) running in
+  CI **and** a production canary that **auto-quarantines** a source on drift.
+- **Key decisions:** (a) **at-least-once delivery + idempotent version-keyed writes** — refuse
+  exactly-once, make replays/outbox-double-delivery harmless; (b) **strict priority classes with
+  fairness guards** (P0 revocation/security ≤5/≤15 min · P1 content delta · P2 backfill/re-embed/
+  reconciliation) so a backfill can **never** starve a revocation (**R8 core**); (c) the
+  [Storage §7](storage/00-storage-architecture.md) coherence relay = **transactional outbox** at
+  the dedicated-engine tier (pgvector tier stays same-transaction); (d) re-embed/re-chunk =
+  **blue/green P2 jobs reading the parsed object artifact, never the source**
+  ([Storage §8](storage/00-storage-architecture.md)); (e) **least privilege split** — the
+  read-source credential and the write-ACL credential live in different worker pools; (f) under
+  load the plane **drops recall before it drops a revocation** (fail-closed on the write path).
+- Recorded **[ADR-0011](architecture/adr/ADR-0011-ingestion-workers-and-connector-framework.md)**.
+- Updated indexes: ADR index, `workers/README.md` (stub → real), `platform/README.md` domain
+  map (workers → **Seeded**).
+- **Directly de-risks:** R8 (backlog → freshness: priority + fairness + lag alarms, made
+  *observable*), R6 (connector fragility: independent versioning + schema-validated boundary +
+  conformance canary), R3 write-half (change-driven content/ACL re-sync + P0 principal re-sync).
+- **Strengthened open question #7** (freshness SLA): the priority-class model now *implements*
+  the proposed ≤5/≤15 min targets and the relay-lag/queue-lag alarms that enforce them — still
+  **pending [Governance](governance/) ratification** of the actual numbers.
+- ⏳ **Handed to downstream cycles:** freshness-SLA ratification (Q#7) + per-tenant ingest cost +
+  DLQ/retention policy → [Governance](governance/) (Cycle 7); concrete broker choice per tier +
+  worker autoscaling topology + secret provisioning → [Deployment](deployment/); lineage schema
+  emitted by the persist stage → [Metadata](metadata/).
 
 ### Cycle 5 (2026-07-05) — Storage & tenancy deep dive
 - Wrote **[storage/00-storage-architecture.md](storage/00-storage-architecture.md)** — the
@@ -202,6 +239,7 @@
 | ADR-0008 | Normalize every source ACL into one canonical principal model | One filterable predicate; new source = connector + conformance test, not a redesign |
 | ADR-0009 | Hybrid permission-filtered retrieval + structure-aware chunking | Exact-token + semantic recall; safety stays one index predicate; new domain = parser, not a pipeline change |
 | ADR-0010 | Five-store data plane; pgvector-default vector layer (graduate on measured need) behind a filter-only `VectorIndex` port; tenant = customer org | Meets every S1–S7 requirement; ACL stays a single-store `WHERE`; unfiltered search is unrepresentable; lock-in bounded to one adapter |
+| ADR-0011 | Ingestion = staged-DAG workers; at-least-once + idempotent version-keyed writes; priority classes (P0 revoke > P1 delta > P2 backfill); outbox coherence relay; conformance-gated connector contract | Resumable/scalable/contained ingestion; backlog can't starve a revocation (R8); new source = connector + suite, not redesign; write path fail-closed |
 
 ---
 
@@ -236,10 +274,14 @@
 6. **Agent framework** — extend the existing `core/` planner/verifier into the
    distributed orchestrator, or adopt a framework? (Relates to ADR-0002.)
 7. **Freshness SLA** — acceptable staleness window between a source change (content or
-   ACL) and the index reflecting it. Drives connector/worker design. **Provisional
-   (Cycle 3):** principal changes ≤5 min, restricted resource-ACL changes ≤15 min,
-   public best-effort — pending [Governance](governance/) ratification and a cost check
-   in the Workers cycle.
+   ACL) and the index reflecting it. **Provisional (Cycle 3):** principal changes ≤5 min,
+   restricted resource-ACL changes ≤15 min, public best-effort. **Cycle 6 update:** the
+   Workers priority-class model ([workers §4.2](workers/00-ingestion-architecture.md)) and the
+   outbox relay-lag / queue-lag alarms ([workers §5, §10](workers/00-ingestion-architecture.md))
+   now *implement and measure* these targets — a breach is an alarm, not a surprise, and the
+   cost check (reserved P0 capacity + relay poll frequency) is a Deployment tuning knob, not a
+   redesign. **Still pending [Governance](governance/) ratification of the actual numbers**
+   (Cycle 7).
 
 ---
 
@@ -249,12 +291,12 @@
 |---|------|----------|----------------------|
 | R1 | **Permission-model mismatch** — source ACLs can't be faithfully normalized → leak | **Critical** | ✅ *Design mitigated (Cycle 3):* canonical model + `acl_confidence` gate (approximate→deny) + per-connector conformance suite + quarantine tier. Residual: correct **implementation** of each connector's `map_acl`. |
 | R2 | **Prompt injection via retrieved content** | **Critical** | ✅ *Design mitigated (Cycle 4, [RAG §6.1, §7](rag/00-retrieval-pipeline.md)):* retrieved text delivered inside a data boundary (not instructions), retrieved content cannot alter tool/routing/citation policy, verifier enforces grounding + guardrails as the backstop. Residual: implementation hardening of the verifier + red-team corpus. |
-| R3 | **Stale permissions** — user loses access but index still serves it | High | Short TTL query-time re-check; change-driven re-sync; query-time precedence |
+| R3 | **Stale permissions** — user loses access but index still serves it | High | ✅ *Design mitigated (Cycles 3+6):* query-time principal precedence ([Permissions §8](permissions/00-authorization-model.md)) closes offboarding regardless of chunk lag; the write half — **change-driven content/ACL re-sync at P0/P1** + the **outbox relay bounded by the freshness SLA** ([workers §5, §7](workers/00-ingestion-architecture.md)) — closes the resource-re-tag case; relay/queue lag is alarmed (§10). Residual: SLA number ratification (Q#7). |
 | R4 | **Cross-tenant leakage** via a filtering bug | High | ✅ *Design mitigated (Cycle 5, [Storage §5.2](storage/00-storage-architecture.md)):* Shared tier uses **two independent controls** (per-tenant namespace/schema **and** an unconditional `tenant_id` predicate); Isolated tier = dedicated cluster/DB/bucket + per-tenant DEK; the `VectorIndex` port takes a `tenant` on every call (cross-tenant query unrepresentable). Residual: correct namespace provisioning per tenant. |
 | R5 | **Cost blow-up** — inference + storage at 10× data/tenants | High | Gateway budgets, model tiering, tenant cost model, storage tiers |
-| R6 | **Connector fragility** — source API changes break ingestion/permissions | Medium | Connector contract + conformance test suite; versioned connectors |
+| R6 | **Connector fragility** — source API changes break ingestion/permissions | Medium | ✅ *Design mitigated (Cycle 6, [connector §3, §5](workers/01-connector-framework.md)):* independently-versioned connectors + a **schema-validated** return boundary (malformed ACL → DLQ, never the store) + the **conformance suite as a production canary** that **auto-quarantines** a source on semantic drift. Residual: implementation of each connector's change-detection. |
 | R7 | **Vendor lock-in** at model or vector layer | Medium | ✅ *Design mitigated (Cycle 5, [Storage §3.4](storage/00-storage-architecture.md)):* the **`VectorIndex` port** confines each engine to one adapter; a tenant migration is a re-index through the port, not a pipeline rewrite (the vector-layer analogue of the Model Gateway). Models already covered by [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md). |
-| R8 | **Ingestion backlog** starves freshness | Medium | Queue backpressure, autoscaling workers, prioritization by domain |
+| R8 | **Ingestion backlog** starves freshness | Medium | ✅ *Design mitigated (Cycle 6, [workers §4, §10](workers/00-ingestion-architecture.md)):* **strict priority classes** (P0 revoke > P1 delta > P2 backfill) with **fairness guards** so a backfill can't starve a revocation; bounded-lease backpressure; per-tenant weighted-fair scheduling; **queue-lag alarms** make a looming SLA breach loud, not silent. Residual: autoscaling tuning ([Deployment](deployment/)). |
 
 ---
 
@@ -263,11 +305,11 @@
 - ✅ `rag/` — retrieval pipeline (chunking, hybrid search, reranking, grounding, verifier). **Seeded (Cycle 4).**
 - ✅ `permissions/` — canonical ACL model + per-source mapping. **Seeded (Cycle 3).**
 - ✅ `storage/` — five-store data plane, pgvector-default vector layer + `VectorIndex` port, tenancy definition, isolation tiers, encryption/BYOK, coherence, migrations, erasure. **Seeded (Cycle 5).** Resolved open Q#1 (final) + Q#5 (final); mitigated R4/R5/R7 by design.
-- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Metadata specifies the schema.)
-- `workers/` — ingestion/embedding job orchestration, queue design. **Empty. Highest value now.** Hard inputs from Cycle 5: the transactional-outbox relay (§7 coherence), re-embed/re-sync jobs from the parsed object artifact, backpressure (R8).
+- ✅ `workers/` — staged-DAG ingestion, `IngestionTask` queue + idempotent version-keyed writes, priority classes (R8), outbox coherence relay, re-embed migrations, change-driven re-sync, DLQ, least-privilege posture, connector contract + conformance gate. **Seeded (Cycle 6).** Mitigated R8/R6/R3-write by design; strengthened Q#7.
+- `metadata/` — catalog, lineage, classification schema. **Empty.** (Storage holds these; Workers emits lineage at persist; Metadata specifies the schema.) **Highest doc value now, jointly with Governance.**
 - `api/` — external API surface, contracts, versioning. **Empty.**
 - `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty.**
-- `governance/` — model governance, audit usage, compliance mapping, cost. **Empty.**
+- `governance/` — model governance, audit usage, compliance mapping, cost. **Empty. Now unblocked** — Cycles 3/5/6 have queued 3 ratifications for it (freshness SLA Q#7, label policy, retention/erasure/cost).
 
 ---
 
@@ -316,23 +358,30 @@ tenant = customer org, isolation tiers, encryption/BYOK, ACL-denormalization coh
 re-embed migrations, erasure. Resolved open questions 1 (final) and 5 (final); mitigated
 R4/R5/R7 by design.
 
-### ▶ Cycle 6 (do next): **Ingestion workers & connectors**
-Write `workers/00-ingestion-architecture.md` + `workers/01-connector-framework.md`:
-queue design, worker scaling, connector contract, change detection, freshness SLA
-(open question 7), backpressure (R8). **Consumes Cycle 3:** the connector contract must
-include `map_acl` + `list_principal_changes` + the permission-conformance suite as gates.
-**Consumes Cycle 5:** implement the **transactional-outbox relay** that keeps the
-denormalized chunk-ACL coherent at the dedicated-engine tier ([Storage §7](storage/00-storage-architecture.md)),
-and the **re-embed/re-sync jobs** that read the parsed artifact from the object store
-(no source re-hit, [Storage §8](storage/00-storage-architecture.md)). *Why next:* Storage
-has now fixed the write-side contract (versioned upsert, coherence bound, migration shape);
-Workers is the last piece before the ingestion plane is fully specified and unblocks
-Deployment topology.
+### ✅ Cycle 6 (DONE — see §1): **Ingestion workers & connectors**
+Wrote `workers/00-ingestion-architecture.md` + `workers/01-connector-framework.md` +
+[ADR-0011](architecture/adr/ADR-0011-ingestion-workers-and-connector-framework.md).
+Staged-DAG pipeline, idempotent version-keyed writes, priority classes + fairness (R8),
+outbox coherence relay ([Storage §7](storage/00-storage-architecture.md)), re-embed
+migrations, change-driven re-sync, DLQ, least-privilege posture, six-method connector
+contract, conformance gate + canary. Mitigated R8/R6/R3-write by design; strengthened Q#7.
 
-### Cycle 7: **Governance, audit & cost**
+### ▶ Cycle 7 (do next): **Governance, audit & cost**
 Write `governance/00-governance-and-audit.md`: model governance, audit-log usage,
-compliance mapping (per domain), cost model and budgets (R5). **Ratify from Cycle 3:**
-the freshness SLA (open question #7) and the sensitivity-label policy (permissions §7).
+compliance mapping (per domain), cost model and budgets (R5). *Why next:* three upstream
+cycles have now **queued ratifications that only Governance can close**, and it is the last
+cross-cutting concern before the platform's *policy* surface is specified. **Ratify:**
+(1) the **freshness SLA** (open question #7) — Cycle 6 implemented and instrumented the
+≤5/≤15 min targets ([workers §4.2, §10](workers/00-ingestion-architecture.md)); Governance
+fixes the contractual numbers per tenant tier; (2) the **sensitivity-label policy**
+([Permissions §7](permissions/00-authorization-model.md)); (3) **retention + legal-hold
+tombstone + right-to-erasure ratification + per-tenant cost metering**
+([Storage §9, §10](storage/00-storage-architecture.md)) — including the **DLQ / ingest-cost**
+attribution handed up by Cycle 6 ([workers §8, §10](workers/00-ingestion-architecture.md)).
+The audit *store* exists ([Storage §4.4](storage/00-storage-architecture.md)) and both read-
+([RAG §7.3](rag/00-retrieval-pipeline.md)) and write-side ([workers §9](workers/00-ingestion-architecture.md))
+events are emitted into it — Governance specifies how audit is *used* (compliance mapping,
+retention, access).
 
 ### Later (backlog)
 - `api/` — external API contracts & versioning.
