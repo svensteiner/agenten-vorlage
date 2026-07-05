@@ -6,6 +6,32 @@
 - **Current cycle:** 4 (RAG retrieval pipeline deep dive)
 - **Last updated:** 2026-07-05
 - **Documentation root:** `platform/` — the single source of truth.
+- **Gesamtfortschritt:** **≈ 40 %** (Ende Zyklus 4) — siehe §0.1. **Nach jeder Session melden.**
+
+---
+
+## 0.1 Fortschritt (Gesamtstand, gewichtet)
+
+> Gemessen gegen das Endziel: Doku ausreichend, damit ein Team die komplette Plattform
+> ohne zusätzliche Architektur-Vorgabe implementieren kann. **Jeden Zyklus fortschreiben.**
+
+| Bereich | Gewicht | Stand | Beitrag |
+|---------|:------:|:-----:|:------:|
+| Vision & Prinzipien | 10 % | 100 % | 10.0 |
+| Security-Architektur | 10 % | 80 % | 8.0 |
+| Permissions Deep Dive (Z3) | 12 % | 90 % | 10.8 |
+| RAG Deep Dive (Z4) | 12 % | 85 % | 10.2 |
+| Storage & Tenancy | 10 % | 0 % | 0.0 |
+| Workers & Connectors | 10 % | 0 % | 0.0 |
+| Metadata / Katalog / Lineage | 6 % | 0 % | 0.0 |
+| Governance / Audit / Kosten | 8 % | 0 % | 0.0 |
+| API-Surface & Verträge | 5 % | 0 % | 0.0 |
+| Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
+| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
+| Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
+| **Summe** | **100 %** | — | **≈ 40 %** |
+
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · **Z4 ≈ 40 %**.
 
 ---
 
