@@ -3,7 +3,7 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 3 (permissions & identity deep dive)
+- **Current cycle:** 4 (RAG retrieval pipeline deep dive)
 - **Last updated:** 2026-07-05
 - **Documentation root:** `platform/` — the single source of truth.
 
@@ -22,6 +22,35 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 4 (2026-07-05) — RAG retrieval pipeline deep dive
+- Wrote **[rag/00-retrieval-pipeline.md](rag/00-retrieval-pipeline.md)** — the query-plane
+  payoff. Specifies **structure-aware chunking** (heading/clause/table-row/per-email-message,
+  with the **mixed-ACL invariant**: a chunk never spans two items with different ACLs),
+  **universal embedding space + per-domain normalization** (not per-domain models;
+  versioned re-embed on model upgrade), **hybrid search** (dense + BM25, RRF fusion) with
+  the **permission predicate pushed into *both* engines** (consumed from Permissions §6,
+  not re-specified), **cross-encoder reranking** (+ MMR, degradable latency dial), **context
+  assembly** (dedup / budget / cite-tag / label redaction) with the **prompt-injection (R2)
+  data-boundary defense**, the **verifier contract** (grounding / citation validity /
+  no-context honesty / guardrails / label compliance — refuse-over-guess), a latency budget,
+  and a **provisional vector-store position** (open Q#1).
+- Recorded **[ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md)** —
+  hybrid permission-filtered retrieval + structure-aware chunking. Obeys ADR-0004, pushes
+  the ADR-0008 predicate into search, mediated by ADR-0003 gateway.
+- Updated indexes: ADR index, `rag/README.md` (stub → real), `platform/README.md` domain
+  map (rag → **Seeded**).
+- **Directly de-risks:** R2 (prompt injection → retrieved-text-as-data boundary + verifier
+  backstop). Design mitigation now documented, not just named.
+- **Answered open questions:** #4 (chunking & embedding strategy — **decided**:
+  structure-aware chunking + universal space + per-domain normalization).
+- **Provisionally answered:** #1 (vector store — pgvector for small tenants graduating to a
+  dedicated engine; **Storage/Cycle 5 owns the final call**).
+- ⏳ **Handed to downstream cycles:** vector + keyword indexes must support efficient
+  **set-overlap filtering** on principal arrays and **hybrid search under one metadata
+  filter** (hard selection criteria → Storage); chunk parsers per content-type + embedding
+  jobs + re-embed migration → Workers; audit-trail fields (principals, chunk IDs, rerank
+  scores, verifier verdict) → Governance.
 
 ### Cycle 3 (2026-07-05) — Permissions & Identity deep dive
 - Wrote **[permissions/00-authorization-model.md](permissions/00-authorization-model.md)** —
@@ -108,21 +137,32 @@
 | ADR-0003 | All inference via a Model Gateway | One choke point for governance, cost, vendor independence |
 | ADR-0004 | Enforce end-user permissions at query time | Safe for Finance/HR/Legal/Audit; fail closed |
 | ADR-0008 | Normalize every source ACL into one canonical principal model | One filterable predicate; new source = connector + conformance test, not a redesign |
+| ADR-0009 | Hybrid permission-filtered retrieval + structure-aware chunking | Exact-token + semantic recall; safety stays one index predicate; new domain = parser, not a pipeline change |
 
 ---
 
 ## 3. Open questions (need a decision in an upcoming cycle)
 
 1. **Vector store choice** — self-hosted (pgvector, Qdrant, Milvus, Weaviate, Elastic)
-   vs. managed private. Drives Storage + Deployment. **Blocks the RAG deep dive.**
+   vs. managed private. Drives Storage + Deployment. **Provisional (Cycle 4,
+   [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md) §6 /
+   [RAG §9](rag/00-retrieval-pipeline.md)):** pgvector for small tenants (co-located
+   vectors + ACL arrays + full-text + native set-overlap) graduating to a dedicated engine
+   (Qdrant / Elasticsearch) at scale. **Hard requirements now fixed:** efficient principal
+   **set-overlap filtering** + **hybrid search under one metadata filter** + per-tenant
+   isolation + versioned upsert. **[Storage](storage/) (Cycle 5) owns the final selection.**
 2. ✅ **DECIDED (Cycle 3, [ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)).**
    ~~Permission normalization model~~ — canonical four-noun model + CPI, normalize at
    ingestion, enforce one predicate at query time. Remaining sub-question deferred to
    connector cycles: the exact `map_acl` fidelity achievable per SAP module.
 3. **Model hosting** — in-boundary OSS models vs. contractually-private managed
    endpoints (or both, by tenant tier). Drives cost, latency, and compliance posture.
-4. **Chunking & embedding strategy** — per-domain vs. universal; how to handle tables
-   (Finance/SAP), long contracts (Legal), and email threads.
+4. ✅ **DECIDED (Cycle 4, [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md)).**
+   ~~Chunking & embedding strategy~~ — **structure-aware chunking** (heading/clause/table-row/
+   per-email-message; mixed-ACL invariant) + **universal embedding space with per-domain
+   text normalization** (not per-domain models) + versioned re-embed on model upgrade. See
+   [RAG §2–§3](rag/00-retrieval-pipeline.md). Remaining sub-question deferred to Workers:
+   the exact per-content-type parser fidelity (OCR layout, SAP table serialization).
 5. **Tenancy granularity** — is a "tenant" a customer, a department, or a domain?
    Affects isolation tiers and cost model.
 6. **Agent framework** — extend the existing `core/` planner/verifier into the
@@ -140,7 +180,7 @@
 | # | Risk | Severity | Mitigation direction |
 |---|------|----------|----------------------|
 | R1 | **Permission-model mismatch** — source ACLs can't be faithfully normalized → leak | **Critical** | ✅ *Design mitigated (Cycle 3):* canonical model + `acl_confidence` gate (approximate→deny) + per-connector conformance suite + quarantine tier. Residual: correct **implementation** of each connector's `map_acl`. |
-| R2 | **Prompt injection via retrieved content** | **Critical** | Retrieved text = data not instructions; verifier; tool-call policy gate |
+| R2 | **Prompt injection via retrieved content** | **Critical** | ✅ *Design mitigated (Cycle 4, [RAG §6.1, §7](rag/00-retrieval-pipeline.md)):* retrieved text delivered inside a data boundary (not instructions), retrieved content cannot alter tool/routing/citation policy, verifier enforces grounding + guardrails as the backstop. Residual: implementation hardening of the verifier + red-team corpus. |
 | R3 | **Stale permissions** — user loses access but index still serves it | High | Short TTL query-time re-check; change-driven re-sync; query-time precedence |
 | R4 | **Cross-tenant leakage** via a filtering bug | High | Isolate by namespace/cluster, not just `tenant_id` filter; fail closed |
 | R5 | **Cost blow-up** — inference + storage at 10× data/tenants | High | Gateway budgets, model tiering, tenant cost model, storage tiers |
@@ -152,9 +192,9 @@
 
 ## 5. Documentation gaps (folders still empty / thin)
 
-- `rag/` — retrieval pipeline (chunking, hybrid search, reranking, grounding). **Empty. Highest value now** (consumes the permission filter).
+- ✅ `rag/` — retrieval pipeline (chunking, hybrid search, reranking, grounding, verifier). **Seeded (Cycle 4).**
 - ✅ `permissions/` — canonical ACL model + per-source mapping. **Seeded (Cycle 3).**
-- `storage/` — vector/object/relational/cache choices + isolation tiers. **Empty.** Now has a hard input: must support principal set-overlap filtering (see permissions §6).
+- `storage/` — vector/object/relational/cache choices + isolation tiers. **Empty. Highest value now.** Hard inputs from Cycles 3+4: must support principal **set-overlap filtering** AND **hybrid (vector+keyword) search under one metadata filter** + versioned upsert (see [RAG §9](rag/00-retrieval-pipeline.md)); resolves open Q#1 (provisional) + Q#5.
 - `metadata/` — catalog, lineage, classification schema. **Empty.**
 - `workers/` — ingestion/embedding job orchestration, queue design. **Empty.**
 - `api/` — external API surface, contracts, versioning. **Empty.**
@@ -195,21 +235,23 @@ Wrote `permissions/00-authorization-model.md` + [ADR-0008](architecture/adr/ADR-
 Canonical model, query-time enforcement, freshness, conformance suite. Mitigates R1/R3/R4
 by design; decided open question #2; provisional answer to #7.
 
-### ▶ Cycle 4 (do next): **RAG pipeline deep dive**
-Write `rag/00-retrieval-pipeline.md`: chunking strategy, embeddings, hybrid
-(vector+keyword) search, reranking, **integration of the permission filter from
-[permissions §6](permissions/00-authorization-model.md)** (retrieval must apply the
-allow/deny + `acl_confidence=exact` + tenant predicate — do not re-specify it, consume
-it), grounding & citation, and the verifier's contract. *Why next:* the permission
-model now exists to plug into; RAG is the query-plane payoff and unblocks nothing until
-it's specified. Resolves open question #4; needs a provisional answer to #1.
+### ✅ Cycle 4 (DONE — see §1): **RAG pipeline deep dive**
+Wrote `rag/00-retrieval-pipeline.md` + [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md).
+Structure-aware chunking, universal embedding space, hybrid search consuming the permission
+filter, reranking, grounding/citation, verifier contract. Decided open question #4; mitigated
+R2 by design; provisional answer to #1.
 
-### Cycle 5: **Storage & tenancy deep dive**
+### ▶ Cycle 5 (do next): **Storage & tenancy deep dive**
 Write `storage/00-storage-architecture.md`: vector/object/relational/cache selection,
 isolation tiers (namespace vs. cluster), encryption/BYOK, versioning & deletion.
-**Hard input from Cycle 3:** the vector store MUST support efficient principal
-**set-overlap filtering** (allow/deny arrays) — this is now a selection criterion, not a
-nice-to-have. Resolves open questions 1 and 5.
+**Hard inputs from Cycles 3+4** (these are now *selection criteria*, not nice-to-haves):
+the vector + keyword layer MUST support (a) efficient principal **set-overlap filtering**
+(allow/deny arrays), and (b) **hybrid (vector+keyword) search under one shared metadata
+filter**, and (c) **versioned upsert/delete** for re-embed migrations. Confirm or supersede
+[ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md) §6's provisional
+pgvector→dedicated-engine lean. Resolves open questions 1 (final) and 5. *Why next:* RAG and
+Permissions have both handed Storage hard, concrete requirements; it is now the bottleneck
+that unblocks Workers + Deployment.
 
 ### Cycle 6: **Ingestion workers & connectors**
 Write `workers/00-ingestion-architecture.md` + `workers/01-connector-framework.md`:

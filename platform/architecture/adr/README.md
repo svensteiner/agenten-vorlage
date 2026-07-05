@@ -21,5 +21,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0006](ADR-0006-fail-closed-autonomy-default.md) | Fail-closed autonomy is the template default | Accepted |
 | [0007](ADR-0007-client-configuration-surface.md) | Client configuration surface (local settings UI) | Accepted |
 | [0008](ADR-0008-canonical-principal-acl-model.md) | Normalize every source ACL into one canonical principal model | Accepted |
+| [0009](ADR-0009-hybrid-retrieval-and-chunking.md) | Hybrid permission-filtered retrieval with structure-aware chunking | Accepted |
 
 New ADRs are added by later cycles as decisions are made.
