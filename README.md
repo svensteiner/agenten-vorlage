@@ -106,6 +106,17 @@ Runtime data is operational, not domain-specific:
 7. Memory stores the outcome and the learning.
 8. The orchestrator either finishes, retries, or escalates.
 
+## Autonomy
+
+The template ships in **full-autonomy mode** (`autonomy_level: "max"`). The agent
+plans, executes, self-verifies, self-corrects, and loops without asking for
+human approval — even for destructive or irreversible actions. Risky steps are
+still flagged in the run metadata so there is an audit trail.
+
+To re-enable the human approval gate, set `"require_human_approval": true` in
+`project/config.json` and list gated terms under `approval_required_for` in
+`project/manifest.json`.
+
 ## Current status
 
 The new `core/` and `project/` folders are already in the repo as the target structure.
