@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 17 (Domain Pack #7 — SharePoint: the second *source-shaped* pack and SAP's *mirror* — the canonical `map_acl` reference; the *inverse* falsifiability test: silent *over*-grant, held via flag-and-fail-closed)
+- **Current cycle:** 18 (Domain Pack #8 — Email/Exchange: the third and **last** *source-shaped* pack — the canonical `map_acl` reference; the *transport-vs-storage* falsifiability test: a transport audience is never a storage grant, held via mailbox-only mapping)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 90 %** (Ende Zyklus 17) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 91 %** (Ende Zyklus 18) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint …) | 6 % | 92 % | 5.5 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email …) | 6 % | 95 % | 5.7 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 90 %** |
+| **Summe** | **100 %** | — | **≈ 91 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · **Z17 ≈ 90 %** (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · **Z18 ≈ 91 %** (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -48,6 +48,61 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 18 (2026-07-06) — Domain Pack #8 (Email/Exchange): the third & *last* source-shaped pack — the *transport-vs-storage* test
+- Wrote **[packs/email/00-email-pack.md](packs/email/00-email-pack.md)** — the **eighth pack**, the
+  **third and last source-shaped** one, and the **simplest of all sources**. SAP was the *hardest*
+  (no document ACL → quarantine story); SharePoint the easiest *document* source (rich ACL, but a
+  sharing-link over-grant trap); Email is simpler still — a message's ACL is just its **mailbox owner
+  + explicit delegates**, with **no sharing-link surface at all**. It is now the **canonical Email
+  `map_acl` reference** that HR/Legal/Audit cite instead of re-deriving (all three already read email).
+- **The headline (§0 ledger + the "transport-vs-storage" analysis): net horizontal change = none, all
+  additive — the falsifiability rule was armed against a *transport-to-storage widening* and did NOT
+  fire.** The one trap unique to messaging is conflating a message's **transport-time audience** with a
+  **storage-time read grant**. Every Exchange construct sorts into `allow` / `deny` / quarantine, and
+  the audience is captured as **content, never a grant**:
+  - **The archived copy's ACL = the mailbox it lives in, not the message's To/Cc/Bcc audience** — a
+    message in Alice's mailbox is granted to Alice + her delegates, *not* to everyone on the recipient
+    line ([Permissions §5.3](permissions/00-authorization-model.md#53-email--exchange), verbatim).
+  - **Per-message thread ACLs → the mixed-ACL invariant** — each message keeps its own ACL; a
+    forwarded/quoted thread does not retroactively grant earlier recipients. The Item = one message;
+    [RAG §2.2](rag/00-retrieval-pipeline.md)'s per-email-message chunker already enforces it.
+  - **Delegate / Full-Access / shared-mailbox → explicit `allow`s** (Band-A `exact`, ordinary
+    principal-set expansion); **Send-As / Send-on-Behalf → no read grant** (write rights; platform is
+    read-only); a dynamic-group-governed delegate set → the *existing* [SAP Band-B](packs/sap/00-sap-pack.md)
+    resolve-or-quarantine path.
+  - **Distribution-list membership → NOT a read grant on the archive** (the email analogue of
+    SharePoint's "anyone"-link trap) — membership is a *transport* delivery fact; the canonical model
+    refuses to derive a storage grant from it.
+  - **Mailbox perms not fully readable → quarantine** (`acl_confidence = exact` only when the delegate
+    set was fully read — the one hard floor).
+- **The reusable articulation (stated once, in the pack):** *the archived copy's ACL is the mailbox it
+  lives in, never the message's transport audience; a recipient set (To/Cc/Bcc, a distribution list, a
+  forwarded thread) is captured as **content**, never promoted to a **grant** — so no transport fact
+  ever silently widens storage access.* Reaffirms [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)/[ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)
+  → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **Fourth pack with empty §2 + §3** (after KM, SAP, SharePoint) — a source-shaped pack carries no
+  policy of its own; a message has no native label vocabulary (an Exchange hold/sensitivity tag is
+  *carried*, not *owned*). §4 fully inherited (GDPR/privilege/SOX-PCAOB/ISO) + one source-specific
+  evidence binding (mailbox + internetMessageId + Graph change-key). **Shortest §1 matrix of any pack**
+  — **no Band-C** (message is the ACL-carrying Item) *and* **no sharing-link surface**.
+- **Consolidation / DRY win:** Email fidelity was asserted **3× ad hoc** (HR/Legal/Audit); this pack
+  makes it **one canonical §1**. Conformance fixtures weighted toward the transport-vs-storage over-grant
+  mode (DL non-grant, thread-audience non-widening, To/Cc/Bcc non-grant, delegate pos/neg, shared-mailbox
+  correctness, Band-B freshness, not-fully-read quarantine, cross-tenant, revocation). Eval headline is
+  the source-shaped analogue: **transport-vs-storage over-grant negatives (0 silent over-grants)** + the
+  [KM](packs/km/00-km-pack.md) over-refusal/recall lens retained.
+- Updated indexes: `packs/README.md` (Email → **Seeded**, 3rd & last source-shaped pack), `platform/README.md`
+  domain map (packs → **… + Email seeded**).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=8** and closes the **source-pack
+  surface**; hardens R4 (transport-audience non-widening + cross-tenant mailbox isolation now checked-and-empty),
+  R1 (not-fully-read quarantine), and re-exercises the Band-B (dynamic delegate-set) freshness path.
+- ⏳ **Handed to later cycles:** the **source-pack surface is now complete** (Finance/HR/Legal/Audit/KM
+  concept-shaped + SAP/SharePoint/Email source-shaped). Remaining packs — **Document Intelligence** and
+  **Reporting** — are *concept-shaped reuse*; the **runtime pack-load SPI** (open Q#6-adjacent) is now the
+  primary remaining track. The one future case that would force a horizontal Permissions ADR is named:
+  an Exchange construct mappable to none of `allow`/`deny`/quarantine without deriving a storage grant
+  from a transport fact (none found).
 
 ### Cycle 17 (2026-07-06) — Domain Pack #7 (SharePoint): the second *source-shaped* pack — SAP's mirror, the *inverse* (over-grant) test
 - Wrote **[packs/sharepoint/00-sharepoint-pack.md](packs/sharepoint/00-sharepoint-pack.md)** — the
@@ -1074,29 +1129,40 @@ item-level). 3rd pack with empty §2 + §3 (source carries no policy; MIP labels
 Consolidated the 5× ad-hoc SharePoint fidelity into one canonical §1; committed the untracked Cycle-16
 SAP pack alongside.
 
-### ▶ Cycle 18 (do next): **Domain Pack #8 — Email / Exchange (the last source pack)** *(or the runtime pack-load SPI — engineering track)*
-Write `packs/email/00-email-pack.md` against the [skeleton](packs/README.md). *Why next:* Email is the
-**last source-shaped pack** and the **simplest** — a message's ACL is its **mailbox owner + explicit
-delegates**, shared mailboxes grant their delegate set, and (per [§5.3](permissions/00-authorization-model.md#53-email--exchange))
-distribution-list membership does **not** grant read to the archived copy, and a forwarded/quoted thread
-does **not** retroactively grant earlier recipients. There is **no sharing-link surface**, so it should be
-*shorter than SharePoint*. Its whole content is the canonical Email `map_acl` reference that HR/Legal/Audit
-cite (all three already exercised email). *Falsifiability check:* the interesting cases are **per-message
-(not per-thread) ACLs** (the mixed-ACL invariant already guards this) and **shared-mailbox delegate
-resolution** (an ordinary principal-set expansion, Band-A `exact`); expected zero horizontal change. After
-Email, the source-pack surface is complete — remaining packs (Document Intelligence, Reporting) are
-concept-shaped reuse, and the **runtime pack-load SPI** becomes the primary remaining track.
-**Alternative for this slot:** if the engineering track is preferred over more doc packs, pick up the
-**runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads*
-a pack at runtime is not yet built.
+### ✅ Cycle 18 (DONE — see §1): **Domain Pack #8 — Email / Exchange (the last source pack)**
+Wrote `packs/email/00-email-pack.md` against the [skeleton](packs/README.md). No new ADR (Email is a
+worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). **Third & last
+source-shaped pack, the simplest of all sources — the *transport-vs-storage* falsifiability test, held.**
+A message's ACL is its **mailbox owner + delegates**, never its transport audience; every construct
+(mailbox owner, delegate, shared mailbox, Send-As→no-read, per-message thread ACL, **DL membership→no
+grant**, To/Cc/Bcc→content-not-ACL) maps to `allow`/`deny`/quarantine — no new principal category, no new
+predicate. **4th pack with empty §2 + §3**; **shortest §1 matrix** (no Band-C, no sharing-link surface).
+Consolidated the 3× ad-hoc Email fidelity (HR/Legal/Audit) into one canonical §1. **The source-pack surface
+is now complete.**
+
+### ▶ Cycle 19 (do next): **Domain Pack #9 — Document Intelligence** *(or the runtime pack-load SPI — engineering track)*
+Write `packs/document-intelligence/00-document-intelligence-pack.md` against the [skeleton](packs/README.md).
+*Why next:* with all three source-shaped packs seeded (SAP/SharePoint/Email) and five concept packs
+(Finance/HR/Legal/Audit/KM), Document Intelligence is the next **concept-shaped** pack — its interesting
+corner is **derived/extracted content** (OCR text, entity extraction, classification inferred *by the
+platform* rather than read from the source). *Falsifiability check:* does a platform-*derived* label or a
+platform-*derived* entity ACL fit the canonical model without a new predicate? Expected resolution: a
+derived artifact **inherits the ACL of the source Item it was derived from** (the [lineage
+`derived_from` edge](metadata/00-catalog-and-lineage.md) carries the ACL forward), and a *derived*
+classification is a `restricted:<class>`/`pii_class:<type>` value the pack **registers** (a non-empty §2,
+unlike the source packs) but the derivation **can only tighten** (an inferred `pii_class:health` adds a
+mask, never a grant) — so it should be additive. This is the first pack whose §2 is expected **non-empty**
+again (it *owns* a derived-classification vocabulary), which is itself a useful contrast to the four
+empty-§2 source/KM packs. **Alternative for this slot:** if the engineering track is preferred, pick up the
+**runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads* a
+pack at runtime is not yet built.
 
 ### Later (backlog)
-- Further **pack specifications** after SharePoint — the last **source-shaped** pack Email (Cycle 18,
-  next; near-pure connector-fidelity reuse; *has* per-message document ACLs, already exercised via
-  HR/Legal/Audit), then the concept-shaped Document Intelligence / Reporting — reusing the Cycle-11
-  skeleton and the Cycle-16/17 source-pack shape (canonical `map_acl` §1, empty §2/§3, inherited §4);
-  each **inherits** a compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and
-  the Finance §0-ledger discipline.
+- Further **pack specifications** after Email — the concept-shaped **Document Intelligence** (Cycle 19,
+  next; derived/extracted content + derived-classification vocabulary, first non-empty §2 since Legal) and
+  **Reporting** (dashboards/BI extracts — reuses SAP BW/Finance fidelity), reusing the Cycle-11 skeleton;
+  each **inherits** a compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the
+  Finance §0-ledger discipline. **The source-pack surface (SAP/SharePoint/Email) is complete.**
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
   the code mechanism is not yet built.
