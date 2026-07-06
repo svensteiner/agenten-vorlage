@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 11 (Domain Pack #1 — Finance + the reusable pack-spec skeleton)
+- **Current cycle:** 12 (Domain Pack #2 — HR: the second, structurally-different data point)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 84 %** (Ende Zyklus 11) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 85 %** (Ende Zyklus 12) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 40 % | 2.4 |
+| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 55 % | 3.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 84 %** |
+| **Summe** | **100 %** | — | **≈ 85 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · **Z11 ≈ 84 %** (Finance-Pack + Skeleton; HR/Legal/Audit/… bleiben).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · **Z12 ≈ 85 %** (HR-Pack — Wiederverwendbarkeit von n=1 auf n=2 bewiesen; Legal/Audit/KM/… bleiben fill-in-the-blank).
 
 ---
 
@@ -48,6 +48,47 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 12 (2026-07-06) — Domain Pack #2 (HR): the second, structurally-different data point
+- Wrote **[packs/hr/00-hr-pack.md](packs/hr/00-hr-pack.md)** — the **second pack**, chosen to
+  stress a **different corner** than Finance so the bet is tested for *reusability*, not just
+  *possibility*. One pack proves the mechanism exists; a second, structurally-different pack is
+  the first evidence the [skeleton](packs/README.md) *generalizes*.
+- **The headline (§0 ledger): net horizontal change = none, all additive — the skeleton
+  generalized from n=1 to n=2 cleanly.** The case most likely to force a new primitive —
+  **employee-self-scoped ACLs** ("a subject may see *only their own* record") — resolved to the
+  **degenerate case of the existing set-membership predicate**: a one-element `allow` set = the
+  owner's CPI, and the subject's own CPI is *already* one of their effective principals
+  ([Permissions §4.1](permissions/00-authorization-model.md)). No "owner-of" concept was added.
+- **Computed manager-hierarchy visibility** ("manager sees reports N levels down", dynamic
+  security groups) that is *not* expressible as static set-membership rides the **existing §9
+  quarantine / §10 OBO escape hatch** — the *same one Finance used for SAP field-level auth*.
+  The R1 confidence gate held against a second, different ABAC shape.
+- **Special-category data:** registered `pii_class:health` (GDPR Art. 9 — already the Metadata
+  schema's named example), `pii_class:employment`, and `restricted:works_council`; **tightened**
+  the label matrix with a **manager-visibility carve-out** (health data masked even from a
+  subordinate's own line manager by default) — a *tighten*, never a grant.
+- **GDPR as the *primary* regime (Finance leaned SOX):** exercised the reflexive **self-DSAR**
+  (employee is both subject and caller — the existing DSAR job, unchanged) and the
+  **`legal_hold > erasure > retention`** precedence under real conflict (an erasure request is
+  *partially* honored — HR content erased, statutorily-retained payroll held — provable by
+  lineage traversal).
+- **Sources:** Workday + SAP-HCM/SuccessFactors (**reuses Finance's SAP connector fidelity work
+  verbatim**), SharePoint (HR policy library, broadly `internal`, high recall), grievance email.
+  Supplied self-scope + health-masking + erasure/retention conformance fixtures and an eval set
+  whose headline classes are **self-scope permission negatives** and **health-field masking**.
+- **No new ADR this cycle** — [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)
+  already ratifies the pack contract; HR is a *worked instance* of it, exactly as Finance was.
+  (A new pack that *did* force a horizontal change would have needed one — HR did not.)
+- Updated indexes: `packs/README.md` pack table (HR → **Seeded**), `platform/README.md` domain
+  map (packs → **Finance + HR seeded**).
+- **Directly strengthens (no new risk owned):** turns "new domain = pack, not redesign" from a
+  claim backed by *one* example into one backed by **two structurally-different examples**;
+  re-exercises R1 (a second ABAC shape quarantined), R4 (cross-tenant + self-scope blast radius),
+  and the erasure/legal-hold precedence end to end.
+- ⏳ **Handed to later cycles:** Legal / Audit / KM / SAP / SharePoint / Email packs stay
+  fill-in-the-blank (Legal reuses HR's `matter:*`/grievance-hold shape; Audit reuses Finance's
+  SOX row); the runtime **pack-load SPI** (open Q#6-adjacent) is still the engineering track.
 
 ### Cycle 11 (2026-07-06) — Domain Pack #1 (Finance) + the reusable pack-spec skeleton
 - Opened the **`packs/`** folder — the first *vertical* surface, after all ten horizontals were
@@ -667,20 +708,32 @@ Finance's §0 horizontal-change ledger records **zero** horizontal changes again
 domain — the founding bet held. HR/Legal/Audit/KM/SAP/SharePoint/Email packs are now
 fill-in-the-blank against the Finance template.
 
-### ▶ Cycle 12 (do next): **Domain Pack #2 — HR (second data point + GDPR/health stress)**
-Write `packs/hr/00-hr-pack.md` against the [pack skeleton](packs/README.md). *Why next:* one pack
-proves the mechanism exists; a **second, structurally different** pack proves it's *reusable* (the
-actual bet). HR is the right second because it stresses a **different** corner than Finance:
-`pii_class:health`, employee-self-scoped ACLs (a subject may see *only their own* records — the
-hardest principal-derivation case), GDPR right-to-erasure as the primary regime (Finance leaned SOX),
-and Workday/SAP-HCM + SharePoint + email as mixed sources. Fill the same six sections; the **§0
-ledger is again the headline** — expected "none, all additive," reusing Finance's SAP connector
-fidelity work. If HR *does* force a horizontal change, that's the more interesting finding (the
-skeleton generalized from n=1 to n=2 imperfectly) → horizontal ADR per the falsifiability rule.
-After HR, Legal/Audit become near-mechanical (Audit reuses the SOX row + SAP fidelity almost verbatim).
+### ✅ Cycle 12 (DONE — see §1): **Domain Pack #2 — HR**
+Wrote `packs/hr/00-hr-pack.md` against the [pack skeleton](packs/README.md). No new ADR (HR is a
+worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md), like Finance).
+**§0 ledger = none, all additive — the skeleton generalized from n=1 to n=2 cleanly.** The hardest
+case (employee-self-scoped ACLs) resolved to the *degenerate* set-membership predicate (owner CPI is
+already an effective principal); computed manager-hierarchy rules reused the §9/§10 escape hatch.
+Registered `pii_class:health`/`employment`/`restricted:works_council`; tightened the matrix with a
+manager-visibility carve-out; exercised the reflexive self-DSAR and `legal_hold > erasure > retention`.
+
+### ▶ Cycle 13 (do next): **Domain Pack #3 — Legal (privilege + matter-scoped holds)**
+Write `packs/legal/00-legal-pack.md` against the [skeleton](packs/README.md). *Why next:* with the
+bet now proven reusable (n=2), Legal is the highest-leverage third because it (a) **reuses HR's
+`matter:<id>` / hold shape** and Finance's DMS/SharePoint fidelity, so it is near-mechanical, and
+(b) introduces the one genuinely new concept the platform has not yet stress-tested:
+**attorney-client privilege as a retrieval gate** — is privilege expressible as a
+`restricted:privileged` label + a cleared-principal set (additive), or does "privilege can be
+*waived* per matter, per recipient" force something the label lattice can't represent? That is the
+**real falsifiability test of Cycle 13** — if privilege-waiver needs per-recipient dynamic policy the
+static label→action matrix can't express, raise a horizontal ADR (Governance/Metadata) rather than a
+pack-local hack. Sources: DMS (iManage/NetDocuments), SharePoint, email, matter stores; clause-level
+chunking (reuse RAG's structure-aware seam). After Legal, **Audit** becomes almost entirely
+inherited (Finance SOX row + segregation-of-duties + append-only evidence), then KM (broad `internal`,
+high recall, low restriction — the *inverse* stress: does the pipeline *over*-refuse on open content?).
 
 ### Later (backlog)
-- Further **pack specifications** (Legal, Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
+- Further **pack specifications** after Legal (Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
   reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
   ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger discipline.
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering

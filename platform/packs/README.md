@@ -58,7 +58,7 @@ not a failure of the pack — it converts an unstated assumption into a tracked 
 | Pack | Status | Primary sources | Hardest features it exercises |
 |------|--------|-----------------|-------------------------------|
 | [Finance](finance/00-finance-pack.md) | **Seeded (Cycle 11)** — the reference pack | SAP (FI/CO), ledgers, Excel, reporting DBs | Row/record-level SAP ACLs, `restricted:*`+`pii_class`+`legal_hold`, SOX compliance row, SAP-table parsers |
-| HR | Backlog | Workday/SAP HCM, SharePoint, email | `pii_class:health`, GDPR erasure, employee-scoped ACLs |
+| [HR](hr/00-hr-pack.md) | **Seeded (Cycle 12)** — the 2nd data point | Workday/SAP HCM, SharePoint, email | Employee-self-scoped ACLs, `pii_class:health` (Art. 9), GDPR-primary erasure vs. statutory retention |
 | Legal | Backlog | DMS, SharePoint, email, matter stores | `legal_hold`/`matter:<id>`, clause chunking, privilege |
 | Audit | Backlog | Finance + Legal sources, workpapers | SOX + segregation-of-duties, append-only evidence |
 | Knowledge Mgmt | Backlog | Confluence, SharePoint, wikis | Broad `internal`, low restriction, high recall |
