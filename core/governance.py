@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-import re
 from typing import TYPE_CHECKING, Any
 
 from .context import ProjectContext
@@ -39,10 +38,35 @@ class GovernancePolicy:
         combined = " ".join(part for part in [action, tool or "", text] if part).lower()
         approval_terms = self._approval_terms(context)
         matched_terms = self._matched_approval_terms(approval_terms, combined)
+        hard_block_terms = self._matched_hard_block_terms(combined)
         would_gate = risk == "high" or bool(matched_terms)
 
-        # Full-autonomy mode (default): never block. Risky actions are still
-        # flagged in metadata so the run leaves an audit trail.
+        # ── Hard block, evaluated BEFORE the autonomy shortcut (ADR-0006, G5) ──
+        # The hard-block class — destructive / irreversible operations detected
+        # by a *deterministic* keyword policy, not by trusting an LLM-produced
+        # `requires_human` flag — is unconditional. A full-autonomy deployment
+        # may skip the *approval* gate for ordinary actions, but can never skip
+        # the hard block unless it explicitly opts out via manifest
+        # `hard_block_on_high_risk: false`. This makes the check.py "max is
+        # fail-open" warning unreachable for the hard-block class.
+        if hard_block_terms and self._hard_block_enabled(context):
+            return GovernanceDecision(
+                allowed=False,
+                reason=(
+                    f"{action} hard-blocked (irreversible/destructive): "
+                    f"{', '.join(hard_block_terms)}."
+                ),
+                requires_approval=True,
+                metadata={
+                    "gate": "hard_block",
+                    "risk": risk,
+                    "tool": tool,
+                    "hard_block_terms": hard_block_terms,
+                },
+            )
+
+        # Full-autonomy mode (default): never block ordinary actions. Risky
+        # actions are still flagged in metadata so the run leaves an audit trail.
         if not self._approval_required(context):
             return GovernanceDecision(
                 allowed=True,
@@ -70,6 +94,47 @@ class GovernancePolicy:
                 metadata={"matched_terms": matched_terms, "tool": tool},
             )
         return GovernanceDecision(allowed=True)
+
+    # Deterministic hard-block vocabulary (ADR-0006). Irreversible / destructive
+    # operations that must never be reachable via the autonomy shortcut. Kept as
+    # a fixed policy in code, not derived from a model's judgement.
+    _HARD_BLOCK_TERMS: tuple[str, ...] = (
+        "delete",
+        "remove",
+        "lösch",
+        "loesch",
+        "entfern",
+        "overwrite",
+        "überschreib",
+        "ueberschreib",
+        "drop table",
+        "truncate",
+        "bulk",
+        "massenlösch",
+        "massenloesch",
+        "payment",
+        "zahlung",
+        "wire transfer",
+        "überweis",
+        "ueberweis",
+        "deploy production",
+        "production deploy",
+    )
+
+    def _hard_block_enabled(self, context: ProjectContext | None) -> bool:
+        """Whether the unconditional hard block is active (default: True).
+
+        A deployment may opt out for the hard-block class by setting
+        ``hard_block_on_high_risk: false`` in project/manifest.json — an explicit,
+        auditable decision, never an implicit consequence of ``autonomy_level``.
+        """
+        if context is None:
+            return True
+        manifest = context.manifest if isinstance(context.manifest, dict) else {}
+        return bool(manifest.get("hard_block_on_high_risk", True))
+
+    def _matched_hard_block_terms(self, text: str) -> list[str]:
+        return [term for term in self._HARD_BLOCK_TERMS if term in text]
 
     def _approval_required(self, context: ProjectContext | None) -> bool:
         """Whether the human-approval gate is active.

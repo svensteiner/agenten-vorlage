@@ -1,6 +1,11 @@
 # Engineering Track — `platform/` → `core/` Reconciliation Plan
 
-> **Status:** Seeded (Cycle 24). This is the **engineering projection** of the architecture
+> **Status:** Seeded (Cycle 24) · **Executed (Cycle 25)** — Front A (WP-A1/A2/A5/A3 + G4)
+> and all of Front B (WP-B1–B4) are implemented and green; see the
+> [Cycle-25 implementation report](01-cycle-25-implementation-report.md). Remaining:
+> **WP-A4** (re-express `run()` against the port) + **WP-C1** (CI coverage gate).
+>
+> This is the **engineering projection** of the architecture
 > docs, not a new architectural decision. Every open architecture question (Q#1–Q#7) is
 > closed; the only remaining weighted gap is *code-reconciliation*
 > ([NEXT_STEPS §0.1](../NEXT_STEPS.md)). This document is that gap's implementation

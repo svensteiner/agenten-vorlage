@@ -12,12 +12,17 @@ fully-specified but not-yet-built targets named by
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
-| [00-core-reconciliation-plan.md](00-core-reconciliation-plan.md) | Ground-truth `core/` audit, gap ledger vs. the two ADRs, two target designs (orchestrator re-host + pack-load loader), and a sequenced TDD work-package plan with falsifiability tests | **Seeded (Cycle 24)** |
+| [00-core-reconciliation-plan.md](00-core-reconciliation-plan.md) | Ground-truth `core/` audit, gap ledger vs. the two ADRs, two target designs (orchestrator re-host + pack-load loader), and a sequenced TDD work-package plan with falsifiability tests | **Seeded (Cycle 24) · Executed (Cycle 25)** |
+| [01-cycle-25-implementation-report.md](01-cycle-25-implementation-report.md) | Execution record of the plan: work packages shipped, test matrix results, design decisions, definition-of-done status | **Implemented (Cycle 25)** |
 
-**Key finding driving the plan:** `core/orchestrator.py` today calls neither
+**Key finding driving the plan (Cycle 24):** `core/orchestrator.py` called neither
 [`WorkerRegistry`](../../core/workers.py) nor [`HandoffRouter`](../../core/handoff.py) — both
-are fully built and unit-tested (62 tests green) but **inert** in the run loop. Making those
-two ratified gates live is the highest-leverage, lowest-risk first move.
+were fully built and unit-tested but **inert** in the run loop. **Cycle 25 wired both gates
+live** (tool-scope → `tool_scope_blocked`, handoff → `handoff_refused`), added the
+[`ExecutionBackend`](../../core/execution.py) port, and built the complete
+[`core/packs/`](../../core/packs/) loader — the marquee test
+`test_floor_loosening_bundle_fails_validate` is green. **62 → 131 tests, `check.py` exit 0.**
+Remaining: **WP-A4** (re-express `run()` against the port) + **WP-C1** (CI coverage gate).
 
 This is a **coding-cycle brief**, not an architecture doc: it is written to be executed against
 the real code, keeping the tree green at every step (`--cov=core --cov-fail-under=80`).
