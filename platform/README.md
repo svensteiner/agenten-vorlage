@@ -36,7 +36,7 @@ is stable.
 | [metadata/](metadata/) | Catalog, lineage, classification, tagging | **Seeded** |
 | [workers/](workers/) | Ingestion, embedding, and job orchestration | **Seeded** |
 | [api/](api/) | External API surface, contracts, versioning | **Seeded** |
-| [deployment/](deployment/) | Topology, environments, CI/CD, DR | Planned |
+| [deployment/](deployment/) | Topology, environments, CI/CD, DR | **Seeded** |
 | [governance/](governance/) | Model governance, audit, compliance, cost | **Seeded** |
 
 ## Documentation contract

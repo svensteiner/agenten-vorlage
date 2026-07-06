@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 9 (API — external surface, contracts & versioning)
+- **Current cycle:** 10 (Deployment — topology, environments, CI/CD & DR/BCP)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 76 %** (Ende Zyklus 9) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 82 %** (Ende Zyklus 10) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -26,12 +26,12 @@
 | Metadata / Katalog / Lineage (Z8) | 6 % | 90 % | 5.4 |
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
-| Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
+| Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 76 %** |
+| **Summe** | **100 %** | — | **≈ 82 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · **Z9 ≈ 76 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · **Z10 ≈ 82 %**.
 
 ---
 
@@ -48,6 +48,59 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 10 (2026-07-06) — Deployment: topology, environments, CI/CD & DR/BCP
+- Wrote **[deployment/00-deployment-topology.md](deployment/00-deployment-topology.md)** — the
+  **physical projection** of the whole platform and the **last un-seeded surface**. Introduces
+  **no new logical component and no new guarantee**; it makes the existing ones affordable,
+  operable, and survivable, and is the single place the **empirical sizing/tuning numbers** queued
+  by Cycles 5–9 land. Collected those obligations as **D1–D8**, each tracing to its upstream source.
+- **Physical projection:** the [three planes](architecture/01-platform-overview.md) map onto three
+  substrates by dominant scaling axis — **edge+query** (stateless, latency-SLO autoscale),
+  **ingestion** (stateless workers, scaled on **queue lag** not CPU), **data** (the only stateful
+  substrate, hence the only backup/DR owner). Fail independently, blast radius stays separate.
+- **Reference topology per tier (D1):** **Shared** (dense multi-tenant pool + two-control isolation)
+  vs. **Isolated** (dedicated pool/cluster + per-tenant DEK/BYOK, quarantine hatch), mirroring the
+  [Storage isolation tiers](storage/00-storage-architecture.md) one-to-one. **Graduation** =
+  blue/green re-index through the `VectorIndex` port (no source re-hit) + a `tenant→placement`
+  route flip — a data migration, not a redesign.
+- **CI/CD as a safety gate (D7):** the [permission-conformance suite](permissions/00-authorization-model.md)
+  is the **un-overridable release veto** (any over-permissive `map_acl` → hard fail, ships in
+  quarantine never open); the [eval-before-promotion](governance/00-governance-and-audit.md) battery
+  gates model changes; progressive delivery (staging → canary → prod) with the connector canary live;
+  policy/allowlist/topology **as code**. **Real tenant data never leaves prod** — staging is
+  synthetic but **ACL-shaped** so the gate stays meaningful.
+- **SLA-capacity sizing (D2/D3):** **P0 revocation capacity is reserved, never autoscaled** (reacting
+  to a revocation backlog is already a breach); P1/P2 autoscale on queue lag; relay-poll cadence set
+  **below the SLA budget** — the freshness SLA is really an SLA on cache-TTL+invalidation, which
+  query-time principal precedence backstops. Broker: managed queue + Postgres outbox (Shared),
+  partitioned log (Isolated). **Safety is provisioned, bulk is elastic.**
+- **Cost/residency (D4):** prices + envelope sizes live in a **versioned manifest** promoted through
+  the pipeline (a price change is a reviewable commit into the unchanged degradation ladder); the
+  safety invariant is inherited verbatim (no envelope/scale-down relaxes a permission). **Region is a
+  routing fact** (`tenant→placement`), never a contract change; **data never crosses its residency class.**
+- **Metadata ops (D5):** catalog partitioned by `tenant_id`; cold-lineage archival keeps tombstone/
+  erasure walkability; a scheduled **lineage-integrity-check** asserts the [Metadata §7](metadata/00-catalog-and-lineage.md)
+  invariants (no orphan / version monotonicity / label⊆registry / **no cross-tenant edge, R4**),
+  violation → governance incident + write-quarantine.
+- **DR/BCP (D8) → [ADR-0015](architecture/adr/ADR-0015-deployment-dr-and-regional-topology.md):**
+  **active-passive per residency region** (no active-active writes → **never** a window where two
+  regions disagree on a revocation); **ACL-first, fail-closed recovery** (SoT→object→vector-rebuild→
+  cache; permissions recover before content is queryable); **vectors rebuilt, not backed up**
+  (a restored snapshot could disagree with recovered ACLs; the object-artifact rebuild is
+  consistency-safe); tiered RPO/RTO (Shared ≤15 min/≤4 h, Isolated ≤5 min/≤1 h). The failover safety
+  rule reuses query-time principal precedence — a failover cannot resurrect a revoked grant.
+- Recorded **[ADR-0015](architecture/adr/ADR-0015-deployment-dr-and-regional-topology.md)**.
+- Updated indexes: ADR index, `deployment/README.md` (stub → real), `platform/README.md` domain map
+  (deployment → **Seeded**).
+- **Directly strengthens (no new risk owned):** **closes the residual/"empirical" half of R3, R5, R8**
+  (SLA-capacity sizing, prices/envelopes, autoscaling tuning now have a home) and **operationalizes R4**
+  (partition pruning + the scheduled cross-tenant-edge integrity check). **All eight core platform
+  surfaces are now Seeded — §5 is fully closed.**
+- ⏳ **Handed to later cycles:** per-domain **pack specs** (Finance/HR/Legal — proves the "new domain =
+  deployment of data+policy, not a topology change" bet end to end); open Q#3 (model-hosting posture per
+  tier) feeds the concrete instance/model manifest; open Q#6 (agent framework) and the `core/`
+  reconciliation remain the engineering track.
 
 ### Cycle 9 (2026-07-06) — API: external surface, contracts & versioning
 - Wrote **[api/00-api-surface.md](api/00-api-surface.md)** — the platform's **outward
@@ -391,6 +444,7 @@
 | ADR-0012 | Governance = policy plane (no hot-path component); ratified per-tier freshness SLA + label→action matrix + retention/erasure; audit-as-evidence; per-tenant budgets that degrade capability-before-safety; eval-gated model registry; per-domain compliance map | Promises become contractual & provable; cost control (R5) can never regress into a safety leak; new domain inherits a control map, not a redesign |
 | ADR-0013 | Canonical metadata: four-level catalog (Doc→Item→Chunk→Version) + explicit bidirectional lineage graph + closed classification vocabulary + content-free erasure tombstone; held in the relational SoT, no new store; versioned + write-boundary-validated | Four consumers share one contract not four shapes; the Governance label matrix becomes total; erasure-completeness & audit-evidence become provable queries; new domain/artifact type = additive registration, not a schema redesign |
 | ADR-0014 | API contract: token-bound identity (tenancy never in URL) + OBO via token exchange; dual sync/streaming answer under one verifier gate; "no access" is a 200; one typed-error envelope; heavy work = jobs; admin-can-only-tighten; filter-parity reads; URL-major additive versioning | Permission-faithful retrieval enforced once at audited choke points not re-argued per endpoint; impersonation/cross-tenant unrepresentable on the wire; budgets throttle cost not safety; new pack = additive, not a version event |
+| ADR-0015 | Deployment DR: active-passive per residency region (no active-active writes); ACL-first fail-closed recovery (SoT→object→vector-rebuild→cache); vectors rebuilt not backed up; tiered RPO/RTO; reserved (not autoscaled) P0 capacity | No cross-region window disagrees on a revocation; the platform recovers fail-closed (permissions before content); a restore can't resurrect a vector snapshot that disagrees with recovered ACLs; the revocation SLA is provisioned in advance |
 
 ---
 
@@ -466,7 +520,16 @@
 - ✅ `workers/` — staged-DAG ingestion, `IngestionTask` queue + idempotent version-keyed writes, priority classes (R8), outbox coherence relay, re-embed migrations, change-driven re-sync, DLQ, least-privilege posture, connector contract + conformance gate. **Seeded (Cycle 6).** Mitigated R8/R6/R3-write by design; strengthened Q#7.
 - ✅ `metadata/` — canonical four-level catalog (Doc→Item→Chunk→Version), bidirectional lineage graph, closed classification/label vocabulary, content-free erasure tombstone, metadata-as-audit-evidence, schema versioning/validation. **Seeded (Cycle 8).** Closed the last un-seeded cross-cutting store concern; made Governance's label matrix total and its erasure/audit promises provable.
 - ✅ `api/` — external surface: five resource groups, token-bound identity + OBO, query/answer + streaming contract (one verifier gate), one typed-error envelope, async-job pattern, admin-can-only-tighten policy CRUD, DSAR/erasure/audit-export, filter-parity catalog/lineage, URL-major versioning. **Seeded (Cycle 9).** Discharged the client-facing surfaces Governance/Metadata/RAG/Permissions queued; enforced permission-faithfulness once at the edge.
-- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now the only un-seeded surface and the most heavily loaded** — Cycles 5/6/7/8/9 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency routing, catalog partitioning + lineage archival + integrity-check schedule, gateway/rate-limit/streaming ops).
+- ✅ `deployment/` — physical projection: per-tier reference topology + graduation, environments,
+  safety-gated CI/CD (conformance suite as un-overridable release veto), reserved-P0 SLA-capacity
+  sizing, cost-envelope/residency routing, catalog partitioning + cold-lineage archival + integrity
+  checks, gateway/rate-limit/streaming ops, and **ACL-first active-passive DR/BCP** with per-store
+  backup/restore. **Seeded (Cycle 10).** Discharged the sizing/tuning inputs Cycles 5–9 queued;
+  closed the residual/empirical half of R3/R5/R8 and operationalized R4.
+
+**→ All eight core platform surfaces (architecture, security, permissions, rag, storage, workers,
+metadata, api, governance, deployment) are now Seeded. §5 is fully closed.** The remaining work is
+domain-pack specifications, code reconciliation, and the two open engineering questions (Q#3, Q#6).
 - ✅ `governance/` — policy plane: ratified freshness SLA + label→action matrix + retention/erasure, audit usage (retention/access/evidence), per-tenant cost model & budgets (R5), model governance, compliance map. **Seeded (Cycle 7).** Closed open Q#7; mitigated R5 by design.
 
 ---
@@ -550,28 +613,43 @@ versioning. Discharged the client-facing surfaces Governance/Metadata/RAG/Permis
 enforced permission-faithful retrieval once at the edge (a contract-shape decision was cross-component
 → ADR-0014).
 
-### ▶ Cycle 10 (do next): **Deployment — topology, environments, CI/CD, DR/BCP**
-Write `deployment/00-deployment-topology.md`. *Why next:* it is the **last un-seeded platform
-surface**, and **five** cycles have queued concrete sizing/tuning inputs onto it — it is now the
-single place those empirical numbers land. Specify: the **reference topology per tenant tier**
-(Shared vs. Isolated, [Storage §3.3](storage/00-storage-architecture.md)) + **graduation thresholds**;
-**broker choice + worker autoscaling** ([Workers §3.2, §13](workers/00-ingestion-architecture.md));
-**SLA-capacity sizing** (reserved-P0 capacity / relay-poll frequency that meets the ratified
-freshness numbers) + **prices/budget-envelope sizes** + **region/residency routing**
-([Governance §3, §7](governance/00-governance-and-audit.md)); **catalog partitioning + cold-lineage
-archival + lineage-integrity-check schedule** ([Metadata §7, §11](metadata/00-catalog-and-lineage.md));
-**gateway/rate-limit/streaming ops** ([API §10.3](api/00-api-surface.md)); **CI/CD** (connector
-conformance suite as the production gate, [Permissions §11](permissions/00-authorization-model.md)) +
-**environments** + **DR/BCP + backup/restore** per store. Likely warrants an ADR if a topology
-decision (e.g. active-active vs. active-passive DR, per-region isolation) proves cross-component.
+### ✅ Cycle 10 (DONE — see §1): **Deployment — topology, environments, CI/CD, DR/BCP**
+Wrote `deployment/00-deployment-topology.md` + [ADR-0015](architecture/adr/ADR-0015-deployment-dr-and-regional-topology.md).
+Physical projection of the three planes; per-tier topology + graduation; safety-gated CI/CD
+(conformance suite as release veto); reserved-P0 SLA-capacity sizing; cost-envelope/residency
+routing; catalog partitioning + cold-lineage archival + integrity checks; gateway/streaming ops;
+**ACL-first active-passive DR** with per-store backup/restore (a cross-component DR decision → ADR-0015).
+Discharged the sizing/tuning inputs Cycles 5–9 queued; **closed §5 — all core surfaces Seeded.**
+
+### ▶ Cycle 11 (do next): **Domain Pack #1 — Finance (the proof of the founding bet)**
+Write `packs/finance/00-finance-pack.md` (new `packs/` folder). *Why next:* every horizontal
+surface is now Seeded, so the highest-leverage remaining move is to **prove "new domain = pack, not
+redesign" end to end** against the stable core — the platform's founding thesis, so far only
+asserted. Finance first because it exercises the hardest cross-cutting features already built:
+row/record-level ACLs (SAP), `restricted:<class>`/`pii_class` labels + `legal_hold`
+([Metadata §4](metadata/00-catalog-and-lineage.md)), the SOX/audit compliance-map row
+([Governance §9](governance/00-governance-and-audit.md)), and per-content-type parsers
+(SAP table serialization, [RAG open sub-Q](rag/00-retrieval-pipeline.md)). The pack spec should be
+a **template**: (1) the sources + each source's `map_acl` fidelity target + conformance fixtures;
+(2) the classification-registry values the pack registers (`restricted:<class>`, `pii_class:<type>`);
+(3) the label→action deltas it *tightens* (never loosens); (4) its compliance-map row (SOX/GDPR
+cells, evidence-backed); (5) its retrieval/answer eval set (grounding, refusal, pack task accuracy);
+(6) the *optional* additive API `pack` hint ([ADR-0014](architecture/adr/ADR-0014-api-contract-surface.md)) —
+**demonstrating zero changes to any horizontal doc.** If the pack forces a horizontal change, that
+change is itself the finding (the bet is weaker than claimed) and warrants an ADR. Establish the
+**reusable pack-spec skeleton** here so HR/Legal/Audit/KM/SAP/SharePoint packs are fill-in-the-blank.
 
 ### Later (backlog)
-- Per-domain **pack specifications** (Finance, HR, Legal, ...) once the core deep dives
-  are stable — proving the "new domain = pack, not redesign" bet; each pack now **inherits** a
-  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)).
-- Reconcile `platform/` architecture with the existing `core/` code
-  (ADR-0002 implementation path).
-- Resolve open Q#3 (model hosting) → feed the approved-model registry ([Governance §8](governance/00-governance-and-audit.md)).
+- Further **pack specifications** (HR, Legal, Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
+  reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
+  ([Governance §9](governance/00-governance-and-audit.md)).
+- **Cycle 2c engineering track** (still open) — wire `WorkerRegistry`/`HandoffRouter` into the
+  runtime, finish the test port + coverage gate, deeper governance hardening (see §6 Cycle 2c).
+- Reconcile `platform/` architecture with the existing `core/` code (ADR-0002 implementation path).
+- Resolve open **Q#3** (model hosting — in-boundary OSS vs. contractually-private managed, per tier)
+  → feed the approved-model registry ([Governance §8](governance/00-governance-and-audit.md)) + the
+  Deployment instance/model manifest ([Deployment §7](deployment/00-deployment-topology.md)); may warrant its own ADR.
+- Resolve open **Q#6** (agent framework — extend `core/` planner/verifier vs. adopt a framework).
 
 ---
 
