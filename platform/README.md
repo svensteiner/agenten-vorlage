@@ -38,6 +38,7 @@ is stable.
 | [api/](api/) | External API surface, contracts, versioning | **Seeded** |
 | [deployment/](deployment/) | Topology, environments, CI/CD, DR | **Seeded** |
 | [governance/](governance/) | Model governance, audit, compliance, cost | **Seeded** |
+| [models/](models/) | Model hosting & serving substrate (in-boundary OSS vs. contractually-private managed), per-tier×class routing behind the Gateway — **resolves open Q#3** | **Seeded (Cycle 22)** |
 | [packs/](packs/) | Domain packs (**all 10 planned seeded** — Finance + HR + Legal + Audit + KM + SAP + SharePoint + Email + Document Intelligence + Reporting) + the **[runtime pack-load SPI](packs/01-pack-load-spi.md)** (the fail-closed loader that makes the pack contract executable) — the "new domain = pack, not redesign" proof | **Surface complete (Cycle 20); load SPI designed (Cycle 21)** |
 
 ## Documentation contract

@@ -30,5 +30,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0015](ADR-0015-deployment-dr-and-regional-topology.md) | Deployment DR & regional topology: active-passive per residency region, ACL-first recovery, rebuilt vectors | Accepted |
 | [0016](ADR-0016-domain-pack-contract.md) | Domain pack contract: a pack is additive data + policy (tighten-only), never a horizontal change | Accepted |
 | [0017](ADR-0017-runtime-pack-load-spi.md) | Runtime pack-load SPI: a validating, fail-closed loader that makes the pack contract executable (a floor-loosening pack is structurally rejected, not merely reviewed) | Accepted |
+| [0018](ADR-0018-model-hosting-and-serving-posture.md) | Model hosting & serving posture: a dual-track fabric (in-boundary OSS + contractually-private managed), routed per (tenant tier × data class) behind the Model Gateway; closes open Q#3 | Accepted |
 
 New ADRs are added by later cycles as decisions are made.

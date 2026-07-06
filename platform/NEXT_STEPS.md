@@ -3,11 +3,12 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 21 (**Runtime pack-load SPI** — the *engineering form* of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md), which named this ADR in its own "Revisit when". The doc contract was fixed (a pack = six additive sections, tighten-only, §0 ledger); this cycle designs *how a pack is loaded at runtime* — a **validating, transactional, fail-closed loader** (RESOLVE → VALIDATE → DRY-RUN → COMMIT-atomic → ACTIVATE-scoped) whose defining property is that a **floor-loosening pack is structurally rejected by the loader, not merely by review**. The safety gate is six validators, each checking a section `⊆` its horizontal extension point; the loader is **safe by construction** because its only verbs are subset-installs into fail-closed extension points (the `VectorIndex` port has no unfiltered method to bind; the label schema is a closed grammar; the matrix composes most-restrictive-wins). A pack loads with **no code deploy** (validated data + a route flip); a pack claiming any horizontal change fails the machine-checked §0 ledger and routes to a human ADR gate. Wrote [packs/01-pack-load-spi.md](packs/01-pack-load-spi.md) + [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md); the SPI's own §0-equivalent ledger is *"none, all additive"* — it writes only into stores that already exist. This is the prerequisite for the `core/` code-reconciliation and the first `platform/`→`core/` mechanism to implement.)
+- **Current cycle:** 22 (**Model hosting & serving posture — resolves open Q#3.** With the platform surface complete (10 packs Seeded, pack-load SPI designed), the highest-leverage architecture-doc move is closing one of the two remaining open questions. Q#3 asked *where models physically run* — in-boundary OSS vs. contractually-private managed, per tenant tier. Resolved as a **dual-track serving fabric behind the [Model Gateway](architecture/adr/ADR-0003-model-gateway-indirection.md)**: **Track A** (in-boundary self-hosted open-weight models on reserved GPUs — privacy/residency *by physical construction*) + **Track B** (contractually-private managed endpoints over private networking, zero-retention/no-train terms — capability/elastic), with the track selected **per `(tenant tier × data class)`** by the *existing* label→trust matrix. **Isolated tier → Track A only; Standard tier → Track B default with a `confidential`/`pii` floor lifting to the highest-trust track.** Hosting posture becomes a **closed registry enum** (`in_boundary_oss` / `managed_private` / `managed_private_dedicated`) with mandatory data-handling terms — the one open field of [Governance §8](governance/00-governance-and-audit.md#8-g6--model-governance)'s approved-model registry. **Routing is fail-closed:** a `pii` request whose track is down degrades within-or-above its trust floor, never spills to a cheaper track. Net **horizontal change = none, all additive** — two data values (the enum + the per-tier map) + one boundary condition behind the Gateway indirection ADR-0003 already built; no new hot-path component, no new predicate, read plane untouched. Wrote [models/00-model-hosting-and-serving.md](models/00-model-hosting-and-serving.md) + [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md); closes a real doc gap — model *serving* was referenced by ADR-0003/Governance §8/Deployment §7 but had no home. Only Q#6 (orchestrator posture) + the `core/` code-reconciliation remain open.)
+- **Superseded current-cycle note (Cycle 21):** (**Runtime pack-load SPI** — the *engineering form* of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md), which named this ADR in its own "Revisit when". The doc contract was fixed (a pack = six additive sections, tighten-only, §0 ledger); this cycle designs *how a pack is loaded at runtime* — a **validating, transactional, fail-closed loader** (RESOLVE → VALIDATE → DRY-RUN → COMMIT-atomic → ACTIVATE-scoped) whose defining property is that a **floor-loosening pack is structurally rejected by the loader, not merely by review**. The safety gate is six validators, each checking a section `⊆` its horizontal extension point; the loader is **safe by construction** because its only verbs are subset-installs into fail-closed extension points (the `VectorIndex` port has no unfiltered method to bind; the label schema is a closed grammar; the matrix composes most-restrictive-wins). A pack loads with **no code deploy** (validated data + a route flip); a pack claiming any horizontal change fails the machine-checked §0 ledger and routes to a human ADR gate. Wrote [packs/01-pack-load-spi.md](packs/01-pack-load-spi.md) + [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md); the SPI's own §0-equivalent ledger is *"none, all additive"* — it writes only into stores that already exist. This is the prerequisite for the `core/` code-reconciliation and the first `platform/`→`core/` mechanism to implement.)
 - **Superseded current-cycle note (Cycle 20):** (Domain Pack #10 — Reporting: the first *aggregation* falsifiability test and **the pack that completes the domain-pack surface** — a report is a *derived artifact* reusing DocIntel's inherit-source-ACL rule + SAP BW/Finance fidelity; the sharp new corner is *arithmetic inference* (a total reconstructing a masked row via small-cell/differencing), disarmed **by construction** via the existing **filter-then-aggregate** order, not a disclosure-control engine; cross-source rollup = **intersection, never union**; unresolvable-contributor aggregate = quarantine; 5th pack with empty §2 + §3; held with net zero horizontal change — the 10th consecutive all-additive ledger)
-- **Last updated:** 2026-07-06
+- **Last updated:** 2026-07-06 (Cycle 22)
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 94 %** (Ende Zyklus 21) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 95 %** (Ende Zyklus 22) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -19,7 +20,7 @@
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | Vision & Prinzipien | 10 % | 100 % | 10.0 |
-| Security-Architektur | 10 % | 80 % | 8.0 |
+| Security-Architektur (inkl. **Model-Hosting-Posture Z22** — in-boundary vs. contractually-private, fail-closed Routing) | 10 % | 90 % | 9.0 |
 | Permissions Deep Dive (Z3) | 12 % | 90 % | 10.8 |
 | RAG Deep Dive (Z4) | 12 % | 85 % | 10.2 |
 | Storage & Tenancy (Z5) | 10 % | 90 % | 9.0 |
@@ -30,9 +31,9 @@
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
 | Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel/Reporting) — **alle 10 seeded, Fläche vollständig** + **Pack-Load-SPI designed (Z21)** | 6 % | 100 % | 6.0 |
 | Code-Reconciliation (`core/`-Umsetzung) — **SPI-Design (Z21) liefert das erste konkrete `platform/`→`core/`-Ziel** | 4 % | 45 % | 1.8 |
-| **Summe** | **100 %** | — | **≈ 94 %** |
+| **Summe** | **100 %** | — | **≈ 95 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · Z19 ≈ 92 % · Z20 ≈ 93 % · **Z21 ≈ 94 %** (Pack-Load-SPI — der **Übergang von der Papier- zur Laufzeit-Fähigkeit**: der *validierende, transaktionale, fail-closed* Loader, der die sechs Pack-Sektionen in ihre horizontalen Erweiterungspunkte installiert und **jeden bodenlockernden Pack strukturell ablehnt** — nicht per Review, sondern per Konstruktion, weil die einzigen Verben des Loaders Subset-Installationen in fail-closed-Erweiterungspunkte sind. Kein neuer Hot-Path; das §0-Äquivalent-Ledger des SPI selbst ist *"none, all additive"*. Erstes konkretes `platform/`→`core/`-Umsetzungsziel; [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)) · Verlauf-Fortsetzung: **Z20 ≈ 93 %** (Reporting-Pack — n=10, der **letzte** Pack; die **Domänen-Pack-Fläche ist damit vollständig**. Der **erste *Aggregat*-Test**: ein Report-Wert ist selten eine Quellzeile, sondern ein **Rollup** über viele Zeilen mit *heterogenen* ACLs. Der scharfe neue Fehlermodus, den kein früherer Pack hatte, ist **arithmetische Inferenz** — eine Summe kann eine maskierte Zeile *rekonstruieren* (Small-Cell/Differencing: eine Gehaltssumme über *eine* Person **ist** deren Gehalt). Kernbefund: entschärft **durch Konstruktion, nicht durch eine Disclosure-Control-Engine** — die Plattform **filtert Zeilen *vor* dem Aggregieren** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)), also ist jedes ausgelieferte Total eine Funktion von Zeilen, die der Aufrufer ohnehin einzeln lesen dürfte → ein Total verrät nie etwas Neues. *filter-then-aggregate*, nie *aggregate-then-filter* — Letzteres ist die Naht, durch die Aggregation leckt, und dieser Codepfad **existiert nicht**. Ein **vor-materialisierter** Report trägt die **eigene Quell-ACL** ([SAP Band-A](packs/sap/00-sap-pack.md)); ein **quellen-übergreifender** Rollup trägt die **Schnittmenge** (most-restrictive, DocIntel-Merge — nie die Vereinigung); ein Aggregat über einen *nicht auflösbaren* Beitragssatz wird **quarantänisiert**. **5. Pack mit leerem §2 + §3** (ein Report *präsentiert* die Policy der reitenden Domäne, besitzt keine eigene). §2/§3 leer, §4 vollständig geerbt (jede beitragende Domäne — eine Kachel aus Finance-Ledger + HR-Headcount ist SOX *und* Art. 9). Kein neues ADR (Worked Instance von [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). Der **eine benannte zukünftige ADR**: ein Total über Zeilen *ausliefern*, die der Aufrufer nicht einzeln lesen darf (statistische Disclosure Control / Differential Privacy) — heute bewusst außerhalb des Scopes, quarantänisiert. **Verbleibend: keine Packs mehr** — der Engineering-Track (runtime pack-load SPI, Code-Reconciliation) und die offenen Q#3/Q#6 sind der einzige verbleibende Weg)) (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · Z19 ≈ 92 % · Z20 ≈ 93 % · Z21 ≈ 94 % · **Z22 ≈ 95 %** (Model-Hosting-Posture — die Auflösung von **Q#3**, einer der letzten zwei offenen Architektur-Fragen: *wo* Modelle physisch laufen. Antwort: **Dual-Track-Serving-Fabric hinter dem [Model Gateway](architecture/adr/ADR-0003-model-gateway-indirection.md)** — **Track A** (in-boundary self-hosted OSS auf reservierten GPUs; Privatheit/Residenz *durch physische Konstruktion*) + **Track B** (contractually-private Managed Endpoints über Private Networking, Zero-Retention/No-Train) — Track-Wahl **pro `(Tenant-Tier × Datenklasse)`** über die *bestehende* Label→Trust-Matrix. Isolated → nur Track A; Standard → Track B Default mit `confidential`/`pii`-Boden auf den höchst-vertrauten Track. Hosting-Posture wird ein **geschlossenes Registry-Enum** mit Pflicht-Datenverarbeitungs-Terms; Routing ist **fail-closed** (kein stiller Fallback auf einen niedriger-vertrauten Track). Netto **horizontale Änderung = keine, rein additiv** — zwei Datenwerte + eine Randbedingung hinter der Gateway-Indirektion, die ADR-0003 bereits gebaut hat; kein neuer Hot-Path, kein neues Prädikat, Read-Plane unberührt. „Schwer zu *entscheiden*, trivial zu *verdrahten*" — das Gütezeichen der frühen ADR-0003-Entscheidung. Schließt zugleich eine echte Doku-Lücke: Model-*Serving* hatte bislang kein eigenes Verzeichnis. [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)) (Pack-Load-SPI — der **Übergang von der Papier- zur Laufzeit-Fähigkeit**: der *validierende, transaktionale, fail-closed* Loader, der die sechs Pack-Sektionen in ihre horizontalen Erweiterungspunkte installiert und **jeden bodenlockernden Pack strukturell ablehnt** — nicht per Review, sondern per Konstruktion, weil die einzigen Verben des Loaders Subset-Installationen in fail-closed-Erweiterungspunkte sind. Kein neuer Hot-Path; das §0-Äquivalent-Ledger des SPI selbst ist *"none, all additive"*. Erstes konkretes `platform/`→`core/`-Umsetzungsziel; [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)) · Verlauf-Fortsetzung: **Z20 ≈ 93 %** (Reporting-Pack — n=10, der **letzte** Pack; die **Domänen-Pack-Fläche ist damit vollständig**. Der **erste *Aggregat*-Test**: ein Report-Wert ist selten eine Quellzeile, sondern ein **Rollup** über viele Zeilen mit *heterogenen* ACLs. Der scharfe neue Fehlermodus, den kein früherer Pack hatte, ist **arithmetische Inferenz** — eine Summe kann eine maskierte Zeile *rekonstruieren* (Small-Cell/Differencing: eine Gehaltssumme über *eine* Person **ist** deren Gehalt). Kernbefund: entschärft **durch Konstruktion, nicht durch eine Disclosure-Control-Engine** — die Plattform **filtert Zeilen *vor* dem Aggregieren** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)), also ist jedes ausgelieferte Total eine Funktion von Zeilen, die der Aufrufer ohnehin einzeln lesen dürfte → ein Total verrät nie etwas Neues. *filter-then-aggregate*, nie *aggregate-then-filter* — Letzteres ist die Naht, durch die Aggregation leckt, und dieser Codepfad **existiert nicht**. Ein **vor-materialisierter** Report trägt die **eigene Quell-ACL** ([SAP Band-A](packs/sap/00-sap-pack.md)); ein **quellen-übergreifender** Rollup trägt die **Schnittmenge** (most-restrictive, DocIntel-Merge — nie die Vereinigung); ein Aggregat über einen *nicht auflösbaren* Beitragssatz wird **quarantänisiert**. **5. Pack mit leerem §2 + §3** (ein Report *präsentiert* die Policy der reitenden Domäne, besitzt keine eigene). §2/§3 leer, §4 vollständig geerbt (jede beitragende Domäne — eine Kachel aus Finance-Ledger + HR-Headcount ist SOX *und* Art. 9). Kein neues ADR (Worked Instance von [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). Der **eine benannte zukünftige ADR**: ein Total über Zeilen *ausliefern*, die der Aufrufer nicht einzeln lesen darf (statistische Disclosure Control / Differential Privacy) — heute bewusst außerhalb des Scopes, quarantänisiert. **Verbleibend: keine Packs mehr** — der Engineering-Track (runtime pack-load SPI, Code-Reconciliation) und die offenen Q#3/Q#6 sind der einzige verbleibende Weg)) (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -49,6 +50,63 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 22 (2026-07-06) — Model hosting & serving posture: **resolves open Q#3**
+- Wrote **[models/00-model-hosting-and-serving.md](models/00-model-hosting-and-serving.md)** +
+  **[ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)** — closing **open Q#3**
+  (model hosting), one of only two remaining open architecture questions, and creating the **`models/`
+  concern folder** (a real doc gap: model *serving* was cited by [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md),
+  [Governance §8](governance/00-governance-and-audit.md#8-g6--model-governance), and
+  [Deployment §7](deployment/00-deployment-topology.md) but never had a home). With the pack surface
+  complete, this was the **highest-leverage pure-architecture-doc move.**
+- **The headline: a dual-track serving fabric, routed per `(tenant tier × data class)` behind the Model
+  Gateway — and, consistent with every cycle since ADR-0016, net horizontal change = none, all additive.**
+  - **Track A — in-boundary self-hosted OSS:** open-weight models on **reserved GPUs inside the trust
+    boundary**. Privacy and residency hold **by construction** (no endpoint to egress to) — the posture
+    for the **Isolated tier** and for `confidential`/`pii` on any tenant. Cost: reserved-GPU fixed spend
+    + model-ops burden + a possible frontier-capability gap.
+  - **Track B — contractually-private managed endpoint:** a managed service over **private networking**
+    under **zero-retention / no-training** terms (`managed_private_dedicated` for single-tenant). Frontier
+    capability + elastic; privacy by **contract + network isolation**, not physical possession. The default
+    for **Standard**-tier `public`/`internal` bulk.
+  - **Routing = the existing label→trust matrix, tighten-only.** Isolated → **Track A only**; Standard →
+    **Track B default with a `confidential`/`pii` floor** lifting to the highest-trust track. A tenant may
+    pin stricter, never route a sensitive class down (the [admin-can-only-tighten](architecture/adr/ADR-0014-api-contract-surface.md)
+    rule applied to model routing).
+- **Q#3 was literally the open `hosting_posture` field of [Governance §8](governance/00-governance-and-audit.md#8-g6--model-governance)'s
+  approved-model registry.** It is now a **closed enum** — `in_boundary_oss` / `managed_private` /
+  `managed_private_dedicated` — and a `managed_private*` entry **must** carry its data-handling terms
+  (DPA / retention=0 / training=none / sub-processors) or the eval gate refuses promotion. This turns
+  "contractually private" from a verbal assurance into a **recorded, auditable, eval-gated fact.**
+- **Fail-closed routing (the safety crux).** If the required track is unavailable, the request degrades
+  *within-or-above* its trust floor, is queued, or is denied — it **never** spills to a lower-trust track.
+  A `pii` prompt whose Track A pool is saturated does **not** fall back to Track B. This is the
+  model-serving projection of the platform-wide invariant: *capability/availability may degrade; the trust
+  floor may not* ([Governance §7.3](governance/00-governance-and-audit.md), R5).
+- **Why nothing horizontal changed:** the two tracks are *serving endpoints behind the existing Gateway*;
+  the registry, the label matrix, and the routing policy already exist. The cycle fixes **two data values**
+  (the enum + the per-tier×class map) and **one boundary condition** (fail-closed fallback). Callers are
+  unchanged — they request a logical role and never learn which track answered (M2). The read/ACL plane is
+  untouched (the filter runs *before* any model sees content, [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)):
+  a mis-hosted model can, at worst, cost capability or (if fail-closed were broken) reach *a vendor under
+  contract*, never widen a user's read access. **"Both, by tier" is expressible as pure policy only because
+  [ADR-0003](architecture/adr/ADR-0003-model-gateway-indirection.md) built the Gateway indirection first —
+  hard to *decide*, trivial to *wire*; the sign of a good earlier decision.**
+- **This is a cross-component decision → [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)**
+  (it constrains Governance/Security/Deployment/Data at once). Updated indexes: ADR index (0018 added),
+  Governance §8 (hosting-posture field resolved + routing-map link), `platform/README.md` domain map (new
+  `models/` row, Q#3 resolved).
+- **Directly strengthens (no new risk owned):** hardens the **Security-Architektur** posture (in-boundary
+  vs. contractually-private is now specified, not deferred) and R7 (Track B vendor lock-in bounded to one
+  Gateway adapter — the model analogue of the `VectorIndex` port). Adds a **model-routing conformance/eval
+  class** (no `pii` fixture ever routes to a `managed_private` posture) — the routing analogue of the
+  permission-negative conformance class.
+- ⏳ **Handed to later cycles:** **empirical sizing → [Deployment §7](deployment/00-deployment-topology.md)**
+  (Track A reserved-GPU pool sizing as a reserved-capacity class alongside reserved-P0; Track B endpoint
+  pricing/region routing → the D4 pricing manifest) and **network-boundary hardening → [Security](security/00-security-architecture.md)**
+  (Track B PrivateLink/VPC-peering + zero-egress verification; Track A GPU-pool tenant isolation). Only
+  **Q#6** (orchestrator posture — extend `core/` vs. adopt) and the **`core/` code-reconciliation** (Cycle 22
+  SPI-implementation candidate / Cycle 2c engineering track) remain open.
 
 ### Cycle 21 (2026-07-06) — Runtime pack-load SPI: the engineering form of ADR-0016
 - Wrote **[packs/01-pack-load-spi.md](packs/01-pack-load-spi.md)** + **[ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)** —
@@ -1078,6 +1136,7 @@
 | ADR-0015 | Deployment DR: active-passive per residency region (no active-active writes); ACL-first fail-closed recovery (SoT→object→vector-rebuild→cache); vectors rebuilt not backed up; tiered RPO/RTO; reserved (not autoscaled) P0 capacity | No cross-region window disagrees on a revocation; the platform recovers fail-closed (permissions before content); a restore can't resurrect a vector snapshot that disagrees with recovered ACLs; the revocation SLA is provisioned in advance |
 | ADR-0016 | Domain pack contract: a pack is additive data + policy, **tighten-only**, exactly six sections, with a mandatory §0 horizontal-change ledger + a falsifiability rule (can't-fit → horizontal ADR, never a pack-local hack) | Makes "new domain = pack, not redesign" a reviewable/blockable contract not a slogan; a misconfigured pack can only over-restrict (availability), never over-expose (safety); Finance (reference pack) proved zero horizontal changes against the hardest domain |
 | ADR-0017 | Runtime pack-load SPI: a validating, transactional, fail-closed loader (RESOLVE→VALIDATE→DRY-RUN→COMMIT-atomic→ACTIVATE-scoped) installing the six sections into their horizontal extension points; signed data-only bundle (connector referenced, never shipped); machine-checked §0 ledger; per-tenant `pack_version` pinning; no code deploy | Makes ADR-0016's tighten-only rule **executable** — a floor-loosening pack is *structurally* rejected by the loader, not by review; the worst a bad/malicious pack does is fail to load (availability), never loosen a floor (safety); the first `platform/`→`core/` reconciliation target |
+| ADR-0018 | Model hosting & serving posture: a dual-track serving fabric (Track A in-boundary self-hosted OSS / Track B contractually-private managed endpoints) routed per `(tenant tier × data class)` by the label→trust matrix behind the Model Gateway; closed `hosting_posture` registry enum + mandatory data-handling terms; fail-closed track-fallback | Closes open Q#3 with the honest *both-by-tier* answer, expressible as pure policy because ADR-0003 built the Gateway indirection first; the trust floor may never degrade (a `pii` request never spills to a cheaper track); no new hot-path component, read plane untouched — additive |
 
 ---
 
@@ -1100,14 +1159,18 @@
    re-sync, else quarantine); FI field-level / infotype subfield / BW analysis authorizations →
    **Band C** quarantine. The bands are jointly exhaustive — no SAP construct is neither
    resolvable nor quarantinable, so no new confidence level / predicate was needed.
-3. **Model hosting** — in-boundary OSS models vs. contractually-private managed
-   endpoints (or both, by tenant tier). Drives cost, latency, and compliance posture.
-   **Cycle 7 note:** Governance built the **approved-model registry + eval-before-promotion
-   gate** ([Governance §8](governance/00-governance-and-audit.md)) that *any* hosting choice
-   flows through; the label→trust routing matrix ([Governance §4](governance/00-governance-and-audit.md))
-   already expresses the compliance side. The still-open decision is the concrete
-   *in-boundary-vs-managed-private posture per tenant tier* — feed it into the registry when
-   decided (may warrant its own ADR; [ADR-0012 revisit-when](architecture/adr/ADR-0012-governance-audit-and-cost.md)).
+3. ✅ **DECIDED (Cycle 22, [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)).**
+   ~~Model hosting~~ — a **dual-track serving fabric behind the Model Gateway**: **Track A**
+   (in-boundary self-hosted OSS on reserved GPUs — privacy/residency by physical construction) +
+   **Track B** (contractually-private managed endpoints over private networking, zero-retention/no-train),
+   **routed per `(tenant tier × data class)`** by the existing label→trust matrix (**Isolated → Track A
+   only; Standard → Track B default with a `confidential`/`pii` floor to the highest-trust track**).
+   Hosting posture is now a **closed registry enum** (`in_boundary_oss`/`managed_private`/
+   `managed_private_dedicated`) with mandatory data-handling terms; routing is **fail-closed** (no silent
+   fallback to a lower-trust track). See [Models §2–§4](models/00-model-hosting-and-serving.md). Net
+   horizontal change = none (two data values + one boundary condition behind ADR-0003). Empirical GPU-pool
+   sizing / managed-endpoint pricing handed to [Deployment §7](deployment/00-deployment-topology.md);
+   network-boundary hardening handed to [Security](security/00-security-architecture.md).
 4. ✅ **DECIDED (Cycle 4, [ADR-0009](architecture/adr/ADR-0009-hybrid-retrieval-and-chunking.md)).**
    ~~Chunking & embedding strategy~~ — **structure-aware chunking** (heading/clause/table-row/
    per-email-message; mixed-ACL invariant) + **universal embedding space with per-domain
@@ -1390,20 +1453,29 @@ pinning; fail-closed unload. The SPI's own §0-equivalent ledger is *"none, all 
 component. The SPI's falsifiability check (*no-code-deploy load? floor-loosening pack structurally rejected?*)
 resolves **yes to both**. Cross-component → ADR-0017; first concrete `platform/`→`core/` reconciliation target.
 
-### ▶ Cycle 22 (do next): **Implement the pack-load SPI in `core/` — OR resolve open Q#3 / Q#6**
-The doc/architecture of the loader is now fixed ([ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md));
-the highest-leverage next move is the **first `platform/`→`core/` reconciliation**: implement the loader
-(RESOLVE/VALIDATE/DRY-RUN/COMMIT/ACTIVATE) against the existing `core/` template + `tools/check.py` gate, with
-the [Finance pack](packs/finance/00-finance-pack.md) as the reference bundle and the
+### ✅ Cycle 22 (DONE — see §1): **Model hosting & serving posture — resolved open Q#3**
+Wrote `models/00-model-hosting-and-serving.md` + [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md).
+Dual-track serving fabric (Track A in-boundary OSS / Track B contractually-private managed) routed per
+`(tenant tier × data class)` behind the Model Gateway; closed `hosting_posture` registry enum + mandatory
+data-handling terms; fail-closed track-fallback. Net horizontal change = none, all additive. Closed a real
+doc gap (model serving had no home folder); resolved open Q#3. Handed empirical sizing/pricing to Deployment
+§7 and network-boundary hardening to Security.
+
+### ▶ Cycle 23 (do next): **Implement the pack-load SPI in `core/` — OR resolve open Q#6**
+With Q#3 closed, the **two remaining open items** are both on the **engineering track**. The
+highest-leverage next move is the **first `platform/`→`core/` reconciliation**: implement the pack-load
+loader ([ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md): RESOLVE/VALIDATE/DRY-RUN/COMMIT/
+ACTIVATE) against the existing `core/` template + `tools/check.py` gate, with the
+[Finance pack](packs/finance/00-finance-pack.md) as the reference bundle and the
 [conformance suite](permissions/00-authorization-model.md#11-the-permission-conformance-test-the-production-gate)
-as the CI veto. This is a **coding cycle** (TDD, `--cov=core --cov-fail-under=80`), and it dovetails with the
+as the CI veto. This is a **coding cycle** (TDD, `--cov=core --cov-fail-under=80`), dovetailing with the
 still-open [Cycle 2c engineering track](#-cycle-2c-open--parallel-engineering-track-not-the-architecture-doc-path)
 (wire `WorkerRegistry`/`HandoffRouter` into the runtime). *Falsifiability check for the implementation:* does a
 hand-crafted floor-loosening bundle fail VALIDATE in a unit test (not review)? Expected: yes.
-**Alternative for this slot (pure architecture-doc path):** resolve open **Q#3** (model hosting — in-boundary
-OSS vs. contractually-private managed, per tier; feed the approved-model registry + Deployment manifest; may
-warrant its own ADR) or **Q#6** (agent-framework orchestrator posture — extend `core/` vs. adopt). Neither now
-blocks any pack; the SPI decoupled domain content from the orchestrator choice.
+**Alternative for this slot (pure architecture-doc path):** resolve the last open question **Q#6**
+(agent-framework orchestrator posture — extend `core/` planner/verifier vs. adopt a framework). It now blocks
+nothing on the pack side (the SPI decoupled domain content from the orchestrator choice), so it is a lower
+priority than the `core/` reconciliation but is the only remaining *doc*-track item.
 
 ### Later (backlog)
 - **The pack backlog is empty** — all ten planned packs (Finance/HR/Legal/Audit/KM/DocIntel concept-shaped +
@@ -1417,10 +1489,13 @@ blocks any pack; the SPI decoupled domain content from the orchestrator choice.
 - **Cycle 2c engineering track** (still open) — wire `WorkerRegistry`/`HandoffRouter` into the
   runtime, finish the test port + coverage gate, deeper governance hardening (see §6 Cycle 2c).
 - Reconcile `platform/` architecture with the existing `core/` code (ADR-0002 implementation path).
-- Resolve open **Q#3** (model hosting — in-boundary OSS vs. contractually-private managed, per tier)
-  → feed the approved-model registry ([Governance §8](governance/00-governance-and-audit.md)) + the
-  Deployment instance/model manifest ([Deployment §7](deployment/00-deployment-topology.md)); may warrant its own ADR.
-- Resolve open **Q#6** (agent framework — extend `core/` planner/verifier vs. adopt a framework).
+- ✅ **Resolved open Q#3** (model hosting — Cycle 22, [ADR-0018](architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)):
+  dual-track serving fabric routed per `(tenant tier × data class)` behind the Gateway. **Remaining: the
+  empirical GPU-pool sizing / managed-endpoint pricing** ([Deployment §7](deployment/00-deployment-topology.md))
+  and **Track-B network-boundary hardening** ([Security](security/00-security-architecture.md)) — tuning
+  inputs, not redesigns.
+- Resolve open **Q#6** (agent framework — extend `core/` planner/verifier vs. adopt a framework) — now the
+  **last open architecture question**; blocks nothing on the pack side.
 
 ---
 

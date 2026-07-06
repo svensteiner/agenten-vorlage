@@ -318,13 +318,19 @@ The [Model Gateway](../architecture/adr/ADR-0003-model-gateway-indirection.md) i
 point (Principle 6); Governance is the **policy that flows through it.**
 
 - **Model approval & registry.** No model serves a tenant until it is in the **approved-model
-  registry** with a recorded provenance, hosting posture (in-boundary vs. contractually-private
-  endpoint — open Q#3, still open, see §13), data-handling terms, and an eval score (below).
+  registry** with a recorded provenance, **hosting posture** (a closed `hosting_posture` enum —
+  `in_boundary_oss` / `managed_private` / `managed_private_dedicated` — **resolved Cycle 22**,
+  [ADR-0018](../architecture/adr/ADR-0018-model-hosting-and-serving-posture.md) / [Models §3](../models/00-model-hosting-and-serving.md);
+  a `managed_private*` entry must carry its data-handling terms or the eval gate refuses promotion),
+  and an eval score (below).
   This is the model analogue of the connector conformance gate ([Workers §5](../workers/00-ingestion-architecture.md)):
   *nothing serves production until it passes a gate.*
 - **Routing policy by data class.** The label matrix (§4) drives routing: `confidential`/`pii`
   → highest-trust in-boundary tier only; `public`/`internal` may use cheaper tiers (§7.1). The
-  Gateway enforces; Governance authors the policy.
+  Gateway enforces; Governance authors the policy. The concrete per-`(tenant tier × data class)`
+  track map (Isolated → in-boundary-only; Standard → managed-private default with a sensitive-class
+  floor) and the **fail-closed track-fallback** rule live in
+  [Models §4](../models/00-model-hosting-and-serving.md) ([ADR-0018](../architecture/adr/ADR-0018-model-hosting-and-serving-posture.md)).
 - **Evaluation before promotion.** A candidate model (or version) is scored on a **held-out
   eval set** (grounding, citation validity, refusal calibration per the [RAG verifier
   contract §7](../rag/00-retrieval-pipeline.md); safety/jailbreak resistance for R2; and
