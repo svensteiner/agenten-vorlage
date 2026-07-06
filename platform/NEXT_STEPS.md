@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 8 (Metadata — catalog, lineage & classification schema)
+- **Current cycle:** 9 (API — external surface, contracts & versioning)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 71 %** (Ende Zyklus 8) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 76 %** (Ende Zyklus 9) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -25,13 +25,13 @@
 | Workers & Connectors (Z6) | 10 % | 90 % | 9.0 |
 | Metadata / Katalog / Lineage (Z8) | 6 % | 90 % | 5.4 |
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
-| API-Surface & Verträge | 5 % | 0 % | 0.0 |
+| API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR | 7 % | 0 % | 0.0 |
 | Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 71 %** |
+| **Summe** | **100 %** | — | **≈ 76 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · **Z8 ≈ 71 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · **Z9 ≈ 76 %**.
 
 ---
 
@@ -48,6 +48,56 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 9 (2026-07-06) — API: external surface, contracts & versioning
+- Wrote **[api/00-api-surface.md](api/00-api-surface.md)** — the platform's **outward
+  contract** and the **last major un-seeded surface**. It is a *contract, not a new component*:
+  the outward face of the [API Gateway](architecture/01-platform-overview.md) (Plane 1) and the
+  [Governance policy store](governance/00-governance-and-audit.md). Discharges the client-facing
+  needs three cycles queued (Governance → budgets/DSAR/audit-export; Metadata → catalog/lineage/
+  DSAR-status; RAG+Permissions → the query endpoint that carries the subject token).
+- **Five resource groups:** Query & Answer · Catalog & Lineage · Governance & Admin · Privacy &
+  Audit (DSAR/erasure/export) · Ingestion ops, plus a shared async **Jobs** surface. Aligned to
+  caller + owning plane/policy.
+- **Six design tenets** = the outward projection of the platform principles: identity in the token
+  not the URL/body; fail-closed at the edge; one envelope; heavy work is a job; idempotent writes;
+  versioned & deprecable.
+- **Query/answer contract:** sync `POST /v1/answers` + streaming `/v1/answers:stream`, **one
+  verifier gate for both** (streamed `final` event emitted only after the verifier passes — streaming
+  is never a grounding bypass). "No permitted data" is a **`200` success**
+  (`grounding:"no_accessible_information"`), never an error — so absence of access can't leak as (or
+  be faked as) an error. Citations expose the canonical `resource_id`+`source_item_version` from
+  [Metadata §3](metadata/00-catalog-and-lineage.md).
+- **Token → subject at the edge:** IdP bearer token → `{tenant, subject, effective principals,
+  delegation}`; tenancy **derived from the token, never a URL segment** (impersonation
+  unrepresentable). OBO via **token exchange** (actor + subject; retrieval runs under the subject).
+  A **client-credentials** token has no end-user principals → a service account **structurally cannot**
+  read user-restricted knowledge — kills the "index-everything under a service account" anti-pattern
+  at the API layer.
+- **One response envelope** `{ok,data,error,meta}` with **typed error enums**, leak-free messages,
+  and `meta.request_id` == the audit correlation id; hidden resources return `not_found`, never a
+  message confirming existence.
+- **Admin API can only tighten:** thin self-auditing CRUD over the Governance policy store; a write
+  that would loosen a platform floor (widen a label, disable the ACL filter, throttle a P0 revocation,
+  raise a budget above ceiling, pin an un-evaluated model) → `422 policy_blocked`. Successor to the
+  local [ADR-0007](architecture/adr/ADR-0007-client-configuration-surface.md) `control_panel.py`.
+- **Privacy group** (DSAR/erasure/audit-export) = **jobs**; erasure status returns the
+  [Metadata lineage-tombstone](metadata/00-catalog-and-lineage.md) evidence — completeness is
+  **proven by a traversal**, `legal_hold` blocks with `422`. **Filter parity** on catalog/lineage
+  reads (identical predicate to retrieval; no unfiltered "list mode" side-channel).
+- **Versioning:** URL-major (`/v1/`), additive-by-default (clients must ignore unknown fields),
+  breaking → new major + `Deprecation`/`Sunset` + per-version usage reporting. **A new domain pack
+  is not a version event.**
+- Recorded **[ADR-0014](architecture/adr/ADR-0014-api-contract-surface.md)**.
+- Updated indexes: ADR index, `api/README.md` (stub → real), `platform/README.md` domain map
+  (api → **Seeded**).
+- **Directly strengthens (no new risk owned):** the A1/A6 obligations — permission-faithful retrieval
+  ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)) enforced once at audited
+  choke points instead of re-argued per endpoint; budget/rate limits couple to
+  [Governance §7.3](governance/00-governance-and-audit.md) and **throttle cost, never safety** (R5).
+- ⏳ **Handed to downstream cycles:** concrete gateway/broker/topology + per-region residency routing +
+  rate-limit sizing + streaming transport ops → [Deployment](deployment/); each domain pack's optional
+  `pack` hint + any pack-specific endpoints ride the additive rule (no contract change).
 
 ### Cycle 8 (2026-07-06) — Metadata: catalog, lineage & classification schema
 - Wrote **[metadata/00-catalog-and-lineage.md](metadata/00-catalog-and-lineage.md)** — the
@@ -340,6 +390,7 @@
 | ADR-0011 | Ingestion = staged-DAG workers; at-least-once + idempotent version-keyed writes; priority classes (P0 revoke > P1 delta > P2 backfill); outbox coherence relay; conformance-gated connector contract | Resumable/scalable/contained ingestion; backlog can't starve a revocation (R8); new source = connector + suite, not redesign; write path fail-closed |
 | ADR-0012 | Governance = policy plane (no hot-path component); ratified per-tier freshness SLA + label→action matrix + retention/erasure; audit-as-evidence; per-tenant budgets that degrade capability-before-safety; eval-gated model registry; per-domain compliance map | Promises become contractual & provable; cost control (R5) can never regress into a safety leak; new domain inherits a control map, not a redesign |
 | ADR-0013 | Canonical metadata: four-level catalog (Doc→Item→Chunk→Version) + explicit bidirectional lineage graph + closed classification vocabulary + content-free erasure tombstone; held in the relational SoT, no new store; versioned + write-boundary-validated | Four consumers share one contract not four shapes; the Governance label matrix becomes total; erasure-completeness & audit-evidence become provable queries; new domain/artifact type = additive registration, not a schema redesign |
+| ADR-0014 | API contract: token-bound identity (tenancy never in URL) + OBO via token exchange; dual sync/streaming answer under one verifier gate; "no access" is a 200; one typed-error envelope; heavy work = jobs; admin-can-only-tighten; filter-parity reads; URL-major additive versioning | Permission-faithful retrieval enforced once at audited choke points not re-argued per endpoint; impersonation/cross-tenant unrepresentable on the wire; budgets throttle cost not safety; new pack = additive, not a version event |
 
 ---
 
@@ -414,8 +465,8 @@
 - ✅ `storage/` — five-store data plane, pgvector-default vector layer + `VectorIndex` port, tenancy definition, isolation tiers, encryption/BYOK, coherence, migrations, erasure. **Seeded (Cycle 5).** Resolved open Q#1 (final) + Q#5 (final); mitigated R4/R5/R7 by design.
 - ✅ `workers/` — staged-DAG ingestion, `IngestionTask` queue + idempotent version-keyed writes, priority classes (R8), outbox coherence relay, re-embed migrations, change-driven re-sync, DLQ, least-privilege posture, connector contract + conformance gate. **Seeded (Cycle 6).** Mitigated R8/R6/R3-write by design; strengthened Q#7.
 - ✅ `metadata/` — canonical four-level catalog (Doc→Item→Chunk→Version), bidirectional lineage graph, closed classification/label vocabulary, content-free erasure tombstone, metadata-as-audit-evidence, schema versioning/validation. **Seeded (Cycle 8).** Closed the last un-seeded cross-cutting store concern; made Governance's label matrix total and its erasure/audit promises provable.
-- `api/` — external API surface, contracts, versioning. **Empty. Now the next doc-track item.** Governance handed it the budget / DSAR / audit-export surface; Metadata handed it the catalog-browse / lineage / DSAR-status surface.
-- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now heavily loaded** — Cycles 5/6/7/8 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency, catalog partitioning + lineage archival + integrity-check schedule).
+- ✅ `api/` — external surface: five resource groups, token-bound identity + OBO, query/answer + streaming contract (one verifier gate), one typed-error envelope, async-job pattern, admin-can-only-tighten policy CRUD, DSAR/erasure/audit-export, filter-parity catalog/lineage, URL-major versioning. **Seeded (Cycle 9).** Discharged the client-facing surfaces Governance/Metadata/RAG/Permissions queued; enforced permission-faithfulness once at the edge.
+- `deployment/` — topology, environments, CI/CD, DR/BCP. **Empty. Now the only un-seeded surface and the most heavily loaded** — Cycles 5/6/7/8/9 have queued concrete sizing/tuning inputs (per-tier topology, graduation thresholds, broker choice, autoscaling, SLA-capacity sizing, prices/envelopes, region/residency routing, catalog partitioning + lineage archival + integrity-check schedule, gateway/rate-limit/streaming ops).
 - ✅ `governance/` — policy plane: ratified freshness SLA + label→action matrix + retention/erasure, audit usage (retention/access/evidence), per-tenant cost model & budgets (R5), model governance, compliance map. **Seeded (Cycle 7).** Closed open Q#7; mitigated R5 by design.
 
 ---
@@ -490,27 +541,31 @@ component. Closed the last un-seeded cross-cutting store concern; strengthened R
 Governance's erasure/retention/label promises provable. A cross-component schema decision *did*
 emerge → ADR-0013.
 
-### ▶ Cycle 9 (do next): **API — external surface, contracts & versioning**
-Write `api/00-api-surface.md`. *Why next:* it is now the **last major un-seeded platform surface**
-and three cycles have queued concrete client-facing needs onto it — Governance handed up the
-**budget / DSAR / audit-export** surface ([Governance §5, §7](governance/00-governance-and-audit.md)),
-Metadata handed up the **catalog-browse / lineage / DSAR-status** surface
-([Metadata §11](metadata/00-catalog-and-lineage.md)), and RAG/Permissions define the **query
-endpoint** whose request must carry the subject token that drives query-time enforcement
-([Permissions §3](permissions/00-authorization-model.md), [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)).
-Specify: the **query/answer contract** (subject identity in, cited/verified answer out), the
-**admin/config surface** (tenant policy, budgets, model pinning — the Governance policy store's
-API), the **DSAR/erasure + audit-export** endpoints, **versioning + deprecation policy**,
-**pagination/filtering/rate-limiting** (reuse the [api-design skill](../project/skills/) patterns),
-and the **API-response envelope**. Likely warrants an ADR if a contract-shape decision (e.g.
-sync-vs-streaming answer, tenancy in the URL vs. the token) proves cross-component.
+### ✅ Cycle 9 (DONE — see §1): **API — external surface, contracts & versioning**
+Wrote `api/00-api-surface.md` + [ADR-0014](architecture/adr/ADR-0014-api-contract-surface.md).
+Five resource groups, token-bound identity + OBO (tenancy never in the URL), dual sync/streaming
+query contract under one verifier gate, one typed-error envelope, async-job pattern, admin-can-only-
+tighten policy CRUD, DSAR/erasure/audit-export, filter-parity catalog/lineage, URL-major additive
+versioning. Discharged the client-facing surfaces Governance/Metadata/RAG/Permissions queued;
+enforced permission-faithful retrieval once at the edge (a contract-shape decision was cross-component
+→ ADR-0014).
+
+### ▶ Cycle 10 (do next): **Deployment — topology, environments, CI/CD, DR/BCP**
+Write `deployment/00-deployment-topology.md`. *Why next:* it is the **last un-seeded platform
+surface**, and **five** cycles have queued concrete sizing/tuning inputs onto it — it is now the
+single place those empirical numbers land. Specify: the **reference topology per tenant tier**
+(Shared vs. Isolated, [Storage §3.3](storage/00-storage-architecture.md)) + **graduation thresholds**;
+**broker choice + worker autoscaling** ([Workers §3.2, §13](workers/00-ingestion-architecture.md));
+**SLA-capacity sizing** (reserved-P0 capacity / relay-poll frequency that meets the ratified
+freshness numbers) + **prices/budget-envelope sizes** + **region/residency routing**
+([Governance §3, §7](governance/00-governance-and-audit.md)); **catalog partitioning + cold-lineage
+archival + lineage-integrity-check schedule** ([Metadata §7, §11](metadata/00-catalog-and-lineage.md));
+**gateway/rate-limit/streaming ops** ([API §10.3](api/00-api-surface.md)); **CI/CD** (connector
+conformance suite as the production gate, [Permissions §11](permissions/00-authorization-model.md)) +
+**environments** + **DR/BCP + backup/restore** per store. Likely warrants an ADR if a topology
+decision (e.g. active-active vs. active-passive DR, per-region isolation) proves cross-component.
 
 ### Later (backlog)
-- `deployment/` — reference topology, environments, CI/CD, DR/BCP. **Now the most heavily-loaded
-  backlog item:** per-tier storage topology + graduation thresholds ([Storage §3.3](storage/00-storage-architecture.md)),
-  broker choice + worker autoscaling ([Workers §3.2, §13](workers/00-ingestion-architecture.md)),
-  SLA-capacity sizing + prices/envelopes + region/residency ([Governance §3, §7](governance/00-governance-and-audit.md)),
-  catalog partitioning + lineage archival + integrity-check schedule ([Metadata §7, §11](metadata/00-catalog-and-lineage.md)).
 - Per-domain **pack specifications** (Finance, HR, Legal, ...) once the core deep dives
   are stable — proving the "new domain = pack, not redesign" bet; each pack now **inherits** a
   compliance-map row ([Governance §9](governance/00-governance-and-audit.md)).

@@ -35,7 +35,7 @@ is stable.
 | [storage/](storage/) | Object, vector, relational, cache storage | **Seeded** |
 | [metadata/](metadata/) | Catalog, lineage, classification, tagging | **Seeded** |
 | [workers/](workers/) | Ingestion, embedding, and job orchestration | **Seeded** |
-| [api/](api/) | External API surface, contracts, versioning | Planned |
+| [api/](api/) | External API surface, contracts, versioning | **Seeded** |
 | [deployment/](deployment/) | Topology, environments, CI/CD, DR | Planned |
 | [governance/](governance/) | Model governance, audit, compliance, cost | **Seeded** |
 
