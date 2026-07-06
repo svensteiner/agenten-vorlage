@@ -28,5 +28,6 @@ Each ADR uses: **Status** (Proposed / Accepted / Superseded), **Context**,
 | [0013](ADR-0013-canonical-metadata-lineage-schema.md) | Canonical metadata, catalog & lineage schema as a shared, versioned contract | Accepted |
 | [0014](ADR-0014-api-contract-surface.md) | API contract surface: token-bound identity, dual sync/streaming answer, job-based heavy work, URL-major versioning | Accepted |
 | [0015](ADR-0015-deployment-dr-and-regional-topology.md) | Deployment DR & regional topology: active-passive per residency region, ACL-first recovery, rebuilt vectors | Accepted |
+| [0016](ADR-0016-domain-pack-contract.md) | Domain pack contract: a pack is additive data + policy (tighten-only), never a horizontal change | Accepted |
 
 New ADRs are added by later cycles as decisions are made.

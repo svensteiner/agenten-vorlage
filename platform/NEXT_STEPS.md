@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 10 (Deployment — topology, environments, CI/CD & DR/BCP)
+- **Current cycle:** 11 (Domain Pack #1 — Finance + the reusable pack-spec skeleton)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 82 %** (Ende Zyklus 10) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 84 %** (Ende Zyklus 11) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 5 % | 0.3 |
+| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 40 % | 2.4 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 82 %** |
+| **Summe** | **100 %** | — | **≈ 84 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · **Z10 ≈ 82 %**.
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · **Z11 ≈ 84 %** (Finance-Pack + Skeleton; HR/Legal/Audit/… bleiben).
 
 ---
 
@@ -48,6 +48,43 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 11 (2026-07-06) — Domain Pack #1 (Finance) + the reusable pack-spec skeleton
+- Opened the **`packs/`** folder — the first *vertical* surface, after all ten horizontals were
+  Seeded (Cycle 10). Its purpose is to **prove the founding bet** (*"new domain = pack, not
+  redesign"*), asserted ten times and until now proven zero times.
+- Wrote **[packs/README.md](packs/README.md)** — the **reusable six-part pack-spec skeleton**
+  (every future pack is fill-in-the-blank): (1) sources + `map_acl` fidelity + conformance
+  fixtures; (2) classification-registry values; (3) label→action *tighten* deltas; (4)
+  compliance-map rows; (5) retrieval/answer eval set + parsers; (6) optional additive API `pack`
+  hint. Each section plugs into **one already-built horizontal extension point** — the author
+  fills blanks, never designs mechanism. Added the mandatory **§0 horizontal-change ledger** and
+  the **falsifiability rule** (if a pack *can't* fit, that's a real horizontal gap → a horizontal
+  ADR, never a pack-local hack).
+- Wrote **[packs/finance/00-finance-pack.md](packs/finance/00-finance-pack.md)** — the **reference
+  pack**, deliberately the hardest (SAP has *no document ACL*; Finance data is simultaneously
+  `confidential` + PII + legally held; SOX makes the audit trail contractual; numbers must be
+  grounded-or-refused). Its **§0 ledger records ZERO horizontal changes** across all ten surfaces —
+  the bet held against the worst case. Concretely: SAP `map_acl` fidelity target + 4 conformance
+  fixtures (incl. `approximate→deny+quarantine` for field-level auth, and revocation-within-SLA);
+  registered `restricted:mnpi`/`restricted:supervisory` + `pii_class:financial`/`tax`; tighten-only
+  label deltas (MNPI → Isolated model pool + egress block); inherited SOX/GDPR/ISO compliance rows
+  with evidence bindings; SAP-table/ledger/Excel parsers + a numeric-grounding / refuse-over-guess /
+  permission-negatives eval set; the additive `pack:"finance"` hint (identity still governs).
+- Recorded **[ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)** — ratifies the pack
+  contract as a genuinely cross-component decision (it constrains all ten horizontal surfaces at
+  once): **a pack is additive data + policy, tighten-only, six sections, with a mandatory
+  horizontal-change ledger.** The worst a misconfigured pack can do is over-restrict (availability
+  bug), never over-expose (safety bug) — fail-closed applied to extensibility.
+- Updated indexes: ADR index, `platform/README.md` domain map (added `packs/` → **Finance seeded**).
+- **Directly strengthens (no new risk owned):** turns the founding bet from a slogan into a
+  **reviewable, blockable contract** (a non-additive §0 ledger row is a PR-visible event);
+  exercises and validates R1 (SAP quarantine), R5 (Isolated-tier cost trade), and the
+  audit-as-evidence promise end to end.
+- ⏳ **Handed to later cycles:** HR / Legal / Audit / KM / SAP / SharePoint / Email packs are now
+  fill-in-the-blank against the Finance template; the runtime **pack-load SPI** (how a pack is
+  *loaded* at runtime) is deferred to the engineering track (open Q#6); open Q#3 (model hosting)
+  still feeds each pack's eval-tuned model choice.
 
 ### Cycle 10 (2026-07-06) — Deployment: topology, environments, CI/CD & DR/BCP
 - Wrote **[deployment/00-deployment-topology.md](deployment/00-deployment-topology.md)** — the
@@ -445,6 +482,7 @@
 | ADR-0013 | Canonical metadata: four-level catalog (Doc→Item→Chunk→Version) + explicit bidirectional lineage graph + closed classification vocabulary + content-free erasure tombstone; held in the relational SoT, no new store; versioned + write-boundary-validated | Four consumers share one contract not four shapes; the Governance label matrix becomes total; erasure-completeness & audit-evidence become provable queries; new domain/artifact type = additive registration, not a schema redesign |
 | ADR-0014 | API contract: token-bound identity (tenancy never in URL) + OBO via token exchange; dual sync/streaming answer under one verifier gate; "no access" is a 200; one typed-error envelope; heavy work = jobs; admin-can-only-tighten; filter-parity reads; URL-major additive versioning | Permission-faithful retrieval enforced once at audited choke points not re-argued per endpoint; impersonation/cross-tenant unrepresentable on the wire; budgets throttle cost not safety; new pack = additive, not a version event |
 | ADR-0015 | Deployment DR: active-passive per residency region (no active-active writes); ACL-first fail-closed recovery (SoT→object→vector-rebuild→cache); vectors rebuilt not backed up; tiered RPO/RTO; reserved (not autoscaled) P0 capacity | No cross-region window disagrees on a revocation; the platform recovers fail-closed (permissions before content); a restore can't resurrect a vector snapshot that disagrees with recovered ACLs; the revocation SLA is provisioned in advance |
+| ADR-0016 | Domain pack contract: a pack is additive data + policy, **tighten-only**, exactly six sections, with a mandatory §0 horizontal-change ledger + a falsifiability rule (can't-fit → horizontal ADR, never a pack-local hack) | Makes "new domain = pack, not redesign" a reviewable/blockable contract not a slogan; a misconfigured pack can only over-restrict (availability), never over-expose (safety); Finance (reference pack) proved zero horizontal changes against the hardest domain |
 
 ---
 
@@ -621,28 +659,33 @@ routing; catalog partitioning + cold-lineage archival + integrity checks; gatewa
 **ACL-first active-passive DR** with per-store backup/restore (a cross-component DR decision → ADR-0015).
 Discharged the sizing/tuning inputs Cycles 5–9 queued; **closed §5 — all core surfaces Seeded.**
 
-### ▶ Cycle 11 (do next): **Domain Pack #1 — Finance (the proof of the founding bet)**
-Write `packs/finance/00-finance-pack.md` (new `packs/` folder). *Why next:* every horizontal
-surface is now Seeded, so the highest-leverage remaining move is to **prove "new domain = pack, not
-redesign" end to end** against the stable core — the platform's founding thesis, so far only
-asserted. Finance first because it exercises the hardest cross-cutting features already built:
-row/record-level ACLs (SAP), `restricted:<class>`/`pii_class` labels + `legal_hold`
-([Metadata §4](metadata/00-catalog-and-lineage.md)), the SOX/audit compliance-map row
-([Governance §9](governance/00-governance-and-audit.md)), and per-content-type parsers
-(SAP table serialization, [RAG open sub-Q](rag/00-retrieval-pipeline.md)). The pack spec should be
-a **template**: (1) the sources + each source's `map_acl` fidelity target + conformance fixtures;
-(2) the classification-registry values the pack registers (`restricted:<class>`, `pii_class:<type>`);
-(3) the label→action deltas it *tightens* (never loosens); (4) its compliance-map row (SOX/GDPR
-cells, evidence-backed); (5) its retrieval/answer eval set (grounding, refusal, pack task accuracy);
-(6) the *optional* additive API `pack` hint ([ADR-0014](architecture/adr/ADR-0014-api-contract-surface.md)) —
-**demonstrating zero changes to any horizontal doc.** If the pack forces a horizontal change, that
-change is itself the finding (the bet is weaker than claimed) and warrants an ADR. Establish the
-**reusable pack-spec skeleton** here so HR/Legal/Audit/KM/SAP/SharePoint packs are fill-in-the-blank.
+### ✅ Cycle 11 (DONE — see §1): **Domain Pack #1 — Finance + the pack-spec skeleton**
+Wrote `packs/README.md` (the reusable six-part skeleton + §0 ledger + falsifiability rule),
+`packs/finance/00-finance-pack.md` (the reference pack), and
+[ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md) (the pack contract).
+Finance's §0 horizontal-change ledger records **zero** horizontal changes against the hardest
+domain — the founding bet held. HR/Legal/Audit/KM/SAP/SharePoint/Email packs are now
+fill-in-the-blank against the Finance template.
+
+### ▶ Cycle 12 (do next): **Domain Pack #2 — HR (second data point + GDPR/health stress)**
+Write `packs/hr/00-hr-pack.md` against the [pack skeleton](packs/README.md). *Why next:* one pack
+proves the mechanism exists; a **second, structurally different** pack proves it's *reusable* (the
+actual bet). HR is the right second because it stresses a **different** corner than Finance:
+`pii_class:health`, employee-self-scoped ACLs (a subject may see *only their own* records — the
+hardest principal-derivation case), GDPR right-to-erasure as the primary regime (Finance leaned SOX),
+and Workday/SAP-HCM + SharePoint + email as mixed sources. Fill the same six sections; the **§0
+ledger is again the headline** — expected "none, all additive," reusing Finance's SAP connector
+fidelity work. If HR *does* force a horizontal change, that's the more interesting finding (the
+skeleton generalized from n=1 to n=2 imperfectly) → horizontal ADR per the falsifiability rule.
+After HR, Legal/Audit become near-mechanical (Audit reuses the SOX row + SAP fidelity almost verbatim).
 
 ### Later (backlog)
-- Further **pack specifications** (HR, Legal, Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
+- Further **pack specifications** (Legal, Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
   reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
-  ([Governance §9](governance/00-governance-and-audit.md)).
+  ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger discipline.
+- **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
+  form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
+  the code mechanism is not yet built.
 - **Cycle 2c engineering track** (still open) — wire `WorkerRegistry`/`HandoffRouter` into the
   runtime, finish the test port + coverage gate, deeper governance hardening (see §6 Cycle 2c).
 - Reconcile `platform/` architecture with the existing `core/` code (ADR-0002 implementation path).

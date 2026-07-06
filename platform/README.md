@@ -38,6 +38,7 @@ is stable.
 | [api/](api/) | External API surface, contracts, versioning | **Seeded** |
 | [deployment/](deployment/) | Topology, environments, CI/CD, DR | **Seeded** |
 | [governance/](governance/) | Model governance, audit, compliance, cost | **Seeded** |
+| [packs/](packs/) | Domain packs (Finance seeded) — the "new domain = pack, not redesign" proof | **Finance seeded** |
 
 ## Documentation contract
 
