@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 13 (Domain Pack #3 — Legal: the first genuine novel-concept falsifiability test since Finance)
+- **Current cycle:** 14 (Domain Pack #4 — Audit: the first *combinatorial*-concept falsifiability test — segregation-of-duties)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 86 %** (Ende Zyklus 13) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 87 %** (Ende Zyklus 14) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 68 % | 4.1 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit …) | 6 % | 78 % | 4.7 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 86 %** |
+| **Summe** | **100 %** | — | **≈ 87 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · **Z13 ≈ 86 %** (Legal-Pack — n=3; der erste *neuartige* Begriff, Anwalts­privileg **inkl. Waiver**, hält additiv: Waiver = einschränkende ACL-Änderung, nie Label-Entfernung; Ethical Walls = bestehendes deny-wins. Audit/KM/… bleiben fill-in-the-blank).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · **Z14 ≈ 87 %** (Audit-Pack — n=4; der erste *kombinatorische* Begriff, Segregation-of-Duties, hält — aber aus einem schärferen Grund als Legal: SoD-*Prävention* ist eine Schreib-/Transaktions­kontrolle **außerhalb der Plattform-Ebene** (read-plane mirror), SoD-*Detektion* ist eine gewöhnliche berechtigungstreue Retrieval-Abfrage; SoD-Leseausschluss = bestehendes deny-wins. SOX/PCAOB von Finance geerbt. KM/SAP/SharePoint/Email bleiben fill-in-the-blank).
 
 ---
 
@@ -48,6 +48,67 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 14 (2026-07-06) — Domain Pack #4 (Audit): the first *combinatorial*-concept falsifiability test
+- Wrote **[packs/audit/00-audit-pack.md](packs/audit/00-audit-pack.md)** — the **fourth pack**,
+  chosen as the **highest-leverage / lowest-effort** slot: it inherits almost everything already
+  built (**Finance's SOX row + SAP fidelity verbatim**; **Legal's `matter:<id>` hold + append-only
+  evidence**) and introduces **exactly one concept to stress: segregation-of-duties (SoD)** — the
+  first *combinatorial* constraint any pack has raised (every prior restriction was *unary*: a
+  property of one (principal, item) pair; SoD is *relational* — "the preparer of entry E may not be
+  its approver").
+- **The headline (§0 ledger + the dedicated "Segregation-of-duties" analysis): net horizontal change
+  = none, all additive — the falsifiability rule was armed and did NOT fire, but for a *sharper*
+  reason than Legal's.** Legal's waiver held by *composing* two existing mechanisms; Audit's SoD
+  holds because of a **plane boundary**. SoD is one word for two controls in two planes:
+  - **SoD as *prevention* (write plane) — out of the platform's plane.** "Preparer may not post" is
+    a constraint on *executing a transaction*, enforced in the source system of record (SAP GRC /
+    the ERP). The platform is a **read-only, permission-faithful knowledge platform**
+    ([ADR-0001](architecture/adr/ADR-0001-platform-shape-private-rag.md)/[ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md));
+    it **never posts/approves/executes** — so **there is no SoD action for it to gate.** Not a gap;
+    out of plane.
+  - **SoD as it *projects onto read access* — a per-principal `deny`, pre-resolved by the source.**
+    An independence/SoD *read*-exclusion is structurally identical to Legal's **ethical wall**: the
+    source resolves the relation into a principal set, the connector `map_acl`s it into a `deny`
+    grant, deny-wins evaluates first. *Additive.*
+  - **SoD as *detection* (read plane) — an ordinary permission-gated retrieval.** "Which users both
+    prepared and approved?" is a **read** over the audit trail; the combinatorial join lives **in
+    the query and the source data, never in the access predicate.** The verifier grounds it in cited
+    trail rows. *Additive — exactly what a permission-faithful RAG platform is for.*
+- **The reusable articulation (stated once, in the pack):** *the platform enforces
+  **who-may-read**, never **who-may-act**. Any action-phrased control — SoD, four-eyes,
+  maker-checker, dual-authorization — is enforced in the source; the platform mirrors the **read**
+  restriction it produces (a `deny`) and **retrieves over** the **evidence** it leaves (the trail).
+  Detection in scope; prevention of an action out of plane.* This **reaffirms** ADR-0001/0004 rather
+  than extending them → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **Where it could have broken:** trying to make the *access predicate itself* compute the relation
+  live. Covered by two *existing* hatches: pre-resolved → unary `deny`; computed-and-unresolvable →
+  the *existing* `approximate → deny + quarantine` path (identical to SAP field-level auth / Legal
+  computed-privilege). No third case exists → no horizontal gap.
+- **Sources:** GRC/audit-management (AuditBoard/Workiva/SAP GRC), SAP/ERP (reuses Finance fidelity +
+  field-level-auth quarantine verbatim), DMS/SharePoint (reuses Legal/Finance), the platform's **own
+  S7 append-only trail** (the reflexive case), email. Registered **`restricted:audit_workpaper`**
+  (pre-issuance masking + egress block); reused `matter:<id>` for PCAOB AS 1215 7-yr retention holds.
+  Supplied conformance fixtures (SoD read-exclusion deny-wins, pre-issuance pos/neg, computed-SoD
+  quarantine, hold-vs-erasure, cross-tenant) and an eval set whose headline classes are
+  **pre-issuance permission negatives** and — a deliberate first — **SoD-conflict *detection*
+  recall** (missing a real conflict is an audit failure), the first sighting of the *over-refusal*
+  failure mode KM will make its headline.
+- **No new ADR this cycle** — Audit is a *worked instance* of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md);
+  the pack instead **documents the plane boundary** as the explicit reason no transaction-control ADR
+  was needed (and names the future pack that *would* need one: an action-taking pack).
+- Updated indexes: `packs/README.md` (Audit → **Seeded**, 1st combinatorial test), `platform/README.md`
+  domain map (packs → **Finance + HR + Legal + Audit seeded**).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=4** and to its **first
+  combinatorial concept**; hardens the SOX/evidence story (Finance's row, now reused + reflexive:
+  the platform's own SOC 2 evidence is the trail Audit queries); re-exercises R1 (computed-SoD
+  quarantine), R4 (cross-tenant), and the `legal_hold > erasure > retention` precedence under PCAOB
+  retention; makes the **read-plane-mirror scope boundary** an explicit, cited statement.
+- ⏳ **Handed to later cycles:** **KM** is next as the deliberate *inverse* stress (broad `internal`,
+  high recall, low restriction — does the pipeline *over*-refuse on open content?); the runtime
+  **pack-load SPI** (open Q#6-adjacent) is still the engineering track; a future **action-taking**
+  pack would be the one case forcing a horizontal transaction-control ADR (deliberately out of scope,
+  now documented).
 
 ### Cycle 13 (2026-07-06) — Domain Pack #3 (Legal): the first genuine novel-concept falsifiability test
 - Wrote **[packs/legal/00-legal-pack.md](packs/legal/00-legal-pack.md)** — the **third pack**, chosen
@@ -780,23 +841,36 @@ recipient policy. Ethical walls = the existing deny-wins clause. Registered `res
 `restricted:work_product`; reused `matter:<id>`. The platform *mirrors* privilege (computed/unresolvable
 privilege → `approximate → deny + quarantine`), never *computes* waiver.
 
-### ▶ Cycle 14 (do next): **Domain Pack #4 — Audit (mostly inherited) + segregation-of-duties**
-Write `packs/audit/00-audit-pack.md` against the [skeleton](packs/README.md). *Why next:* Audit is the
-**highest-leverage low-effort** pack — it inherits almost everything already built and adds essentially
-one new application of an existing mechanism, making it the cheapest way to push the bet to n=4 and
-harden the SOX/evidence story. It **inherits Finance's SOX compliance row + SAP connector fidelity
-verbatim**, reuses **Legal's `matter:<id>` hold + append-only evidence**, and the one concept to test is
-**segregation-of-duties (SoD)** — which should resolve to *another application of the existing deny-wins
-clause* (a principal who holds role A is **denied** artifacts requiring role B, a `deny` grant), exactly
-as Legal's ethical walls did. *Falsifiability check:* if SoD needs a *combinatorial/relational* rule
-("no single principal may hold both approve **and** post on the same document") that a per-principal
-`deny` set can't express, that is a real horizontal gap → a Permissions/Governance ADR, not a pack hack.
-Sources: Finance + Legal sources, workpapers/evidence repositories. After Audit, **KM** is the
-deliberate *inverse* stress (broad `internal`, high recall, low restriction — does the pipeline
-*over*-refuse on open content, the opposite failure mode from Legal's *who*-dominated one?).
+### ✅ Cycle 14 (DONE — see §1): **Domain Pack #4 — Audit (mostly inherited) + segregation-of-duties**
+Wrote `packs/audit/00-audit-pack.md` against the [skeleton](packs/README.md). No new ADR (Audit is a
+worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). **First
+*combinatorial*-concept falsifiability test — the rule was armed and did NOT fire, but for a sharper
+reason than Legal's:** SoD *prevention* is a write/transaction control **out of the platform's plane**
+(read-plane mirror — the platform never posts/approves/executes); SoD *read*-exclusion = the existing
+deny-wins clause (a unary `deny`, pre-resolved by the source, identical to Legal's ethical wall); SoD
+*detection* ("who both prepared and approved?") = an ordinary permission-gated retrieval whose
+combinatorial join lives in the query + source data, never in the access predicate. Registered
+`restricted:audit_workpaper`; inherited Finance's SOX row + SAP fidelity + Legal's `matter:<id>` hold +
+the S7 append-only trail verbatim. Documented the **read-plane-mirror scope boundary** as the explicit
+reason no transaction-control ADR was needed (and named the future *action-taking* pack that would).
+
+### ▶ Cycle 15 (do next): **Domain Pack #5 — Knowledge Management (the inverse stress)**
+Write `packs/km/00-km-pack.md` against the [skeleton](packs/README.md). *Why next:* every pack so far
+(Finance/HR/Legal/Audit) has stressed the *who*-restricted, fail-closed corner — "does the platform
+correctly *refuse*?" KM is the **deliberate inverse**: broad `internal` visibility, low restriction,
+**high recall** over Confluence/SharePoint/wikis. The failure mode flips from *over-share* (a safety
+bug) to ***over-refuse*** (an availability bug) — does the fail-closed pipeline, tuned on four
+restrictive packs, now leave accessible open content *unfound* or *needlessly masked*? *Falsifiability
+check:* if maximizing recall on open content *requires loosening* a floor (a widened default label, a
+relaxed verifier grounding bar, an unfiltered "list mode") that is a real horizontal gap → an ADR, not
+a pack hack. Expected resolution: KM tightens *nothing* and *loosens nothing* — it is the pack that
+proves the platform's defaults are already correctly calibrated for the low-restriction end, with the
+eval headline being **recall / refuse-only-when-truly-inaccessible**, the mode Audit's SoD-detection
+recall class first surfaced. Sources: Confluence, SharePoint wikis, internal docs/portals. After KM,
+the **source-shaped** packs (SAP / SharePoint / Email) are pure connector-fidelity reuse.
 
 ### Later (backlog)
-- Further **pack specifications** after Legal (Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
+- Further **pack specifications** after Audit (Knowledge Mgmt, then source-shaped SAP, SharePoint, Email, …)
   reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
   ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger discipline.
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering

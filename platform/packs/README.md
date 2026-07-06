@@ -60,7 +60,7 @@ not a failure of the pack — it converts an unstated assumption into a tracked 
 | [Finance](finance/00-finance-pack.md) | **Seeded (Cycle 11)** — the reference pack | SAP (FI/CO), ledgers, Excel, reporting DBs | Row/record-level SAP ACLs, `restricted:*`+`pii_class`+`legal_hold`, SOX compliance row, SAP-table parsers |
 | [HR](hr/00-hr-pack.md) | **Seeded (Cycle 12)** — the 2nd data point | Workday/SAP HCM, SharePoint, email | Employee-self-scoped ACLs, `pii_class:health` (Art. 9), GDPR-primary erasure vs. statutory retention |
 | [Legal](legal/00-legal-pack.md) | **Seeded (Cycle 13)** — 1st novel-concept test | DMS (iManage/NetDocuments), SharePoint, email, matter stores | Attorney-client **privilege + waiver** (falsifiability test — held), **ethical walls = deny-wins**, `matter:<id>` holds, clause chunking |
-| Audit | Backlog | Finance + Legal sources, workpapers | SOX + segregation-of-duties, append-only evidence |
+| [Audit](audit/00-audit-pack.md) | **Seeded (Cycle 14)** — 1st combinatorial test | GRC/audit-mgmt (AuditBoard/Workiva/SAP GRC), SAP, DMS, the platform's own S7 trail | **Segregation-of-duties** (falsifiability test — held; SoD prevention is *out of plane*, detection is a read), SOX/PCAOB inherited from Finance, `restricted:audit_workpaper`, append-only evidence |
 | Knowledge Mgmt | Backlog | Confluence, SharePoint, wikis | Broad `internal`, low restriction, high recall |
 | SAP / SharePoint / Email | Backlog | (source-shaped packs) | Reuse Finance/HR connector fidelity work |
 
