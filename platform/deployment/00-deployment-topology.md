@@ -242,6 +242,21 @@ machinery — no code change.
   the same residency class*; a tenant's content, vectors, catalog, and audit all stay in-class.
   This is what makes "in-boundary" a physical fact, not a label.
 
+### 7.3 Orchestration substrate as a reserved-capacity class (D9)
+
+The [`ExecutionBackend`](../orchestration/01-execution-backend-substrate.md) is a **third
+reserved-capacity dimension** alongside reserved-P0 (§6.2) and the
+[Track-A GPU pool](../models/00-model-hosting-and-serving.md) — sized by the **same asymmetry**:
+*reserve the capacity to start-and-finish a safety-class run promptly; autoscale bulk/batch runs on
+queue lag.* The full per-tier design (substrate shape per tier, tenant-namespace isolation, fan-out
+cap, in-boundary residency for Isolated) lives in
+[Orchestration §5](../orchestration/01-execution-backend-substrate.md#5-per-tier-substrate-sizing-the-deployment-input-d2d3d9);
+Deployment owns only the **empirical numbers** (warm-worker counts, engine instance sizing, $/run),
+seeded from the reference topology's steady-state and tuned from measured spend, promoted through the
+same **versioned pricing/envelope manifest** as every other price (§7.1). A capacity change is a
+reviewable commit, not a code change — and the safety invariant is inherited verbatim: a scale-down
+may narrow fan-out (a capability lever), but **never** relax a gate or delay a P0-class run.
+
 ---
 
 ## 8. Catalog partitioning, cold-lineage archival & integrity checks (D5)

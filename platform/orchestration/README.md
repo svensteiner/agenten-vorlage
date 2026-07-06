@@ -23,6 +23,14 @@ sequences** them when a request spans many agents.
   or tool-calling. Bounded, pack-declared multi-agent graphs; the same five gates re-hosted onto the
   queue-backed topology. **Resolves open Q#6.** Implements
   [ADR-0019](../architecture/adr/ADR-0019-agent-orchestration-posture.md).
+- **[01-execution-backend-substrate.md](01-execution-backend-substrate.md)** — the **distributed
+  `ExecutionBackend` adapter design + per-tier substrate sizing** (Cycle 27). Fills the substrate half of
+  [ADR-0019 §4.4](../architecture/adr/ADR-0019-agent-orchestration-posture.md): the two candidate substrate
+  shapes (Temporal-class engine vs. queue+state composition) behind the one built
+  [port](../../core/execution.py), the exactly-once *observable* execution discipline (at-least-once delivery +
+  idempotent key-addressed effects), the reserved-capacity sizing class (reserve safety-class runs, autoscale
+  bulk), and the adapter-swap contract. **No new ADR** — an engineering/deployment projection of ADR-0019, not
+  a new decision. Hands empirical numbers to [Deployment §6–§7](../deployment/00-deployment-topology.md).
 
 Reuses the "commodity behind a port" pattern from
 [ADR-0003](../architecture/adr/ADR-0003-model-gateway-indirection.md) (Model Gateway) and
