@@ -3,10 +3,11 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 20 (Domain Pack #10 — Reporting: the first *aggregation* falsifiability test and **the pack that completes the domain-pack surface** — a report is a *derived artifact* reusing DocIntel's inherit-source-ACL rule + SAP BW/Finance fidelity; the sharp new corner is *arithmetic inference* (a total reconstructing a masked row via small-cell/differencing), disarmed **by construction** via the existing **filter-then-aggregate** order, not a disclosure-control engine; cross-source rollup = **intersection, never union**; unresolvable-contributor aggregate = quarantine; 5th pack with empty §2 + §3; held with net zero horizontal change — the 10th consecutive all-additive ledger)
+- **Current cycle:** 21 (**Runtime pack-load SPI** — the *engineering form* of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md), which named this ADR in its own "Revisit when". The doc contract was fixed (a pack = six additive sections, tighten-only, §0 ledger); this cycle designs *how a pack is loaded at runtime* — a **validating, transactional, fail-closed loader** (RESOLVE → VALIDATE → DRY-RUN → COMMIT-atomic → ACTIVATE-scoped) whose defining property is that a **floor-loosening pack is structurally rejected by the loader, not merely by review**. The safety gate is six validators, each checking a section `⊆` its horizontal extension point; the loader is **safe by construction** because its only verbs are subset-installs into fail-closed extension points (the `VectorIndex` port has no unfiltered method to bind; the label schema is a closed grammar; the matrix composes most-restrictive-wins). A pack loads with **no code deploy** (validated data + a route flip); a pack claiming any horizontal change fails the machine-checked §0 ledger and routes to a human ADR gate. Wrote [packs/01-pack-load-spi.md](packs/01-pack-load-spi.md) + [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md); the SPI's own §0-equivalent ledger is *"none, all additive"* — it writes only into stores that already exist. This is the prerequisite for the `core/` code-reconciliation and the first `platform/`→`core/` mechanism to implement.)
+- **Superseded current-cycle note (Cycle 20):** (Domain Pack #10 — Reporting: the first *aggregation* falsifiability test and **the pack that completes the domain-pack surface** — a report is a *derived artifact* reusing DocIntel's inherit-source-ACL rule + SAP BW/Finance fidelity; the sharp new corner is *arithmetic inference* (a total reconstructing a masked row via small-cell/differencing), disarmed **by construction** via the existing **filter-then-aggregate** order, not a disclosure-control engine; cross-source rollup = **intersection, never union**; unresolvable-contributor aggregate = quarantine; 5th pack with empty §2 + §3; held with net zero horizontal change — the 10th consecutive all-additive ledger)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 93 %** (Ende Zyklus 20) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 94 %** (Ende Zyklus 21) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +28,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel/Reporting) — **alle 10 seeded, Fläche vollständig** | 6 % | 100 % | 6.0 |
-| Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 93 %** |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel/Reporting) — **alle 10 seeded, Fläche vollständig** + **Pack-Load-SPI designed (Z21)** | 6 % | 100 % | 6.0 |
+| Code-Reconciliation (`core/`-Umsetzung) — **SPI-Design (Z21) liefert das erste konkrete `platform/`→`core/`-Ziel** | 4 % | 45 % | 1.8 |
+| **Summe** | **100 %** | — | **≈ 94 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · Z19 ≈ 92 % · **Z20 ≈ 93 %** (Reporting-Pack — n=10, der **letzte** Pack; die **Domänen-Pack-Fläche ist damit vollständig**. Der **erste *Aggregat*-Test**: ein Report-Wert ist selten eine Quellzeile, sondern ein **Rollup** über viele Zeilen mit *heterogenen* ACLs. Der scharfe neue Fehlermodus, den kein früherer Pack hatte, ist **arithmetische Inferenz** — eine Summe kann eine maskierte Zeile *rekonstruieren* (Small-Cell/Differencing: eine Gehaltssumme über *eine* Person **ist** deren Gehalt). Kernbefund: entschärft **durch Konstruktion, nicht durch eine Disclosure-Control-Engine** — die Plattform **filtert Zeilen *vor* dem Aggregieren** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)), also ist jedes ausgelieferte Total eine Funktion von Zeilen, die der Aufrufer ohnehin einzeln lesen dürfte → ein Total verrät nie etwas Neues. *filter-then-aggregate*, nie *aggregate-then-filter* — Letzteres ist die Naht, durch die Aggregation leckt, und dieser Codepfad **existiert nicht**. Ein **vor-materialisierter** Report trägt die **eigene Quell-ACL** ([SAP Band-A](packs/sap/00-sap-pack.md)); ein **quellen-übergreifender** Rollup trägt die **Schnittmenge** (most-restrictive, DocIntel-Merge — nie die Vereinigung); ein Aggregat über einen *nicht auflösbaren* Beitragssatz wird **quarantänisiert**. **5. Pack mit leerem §2 + §3** (ein Report *präsentiert* die Policy der reitenden Domäne, besitzt keine eigene). §2/§3 leer, §4 vollständig geerbt (jede beitragende Domäne — eine Kachel aus Finance-Ledger + HR-Headcount ist SOX *und* Art. 9). Kein neues ADR (Worked Instance von [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). Der **eine benannte zukünftige ADR**: ein Total über Zeilen *ausliefern*, die der Aufrufer nicht einzeln lesen darf (statistische Disclosure Control / Differential Privacy) — heute bewusst außerhalb des Scopes, quarantänisiert. **Verbleibend: keine Packs mehr** — der Engineering-Track (runtime pack-load SPI, Code-Reconciliation) und die offenen Q#3/Q#6 sind der einzige verbleibende Weg)) (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · Z19 ≈ 92 % · Z20 ≈ 93 % · **Z21 ≈ 94 %** (Pack-Load-SPI — der **Übergang von der Papier- zur Laufzeit-Fähigkeit**: der *validierende, transaktionale, fail-closed* Loader, der die sechs Pack-Sektionen in ihre horizontalen Erweiterungspunkte installiert und **jeden bodenlockernden Pack strukturell ablehnt** — nicht per Review, sondern per Konstruktion, weil die einzigen Verben des Loaders Subset-Installationen in fail-closed-Erweiterungspunkte sind. Kein neuer Hot-Path; das §0-Äquivalent-Ledger des SPI selbst ist *"none, all additive"*. Erstes konkretes `platform/`→`core/`-Umsetzungsziel; [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)) · Verlauf-Fortsetzung: **Z20 ≈ 93 %** (Reporting-Pack — n=10, der **letzte** Pack; die **Domänen-Pack-Fläche ist damit vollständig**. Der **erste *Aggregat*-Test**: ein Report-Wert ist selten eine Quellzeile, sondern ein **Rollup** über viele Zeilen mit *heterogenen* ACLs. Der scharfe neue Fehlermodus, den kein früherer Pack hatte, ist **arithmetische Inferenz** — eine Summe kann eine maskierte Zeile *rekonstruieren* (Small-Cell/Differencing: eine Gehaltssumme über *eine* Person **ist** deren Gehalt). Kernbefund: entschärft **durch Konstruktion, nicht durch eine Disclosure-Control-Engine** — die Plattform **filtert Zeilen *vor* dem Aggregieren** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)), also ist jedes ausgelieferte Total eine Funktion von Zeilen, die der Aufrufer ohnehin einzeln lesen dürfte → ein Total verrät nie etwas Neues. *filter-then-aggregate*, nie *aggregate-then-filter* — Letzteres ist die Naht, durch die Aggregation leckt, und dieser Codepfad **existiert nicht**. Ein **vor-materialisierter** Report trägt die **eigene Quell-ACL** ([SAP Band-A](packs/sap/00-sap-pack.md)); ein **quellen-übergreifender** Rollup trägt die **Schnittmenge** (most-restrictive, DocIntel-Merge — nie die Vereinigung); ein Aggregat über einen *nicht auflösbaren* Beitragssatz wird **quarantänisiert**. **5. Pack mit leerem §2 + §3** (ein Report *präsentiert* die Policy der reitenden Domäne, besitzt keine eigene). §2/§3 leer, §4 vollständig geerbt (jede beitragende Domäne — eine Kachel aus Finance-Ledger + HR-Headcount ist SOX *und* Art. 9). Kein neues ADR (Worked Instance von [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). Der **eine benannte zukünftige ADR**: ein Total über Zeilen *ausliefern*, die der Aufrufer nicht einzeln lesen darf (statistische Disclosure Control / Differential Privacy) — heute bewusst außerhalb des Scopes, quarantänisiert. **Verbleibend: keine Packs mehr** — der Engineering-Track (runtime pack-load SPI, Code-Reconciliation) und die offenen Q#3/Q#6 sind der einzige verbleibende Weg)) (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -48,6 +49,68 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 21 (2026-07-06) — Runtime pack-load SPI: the engineering form of ADR-0016
+- Wrote **[packs/01-pack-load-spi.md](packs/01-pack-load-spi.md)** + **[ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)** —
+  the **first cycle off the domain-pack track and onto the engineering track.** With the
+  [domain-pack surface complete](packs/README.md) (Cycle 20), the highest-leverage move is the piece that
+  turns ten *proven paper packs* into a *runtime capability*: the **code mechanism that loads a pack**.
+  [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md) fixed *what a pack is allowed to be* and
+  **named this ADR in its own "Revisit when"**; this cycle discharges it.
+- **The headline: the loader is a safety gate, and its defining property is that a floor-loosening pack is
+  *structurally rejected by the loader*, not merely by review.** The SPI's own falsifiability check (mirroring
+  the pack falsifiability rule) — *can a pack load with no code deploy, and is a floor-loosening pack rejected
+  structurally?* — resolves **yes to both**:
+  - **The pack artifact is a signed, versioned, content-addressed bundle** (not the Markdown spec) carrying the
+    machine-readable projection of the six sections — **data + declarative config only, no read-path code.** A
+    pack *references* an already-built, independently conformance-gated Connector; it never ships one (new
+    connector code is a platform PR through the connector gate, keeping "load a pack" down to "install validated
+    config," never "run untrusted code on the retrieval path").
+  - **The load lifecycle is a staged, transactional pipeline** — RESOLVE → VALIDATE → DRY-RUN → COMMIT(atomic)
+    → ACTIVATE(tenant-scoped) — mirroring the [ingestion DAG](workers/00-ingestion-architecture.md). **All six
+    sections commit in one transaction or none do:** partial installation is the one state that could
+    transiently loosen a floor, so it is made unrepresentable.
+  - **VALIDATE is six validators, one invariant.** Each section is checked `⊆` its extension point (§1 fixtures
+    against the [conformance suite](permissions/00-authorization-model.md#11-the-permission-conformance-test-the-production-gate);
+    §2 values against the [closed label grammar](metadata/00-catalog-and-lineage.md#4-the-classification--label-schema-m3);
+    §3 deltas against the [label→action matrix](governance/00-governance-and-audit.md#41-the-labelaction-matrix-the-ratified-default-tenants-may-tighten-never-loosen),
+    tighten-only; §4/§5/§6 similarly). The composite invariant is [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)
+    §2 made executable: **an accepted pack can only subtract capability.**
+  - **Safe by construction, not by decision:** the loader's only verbs are subset-installs into fail-closed
+    extension points — the [`VectorIndex` port has no unfiltered method](storage/00-storage-architecture.md#34-the-abstraction-that-prevents-lock-in-r7)
+    to bind, the label schema is a closed grammar (unregistered value → DLQ), the matrix composes
+    most-restrictive-wins (a widening delta is a no-op or a rejected write). The gate is the belt; the closed
+    extension points are the suspenders.
+- **The §0 ledger is machine-checked.** A pack loads on the standard path only if its manifest ledger equals
+  `"none, all additive."` A pack claiming a horizontal change (the falsifiability rule firing) is routed to a
+  **human ADR gate** — refused until a horizontal ADR raises the floor it needs. This turns ADR-0016's
+  falsifiability rule from a review convention into an **enforced control-flow branch**.
+- **Versioning/hot-load/rollback:** per-tenant-pinnable `pack_version` (reusing the
+  [model-version pinning pattern](governance/00-governance-and-audit.md#8-g6--model-governance)) + an SPI
+  `schema_version` gated by `min_platform_schema`; a pack loads with **no code deploy** (validated data + a
+  route flip); rollback = a route-flip to the additive prior version; **fail-closed unload** (a live label
+  blocks its own removal). Every load is a signed, **audited governance event**.
+- **No new hot-path component** — the SPI is a control-plane loader writing only into stores that already
+  exist (label schema, policy store, conformance corpus, catalog); the DRY-RUN plan runs in **CI as a release
+  veto**, reusing the [deployment safety-gate pattern](deployment/00-deployment-topology.md). **Runtime
+  consumers are unchanged** — retrieval/verifier/canary see only a larger closed vocabulary + a stricter
+  matrix, both already handled totally. That invisibility is the proof the SPI is additive. The SPI's own
+  §0-equivalent ledger is therefore *"none, all additive."*
+- **This is a cross-component decision → [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)** (it
+  constrains permissions/metadata/governance/api/workers/storage at once, exactly as ADR-0016 did): the loader
+  is the *specification* ADR-0016 §"Revisit when" anticipated. Updated indexes: ADR index (0017 added),
+  `packs/README.md` (new "From paper contract to running capability" section), `platform/README.md` domain map
+  (packs → **load SPI designed (Cycle 21)**).
+- **Directly strengthens (no new risk owned):** hardens R1 (the §1 fixture validator makes an over-permissive
+  `map_acl` a *load-time* CI failure, not just a canary catch), R4 (activation is tenant-scoped; a pack cannot
+  cross tenants), and turns the [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md) tighten-only rule
+  from a reviewable claim into an executable, fail-closed gate.
+- ⏳ **Handed to later cycles:** the **`core/` implementation** of the loader (this doc is its specification —
+  the first concrete `platform/`→`core/` reconciliation target, [NEXT_STEPS §6 Cycle 2c](NEXT_STEPS.md)); open
+  **Q#3** (model hosting — the SPI's §5 eval gate consumes whatever the approved-model registry holds,
+  orthogonal) and **Q#6** (agent framework — the SPI fixes how domain content plugs in independent of the
+  orchestrator choice) remain the only open engineering decisions. A **pack marketplace / external publishers**
+  is the named future extension (the signed content-addressed bundle already is the distributable shape).
 
 ### Cycle 20 (2026-07-06) — Domain Pack #10 (Reporting): the first *aggregation* test — **the pack that completes the domain-pack surface**
 - Wrote **[packs/reporting/00-reporting-pack.md](packs/reporting/00-reporting-pack.md)** — the **tenth
@@ -1014,6 +1077,7 @@
 | ADR-0014 | API contract: token-bound identity (tenancy never in URL) + OBO via token exchange; dual sync/streaming answer under one verifier gate; "no access" is a 200; one typed-error envelope; heavy work = jobs; admin-can-only-tighten; filter-parity reads; URL-major additive versioning | Permission-faithful retrieval enforced once at audited choke points not re-argued per endpoint; impersonation/cross-tenant unrepresentable on the wire; budgets throttle cost not safety; new pack = additive, not a version event |
 | ADR-0015 | Deployment DR: active-passive per residency region (no active-active writes); ACL-first fail-closed recovery (SoT→object→vector-rebuild→cache); vectors rebuilt not backed up; tiered RPO/RTO; reserved (not autoscaled) P0 capacity | No cross-region window disagrees on a revocation; the platform recovers fail-closed (permissions before content); a restore can't resurrect a vector snapshot that disagrees with recovered ACLs; the revocation SLA is provisioned in advance |
 | ADR-0016 | Domain pack contract: a pack is additive data + policy, **tighten-only**, exactly six sections, with a mandatory §0 horizontal-change ledger + a falsifiability rule (can't-fit → horizontal ADR, never a pack-local hack) | Makes "new domain = pack, not redesign" a reviewable/blockable contract not a slogan; a misconfigured pack can only over-restrict (availability), never over-expose (safety); Finance (reference pack) proved zero horizontal changes against the hardest domain |
+| ADR-0017 | Runtime pack-load SPI: a validating, transactional, fail-closed loader (RESOLVE→VALIDATE→DRY-RUN→COMMIT-atomic→ACTIVATE-scoped) installing the six sections into their horizontal extension points; signed data-only bundle (connector referenced, never shipped); machine-checked §0 ledger; per-tenant `pack_version` pinning; no code deploy | Makes ADR-0016's tighten-only rule **executable** — a floor-loosening pack is *structurally* rejected by the loader, not by review; the worst a bad/malicious pack does is fail to load (availability), never loosen a floor (safety); the first `platform/`→`core/` reconciliation target |
 
 ---
 
@@ -1058,6 +1122,11 @@
    [Storage §5](storage/00-storage-architecture.md).
 6. **Agent framework** — extend the existing `core/` planner/verifier into the
    distributed orchestrator, or adopt a framework? (Relates to ADR-0002.)
+   **Cycle 21 note:** the [pack-load SPI](packs/01-pack-load-spi.md) / [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)
+   fixes *how domain content plugs into the runtime* **independent of** the orchestrator
+   choice (a pack is validated declarative config + a route flip, not orchestrator-coupled),
+   so this decision now blocks nothing on the pack side. The still-open call is purely the
+   `core/` orchestrator engineering posture — extend vs. adopt.
 7. ✅ **DECIDED (Cycle 7, [ADR-0012](architecture/adr/ADR-0012-governance-audit-and-cost.md)).**
    ~~Freshness SLA~~ — **ratified as contractual per-tier numbers**
    ([Governance §3](governance/00-governance-and-audit.md)): principal change ≤5 min
@@ -1308,30 +1377,43 @@ quarantined (4th sighting of the hatch). **5th pack with empty §2 + §3** (a re
 policy, owns none); §4 inherited from *every* contributing domain. **The domain-pack surface is now complete —
 all 10 planned packs Seeded, every one with an all-additive §0 ledger.**
 
-### ▶ Cycle 21 (do next): **Runtime pack-load SPI** *(the engineering track — the pack backlog is now empty)*
-With the domain-pack surface complete, the primary remaining track is the **engineering form of
-[ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)**: the *code mechanism that loads a pack at
-runtime*. The doc contract is fixed (a pack = six additive sections, tighten-only, §0 ledger); what is **not**
-yet built is the SPI/loader that (a) reads a pack's registered classification values into the closed
-[label schema](metadata/00-catalog-and-lineage.md#4-the-classification--label-schema-m3), (b) installs its
-`map_acl` fidelity fixtures into the [conformance suite](permissions/00-authorization-model.md#11-the-permission-conformance-test-the-production-gate)
-as a gate, (c) registers its tighten-only label→action deltas, and (d) wires the optional `pack` API hint —
-all **validated at the write boundary** so a pack that tries to *loosen* a floor is rejected in CI, never
-loaded. *Why next:* it is the one piece that turns the ten proven paper packs into a runtime capability, and it
-is a prerequisite for the `core/` code-reconciliation. *Falsifiability check for the SPI:* can a pack be loaded
-**without any code deploy** (pure data/config), and is a floor-loosening pack **structurally rejected** by the
-loader (not merely by review)? Expected: yes to both — the loader validates each section `⊆` its horizontal
-extension point and fails closed. **Alternative for this slot:** resolve open **Q#3** (model hosting) or
-**Q#6** (agent framework), both of which now block no pack and are pure engineering decisions.
+### ✅ Cycle 21 (DONE — see §1): **Runtime pack-load SPI (design)**
+Wrote `packs/01-pack-load-spi.md` + [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md).
+The **engineering form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)** (named in its own
+"Revisit when"): a **validating, transactional, fail-closed loader** (RESOLVE→VALIDATE→DRY-RUN→COMMIT-atomic→
+ACTIVATE-scoped) that installs the six pack sections into their horizontal extension points from a **signed
+data-only bundle** (connector *referenced*, never shipped). VALIDATE = six validators, each checking a section
+`⊆` its extension point → the tighten-only rule becomes **executable**; the loader is **safe by construction**
+(its only verbs are subset-installs into fail-closed extension points). Machine-checked §0 ledger routes a
+horizontal-change pack to a human ADR gate. **No code deploy** to load a pack; per-tenant `pack_version`
+pinning; fail-closed unload. The SPI's own §0-equivalent ledger is *"none, all additive"* — no new hot-path
+component. The SPI's falsifiability check (*no-code-deploy load? floor-loosening pack structurally rejected?*)
+resolves **yes to both**. Cross-component → ADR-0017; first concrete `platform/`→`core/` reconciliation target.
+
+### ▶ Cycle 22 (do next): **Implement the pack-load SPI in `core/` — OR resolve open Q#3 / Q#6**
+The doc/architecture of the loader is now fixed ([ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md));
+the highest-leverage next move is the **first `platform/`→`core/` reconciliation**: implement the loader
+(RESOLVE/VALIDATE/DRY-RUN/COMMIT/ACTIVATE) against the existing `core/` template + `tools/check.py` gate, with
+the [Finance pack](packs/finance/00-finance-pack.md) as the reference bundle and the
+[conformance suite](permissions/00-authorization-model.md#11-the-permission-conformance-test-the-production-gate)
+as the CI veto. This is a **coding cycle** (TDD, `--cov=core --cov-fail-under=80`), and it dovetails with the
+still-open [Cycle 2c engineering track](#-cycle-2c-open--parallel-engineering-track-not-the-architecture-doc-path)
+(wire `WorkerRegistry`/`HandoffRouter` into the runtime). *Falsifiability check for the implementation:* does a
+hand-crafted floor-loosening bundle fail VALIDATE in a unit test (not review)? Expected: yes.
+**Alternative for this slot (pure architecture-doc path):** resolve open **Q#3** (model hosting — in-boundary
+OSS vs. contractually-private managed, per tier; feed the approved-model registry + Deployment manifest; may
+warrant its own ADR) or **Q#6** (agent-framework orchestrator posture — extend `core/` vs. adopt). Neither now
+blocks any pack; the SPI decoupled domain content from the orchestrator choice.
 
 ### Later (backlog)
 - **The pack backlog is empty** — all ten planned packs (Finance/HR/Legal/Audit/KM/DocIntel concept-shaped +
   SAP/SharePoint/Email source-shaped + Reporting aggregation) are Seeded. A **new** domain (Procurement,
   Manufacturing, CRM) is now a fill-in-the-blank pack against the [skeleton](packs/README.md), inheriting the
   Finance §0-ledger discipline — not a redesign. No further pack is *required* to prove the bet.
-- **Runtime pack-load SPI** (open Q#6-adjacent, **now the primary track — Cycle 21**): how a pack is *loaded* at runtime (the engineering
-  form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
-  the code mechanism is not yet built.
+- ✅ **Runtime pack-load SPI — *designed* (Cycle 21, [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md)):**
+  the engineering form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md) — a validating,
+  fail-closed loader ([packs/01-pack-load-spi.md](packs/01-pack-load-spi.md)). **Remaining: the `core/`
+  *implementation* of it** (Cycle 22 candidate; the doc is its specification).
 - **Cycle 2c engineering track** (still open) — wire `WorkerRegistry`/`HandoffRouter` into the
   runtime, finish the test port + coverage gate, deeper governance hardening (see §6 Cycle 2c).
 - Reconcile `platform/` architecture with the existing `core/` code (ADR-0002 implementation path).

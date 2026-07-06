@@ -75,3 +75,18 @@ additive` ledger. The founding bet is now proven across policy concepts, source 
 fidelity, platform-derived content, and arithmetic aggregation. A **new** domain
 (Procurement, Manufacturing, CRM, …) is a fill-in-the-blank pack against this skeleton,
 inheriting the Finance pack's structure verbatim — not a redesign.
+
+---
+
+## From paper contract to running capability — the pack-load SPI
+
+The ten packs above prove the contract *on paper*. **[01-pack-load-spi.md](01-pack-load-spi.md)**
+(Cycle 21, [ADR-0017](../architecture/adr/ADR-0017-runtime-pack-load-spi.md)) is the
+**engineering form of [ADR-0016](../architecture/adr/ADR-0016-domain-pack-contract.md)**: the
+validating, transactional, fail-closed loader that installs each of the six sections into its
+horizontal extension point and **structurally rejects any pack that would loosen a floor**
+(the safety gate, not review, is the last line of defence). Its own falsifiability check —
+*can a pack load with no code deploy, and is a floor-loosening pack rejected by the loader?* —
+resolves **yes to both**: the loader's only verbs are subset-installs into fail-closed
+extension points, so a loosening operation is unrepresentable or rejected at validation. The
+SPI is the prerequisite for the `core/` code-reconciliation.
