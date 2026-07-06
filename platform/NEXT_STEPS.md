@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 16 (Domain Pack #6 — SAP: the first *source-shaped* pack — the canonical `map_acl` reference + three-band fidelity model; resolves open Q#2's per-module sub-question)
+- **Current cycle:** 17 (Domain Pack #7 — SharePoint: the second *source-shaped* pack and SAP's *mirror* — the canonical `map_acl` reference; the *inverse* falsifiability test: silent *over*-grant, held via flag-and-fail-closed)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 89 %** (Ende Zyklus 16) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 90 %** (Ende Zyklus 17) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP …) | 6 % | 90 % | 5.4 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint …) | 6 % | 92 % | 5.5 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 89 %** |
+| **Summe** | **100 %** | — | **≈ 90 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · **Z16 ≈ 89 %** (SAP-Pack — n=6; der erste *source-shaped* Pack: nicht "passt ein neues *Policy*-Konzept?" sondern "passt das *gesamte Autorisierungsmodell der härtesten Quelle* — jedes Modul — in den `map_acl`-Fidelity-Vertrag, ohne Fall der weder `exact` noch quarantänefähig ist?". Das **Drei-Band-Fidelity-Modell** (A `exact` org-/rollen-basiert / B strukturell-dynamisch: auflösen-oder-quarantäne / C feld-/zeilen-/zell-basiert: quarantäne) beweist FI-CO, MM, SD, HCM, BW, GRC jointly-exhaustive — kein vierter Fall. **Zweiter Pack mit leerem §2 + §3** (nach KM), aber aus strukturell anderem Grund: eine *Quelle* trägt keine eigene Policy — Klassifikation/Tighten gehören der aufsitzenden Domäne. Konsolidiert die bisher 3× ad-hoc (Finance/HR/Audit) behauptete SAP-Fidelity in **eine kanonische §1** (DRY-Gewinn) und löst die aufgeschobene Teilfrage von offener Q#2. SharePoint/Email bleiben reine, kürzere Fidelity-Reuse (beide *haben* Dokument-ACLs)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · **Z17 ≈ 90 %** (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -48,6 +48,64 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 17 (2026-07-06) — Domain Pack #7 (SharePoint): the second *source-shaped* pack — SAP's mirror, the *inverse* (over-grant) test
+- Wrote **[packs/sharepoint/00-sharepoint-pack.md](packs/sharepoint/00-sharepoint-pack.md)** — the
+  **seventh pack** and the **second source-shaped** one, deliberately chosen as SAP's *mirror image*.
+  [SAP](packs/sap/00-sap-pack.md) was the **hardest** source (no document ACL → whole story was
+  *quarantine*); SharePoint is the **easiest** (rich item-level ACL → almost everything `exact`). That
+  flips the falsifiability question and the feared failure: SAP's risk was **quarantining too much** (an
+  availability cost); SharePoint's is the **opposite and more dangerous** — a **silent *over*-grant** (a
+  safety leak, R4/R1).
+- **The headline (§0 ledger + the dedicated "over-grant" analysis): net horizontal change = none, all
+  additive — the falsifiability rule was armed against a *widening* and did NOT fire.** Every SharePoint
+  sharing construct maps to one of four outcomes — `allow` / `deny` / **flagged-grant** / quarantine —
+  none of which silently widens access, and none of which needs a new principal category or a new
+  predicate:
+  - **Broken inheritance → the *effective* item ACL, not the library's** (a removal = a `deny`,
+    deny-wins). SharePoint's ACL lives *at* the Item, so **there is no Band-C (sub-Item) case at all** —
+    the structural reason this pack is shorter than SAP.
+  - **Sharing links:** specific-people → explicit `allow`s; org-wide → a real all-org grant; **"anyone"
+    / anonymous links → a *flagged* grant (`sharing:anonymous`) that fail-closes by default — never a
+    silent public grant** (the [§5.1 rule](permissions/00-authorization-model.md#51-sharepoint--onedrive-m365)
+    enforced verbatim). The one construct that *looks* like it needs a "public" predicate is handled by
+    **flag-and-fail-closed** → no anonymous/public predicate, no new principal category.
+  - **External/guest (`#EXT#`) principals → ordinary tenant-namespaced CPIs** (a guest of tenant A is a
+    principal *of tenant A* — R4 unaffected).
+  - **Azure AD dynamic groups → resolve-or-quarantine**, the **same Band-B mechanism SAP defined**,
+    reused verbatim (pre-resolve + `list_principal_changes`, else quarantine).
+  - **Permissions not fully readable → quarantine** (`acl_confidence = exact` only when item perms were
+    fully read — the one hard floor).
+- **The reusable articulation (stated once, in the pack):** *a fidelity-friendly source's risk is the
+  inverse of a fidelity-poor one's — not under-serving via quarantine but over-serving via a silent
+  widening; the defense is to map every sharing construct to an explicit grant, a deny, a **flagged**
+  grant, or a quarantine — the four outcomes are exhaustive, so no construct escapes into a silent
+  public grant.* Reaffirms [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)/[ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)
+  → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **Third pack with empty §2 + §3** (after KM and SAP) — for SAP's reason: **a source-shaped pack
+  carries no policy of its own.** Nuance vs. SAP: SharePoint *carries* MIP sensitivity labels into
+  `labels.sensitivity`, but the label **values** are owned by the riding domain — SharePoint is a label
+  **carrier/mapper**, not a label **owner** (SAP carries no native label at all). §4 fully inherited
+  (SOX/GDPR/privilege/ISO) + one source-specific evidence binding (site/library + item objectId +
+  Graph version + the `sharing:anonymous` flag).
+- **Consolidation / DRY win:** SharePoint fidelity was asserted **5× ad hoc** (Finance/HR/Legal/Audit/KM);
+  this pack makes it **one canonical §1** they all cite. Conformance fixtures weighted toward the
+  over-grant failure mode (broken-inheritance negative, "anyone"-link non-widening, guest isolation,
+  dynamic-group freshness, not-fully-read quarantine, open-mode positive, revocation). Eval headline is
+  the source-shaped analogue: **over-grant negatives (0 silent over-grants)** + the [KM](packs/km/00-km-pack.md)
+  over-refusal/recall lens retained.
+- Updated indexes: `packs/README.md` (SharePoint → **Seeded**, 2nd source-shaped / SAP's mirror; Email →
+  last source pack), `platform/README.md` domain map (packs → **… + SharePoint seeded**).
+- **Also committed the Cycle-16 SAP pack** (it was authored but left untracked by the prior auto-save).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=7** and to its **first over-grant
+  corner**; hardens R4 (guest isolation + no-silent-widening are now checked-and-empty), R1 (not-fully-read
+  quarantine), and re-exercises the Band-B (dynamic-group) freshness path from the document side.
+- ⏳ **Handed to later cycles:** **Email** (Cycle 18) is the **last source pack** — per-message ACL +
+  delegates + shared mailboxes (already exercised via HR/Legal/Audit), shorter still (no sharing-link
+  surface); after that the domain-pack surface is essentially complete and the **runtime pack-load SPI**
+  (open Q#6-adjacent) becomes the primary remaining track. The one future case that would force a
+  horizontal Permissions ADR is named explicitly: a SharePoint sharing construct mappable to none of the
+  four outcomes without silently widening access (none found).
 
 ### Cycle 16 (2026-07-06) — Domain Pack #6 (SAP): the first *source-shaped* pack + the canonical `map_acl` reference
 - Wrote **[packs/sap/00-sap-pack.md](packs/sap/00-sap-pack.md)** — the **sixth pack** and the
@@ -1006,28 +1064,39 @@ quarantinable → no new confidence level/predicate. **2nd pack with empty §2 +
 policy of its own; §4 fully inherited). Resolved open Q#2's deferred per-module sub-question; consolidated
 the 3× ad-hoc SAP fidelity into one canonical §1.
 
-### ▶ Cycle 17 (do next): **Domain Pack #7 — SharePoint (source-shaped, near-pure fidelity reuse)** *(or the runtime pack-load SPI — engineering track)*
-Write `packs/sharepoint/00-sharepoint-pack.md` against the [skeleton](packs/README.md). *Why next:* with
-SAP consolidated, SharePoint is the second source-shaped pack and the **easiest remaining** — it *has* a
-rich item-level document ACL (Entra objectId principals, broken inheritance, sharing links, MIP labels),
-so **no Band-C quarantine story dominates** and it should be materially *shorter* than SAP. Its whole
-content is the canonical [SharePoint `map_acl`](permissions/00-authorization-model.md#51-sharepoint--onedrive-m365)
-reference that Finance/HR/Legal/Audit/KM cite (all five already exercised SharePoint — in restricted
-*and* open mode). *Falsifiability check:* the interesting cases are **sharing links** ("anyone" links on a
-restricted item — a policy flag, not a silent public grant) and **broken inheritance**; expected to ride
-the existing §5.1 rules + conformance suite with zero horizontal change. Then **Email** (Cycle 18) is the
-last source pack (per-message ACL, delegates, shared mailboxes — already exercised via HR/Legal/Audit).
+### ✅ Cycle 17 (DONE — see §1): **Domain Pack #7 — SharePoint (source-shaped, SAP's mirror)**
+Wrote `packs/sharepoint/00-sharepoint-pack.md` against the [skeleton](packs/README.md). No new ADR
+(SharePoint is a worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+**Second source-shaped pack and SAP's mirror — the *inverse* (over-grant) falsifiability test, held.**
+Every sharing construct maps to `allow` / `deny` / **flagged-grant** (`sharing:anonymous` → fail-closed,
+never silent public) / quarantine — no new principal category, no new predicate. **No Band-C** (ACL is
+item-level). 3rd pack with empty §2 + §3 (source carries no policy; MIP labels *carried* not *owned*).
+Consolidated the 5× ad-hoc SharePoint fidelity into one canonical §1; committed the untracked Cycle-16
+SAP pack alongside.
+
+### ▶ Cycle 18 (do next): **Domain Pack #8 — Email / Exchange (the last source pack)** *(or the runtime pack-load SPI — engineering track)*
+Write `packs/email/00-email-pack.md` against the [skeleton](packs/README.md). *Why next:* Email is the
+**last source-shaped pack** and the **simplest** — a message's ACL is its **mailbox owner + explicit
+delegates**, shared mailboxes grant their delegate set, and (per [§5.3](permissions/00-authorization-model.md#53-email--exchange))
+distribution-list membership does **not** grant read to the archived copy, and a forwarded/quoted thread
+does **not** retroactively grant earlier recipients. There is **no sharing-link surface**, so it should be
+*shorter than SharePoint*. Its whole content is the canonical Email `map_acl` reference that HR/Legal/Audit
+cite (all three already exercised email). *Falsifiability check:* the interesting cases are **per-message
+(not per-thread) ACLs** (the mixed-ACL invariant already guards this) and **shared-mailbox delegate
+resolution** (an ordinary principal-set expansion, Band-A `exact`); expected zero horizontal change. After
+Email, the source-pack surface is complete — remaining packs (Document Intelligence, Reporting) are
+concept-shaped reuse, and the **runtime pack-load SPI** becomes the primary remaining track.
 **Alternative for this slot:** if the engineering track is preferred over more doc packs, pick up the
 **runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads*
 a pack at runtime is not yet built.
 
 ### Later (backlog)
-- Further **pack specifications** after SAP — the remaining **source-shaped** SharePoint (Cycle 17,
-  next) and Email (both near-pure connector-fidelity reuse; both *have* document ACLs, both modes
-  already exercised), then Document Intelligence / Reporting — reusing the Cycle-11 skeleton and the
-  Cycle-16 source-pack shape (canonical `map_acl` §1, empty §2/§3, inherited §4); each **inherits** a
-  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the Finance
-  §0-ledger discipline.
+- Further **pack specifications** after SharePoint — the last **source-shaped** pack Email (Cycle 18,
+  next; near-pure connector-fidelity reuse; *has* per-message document ACLs, already exercised via
+  HR/Legal/Audit), then the concept-shaped Document Intelligence / Reporting — reusing the Cycle-11
+  skeleton and the Cycle-16/17 source-pack shape (canonical `map_acl` §1, empty §2/§3, inherited §4);
+  each **inherits** a compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and
+  the Finance §0-ledger discipline.
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
   the code mechanism is not yet built.
