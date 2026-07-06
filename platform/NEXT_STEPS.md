@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 19 (Domain Pack #9 — Document Intelligence: the first *derived-content* falsifiability test and the first non-empty §2 since Legal — a platform-*derived* artifact never carries an ACL of its own but *inherits* the source Item's via lineage; a *derived* label may only tighten, is fail-closed on low confidence, and is provenance-stamped; held with net zero horizontal change)
+- **Current cycle:** 20 (Domain Pack #10 — Reporting: the first *aggregation* falsifiability test and **the pack that completes the domain-pack surface** — a report is a *derived artifact* reusing DocIntel's inherit-source-ACL rule + SAP BW/Finance fidelity; the sharp new corner is *arithmetic inference* (a total reconstructing a masked row via small-cell/differencing), disarmed **by construction** via the existing **filter-then-aggregate** order, not a disclosure-control engine; cross-source rollup = **intersection, never union**; unresolvable-contributor aggregate = quarantine; 5th pack with empty §2 + §3; held with net zero horizontal change — the 10th consecutive all-additive ledger)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 92 %** (Ende Zyklus 19) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 93 %** (Ende Zyklus 20) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel …) | 6 % | 97 % | 5.8 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel/Reporting) — **alle 10 seeded, Fläche vollständig** | 6 % | 100 % | 6.0 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 92 %** |
+| **Summe** | **100 %** | — | **≈ 93 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · **Z19 ≈ 92 %** (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · Z19 ≈ 92 % · **Z20 ≈ 93 %** (Reporting-Pack — n=10, der **letzte** Pack; die **Domänen-Pack-Fläche ist damit vollständig**. Der **erste *Aggregat*-Test**: ein Report-Wert ist selten eine Quellzeile, sondern ein **Rollup** über viele Zeilen mit *heterogenen* ACLs. Der scharfe neue Fehlermodus, den kein früherer Pack hatte, ist **arithmetische Inferenz** — eine Summe kann eine maskierte Zeile *rekonstruieren* (Small-Cell/Differencing: eine Gehaltssumme über *eine* Person **ist** deren Gehalt). Kernbefund: entschärft **durch Konstruktion, nicht durch eine Disclosure-Control-Engine** — die Plattform **filtert Zeilen *vor* dem Aggregieren** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)), also ist jedes ausgelieferte Total eine Funktion von Zeilen, die der Aufrufer ohnehin einzeln lesen dürfte → ein Total verrät nie etwas Neues. *filter-then-aggregate*, nie *aggregate-then-filter* — Letzteres ist die Naht, durch die Aggregation leckt, und dieser Codepfad **existiert nicht**. Ein **vor-materialisierter** Report trägt die **eigene Quell-ACL** ([SAP Band-A](packs/sap/00-sap-pack.md)); ein **quellen-übergreifender** Rollup trägt die **Schnittmenge** (most-restrictive, DocIntel-Merge — nie die Vereinigung); ein Aggregat über einen *nicht auflösbaren* Beitragssatz wird **quarantänisiert**. **5. Pack mit leerem §2 + §3** (ein Report *präsentiert* die Policy der reitenden Domäne, besitzt keine eigene). §2/§3 leer, §4 vollständig geerbt (jede beitragende Domäne — eine Kachel aus Finance-Ledger + HR-Headcount ist SOX *und* Art. 9). Kein neues ADR (Worked Instance von [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). Der **eine benannte zukünftige ADR**: ein Total über Zeilen *ausliefern*, die der Aufrufer nicht einzeln lesen darf (statistische Disclosure Control / Differential Privacy) — heute bewusst außerhalb des Scopes, quarantänisiert. **Verbleibend: keine Packs mehr** — der Engineering-Track (runtime pack-load SPI, Code-Reconciliation) und die offenen Q#3/Q#6 sind der einzige verbleibende Weg)) (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -48,6 +48,72 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 20 (2026-07-06) — Domain Pack #10 (Reporting): the first *aggregation* test — **the pack that completes the domain-pack surface**
+- Wrote **[packs/reporting/00-reporting-pack.md](packs/reporting/00-reporting-pack.md)** — the **tenth
+  and *last* pack** and the most inheritance-heavy of all: a dashboard tile / BI extract / report row is a
+  **derived artifact over source tables**, so it reuses [DocIntel's](packs/document-intelligence/00-document-intelligence-pack.md)
+  *derived-artifact-inherits-source-ACL* rule **verbatim** and [SAP's](packs/sap/00-sap-pack.md) BW/BI +
+  [Finance's](packs/finance/00-finance-pack.md) fidelity for its sources. It was saved for last because it
+  introduces **exactly one concept eleven prior packs never stressed — the *aggregate***: a report cell is
+  rarely one source row but a **rollup** (sum/count/avg) over *many* rows the caller may only *partially* access.
+- **The headline (§0 ledger + the dedicated "Aggregation" analysis): net horizontal change = none, all
+  additive — the falsifiability rule was armed against an *arithmetic-inference leak* and did NOT fire.**
+  Reporting's failure mode is unique among packs: not an ACL-widening but **arithmetic reconstruction** — a
+  total over *one* masked row **is** that row; a difference of two aggregates leaks the delta (the classic
+  small-cell / differencing / statistical-disclosure problem). The concept most likely to force a new hot-path
+  mechanism (k-anonymity / suppression / differential privacy) resolved **by construction, not by an engine**:
+  - **Query-time aggregate → filter-then-aggregate.** The [query-time ACL filter](permissions/00-authorization-model.md#4-query-time-enforcement)
+    runs **before** the aggregation stage ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)),
+    so every served total is a function of rows the caller **could have retrieved individually** — it reveals
+    nothing a row-by-row read wouldn't. The one seam through which aggregation leaks — *aggregate-then-filter* —
+    **is not a code path the platform has.** Differencing is therefore harmless: every aggregate a caller can
+    obtain is built from rows they can each read.
+  - **Pre-materialized report → Band-A mirror.** A BW query result / Power BI dataset / published dashboard
+    is an **Item that already carries the source's own ACL** on that materialized artifact — the
+    [SAP Band-A materialized-extract case](packs/sap/00-sap-pack.md), generalized. The platform mirrors it,
+    never recomputes it.
+  - **Cross-source rollup → intersection, never union.** A tile joining D1`{A,B}` + D2`{B,C}` is visible only
+    to `{B}` — DocIntel's multi-source merge rule reused verbatim; a union would show A a value depending on a
+    row A can't read.
+  - **Unresolvable-contributor aggregate → quarantine.** An aggregate over a BW analysis authorization the
+    connector can't enumerate to a principal set rides the *existing* `approximate → deny + quarantine` hatch
+    (the **fourth sighting** — SAP field-auth / Legal computed-privilege / DocIntel redaction-cell).
+- **The reusable articulation (the "aggregation discipline," stated once, in the pack):** *the platform
+  aggregates only over rows the caller may already read (filter-then-aggregate), mirrors — never recomputes —
+  a source-materialized total's ACL (Band-A), and a cross-source rollup carries the intersection of its
+  contributing ACLs (never the union); an unresolvable contributor is quarantined.* So the worst a
+  misconfigured Reporting pipeline can do is over-mask a tile or quarantine a rollup (**availability**), never
+  reconstruct a masked row (**safety**) — fail-closed applied to *aggregation*. Reaffirms
+  [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)/[ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)/[ADR-0013](architecture/adr/ADR-0013-canonical-metadata-lineage-schema.md)
+  → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **5th pack with empty §2 + §3** (after KM/SAP/SharePoint/Email) — a report **presents** the riding domain's
+  policy, owns none (a report-owns-policy claim is the SAP category error). §2/§3 empty; the one composition
+  behavior (a report resolves to the **most-restrictive** label + tier among contributing rows) is the
+  inherited mixed-ACL invariant, not a new delta. **§4 fully inherited from *every* contributing domain** (a
+  Finance+HR dashboard tile is **both** SOX- and Art.9-relevant) + the reused Finance numeric-grounding bar as
+  the SOX evidence that a figure traces to its ledger source.
+- **Consolidation / DRY win:** Reporting adds **no** SAP/SharePoint/Finance fidelity — it cites them verbatim;
+  its only new content is the aggregation discipline + the arithmetic-inference eval class. Conformance
+  fixtures weighted toward the aggregation failure modes (filter-then-aggregate pos/neg, small-cell/differencing
+  non-leak, cross-source intersection-not-union, pre-materialized ACL mirror, unresolvable-contributor
+  quarantine, aggregate-erasure completeness, cross-tenant). Eval headline is the aggregation analogue:
+  **filter-then-aggregate negatives + small-cell non-leak + cross-source intersection** (0 arithmetic leaks) +
+  numeric grounding (SOX).
+- Updated indexes: `packs/README.md` (Reporting → **Seeded**, 1st aggregation test / **surface complete**;
+  closing note now reads "domain-pack surface complete (Cycle 20)"), `platform/README.md` domain map
+  (packs → **Domain-pack surface complete (Cycle 20)**).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=10** and to its **first aggregation
+  corner**; hardens R4 (cross-source rollups never aggregate across tenant *or* source boundaries,
+  checked-and-empty; arithmetic-inference non-leak checked-and-empty), R1 (unresolvable-contributor
+  quarantine), and makes GDPR erasure reach PII *inside an aggregate* (the lineage forward-walk
+  tombstones/recomputes every aggregate that consumed an erased row — provable, not asserted).
+- ⏳ **Handed to later cycles:** **the pack backlog is now empty — the domain-pack surface is complete.** The
+  only remaining tracks are the **engineering track** (runtime pack-load SPI, `core/` code-reconciliation,
+  Cycle 2c) and the two open engineering questions (**Q#3** model hosting, **Q#6** agent framework). The one
+  future case that *would* force a horizontal ADR is named: a tenant requiring the platform to *serve* an
+  aggregate over rows the caller can't individually read (statistical disclosure control / differential
+  privacy) — deliberately out of scope, quarantined today.
 
 ### Cycle 19 (2026-07-06) — Domain Pack #9 (Document Intelligence): the first *derived-content* falsifiability test
 - Wrote **[packs/document-intelligence/00-document-intelligence-pack.md](packs/document-intelligence/00-document-intelligence-pack.md)** —
@@ -1229,30 +1295,41 @@ enforcement is identical). The one Metadata touch (`LineageNode.kind` for a seco
 additive node-kind growth [Metadata §9](metadata/00-catalog-and-lineage.md) already named — not a contract
 change; unresolvable narrowing sub-Items ride the existing `approximate → deny + quarantine` hatch (3rd sighting).
 
-### ▶ Cycle 20 (do next): **Domain Pack #10 — Reporting** *(or the runtime pack-load SPI — engineering track)*
-Write `packs/reporting/00-reporting-pack.md` against the [skeleton](packs/README.md). *Why next:* with all
-three source-shaped packs (SAP/SharePoint/Email) and six concept packs (Finance/HR/Legal/Audit/KM/DocIntel)
-seeded, **Reporting is the *last* pack on the backlog** and the most inheritance-heavy — a dashboard/BI
-extract is a **derived artifact over source tables**, so it reuses **DocIntel's derived-artifact-inherits-
-source-ACL rule verbatim** and **SAP BW/Finance fidelity** for its sources. *Falsifiability check:* does an
-**aggregate/rollup** row (a report cell summing many source rows the caller may only *partially* access)
-fit without a new predicate? Expected resolution: an aggregate inherits the **intersection** of its
-contributing rows' ACLs (most-restrictive-wins, the same merge rule DocIntel used for multi-source entity
-nodes) — a caller sees an aggregate **only if entitled to every contributing row**, else the cell is masked
-or the aggregate quarantined; a pre-materialized report carrying its own row ACL is an ordinary Band-A item
-(the SAP-pack exception). This should be **additive** (a §2 likely empty again — a report carries no policy,
-it *presents* the riding domain's). Expected to be the pack that **completes the domain-pack surface**.
-**Alternative for this slot:** if the engineering track is preferred, pick up the **runtime pack-load SPI**
-(below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads* a pack at runtime is not yet built.
+### ✅ Cycle 20 (DONE — see §1): **Domain Pack #10 — Reporting (the aggregation test) — surface complete**
+Wrote `packs/reporting/00-reporting-pack.md` against the [skeleton](packs/README.md). No new ADR (Reporting is
+a worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). **First *aggregation*
+falsifiability test — the rule was armed against an *arithmetic-inference leak* (a total reconstructing a
+masked row via small-cell/differencing) and did NOT fire.** Disarmed **by construction, not by a
+disclosure-control engine**: query-time aggregates are **filter-then-aggregate** ([ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)),
+so a served total is always a function of rows the caller could read individually (the *aggregate-then-filter*
+leak path does not exist); a pre-materialized report is a **Band-A** source-ACL mirror; a cross-source rollup
+carries the **intersection** (never union, DocIntel merge reused); an unresolvable-contributor aggregate is
+quarantined (4th sighting of the hatch). **5th pack with empty §2 + §3** (a report presents the riding domain's
+policy, owns none); §4 inherited from *every* contributing domain. **The domain-pack surface is now complete —
+all 10 planned packs Seeded, every one with an all-additive §0 ledger.**
+
+### ▶ Cycle 21 (do next): **Runtime pack-load SPI** *(the engineering track — the pack backlog is now empty)*
+With the domain-pack surface complete, the primary remaining track is the **engineering form of
+[ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)**: the *code mechanism that loads a pack at
+runtime*. The doc contract is fixed (a pack = six additive sections, tighten-only, §0 ledger); what is **not**
+yet built is the SPI/loader that (a) reads a pack's registered classification values into the closed
+[label schema](metadata/00-catalog-and-lineage.md#4-the-classification--label-schema-m3), (b) installs its
+`map_acl` fidelity fixtures into the [conformance suite](permissions/00-authorization-model.md#11-the-permission-conformance-test-the-production-gate)
+as a gate, (c) registers its tighten-only label→action deltas, and (d) wires the optional `pack` API hint —
+all **validated at the write boundary** so a pack that tries to *loosen* a floor is rejected in CI, never
+loaded. *Why next:* it is the one piece that turns the ten proven paper packs into a runtime capability, and it
+is a prerequisite for the `core/` code-reconciliation. *Falsifiability check for the SPI:* can a pack be loaded
+**without any code deploy** (pure data/config), and is a floor-loosening pack **structurally rejected** by the
+loader (not merely by review)? Expected: yes to both — the loader validates each section `⊆` its horizontal
+extension point and fails closed. **Alternative for this slot:** resolve open **Q#3** (model hosting) or
+**Q#6** (agent framework), both of which now block no pack and are pure engineering decisions.
 
 ### Later (backlog)
-- The **last pack specification** — the concept-shaped **Reporting** (Cycle 20, next; dashboards/BI extracts
-  as derived artifacts over source tables — reuses DocIntel's derived-ACL-inheritance + SAP BW/Finance
-  fidelity; the *aggregate-inherits-intersection* corner), reusing the Cycle-11 skeleton; it **inherits** a
-  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger
-  discipline. **The source-pack surface (SAP/SharePoint/Email) and all but one concept pack are complete;
-  Reporting closes the domain-pack surface.**
-- **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
+- **The pack backlog is empty** — all ten planned packs (Finance/HR/Legal/Audit/KM/DocIntel concept-shaped +
+  SAP/SharePoint/Email source-shaped + Reporting aggregation) are Seeded. A **new** domain (Procurement,
+  Manufacturing, CRM) is now a fill-in-the-blank pack against the [skeleton](packs/README.md), inheriting the
+  Finance §0-ledger discipline — not a redesign. No further pack is *required* to prove the bet.
+- **Runtime pack-load SPI** (open Q#6-adjacent, **now the primary track — Cycle 21**): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
   the code mechanism is not yet built.
 - **Cycle 2c engineering track** (still open) — wire `WorkerRegistry`/`HandoffRouter` into the
