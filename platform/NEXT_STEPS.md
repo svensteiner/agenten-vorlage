@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 18 (Domain Pack #8 — Email/Exchange: the third and **last** *source-shaped* pack — the canonical `map_acl` reference; the *transport-vs-storage* falsifiability test: a transport audience is never a storage grant, held via mailbox-only mapping)
+- **Current cycle:** 19 (Domain Pack #9 — Document Intelligence: the first *derived-content* falsifiability test and the first non-empty §2 since Legal — a platform-*derived* artifact never carries an ACL of its own but *inherits* the source Item's via lineage; a *derived* label may only tighten, is fail-closed on low confidence, and is provenance-stamped; held with net zero horizontal change)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 91 %** (Ende Zyklus 18) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 92 %** (Ende Zyklus 19) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email …) | 6 % | 95 % | 5.7 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP/SharePoint/Email/DocIntel …) | 6 % | 97 % | 5.8 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 91 %** |
+| **Summe** | **100 %** | — | **≈ 92 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · **Z18 ≈ 91 %** (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · Z16 ≈ 89 % · Z17 ≈ 90 % · Z18 ≈ 91 % · **Z19 ≈ 92 %** (Document-Intelligence-Pack — n=9; der **erste *derived-content*-Test** und das erste nicht-leere §2 seit Legal. Kernbefund: die Plattform *fabriziert* nie eine Autorisierungs-Tatsache — ein abgeleitetes Artefakt **erbt** die ACL des Quell-Items über die [Lineage](metadata/00-catalog-and-lineage.md) (Mehrfachquellen-Merge = **Schnittmenge/Split/Quarantäne, nie Vereinigung**), und ein *abgeleitetes* Label darf nur **verschärfen**, ist **fail-closed** bei geringer Klassifikator-Konfidenz und wird provenienz-gestempelt (`label_source: derived`). Ein falsches Ableiten kostet **Verfügbarkeit, nie Sicherheit** — weil ein Label nur Fähigkeit *subtrahiert* und die ACL, nicht das Label, das primäre Tor ist. Die einzige Metadata-Berührung (`LineageNode.kind` für einen sekundären abgeleiteten Index) ist das *additive* Knoten-Typ-Wachstum, das [Metadata §9](metadata/00-catalog-and-lineage.md) bereits genau für diesen Fall benannt hat — **kein Vertragsbruch**. Der eine harte Fall (ein abgeleitetes Sub-Item, dessen korrekte ACL enger und unauflösbar ist) reitet auf dem bestehenden `approximate → deny + quarantine`-Pfad. Verbleibend: der concept-shaped **Reporting**-Pack + die runtime pack-load SPI (Engineering-Track)) (Email-Pack — n=8; der **dritte und *letzte* source-shaped Pack** und der *einfachste* aller Quellen: die ACL einer Nachricht ist ihr **Postfach-Eigentümer + Delegierte**, nie ihr Transport-Publikum. Der *transport-vs-storage*-Falsifizierbarkeitstest: wird je eine Transport-Tatsache (To/Cc/Bcc, Verteiler-Mitgliedschaft, ein weitergeleiteter Thread) still zu einem Lese-Grant auf die archivierte Kopie? **Nein** — jedes Konstrukt → `allow`/`deny`/Quarantäne, das Publikum wird als *Inhalt* (Header) erfasst, nie als Grant. **Vierter Pack mit leerem §2 + §3**; **kein Band C, keine Sharing-Link-Fläche** → die kürzeste §1-Matrix. Konsolidiert die 3× ad-hoc behauptete Email-Fidelity (HR/Legal/Audit) in eine kanonische §1. **Die Source-Pack-Fläche ist damit vollständig** — verbleibend: die concept-shaped Packs Document Intelligence/Reporting + die runtime pack-load SPI (Engineering-Track)) (SharePoint-Pack — n=7; der **zweite *source-shaped* Pack und SAPs *Spiegelbild***: SAPs Risiko war *zu viel quarantänisieren* (keine Dokument-ACL); SharePoints Risiko ist das gefährlichere Gegenteil — ein **stiller *Über*-Grant**. Der *inverse* Falsifizierbarkeitstest: passt jedes SharePoint-Sharing-Konstrukt (gebrochene Vererbung, Sharing-Links, **"Anyone"-Links, Gäste, dynamische Gruppen, MIP-Labels**) in `allow`/`deny`/geflaggter-Grant/Quarantäne — *ohne* je stillschweigend Zugriff zu erweitern und *ohne* neue Prinzipal-Kategorie oder neues Prädikat? **"Anyone"-Link → flag-and-fail-closed, nie stiller Public-Grant.** **Dritter Pack mit leerem §2 + §3**; **kein Band C** (ACL ist item-level → strukturell kürzer als SAP). Konsolidiert die bisher 5× ad-hoc behauptete SharePoint-Fidelity in **eine kanonische §1**. Email bleibt der letzte Source-Pack (noch kürzer — keine Sharing-Link-Fläche)).
 
 ---
 
@@ -48,6 +48,81 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 19 (2026-07-06) — Domain Pack #9 (Document Intelligence): the first *derived-content* falsifiability test
+- Wrote **[packs/document-intelligence/00-document-intelligence-pack.md](packs/document-intelligence/00-document-intelligence-pack.md)** —
+  the **ninth pack**, the **first *concept-shaped* pack since KM** (Cycle 15), and the **first non-empty
+  §2 since Legal** (Cycle 13). The eight prior packs all shared an unstated assumption: every artifact's
+  ACL and label was **read from a source of record**. DocIntel is the first pack where the platform
+  **manufactures the content itself** — OCR text, extracted tables/entities/forms, and a classification
+  a classifier *infers* (a `pii_class` no source declared). That raises the one question the
+  [falsifiability rule](packs/README.md#the-falsifiability-rule) exists to catch: *when the platform
+  manufactures an artifact, where does its **ACL** come from, and can a **derived label** be trusted
+  like a source-declared one?*
+- **The headline (§0 ledger + the dedicated "Derived content" analysis): net horizontal change = none,
+  all additive — the falsifiability rule was armed against a *manufactured authorization fact* and did
+  NOT fire, because the platform never manufactures one; it inherits and tightens.** The two concepts
+  most likely to force a horizontal primitive resolved cleanly:
+  - **Derived *ACL* — inherited, never computed.** A derived artifact (OCR text = a `parsed_artifact`;
+    an extracted table = a table-row chunk) is a **lineage descendant** of its `source_item`; the chunk
+    projection denormalizes the *source Item's* ACL arrays. So the OCR of a `{client,counsel}` contract
+    carries exactly `{client,counsel}` — the platform never invents a broader (or any) ACL. A
+    **multi-source** derived node (an entity merging spans from D1/D2) takes the **intersection**
+    (most-restrictive-wins) / splits / quarantines — **never the union** (the mixed-ACL invariant
+    applied to a *manufactured* node). A derived sub-Item whose correct ACL is *narrower-and-unresolvable*
+    (a redaction / PII-cell) rides the *existing* `approximate → deny + quarantine` hatch — the
+    **third sighting** of the SAP-field-auth / Legal-computed-privilege path.
+  - **Derived *label* — registered, tighten-only, fail-closed, provenance-stamped.** A classifier that
+    infers `pii_class:health` is the first label the *platform* assigns rather than the *source* declares.
+    It resolves additively: the value is **registered** (§2 non-empty — DocIntel *owns* this vocabulary);
+    it may only **tighten** (add a mask, never remove/downgrade a label); a **low-confidence** output
+    **fails closed** (resolves to the *more* restrictive outcome); and it is stamped `label_source: derived`
+    + classifier id + version. A *wrong* inference **cannot leak**: under-labeling only fails to *add* an
+    extra mask (a label only *subtracts* capability per [Permissions §7](permissions/00-authorization-model.md);
+    the **ACL** — not the label — is the primary gate), and over-labeling is an *availability* cost (the
+    fail-closed-preferred direction, the KM trade re-applied).
+- **The reusable articulation (the "derivation discipline," stated once, in the pack):** *a
+  platform-derived artifact may only ever **inherit or tighten** authorization, never widen it, in either
+  plane — the ACL inherits (or intersects to) the source Item's and never unions; the label only adds a
+  mask and never removes/downgrades one, failing closed on uncertainty.* This is the DocIntel analogue of
+  Legal's "waiver = ACL edit, label stays" discipline. So the worst a misconfigured DocIntel pipeline can
+  do is over-mask/over-quarantine (availability), never over-expose (safety) — fail-closed applied to
+  *derivation*. Reaffirms [ADR-0004](architecture/adr/ADR-0004-permission-faithful-retrieval.md)/[ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)/[ADR-0013](architecture/adr/ADR-0013-canonical-metadata-lineage-schema.md)
+  → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **First non-empty §2 since Legal, for a *new* reason:** the source packs' §2 was empty because a source
+  carries no policy of its own; DocIntel's §2 is non-empty because it **owns a derived-classification
+  vocabulary** — the labels a classifier *assigns*. The novel element is the **`label_source: derived`
+  provenance stamp** (kept in the *same* dimension so enforcement is identical — never a `derived_sensitivity`
+  fork that could someday be treated more loosely), not a new label value. Registered `restricted:extracted`;
+  §3 tightens it (a derived artifact is **never** placed more openly than its source).
+- **The one Metadata touch is additive, not a contract change.** OCR/extraction are ordinary **parse-stage**
+  outputs (`parsed_as`, no new node). A *secondary* derived index (an entity/KG store) would be a new
+  `LineageNode.kind` + `relation` — but that is the additive node-kind growth **[Metadata §9](metadata/00-catalog-and-lineage.md)
+  already named for exactly this case** ("new derived artifact type = a new `LineageNode.kind` + `relation`");
+  the graph was designed to grow node kinds, exactly as Legal was the first pack to exercise the *label*
+  extension point beyond Finance. §4 fully inherited (GDPR for inferred/incidental PII + **EU AI Act**
+  automated-classification transparency, satisfied by the existing model-version audit field + the
+  provenance stamp + the *riding domain's* regime, since a DocIntel pipeline inherits its source's
+  compliance envelope).
+- **Consolidation / DRY win:** OCR/Doc-Intelligence was already a *named* RAG chunking content type
+  ([RAG §2.1](rag/00-retrieval-pipeline.md)) and the "OCR layout" parser was the deferred sub-question of
+  open Q#4 — this pack makes derived-content authorization **one canonical §1**. Conformance fixtures
+  weighted toward the derived-authorization failure modes (ACL inheritance pos/neg, multi-source
+  merge=intersection-not-union, derived-label fail-closed, redaction sub-Item quarantine, erasure reaches
+  every derived artifact, cross-tenant). Eval headline is the derived-content analogue: **ACL-inheritance
+  negatives + merge correctness + derived-classification fail-closed** (0 widenings) + OCR-noise robustness.
+- Updated indexes: `packs/README.md` (Document Intelligence → **Seeded**, 1st derived-content test),
+  `platform/README.md` domain map (packs → **… + Document Intelligence seeded**).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=9** and to its **first derived-content
+  corner**; hardens R1 (a derived sub-Item's unresolvable ACL is a *checked-and-quarantined* case), R4
+  (multi-source merge never unions across source boundaries, checked-and-empty), and makes GDPR erasure
+  reach *derived* PII (the lineage forward-walk tombstones every derived node — provable, not asserted).
+- ⏳ **Handed to later cycles:** only **Reporting** remains on the pack backlog (concept-shaped; reuses SAP
+  BW/Finance fidelity + DocIntel's derived-artifact-inherits-source-ACL rule verbatim). With the pack
+  surface all but complete, the **runtime pack-load SPI** (open Q#6-adjacent) becomes the primary remaining
+  track. The one future case that *would* force a horizontal ADR is named: a derivation whose narrowing ACL
+  the platform is *trusted to compute-and-enforce as a grant* on the shared path (an automated redaction as
+  a grant, not a mirror) — deliberately out of scope, quarantined today.
 
 ### Cycle 18 (2026-07-06) — Domain Pack #8 (Email/Exchange): the third & *last* source-shaped pack — the *transport-vs-storage* test
 - Wrote **[packs/email/00-email-pack.md](packs/email/00-email-pack.md)** — the **eighth pack**, the
@@ -1140,29 +1215,43 @@ predicate. **4th pack with empty §2 + §3**; **shortest §1 matrix** (no Band-C
 Consolidated the 3× ad-hoc Email fidelity (HR/Legal/Audit) into one canonical §1. **The source-pack surface
 is now complete.**
 
-### ▶ Cycle 19 (do next): **Domain Pack #9 — Document Intelligence** *(or the runtime pack-load SPI — engineering track)*
-Write `packs/document-intelligence/00-document-intelligence-pack.md` against the [skeleton](packs/README.md).
-*Why next:* with all three source-shaped packs seeded (SAP/SharePoint/Email) and five concept packs
-(Finance/HR/Legal/Audit/KM), Document Intelligence is the next **concept-shaped** pack — its interesting
-corner is **derived/extracted content** (OCR text, entity extraction, classification inferred *by the
-platform* rather than read from the source). *Falsifiability check:* does a platform-*derived* label or a
-platform-*derived* entity ACL fit the canonical model without a new predicate? Expected resolution: a
-derived artifact **inherits the ACL of the source Item it was derived from** (the [lineage
-`derived_from` edge](metadata/00-catalog-and-lineage.md) carries the ACL forward), and a *derived*
-classification is a `restricted:<class>`/`pii_class:<type>` value the pack **registers** (a non-empty §2,
-unlike the source packs) but the derivation **can only tighten** (an inferred `pii_class:health` adds a
-mask, never a grant) — so it should be additive. This is the first pack whose §2 is expected **non-empty**
-again (it *owns* a derived-classification vocabulary), which is itself a useful contrast to the four
-empty-§2 source/KM packs. **Alternative for this slot:** if the engineering track is preferred, pick up the
-**runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads* a
-pack at runtime is not yet built.
+### ✅ Cycle 19 (DONE — see §1): **Domain Pack #9 — Document Intelligence (the derived-content test)**
+Wrote `packs/document-intelligence/00-document-intelligence-pack.md` against the [skeleton](packs/README.md).
+No new ADR (DocIntel is a worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+**First *derived-content* falsifiability test — the rule was armed against a *manufactured authorization
+fact* and did NOT fire.** A platform-derived artifact **never carries an ACL of its own** — it *inherits*
+the source Item's via lineage (multi-source merge = **intersection/split/quarantine, never union**); a
+*derived* label may only **tighten**, is **fail-closed** on low classifier confidence, and is
+provenance-stamped (`label_source: derived`). A wrong derivation costs *availability, never safety* (a label
+only subtracts capability; the ACL is the primary gate). **First non-empty §2 since Legal** (owns a
+derived-classification vocabulary; the novel element is the provenance stamp, kept in the same dimension so
+enforcement is identical). The one Metadata touch (`LineageNode.kind` for a secondary derived index) is the
+additive node-kind growth [Metadata §9](metadata/00-catalog-and-lineage.md) already named — not a contract
+change; unresolvable narrowing sub-Items ride the existing `approximate → deny + quarantine` hatch (3rd sighting).
+
+### ▶ Cycle 20 (do next): **Domain Pack #10 — Reporting** *(or the runtime pack-load SPI — engineering track)*
+Write `packs/reporting/00-reporting-pack.md` against the [skeleton](packs/README.md). *Why next:* with all
+three source-shaped packs (SAP/SharePoint/Email) and six concept packs (Finance/HR/Legal/Audit/KM/DocIntel)
+seeded, **Reporting is the *last* pack on the backlog** and the most inheritance-heavy — a dashboard/BI
+extract is a **derived artifact over source tables**, so it reuses **DocIntel's derived-artifact-inherits-
+source-ACL rule verbatim** and **SAP BW/Finance fidelity** for its sources. *Falsifiability check:* does an
+**aggregate/rollup** row (a report cell summing many source rows the caller may only *partially* access)
+fit without a new predicate? Expected resolution: an aggregate inherits the **intersection** of its
+contributing rows' ACLs (most-restrictive-wins, the same merge rule DocIntel used for multi-source entity
+nodes) — a caller sees an aggregate **only if entitled to every contributing row**, else the cell is masked
+or the aggregate quarantined; a pre-materialized report carrying its own row ACL is an ordinary Band-A item
+(the SAP-pack exception). This should be **additive** (a §2 likely empty again — a report carries no policy,
+it *presents* the riding domain's). Expected to be the pack that **completes the domain-pack surface**.
+**Alternative for this slot:** if the engineering track is preferred, pick up the **runtime pack-load SPI**
+(below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads* a pack at runtime is not yet built.
 
 ### Later (backlog)
-- Further **pack specifications** after Email — the concept-shaped **Document Intelligence** (Cycle 19,
-  next; derived/extracted content + derived-classification vocabulary, first non-empty §2 since Legal) and
-  **Reporting** (dashboards/BI extracts — reuses SAP BW/Finance fidelity), reusing the Cycle-11 skeleton;
-  each **inherits** a compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the
-  Finance §0-ledger discipline. **The source-pack surface (SAP/SharePoint/Email) is complete.**
+- The **last pack specification** — the concept-shaped **Reporting** (Cycle 20, next; dashboards/BI extracts
+  as derived artifacts over source tables — reuses DocIntel's derived-ACL-inheritance + SAP BW/Finance
+  fidelity; the *aggregate-inherits-intersection* corner), reusing the Cycle-11 skeleton; it **inherits** a
+  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger
+  discipline. **The source-pack surface (SAP/SharePoint/Email) and all but one concept pack are complete;
+  Reporting closes the domain-pack surface.**
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
   the code mechanism is not yet built.
