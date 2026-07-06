@@ -12,17 +12,20 @@ fully-specified but not-yet-built targets named by
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
-| [00-core-reconciliation-plan.md](00-core-reconciliation-plan.md) | Ground-truth `core/` audit, gap ledger vs. the two ADRs, two target designs (orchestrator re-host + pack-load loader), and a sequenced TDD work-package plan with falsifiability tests | **Seeded (Cycle 24) · Executed (Cycle 25)** |
-| [01-cycle-25-implementation-report.md](01-cycle-25-implementation-report.md) | Execution record of the plan: work packages shipped, test matrix results, design decisions, definition-of-done status | **Implemented (Cycle 25)** |
+| [00-core-reconciliation-plan.md](00-core-reconciliation-plan.md) | Ground-truth `core/` audit, gap ledger vs. the two ADRs, two target designs (orchestrator re-host + pack-load loader), and a sequenced TDD work-package plan with falsifiability tests | **Seeded (Cycle 24) · Executed (Cycles 25–26) — COMPLETE** |
+| [01-cycle-25-implementation-report.md](01-cycle-25-implementation-report.md) | Execution record — Front A gates wired live, `ExecutionBackend` port added, full `core/packs/` loader (marquee test green) | **Implemented (Cycle 25)** |
+| [02-cycle-26-implementation-report.md](02-cycle-26-implementation-report.md) | Execution record — `run()` re-expressed against the port (behaviour parity + review-found run-identity fixes), whole-`core` coverage floor locked in CI | **Implemented (Cycle 26)** |
 
 **Key finding driving the plan (Cycle 24):** `core/orchestrator.py` called neither
 [`WorkerRegistry`](../../core/workers.py) nor [`HandoffRouter`](../../core/handoff.py) — both
 were fully built and unit-tested but **inert** in the run loop. **Cycle 25 wired both gates
 live** (tool-scope → `tool_scope_blocked`, handoff → `handoff_refused`), added the
 [`ExecutionBackend`](../../core/execution.py) port, and built the complete
-[`core/packs/`](../../core/packs/) loader — the marquee test
-`test_floor_loosening_bundle_fails_validate` is green. **62 → 131 tests, `check.py` exit 0.**
-Remaining: **WP-A4** (re-express `run()` against the port) + **WP-C1** (CI coverage gate).
+[`core/packs/`](../../core/packs/) loader. **Cycle 26 re-expressed `run()` against the port**
+(behaviour parity, with an adversarial-review-found run-identity fix) and **locked the whole-`core`
+coverage floor in CI** (`--cov=core --cov-fail-under=80`). **62 → 131 → 193 tests, `check.py`
+exit 0.** The engineering-track [definition-of-done](00-core-reconciliation-plan.md#8-definition-of-done)
+is **fully met** — the reconciliation track is complete; only tuning inputs remain.
 
 This is a **coding-cycle brief**, not an architecture doc: it is written to be executed against
 the real code, keeping the tree green at every step (`--cov=core --cov-fail-under=80`).

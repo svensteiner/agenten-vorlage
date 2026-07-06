@@ -1,0 +1,38 @@
+name: CI
+
+# Engineering-track quality gate (reconciliation plan §8 Definition of Done):
+#   1. tools/check.py must pass (manifest/config consistency, leaf-write, allowlist)
+#   2. the full pytest suite must pass with core-coverage ≥ 80 %
+# The coverage floor is enforced by pytest.ini (--cov=core --cov-fail-under=80),
+# so a drop below 80 % fails the build here even if every test passes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      # Non-strict: the template ships autonomy_level=max by design, which is an
+      # intentional WARN (fail-open autonomy), not an error. The gate is exit 0
+      # (no errors); warnings are surfaced but do not fail the build.
+      - name: Validate project pack (check.py)
+        run: python tools/check.py
+
+      - name: Run tests with coverage gate (core ≥ 80 %)
+        run: python -m pytest

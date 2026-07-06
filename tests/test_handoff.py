@@ -1,5 +1,4 @@
 """Tests für handoff.py — HandoffRouter, HandoffRequest, Validierung."""
-import json
 import pytest
 from core.handoff import HandoffRequest, HandoffRouter, load_router
 

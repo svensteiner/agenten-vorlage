@@ -1,13 +1,20 @@
 """High-level orchestration for the reusable automation template."""
 
 from dataclasses import dataclass, field
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
+import uuid
 
 from .context import ContextBuilder, ProjectContext
 from .dispatcher import Dispatcher, DispatchResult
+from .execution import (
+    ExecutionBackend,
+    InProcessExecutionBackend,
+    RunSpec,
+    Step,
+    StepResult,
+)
 from .governance import GovernanceDecision, GovernancePolicy
 from .handoff import HandoffRouter, load_router
 from .memory import MemoryStore
@@ -17,22 +24,11 @@ from .runtime import RuntimeStore
 from .verifier import VerificationResult, Verifier
 from .workers import WorkerRegistry, load_registry
 
-
-@dataclass(frozen=True)
-class RunSpec:
-    """Run identity — the minimal carrier ADR-0019 §5.1 requires.
-
-    A run is keyed ``(tenant_id, request_id)`` so it is attributable and, once
-    the ``ExecutionBackend`` port is wired, resumable. When the CLI omits both,
-    a local single-tenant run is synthesized so the offline path stays unbroken.
-    """
-
-    tenant_id: str
-    request_id: str
-
-    @property
-    def run_id(self) -> str:
-        return f"{self.tenant_id}:{self.request_id}"
+# ``RunSpec`` is the run-identity carrier ADR-0019 §5.1 requires — keyed
+# ``(tenant_id, request_id)`` so a run is attributable and resumable. It is
+# defined once in ``core.execution`` (the execution plane) and re-exported here
+# so ``from core.orchestrator import RunSpec`` keeps working for callers/tests.
+__all__ = ["AgentOrchestrator", "RunResult", "RunSpec"]
 
 
 @dataclass
@@ -61,6 +57,7 @@ class AgentOrchestrator:
         governance: GovernancePolicy | None = None,
         workers: WorkerRegistry | None = None,
         handoffs: HandoffRouter | None = None,
+        execution_backend: ExecutionBackend | None = None,
     ) -> None:
         self.project_root = Path(project_root)
         self.context_builder = ContextBuilder(self.project_root)
@@ -78,6 +75,13 @@ class AgentOrchestrator:
         manifest = self._load_manifest()
         self.workers = workers or load_registry(manifest)
         self.handoffs = handoffs or load_router(manifest)
+        # Execution plane (ADR-0019 §4.4): each plan step's *execution* is routed
+        # through the ExecutionBackend port. The default in-process adapter runs
+        # every step synchronously, so re-hosting changes no observable output
+        # (WP-A4 behaviour parity); a distributed adapter is a drop-in swap.
+        self.execution_backend: ExecutionBackend = (
+            execution_backend or InProcessExecutionBackend()
+        )
 
     def _load_manifest(self) -> dict[str, Any]:
         path = self.project_root / "project" / "manifest.json"
@@ -97,6 +101,9 @@ class AgentOrchestrator:
         request_id: str | None = None,
     ) -> RunResult:
         run_spec = self._run_spec(task, tenant, request_id)
+        run_handle = self.execution_backend.start_run(
+            run_spec, idempotency_key=run_spec.run_id
+        )
         context = self.context_builder.build()
         tools = tools or {}
         plan = self.planner.draft(task, context=task, project=context, tools=tools)
@@ -119,6 +126,7 @@ class AgentOrchestrator:
         subagent_runs: list[dict[str, Any]] = []
         handoffs_made: list[dict[str, Any]] = []
         success = True
+        dispatch_seq = 0  # unique per scheduled step → distinct backend cache key
 
         for step in plan.steps:
             step_gov = self.governance.allow(
@@ -187,7 +195,30 @@ class AgentOrchestrator:
                     )
             scoped_tools = self.workers.filter_tools(acting_worker, tools) if acting_worker else tools
 
-            dispatch = self.dispatcher.dispatch(step, tools=scoped_tools)
+            # ── Execution plane (ADR-0019 §4.4, WP-A4) ───────────────────────
+            # The *decision* to dispatch this step has already passed every gate
+            # (governance, tool-scope). The *execution* itself is handed to the
+            # ExecutionBackend as an opaque activity: scheduled, then awaited. The
+            # in-process adapter runs it immediately, so behaviour is identical to
+            # a direct call — the port is a faithful seam, not a new decision maker.
+            # The execution id disambiguates on a per-run sequence number, not the
+            # plan step id alone: two plan steps that happen to share an id (an LLM
+            # can emit duplicates) must still map to distinct backend cache keys, or
+            # the second would replay the first's result instead of executing.
+            exec_step_id = f"{step.id}#{dispatch_seq}"
+            exec_step = Step(
+                id=exec_step_id,
+                activity=lambda step=step, scoped_tools=scoped_tools: self._dispatch_activity(
+                    step, scoped_tools
+                ),
+                metadata={"action": step.action, "tool": step.tool, "plan_step": step.id},
+            )
+            step_handle = self.execution_backend.schedule_step(
+                run_handle, exec_step, idempotency_key=f"{run_spec.run_id}:{exec_step_id}"
+            )
+            step_result = self.execution_backend.await_steps(run_handle, [step_handle])[0]
+            dispatch_seq += 1
+            dispatch = step_result.metadata["dispatch"]
             dispatch_results.append(dispatch)
             outputs.append(dispatch.output)
             evidence.append(self._evidence_item(step.tool or step.action, step.id, dispatch.output))
@@ -287,14 +318,36 @@ class AgentOrchestrator:
             },
         )
 
+    def _dispatch_activity(self, step, scoped_tools: dict[str, Any]) -> StepResult:
+        """Opaque execution-plane activity: perform the dispatch, box the result.
+
+        The ExecutionBackend never inspects a ``Step.activity`` — it only runs it
+        and returns a ``StepResult``. The full ``DispatchResult`` is carried in the
+        result metadata so the decision plane (the run loop) recovers the exact
+        object it had before the port was introduced, guaranteeing behaviour parity.
+        """
+        dispatch = self.dispatcher.dispatch(step, tools=scoped_tools)
+        return StepResult(
+            id=step.id,
+            output=dispatch.output,
+            success=dispatch.success,
+            metadata={"dispatch": dispatch},
+        )
+
     def _run_spec(self, task: str, tenant: str | None, request_id: str | None) -> RunSpec:
         """Synthesize run identity, keeping the offline CLI path unbroken.
 
-        When the caller omits ``request_id`` it is derived deterministically from
-        the task text (stable across retries of the same task); ``tenant``
-        defaults to a local single-tenant marker.
+        Each ``run()`` is a *distinct request*, so an omitted ``request_id``
+        defaults to a **fresh unique id per invocation** — never a task-derived
+        value. This matters because the ``ExecutionBackend`` keys its
+        replay/idempotency cache on ``run_id = tenant:request_id``: two separate
+        runs of the *same task text* on a long-lived orchestrator (the
+        ``agent.py`` singleton) must get distinct run ids, or the second would
+        replay the first's cached ``StepResult`` and silently skip re-executing a
+        side-effecting tool. A caller that genuinely wants to resume/dedupe a run
+        passes an explicit ``request_id``; ``tenant`` defaults to a local marker.
         """
-        rid = request_id or hashlib.sha256(task.encode("utf-8")).hexdigest()[:16]
+        rid = request_id or uuid.uuid4().hex[:16]
         return RunSpec(tenant_id=tenant or "local", request_id=rid)
 
     def _acting_worker(self, selected_subagent, step) -> str | None:

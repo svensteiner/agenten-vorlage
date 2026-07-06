@@ -10,6 +10,13 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Test / coverage artifacts
+.coverage
+.coverage.*
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+
 # IDE
 .vscode/
 .idea/

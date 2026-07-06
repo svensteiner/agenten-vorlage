@@ -60,13 +60,18 @@ class TestRunIdentity:
         result = _orch(tmp_root, _RecordingVerifier(True)).run("tu etwas", tools={"probe": _MockTool()})
         assert isinstance(result.run_spec, RunSpec)
         assert result.run_spec.tenant_id == "local"
-        assert result.run_spec.request_id  # deterministic hash of the task
+        assert result.run_spec.request_id  # a fresh unique id per invocation
 
-    def test_run_spec_is_deterministic_per_task(self, tmp_root):
+    def test_each_run_gets_a_distinct_identity(self, tmp_root):
+        # Two runs of the SAME task text on the same long-lived orchestrator are
+        # distinct requests and must get distinct run ids — otherwise the
+        # ExecutionBackend would replay the first run's cached results on the
+        # second (the WP-A4 regression this guards against). A task-derived
+        # request_id would (wrongly) make these equal.
         orch = _orch(tmp_root, _RecordingVerifier(True))
         r1 = orch.run("gleiche aufgabe", tools={"probe": _MockTool()})
         r2 = orch.run("gleiche aufgabe", tools={"probe": _MockTool()})
-        assert r1.run_spec.request_id == r2.run_spec.request_id
+        assert r1.run_spec.request_id != r2.run_spec.request_id
 
     def test_explicit_tenant_and_request_id_are_honored(self, tmp_root):
         result = _orch(tmp_root, _RecordingVerifier(True)).run(
