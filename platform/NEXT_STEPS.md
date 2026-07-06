@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 12 (Domain Pack #2 — HR: the second, structurally-different data point)
+- **Current cycle:** 13 (Domain Pack #3 — Legal: the first genuine novel-concept falsifiability test since Finance)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 85 %** (Ende Zyklus 12) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 86 %** (Ende Zyklus 13) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 55 % | 3.3 |
+| Domänen-Pack-Specs (Finance/HR/Legal …) | 6 % | 68 % | 4.1 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 85 %** |
+| **Summe** | **100 %** | — | **≈ 86 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · **Z12 ≈ 85 %** (HR-Pack — Wiederverwendbarkeit von n=1 auf n=2 bewiesen; Legal/Audit/KM/… bleiben fill-in-the-blank).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · **Z13 ≈ 86 %** (Legal-Pack — n=3; der erste *neuartige* Begriff, Anwalts­privileg **inkl. Waiver**, hält additiv: Waiver = einschränkende ACL-Änderung, nie Label-Entfernung; Ethical Walls = bestehendes deny-wins. Audit/KM/… bleiben fill-in-the-blank).
 
 ---
 
@@ -48,6 +48,58 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 13 (2026-07-06) — Domain Pack #3 (Legal): the first genuine novel-concept falsifiability test
+- Wrote **[packs/legal/00-legal-pack.md](packs/legal/00-legal-pack.md)** — the **third pack**, chosen
+  because it is *near-mechanical in five of six sections* (reuses HR's `matter:<id>`/hold shape +
+  Finance's DMS/SharePoint fidelity) **while introducing the one concept the platform had never
+  stress-tested: attorney-client privilege as a retrieval gate.** Unlike HR (a *different shape* of
+  known mechanism), Legal is the first pack that could have **falsified** the bet with a genuinely
+  new primitive. It did not.
+- **The headline (§0 ledger + the dedicated "Privilege & waiver" analysis): net horizontal change =
+  none, all additive — the falsifiability rule was armed and did NOT fire.** The concept most likely
+  to force a horizontal primitive — **privilege *waiver*, per matter, per recipient** — resolved to
+  the *composition of two mechanisms the platform already has*, by separating **what** from **who**:
+  - **What** (the restriction) = a `restricted:privileged` label — a §2 registered value + §3 tighten
+    delta, structurally identical to Finance's `restricted:mnpi`.
+  - **Who** (the cleared set) = the **item ACL** — the existing per-item `allow` set.
+  - **Waiver** = a **narrowing grant edit on the item ACL**, propagated by the *existing*
+    change-driven re-sync ([Workers §5](workers/00-ingestion-architecture.md)); **never** a label
+    removal (which would over-waive to *everyone* — the trap). "Per recipient" is exactly what an ACL
+    *is*, so the **static label→action matrix never encodes recipient-specific policy → no horizontal
+    gap.** Recorded as **one pack-local discipline** (waiver = ACL edit, label stays), not a mechanism.
+- **Ethical walls (information barriers) = the *existing* deny-wins clause**
+  ([Permissions §3.1](permissions/00-authorization-model.md#31-precedence-deny-always-wins)): a
+  conflicted attorney is a `deny` grant on the matter's items; deny already evaluates first, before
+  any allow. Deliberately **not** modeled as a label (that would lose deny semantics) — kept in the ACL.
+- **The one thing the platform must *refuse*:** it does **not compute** subject-matter waiver (a legal
+  determination); it **mirrors** counsel's decision as reflected in the source ACL. A DMS exposing
+  privilege only as a *computed* rule takes the *existing* `approximate → deny + quarantine` path —
+  identical to SAP field-level auth. Refusing to *infer* privilege is what keeps the platform a
+  faithful ACL mirror rather than a legal-reasoning engine that could leak on a wrong inference.
+- **Sources:** DMS (iManage/NetDocuments — rich per-document ACL + walls, so Legal is *fidelity-friendly*
+  unlike SAP), SharePoint, privileged email, matter/practice-management stores; **clause-level chunking**
+  reuses RAG's structure-aware seam. Registered `restricted:privileged` + `restricted:work_product`
+  (independently waivable → two labels); reused `matter:<id>` verbatim. Supplied conformance fixtures
+  (ethical-wall deny-wins, privilege pos/neg, **waiver-as-grant-edit that does not over-share and keeps
+  the label**, hold-vs-erasure, cross-tenant) and an eval set whose headline classes are **privilege
+  negatives**, **waiver correctness**, and **ethical-wall enforcement**.
+- **No new ADR this cycle** — [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md) already
+  ratifies the pack contract; Legal is a *worked instance* of it. (A pack that *had* forced per-recipient
+  matrix policy would have needed a horizontal Governance ADR — that section instead documents *why the
+  gap does not exist*.)
+- Updated indexes: `packs/README.md` pack table (Legal → **Seeded**, 1st novel-concept test),
+  `platform/README.md` domain map (packs → **Finance + HR + Legal seeded**).
+- **Directly strengthens (no new risk owned):** turns "even a genuinely new restriction type = pack,
+  not redesign" from an *untested* claim into a *tested* one (n=3, first novel concept); binds a new
+  audit dimension (**the waiver decision itself is an audited ACL-change event**); re-exercises R1
+  (computed-privilege quarantine), R3 (waiver propagation within the freshness SLA), R4 (cross-tenant),
+  and the `legal_hold > erasure > retention` precedence under e-discovery preservation.
+- ⏳ **Handed to later cycles:** **Audit** is now almost entirely inherited (Finance SOX row +
+  segregation-of-duties as another `deny`-grant + append-only evidence + Legal's `matter:<id>` hold),
+  then **KM** as the deliberate *inverse* stress (broad `internal`, high recall — does the pipeline
+  *over*-refuse on open content?). The runtime **pack-load SPI** (open Q#6-adjacent) is still the
+  engineering track.
 
 ### Cycle 12 (2026-07-06) — Domain Pack #2 (HR): the second, structurally-different data point
 - Wrote **[packs/hr/00-hr-pack.md](packs/hr/00-hr-pack.md)** — the **second pack**, chosen to
@@ -717,20 +769,31 @@ already an effective principal); computed manager-hierarchy rules reused the §9
 Registered `pii_class:health`/`employment`/`restricted:works_council`; tightened the matrix with a
 manager-visibility carve-out; exercised the reflexive self-DSAR and `legal_hold > erasure > retention`.
 
-### ▶ Cycle 13 (do next): **Domain Pack #3 — Legal (privilege + matter-scoped holds)**
-Write `packs/legal/00-legal-pack.md` against the [skeleton](packs/README.md). *Why next:* with the
-bet now proven reusable (n=2), Legal is the highest-leverage third because it (a) **reuses HR's
-`matter:<id>` / hold shape** and Finance's DMS/SharePoint fidelity, so it is near-mechanical, and
-(b) introduces the one genuinely new concept the platform has not yet stress-tested:
-**attorney-client privilege as a retrieval gate** — is privilege expressible as a
-`restricted:privileged` label + a cleared-principal set (additive), or does "privilege can be
-*waived* per matter, per recipient" force something the label lattice can't represent? That is the
-**real falsifiability test of Cycle 13** — if privilege-waiver needs per-recipient dynamic policy the
-static label→action matrix can't express, raise a horizontal ADR (Governance/Metadata) rather than a
-pack-local hack. Sources: DMS (iManage/NetDocuments), SharePoint, email, matter stores; clause-level
-chunking (reuse RAG's structure-aware seam). After Legal, **Audit** becomes almost entirely
-inherited (Finance SOX row + segregation-of-duties + append-only evidence), then KM (broad `internal`,
-high recall, low restriction — the *inverse* stress: does the pipeline *over*-refuse on open content?).
+### ✅ Cycle 13 (DONE — see §1): **Domain Pack #3 — Legal (privilege, ethical walls & holds)**
+Wrote `packs/legal/00-legal-pack.md` against the [skeleton](packs/README.md). No new ADR (Legal is a
+worked instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). **First genuine
+novel-concept falsifiability test since Finance — the rule was armed and did NOT fire.** Privilege
+*waiver* resolved additively by separating **what** (`restricted:privileged` label) from **who** (item
+ACL): waiver = a *narrowing ACL grant edit* propagated by the existing re-sync, **never** a label
+removal; "per recipient" is what an ACL already is, so the static label→action matrix needs no
+recipient policy. Ethical walls = the existing deny-wins clause. Registered `restricted:privileged` +
+`restricted:work_product`; reused `matter:<id>`. The platform *mirrors* privilege (computed/unresolvable
+privilege → `approximate → deny + quarantine`), never *computes* waiver.
+
+### ▶ Cycle 14 (do next): **Domain Pack #4 — Audit (mostly inherited) + segregation-of-duties**
+Write `packs/audit/00-audit-pack.md` against the [skeleton](packs/README.md). *Why next:* Audit is the
+**highest-leverage low-effort** pack — it inherits almost everything already built and adds essentially
+one new application of an existing mechanism, making it the cheapest way to push the bet to n=4 and
+harden the SOX/evidence story. It **inherits Finance's SOX compliance row + SAP connector fidelity
+verbatim**, reuses **Legal's `matter:<id>` hold + append-only evidence**, and the one concept to test is
+**segregation-of-duties (SoD)** — which should resolve to *another application of the existing deny-wins
+clause* (a principal who holds role A is **denied** artifacts requiring role B, a `deny` grant), exactly
+as Legal's ethical walls did. *Falsifiability check:* if SoD needs a *combinatorial/relational* rule
+("no single principal may hold both approve **and** post on the same document") that a per-principal
+`deny` set can't express, that is a real horizontal gap → a Permissions/Governance ADR, not a pack hack.
+Sources: Finance + Legal sources, workpapers/evidence repositories. After Audit, **KM** is the
+deliberate *inverse* stress (broad `internal`, high recall, low restriction — does the pipeline
+*over*-refuse on open content, the opposite failure mode from Legal's *who*-dominated one?).
 
 ### Later (backlog)
 - Further **pack specifications** after Legal (Audit, Knowledge Mgmt, SAP, SharePoint, Email, …)
