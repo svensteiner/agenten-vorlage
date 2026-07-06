@@ -185,8 +185,19 @@ query path.
 - The threat model is revisited every cycle as new attack classes (esp. against
   agents and RAG) emerge.
 
+## 14. Edge hardening (Cycle 28)
+
+Three later cycles pierced or subdivided the §2 boundary and deferred the concrete controls to Security:
+the **Track-B managed-endpoint egress** edge (ADR-0018), the **substrate run-state residency/isolation**
+edge (S3/S5), and the **agent→agent handoff** intra-boundary trust edge (ADR-0019). Each edge's construction
+control, independent predicate, runtime verifier, fail-closed default, and audit evidence are specified in
+**[01-trust-edge-hardening.md](01-trust-edge-hardening.md)** — which also extends the §9 threat model with
+five new entries (egress exfiltration, residency violation, cross-tenant orchestration leak, handoff
+privilege escalation, poisoned handoff steer). No new ADR — the security projection of ADR-0018/0019/0004.
+
 ## Related
 
+- [Trust-edge hardening (Cycle 28)](01-trust-edge-hardening.md) — E1 egress / E2 residency / E3 handoff.
 - [Vision & Principles](../architecture/00-vision-and-principles.md)
 - [ADR-0004 — Permission-faithful retrieval](../architecture/adr/ADR-0004-permission-faithful-retrieval.md)
 - [ADR-0003 — Model Gateway](../architecture/adr/ADR-0003-model-gateway-indirection.md)

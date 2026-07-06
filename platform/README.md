@@ -29,7 +29,7 @@ is stable.
 | Folder | Concern | Status |
 |--------|---------|--------|
 | [architecture/](architecture/) | Vision, high-level structure, ADR log | **Seeded** |
-| [security/](security/) | Identity, isolation, data protection, threat model | **Seeded** |
+| [security/](security/) | Identity, isolation, data protection, threat model. **Cycle 28:** [trust-edge hardening](security/01-trust-edge-hardening.md) — the three edges earlier cycles handed to Security (E1 Track-B managed-endpoint egress, E2 substrate run-state residency/isolation S3/S5, E3 agent→agent handoff privilege-escalation), each with construction + independent predicate + runtime verifier + fail-closed default + audit evidence; +5 threat-model entries. | **Seeded (Cycle 1) · Extended (Cycle 28)** |
 | [rag/](rag/) | Retrieval-augmented generation pipeline | **Seeded** |
 | [permissions/](permissions/) | Authorization, ACL propagation, row/document-level access | **Seeded** |
 | [storage/](storage/) | Object, vector, relational, cache storage | **Seeded** |
