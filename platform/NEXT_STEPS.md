@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 14 (Domain Pack #4 — Audit: the first *combinatorial*-concept falsifiability test — segregation-of-duties)
+- **Current cycle:** 15 (Domain Pack #5 — Knowledge Management: the first *inverse* falsifiability test — over-refusal vs. loosening a floor)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 87 %** (Ende Zyklus 14) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 88 %** (Ende Zyklus 15) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit …) | 6 % | 78 % | 4.7 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM …) | 6 % | 85 % | 5.1 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 87 %** |
+| **Summe** | **100 %** | — | **≈ 88 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · **Z14 ≈ 87 %** (Audit-Pack — n=4; der erste *kombinatorische* Begriff, Segregation-of-Duties, hält — aber aus einem schärferen Grund als Legal: SoD-*Prävention* ist eine Schreib-/Transaktions­kontrolle **außerhalb der Plattform-Ebene** (read-plane mirror), SoD-*Detektion* ist eine gewöhnliche berechtigungstreue Retrieval-Abfrage; SoD-Leseausschluss = bestehendes deny-wins. SOX/PCAOB von Finance geerbt. KM/SAP/SharePoint/Email bleiben fill-in-the-blank).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · **Z15 ≈ 88 %** (KM-Pack — n=5; der erste *inverse* Stresstest: nicht "verweigert die Plattform korrekt?" sondern "*hört* sie auf zu verweigern, wenn sie darf?". Over-Refusal ist ein *Tuning/Eval*-Problem **oberhalb** von Filter und Verifier (Query-Expansion, Rerank/MMR, Dedup, KM-eval-getuntes Modell), **niemals** ein Floor-Aufweichen (breiteres Default-Label, gelockerte Grounding-Schwelle, ungefilterter List-Mode — alle drei abgelehnt und unnötig). **Erster Pack mit leerem §2 + §3** — null neue Vokabeln, null Tighten, null Loosen: Beweis, dass die Low-Restriction-Defaults bereits korrekt kalibriert sind. SAP/SharePoint/Email bleiben reine Connector-Fidelity-Wiederverwendung).
 
 ---
 
@@ -48,6 +48,61 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 15 (2026-07-06) — Domain Pack #5 (KM): the first *inverse* falsifiability test — over-refusal
+- Wrote **[packs/km/00-km-pack.md](packs/km/00-km-pack.md)** — the **fifth pack**, and the first to
+  stress the platform from the **opposite** direction. Finance/HR/Legal/Audit all asked *"does the
+  platform correctly **refuse**?"* (over-sharing = safety bug). KM inverts it: broad `internal`, low
+  restriction, high recall over Confluence/SharePoint/wikis/portals — the feared failure is
+  ***over-refuse*** (an **availability** bug: accessible open content left *unfound* or *needlessly
+  masked*).
+- **The headline (§0 ledger + the dedicated "Over-refusal" analysis): net horizontal change = none,
+  all additive — and, uniquely, additive with *empty §2 and §3*. The falsifiability rule was armed
+  against a *loosening* (not a tightening) and did NOT fire.** The pack most tempted to loosen a floor
+  to buy recall needed to loosen **nothing**:
+  - **Over-refusal is a *tuning/eval* problem *upstream* of the filter and verifier — never a
+    floor-loosening problem.** A KM answer is wrongly empty for exactly two reasons: (1) content was
+    accessible but *not retrieved* (a recall miss — fixed by the *existing* levers on the
+    already-permitted set: query expansion [RAG §4.3], hybrid/rerank/MMR tuning [RAG §5], wiki dedup
+    [RAG §6], a KM-eval-tuned model); or (2) content was *not accessible* and the empty answer is
+    *correct* (the safety floor working). Neither requires seeing more than the caller may.
+  - **Three floor-loosening temptations, each rejected *and* shown unnecessary:** widen the default
+    label (`internal`→`public`) — buys **zero** recall (`internal` is already retrievable internally)
+    and breaks fail-closed classification; relax the verifier grounding bar — targets the wrong stage
+    and converts an availability bug into a **grounding/R2 leak**; add an unfiltered "list mode" —
+    structurally impossible (`VectorIndex` port has no unfiltered method) *and* unnecessary (browse =
+    the filter-parity catalog read).
+- **The reusable articulation (stated once, in the pack):** *recall is bought **upstream of** the
+  filter and verifier, on the set the caller may already see; safety is enforced **at and after** the
+  filter — the two never trade, so improving one never regresses the other.* Reaffirms
+  ADR-0004/ADR-0009 → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **First pack to register ZERO new vocabulary (§2 empty) and apply ZERO tighten deltas (§3 empty),
+  and it loosens nothing either** — the empty tables *are* the deliverable: direct evidence that the
+  **low-restriction end of the lattice was already complete** and correctly calibrated. Also the
+  **lightest compliance footprint** of any pack (ISO 27001/SOC 2 + incidental-PII GDPR, both inherited).
+- **Sources:** Confluence (space + page restrictions), SharePoint/OneDrive wikis+portals (reuses
+  Finance/HR/Legal fidelity verbatim), internal portals/intranet, Git-hosted wikis. Fidelity-friendly,
+  but the fail-closed rule is **not waived** for it (an unresolvable page restriction is still
+  quarantined; unlabeled → `internal` never `public`). Supplied conformance fixtures with a deliberate
+  *both-ways* emphasis — an **open-content positive** (a space-member *can* read an `internal` page:
+  the pack must not over-restrict) **and** the usual restricted-page/computed-restriction/cross-tenant
+  negatives (safety floor unchanged). Eval set inverts the headline to **recall / over-refusal
+  false-negative** while *retaining* the permission-negative class — proving the gate can chase recall
+  without trading away safety (the SoD-detection recall class Audit first surfaced, now the primary bar).
+- **No new ADR this cycle** — KM is a *worked instance* of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md);
+  the pack instead **documents the floor from the open side** (a tenant demanding "skip the filter" is
+  refused) and names the future pack that *would* force an ADR: a *transparency-mode* pack that
+  surfaces content beyond strict entitlement (deliberately out of scope, now documented).
+- Updated indexes: `packs/README.md` (KM → **Seeded**, 1st inverse test), `platform/README.md` domain
+  map (packs → **Finance + HR + Legal + Audit + KM seeded**).
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=5** and to its **first inverse
+  (over-refusal) corner**; proves the fail-closed defaults don't suppress legitimate recall; re-exercises
+  the SharePoint connector fidelity in *open* mode (complementing the restricted-mode exercise);
+  re-validates R2 from the other side (a lowered grounding bar as an *anti*-pattern is now documented).
+- ⏳ **Handed to later cycles:** the **source-shaped** packs (SAP / SharePoint / Email) are now pure
+  connector-fidelity reuse (both restricted- and open-mode SharePoint paths exercised); the runtime
+  **pack-load SPI** (open Q#6-adjacent) is still the engineering track; open Q#3 (model hosting) still
+  feeds each pack's eval-tuned model choice.
 
 ### Cycle 14 (2026-07-06) — Domain Pack #4 (Audit): the first *combinatorial*-concept falsifiability test
 - Wrote **[packs/audit/00-audit-pack.md](packs/audit/00-audit-pack.md)** — the **fourth pack**,
@@ -854,24 +909,40 @@ combinatorial join lives in the query + source data, never in the access predica
 the S7 append-only trail verbatim. Documented the **read-plane-mirror scope boundary** as the explicit
 reason no transaction-control ADR was needed (and named the future *action-taking* pack that would).
 
-### ▶ Cycle 15 (do next): **Domain Pack #5 — Knowledge Management (the inverse stress)**
-Write `packs/km/00-km-pack.md` against the [skeleton](packs/README.md). *Why next:* every pack so far
-(Finance/HR/Legal/Audit) has stressed the *who*-restricted, fail-closed corner — "does the platform
-correctly *refuse*?" KM is the **deliberate inverse**: broad `internal` visibility, low restriction,
-**high recall** over Confluence/SharePoint/wikis. The failure mode flips from *over-share* (a safety
-bug) to ***over-refuse*** (an availability bug) — does the fail-closed pipeline, tuned on four
-restrictive packs, now leave accessible open content *unfound* or *needlessly masked*? *Falsifiability
-check:* if maximizing recall on open content *requires loosening* a floor (a widened default label, a
-relaxed verifier grounding bar, an unfiltered "list mode") that is a real horizontal gap → an ADR, not
-a pack hack. Expected resolution: KM tightens *nothing* and *loosens nothing* — it is the pack that
-proves the platform's defaults are already correctly calibrated for the low-restriction end, with the
-eval headline being **recall / refuse-only-when-truly-inaccessible**, the mode Audit's SoD-detection
-recall class first surfaced. Sources: Confluence, SharePoint wikis, internal docs/portals. After KM,
-the **source-shaped** packs (SAP / SharePoint / Email) are pure connector-fidelity reuse.
+### ✅ Cycle 15 (DONE — see §1): **Domain Pack #5 — Knowledge Management (the inverse stress)**
+Wrote `packs/km/00-km-pack.md` against the [skeleton](packs/README.md). No new ADR (KM is a worked
+instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)). **First *inverse*
+(over-refusal) falsifiability test — the rule was armed against a *loosening* and did NOT fire.**
+Over-refusal resolved as a *tuning/eval* problem **upstream** of the filter and verifier (query
+expansion, rerank/MMR, dedup, KM-eval-tuned model on the *already-permitted* set), **never** a
+floor-loosening one — all three temptations (widen default label, relax grounding bar, unfiltered list
+mode) rejected *and* shown unnecessary. **First pack with empty §2 + §3** (zero new vocabulary, zero
+tighten, zero loosen) — the empty tables *are* the proof the low-restriction defaults are already
+calibrated. Eval headline inverted to **recall / over-refusal** while retaining the permission-negative
+class (recall chased without trading away safety).
+
+### ▶ Cycle 16 (do next): **Domain Pack #6 — SAP (the first source-shaped pack)** *(or KM-adjacent runtime SPI, see below)*
+Write `packs/sap/00-sap-pack.md` against the [skeleton](packs/README.md). *Why next:* the five
+concept-driven packs (Finance/HR/Legal/Audit/KM) have now stressed every *policy* corner — the
+restrictive `who`-gated cases **and** the inverse over-refusal case. The remaining packs are
+**source-shaped**, not concept-shaped: their whole content is **connector `map_acl` fidelity**, and SAP
+is the hardest and most-reused of them (no document ACL; row/record scope; field-level authorization;
+FI/CO + HCM + GRC modules). Finance already proved SAP fidelity *for financial content* and Audit/HR
+reused it — Cycle 16 consolidates SAP as a **first-class source pack** whose §1 is the canonical SAP
+`map_acl` reference all other packs cite, with the module-by-module fidelity matrix (the sub-question
+open Q#2 deferred: *exact `map_acl` fidelity achievable per SAP module*). *Falsifiability check:* if any
+SAP module exposes authorization the connector cannot resolve to a principal set *and* cannot quarantine,
+that is a real R1 gap → a Permissions ADR; expected resolution: every unresolvable case rides the
+*existing* `approximate → deny + quarantine` hatch (as Finance's field-level auth already does). Then
+SharePoint and Email are near-pure fidelity reuse (both already exercised — SharePoint in restricted
+*and* open mode). **Alternative for this slot:** if the engineering track is preferred over more doc
+packs, pick up the **runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code
+mechanism that *loads* a pack at runtime is not yet built.
 
 ### Later (backlog)
-- Further **pack specifications** after Audit (Knowledge Mgmt, then source-shaped SAP, SharePoint, Email, …)
-  reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
+- Further **pack specifications** after KM — the **source-shaped** SAP, SharePoint, Email (pure
+  connector-fidelity reuse; both SharePoint modes already exercised), then Document Intelligence /
+  Reporting — reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
   ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger discipline.
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,

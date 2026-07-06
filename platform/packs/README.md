@@ -61,7 +61,7 @@ not a failure of the pack — it converts an unstated assumption into a tracked 
 | [HR](hr/00-hr-pack.md) | **Seeded (Cycle 12)** — the 2nd data point | Workday/SAP HCM, SharePoint, email | Employee-self-scoped ACLs, `pii_class:health` (Art. 9), GDPR-primary erasure vs. statutory retention |
 | [Legal](legal/00-legal-pack.md) | **Seeded (Cycle 13)** — 1st novel-concept test | DMS (iManage/NetDocuments), SharePoint, email, matter stores | Attorney-client **privilege + waiver** (falsifiability test — held), **ethical walls = deny-wins**, `matter:<id>` holds, clause chunking |
 | [Audit](audit/00-audit-pack.md) | **Seeded (Cycle 14)** — 1st combinatorial test | GRC/audit-mgmt (AuditBoard/Workiva/SAP GRC), SAP, DMS, the platform's own S7 trail | **Segregation-of-duties** (falsifiability test — held; SoD prevention is *out of plane*, detection is a read), SOX/PCAOB inherited from Finance, `restricted:audit_workpaper`, append-only evidence |
-| Knowledge Mgmt | Backlog | Confluence, SharePoint, wikis | Broad `internal`, low restriction, high recall |
+| [Knowledge Mgmt](km/00-km-pack.md) | **Seeded (Cycle 15)** — 1st *inverse* (over-refusal) test | Confluence, SharePoint, wikis, portals | **High recall over broad `internal`** (falsifiability test — held; recall bought *within* the floors, never by loosening one), **first pack with empty §2 + §3** (zero new vocabulary, zero tighten), over-refusal eval headline |
 | SAP / SharePoint / Email | Backlog | (source-shaped packs) | Reuse Finance/HR connector fidelity work |
 
 Each backlog pack is **fill-in-the-blank** against this skeleton and inherits the
