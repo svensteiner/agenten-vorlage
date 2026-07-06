@@ -41,6 +41,7 @@ is stable.
 | [models/](models/) | Model hosting & serving substrate (in-boundary OSS vs. contractually-private managed), per-tier×class routing behind the Gateway — **resolves open Q#3** | **Seeded (Cycle 22)** |
 | [orchestration/](orchestration/) | Agent orchestration posture: extend `core/`'s planner/verifier loop into the distributed multi-agent orchestrator (choke points stay ours); durable execution behind an `ExecutionBackend` port; bounded pack-declared agent graphs — **resolves open Q#6** | **Seeded (Cycle 23)** |
 | [packs/](packs/) | Domain packs (**all 10 planned seeded** — Finance + HR + Legal + Audit + KM + SAP + SharePoint + Email + Document Intelligence + Reporting) + the **[runtime pack-load SPI](packs/01-pack-load-spi.md)** (the fail-closed loader that makes the pack contract executable) — the "new domain = pack, not redesign" proof | **Surface complete (Cycle 20); load SPI designed (Cycle 21)** |
+| [engineering/](engineering/) | The `platform/`→`core/` **reconciliation track**: ground-truth `core/` audit + gap ledger + sequenced TDD build plan discharging [ADR-0017](architecture/adr/ADR-0017-runtime-pack-load-spi.md) (pack-load loader) & [ADR-0019](architecture/adr/ADR-0019-agent-orchestration-posture.md) (orchestrator re-host) — the only remaining weighted gap | **Seeded (Cycle 24)** |
 
 ## Documentation contract
 
