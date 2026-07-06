@@ -62,7 +62,8 @@ not a failure of the pack — it converts an unstated assumption into a tracked 
 | [Legal](legal/00-legal-pack.md) | **Seeded (Cycle 13)** — 1st novel-concept test | DMS (iManage/NetDocuments), SharePoint, email, matter stores | Attorney-client **privilege + waiver** (falsifiability test — held), **ethical walls = deny-wins**, `matter:<id>` holds, clause chunking |
 | [Audit](audit/00-audit-pack.md) | **Seeded (Cycle 14)** — 1st combinatorial test | GRC/audit-mgmt (AuditBoard/Workiva/SAP GRC), SAP, DMS, the platform's own S7 trail | **Segregation-of-duties** (falsifiability test — held; SoD prevention is *out of plane*, detection is a read), SOX/PCAOB inherited from Finance, `restricted:audit_workpaper`, append-only evidence |
 | [Knowledge Mgmt](km/00-km-pack.md) | **Seeded (Cycle 15)** — 1st *inverse* (over-refusal) test | Confluence, SharePoint, wikis, portals | **High recall over broad `internal`** (falsifiability test — held; recall bought *within* the floors, never by loosening one), **first pack with empty §2 + §3** (zero new vocabulary, zero tighten), over-refusal eval headline |
-| SAP / SharePoint / Email | Backlog | (source-shaped packs) | Reuse Finance/HR connector fidelity work |
+| [SAP](sap/00-sap-pack.md) | **Seeded (Cycle 16)** — the 1st *source-shaped* pack | SAP FI/CO, MM, SD, HCM/SuccessFactors, BW/BI, GRC | **The canonical SAP `map_acl` reference** (resolves open Q#2's per-module sub-question) — the **three-band fidelity model** (A `exact` / B resolve-or-quarantine / C quarantine) proves *no SAP construct is neither resolvable nor quarantinable*; **2nd pack with empty §2 + §3** (a source carries no policy of its own) |
+| SharePoint / Email | Backlog | (source-shaped packs) | Near-pure fidelity reuse (both *have* document ACLs; both modes already exercised) |
 
 Each backlog pack is **fill-in-the-blank** against this skeleton and inherits the
 Finance pack's structure verbatim.

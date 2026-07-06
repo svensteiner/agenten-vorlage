@@ -3,10 +3,10 @@
 > **Read this file first, every cycle.** It is the mandatory hand-off between
 > execution cycles. Update it at the end of every cycle. Never restart from scratch.
 
-- **Current cycle:** 15 (Domain Pack #5 — Knowledge Management: the first *inverse* falsifiability test — over-refusal vs. loosening a floor)
+- **Current cycle:** 16 (Domain Pack #6 — SAP: the first *source-shaped* pack — the canonical `map_acl` reference + three-band fidelity model; resolves open Q#2's per-module sub-question)
 - **Last updated:** 2026-07-06
 - **Documentation root:** `platform/` — the single source of truth.
-- **Gesamtfortschritt:** **≈ 88 %** (Ende Zyklus 15) — siehe §0.1. **Nach jeder Session melden.**
+- **Gesamtfortschritt:** **≈ 89 %** (Ende Zyklus 16) — siehe §0.1. **Nach jeder Session melden.**
 
 ---
 
@@ -27,11 +27,11 @@
 | Governance / Audit / Kosten (Z7) | 8 % | 85 % | 6.8 |
 | API-Surface & Verträge (Z9) | 5 % | 90 % | 4.5 |
 | Deployment / Topologie / DR (Z10) | 7 % | 90 % | 6.3 |
-| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM …) | 6 % | 85 % | 5.1 |
+| Domänen-Pack-Specs (Finance/HR/Legal/Audit/KM/SAP …) | 6 % | 90 % | 5.4 |
 | Code-Reconciliation (`core/`-Umsetzung) | 4 % | 30 % | 1.2 |
-| **Summe** | **100 %** | — | **≈ 88 %** |
+| **Summe** | **100 %** | — | **≈ 89 %** |
 
-**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · **Z15 ≈ 88 %** (KM-Pack — n=5; der erste *inverse* Stresstest: nicht "verweigert die Plattform korrekt?" sondern "*hört* sie auf zu verweigern, wenn sie darf?". Over-Refusal ist ein *Tuning/Eval*-Problem **oberhalb** von Filter und Verifier (Query-Expansion, Rerank/MMR, Dedup, KM-eval-getuntes Modell), **niemals** ein Floor-Aufweichen (breiteres Default-Label, gelockerte Grounding-Schwelle, ungefilterter List-Mode — alle drei abgelehnt und unnötig). **Erster Pack mit leerem §2 + §3** — null neue Vokabeln, null Tighten, null Loosen: Beweis, dass die Low-Restriction-Defaults bereits korrekt kalibriert sind. SAP/SharePoint/Email bleiben reine Connector-Fidelity-Wiederverwendung).
+**Verlauf:** Z1 ≈ 18 % · Z2/2b ≈ 24 % · Z3 ≈ 33 % · Z4 ≈ 40 % · Z5 ≈ 49 % · Z6 ≈ 58 % · Z7 ≈ 65 % · Z8 ≈ 71 % · Z9 ≈ 76 % · Z10 ≈ 82 % · Z11 ≈ 84 % · Z12 ≈ 85 % · Z13 ≈ 86 % · Z14 ≈ 87 % · Z15 ≈ 88 % · **Z16 ≈ 89 %** (SAP-Pack — n=6; der erste *source-shaped* Pack: nicht "passt ein neues *Policy*-Konzept?" sondern "passt das *gesamte Autorisierungsmodell der härtesten Quelle* — jedes Modul — in den `map_acl`-Fidelity-Vertrag, ohne Fall der weder `exact` noch quarantänefähig ist?". Das **Drei-Band-Fidelity-Modell** (A `exact` org-/rollen-basiert / B strukturell-dynamisch: auflösen-oder-quarantäne / C feld-/zeilen-/zell-basiert: quarantäne) beweist FI-CO, MM, SD, HCM, BW, GRC jointly-exhaustive — kein vierter Fall. **Zweiter Pack mit leerem §2 + §3** (nach KM), aber aus strukturell anderem Grund: eine *Quelle* trägt keine eigene Policy — Klassifikation/Tighten gehören der aufsitzenden Domäne. Konsolidiert die bisher 3× ad-hoc (Finance/HR/Audit) behauptete SAP-Fidelity in **eine kanonische §1** (DRY-Gewinn) und löst die aufgeschobene Teilfrage von offener Q#2. SharePoint/Email bleiben reine, kürzere Fidelity-Reuse (beide *haben* Dokument-ACLs)).
 
 ---
 
@@ -48,6 +48,74 @@
 ---
 
 ## 1. Completed work
+
+### Cycle 16 (2026-07-06) — Domain Pack #6 (SAP): the first *source-shaped* pack + the canonical `map_acl` reference
+- Wrote **[packs/sap/00-sap-pack.md](packs/sap/00-sap-pack.md)** — the **sixth pack** and the
+  first that is *source-shaped* rather than *concept-shaped*. Finance/HR/Legal/Audit/KM each
+  stressed a **policy** corner; SAP introduces **no new policy concept at all** — its entire
+  content is **connector `map_acl` fidelity** for the one source with **no document ACL**. It is
+  now the **canonical SAP `map_acl` reference** that Finance/HR/Audit cite instead of re-deriving,
+  and it **resolves the sub-question open Q#2 deferred**: *the exact `map_acl` fidelity achievable
+  per SAP module* (see §3 below).
+- **The headline (§0 ledger + the "three-band fidelity model" analysis): net horizontal change =
+  none, all additive — a *different kind* of falsifiability test, and it held.** The five concept
+  packs asked "does a new *policy* concept fit?"; SAP asks **"does the hardest source's *entire*
+  authorization model — every module — fit the `map_acl` fidelity contract, with no case that is
+  neither `exact` nor quarantinable?"** Every SAP construct sorts into exactly one of three bands:
+  - **Band A — org-level & role authorization → `exact`:** company code / cost center / plant /
+    purchasing org / sales org expressible as `role:*` + `orgunit:*` principal set-membership
+    (FI/CO, MM, SD; the case Finance proved and HR/Audit reused).
+  - **Band B — structural / dynamic authorization → resolve-or-quarantine:** HCM structural
+    authorizations (PD/OM org-tree evaluation paths), `P_ORGINCON` context solution, dynamic
+    groups. **B1** = pre-evaluate to a principal set kept fresh by `list_principal_changes`
+    (the *same mechanism HR's computed manager-hierarchy already rode*) → `exact` within SLA;
+    **B2** = not stably resolvable → `approximate → deny + quarantine` (or OBO).
+  - **Band C — field / row / cell-level → quarantine:** FI field-level auth, infotype subfield
+    masking, BW analysis authorizations (characteristic-value/cell-level) — sub-Item, not a
+    document grant → `approximate → deny + quarantine` (Finance's salary-line fixture path).
+    *Exception:* a materialized extract carrying its own row ACL is an ordinary Band-A item.
+- **Why there is no fourth case (the falsifiability payoff):** "resolvable to a principal set" and
+  "quarantinable" are **jointly exhaustive** — anything not Band A/B1 is sub-`exact`, and everything
+  sub-`exact` is denied-and-quarantined by construction (the `VectorIndex` port has no unfiltered
+  method; the persist stage routes sub-`exact` to quarantine). **There is no representable state in
+  which an unresolvable SAP authorization is served.** The three bands are *presentations* of the
+  existing two-outcome gate (`exact` served / sub-`exact` quarantined), **not a new confidence
+  level** — so no new predicate, no horizontal ADR. Reaffirms
+  [ADR-0008 §5.2](architecture/adr/ADR-0008-canonical-principal-acl-model.md) + the §9 quarantine
+  hatch → **no new ADR** (correct per [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)).
+- **Second pack with empty §2 + §3** (after KM), but for a **structurally different reason**: KM's
+  tables were empty because the low-restriction defaults were already calibrated; SAP's are empty
+  because **a source-shaped pack carries no policy of its own** — classification/tighten belong to
+  the *domain* riding on it (Finance's `restricted:mnpi`, HR's `pii_class:health`, Audit's
+  `restricted:audit_workpaper`). A source claiming policy would be a category error. §4 is **fully
+  inherited** (SOX from Finance-on-SAP, GDPR from HR-on-HCM, PCAOB from Audit-on-GRC) + one
+  source-specific evidence binding (SAP table/module + `CDPOS` change-doc number + version).
+- **Module-by-module fidelity matrix (§1)** covers FI/CO, MM, SD, HCM/SuccessFactors, BW/BI, GRC —
+  each row assigned a band + max `acl_confidence`. Conformance fixtures span all three bands
+  (Band-A pos/neg, Band-C quarantine, Band-B1 freshness, Band-B2 quarantine, revocation,
+  cross-tenant). Eval headline is the source-shaped analogue: **fidelity-band routing correctness**
+  (0 Band-C/B2 items served) + permission negatives. Promoted the **SAP table-serialization parser**
+  (named in Finance §5) to the canonical SAP parser.
+- **GRC/SoD inherited verbatim** from [Audit's plane-boundary analysis](packs/audit/00-audit-pack.md):
+  SoD *prevention* is out of the read plane; SoD read-exclusions = pre-resolved per-principal `deny`
+  (Band A, deny-wins); SoD *detection* = ordinary permission-gated retrieval. Adds nothing.
+- **Consolidation / DRY win:** SAP fidelity was asserted **3× ad hoc** (Finance/HR/Audit); this pack
+  makes it **one canonical §1** they all cite.
+- Updated indexes: `packs/README.md` (SAP → **Seeded**, 1st source-shaped pack; SharePoint/Email →
+  shorter fidelity-reuse backlog), `platform/README.md` domain map (packs → **Finance + HR + Legal +
+  Audit + KM + SAP seeded**).
+- **Resolved the deferred sub-question of open Q#2** — see §3.
+- **Directly strengthens (no new risk owned):** pushes the bet to **n=6** and to its **first
+  source-shaped corner**; hardens R1 (the three-band model makes "neither resolvable nor
+  quarantinable" a *checked and empty* set across all SAP modules); re-exercises R3 (Band-B1
+  structural-auth freshness), R4 (cross-tenant), and the quarantine hatch end to end.
+- ⏳ **Handed to later cycles:** **SharePoint** and **Email** source packs are now near-pure,
+  *shorter* fidelity reuse (both *have* document ACLs → no dominant Band-C story; both modes already
+  exercised); the runtime **pack-load SPI** (open Q#6-adjacent) is still the engineering track; open
+  Q#3 (model hosting) still feeds each pack's eval-tuned model choice. The one future case that would
+  force a horizontal Permissions ADR is now **named explicitly**: an SAP module exposing an
+  authorization construct that is *neither* resolvable to a principal set *nor* sub-Item-quarantinable
+  (none found across FI/CO, MM, SD, HCM, BW, GRC).
 
 ### Cycle 15 (2026-07-06) — Domain Pack #5 (KM): the first *inverse* falsifiability test — over-refusal
 - Wrote **[packs/km/00-km-pack.md](packs/km/00-km-pack.md)** — the **fifth pack**, and the first to
@@ -705,10 +773,15 @@
    port that has no unfiltered-search method**. See [Storage §3](storage/00-storage-architecture.md).
    Remaining sub-question deferred to [Workers](workers/): the transactional-outbox relay
    that keeps the denormalized chunk-ACL coherent at the dedicated-engine tier.
-2. ✅ **DECIDED (Cycle 3, [ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)).**
+2. ✅ **DECIDED (Cycle 3, [ADR-0008](architecture/adr/ADR-0008-canonical-principal-acl-model.md)); sub-question RESOLVED (Cycle 16).**
    ~~Permission normalization model~~ — canonical four-noun model + CPI, normalize at
-   ingestion, enforce one predicate at query time. Remaining sub-question deferred to
-   connector cycles: the exact `map_acl` fidelity achievable per SAP module.
+   ingestion, enforce one predicate at query time. **The deferred sub-question — *exact
+   `map_acl` fidelity achievable per SAP module* — is resolved by the
+   [SAP pack §1 three-band fidelity matrix](packs/sap/00-sap-pack.md):** FI/CO, MM, SD org-level
+   → **Band A `exact`**; HCM structural authorizations → **Band B** (resolve-to-principal-set +
+   re-sync, else quarantine); FI field-level / infotype subfield / BW analysis authorizations →
+   **Band C** quarantine. The bands are jointly exhaustive — no SAP construct is neither
+   resolvable nor quarantinable, so no new confidence level / predicate was needed.
 3. **Model hosting** — in-boundary OSS models vs. contractually-private managed
    endpoints (or both, by tenant tier). Drives cost, latency, and compliance posture.
    **Cycle 7 note:** Governance built the **approved-model registry + eval-before-promotion
@@ -921,29 +994,40 @@ tighten, zero loosen) — the empty tables *are* the proof the low-restriction d
 calibrated. Eval headline inverted to **recall / over-refusal** while retaining the permission-negative
 class (recall chased without trading away safety).
 
-### ▶ Cycle 16 (do next): **Domain Pack #6 — SAP (the first source-shaped pack)** *(or KM-adjacent runtime SPI, see below)*
-Write `packs/sap/00-sap-pack.md` against the [skeleton](packs/README.md). *Why next:* the five
-concept-driven packs (Finance/HR/Legal/Audit/KM) have now stressed every *policy* corner — the
-restrictive `who`-gated cases **and** the inverse over-refusal case. The remaining packs are
-**source-shaped**, not concept-shaped: their whole content is **connector `map_acl` fidelity**, and SAP
-is the hardest and most-reused of them (no document ACL; row/record scope; field-level authorization;
-FI/CO + HCM + GRC modules). Finance already proved SAP fidelity *for financial content* and Audit/HR
-reused it — Cycle 16 consolidates SAP as a **first-class source pack** whose §1 is the canonical SAP
-`map_acl` reference all other packs cite, with the module-by-module fidelity matrix (the sub-question
-open Q#2 deferred: *exact `map_acl` fidelity achievable per SAP module*). *Falsifiability check:* if any
-SAP module exposes authorization the connector cannot resolve to a principal set *and* cannot quarantine,
-that is a real R1 gap → a Permissions ADR; expected resolution: every unresolvable case rides the
-*existing* `approximate → deny + quarantine` hatch (as Finance's field-level auth already does). Then
-SharePoint and Email are near-pure fidelity reuse (both already exercised — SharePoint in restricted
-*and* open mode). **Alternative for this slot:** if the engineering track is preferred over more doc
-packs, pick up the **runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code
-mechanism that *loads* a pack at runtime is not yet built.
+### ✅ Cycle 16 (DONE — see §1): **Domain Pack #6 — SAP (the first source-shaped pack)**
+Wrote `packs/sap/00-sap-pack.md` against the [skeleton](packs/README.md). No new ADR (SAP is a worked
+instance of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md); the three-band model is a
+consolidation of [ADR-0008 §5.2](architecture/adr/ADR-0008-canonical-principal-acl-model.md) + the §9
+quarantine hatch, not a new decision). **First *source-shaped* falsifiability test — held.** The
+module-by-module fidelity matrix (FI/CO, MM, SD, HCM, BW, GRC) sorts every SAP authorization construct
+into **Band A** (`exact`), **Band B** (structural/dynamic: resolve-or-quarantine) or **Band C**
+(field/row/cell: quarantine) — jointly exhaustive, so no construct is neither resolvable nor
+quarantinable → no new confidence level/predicate. **2nd pack with empty §2 + §3** (a source carries no
+policy of its own; §4 fully inherited). Resolved open Q#2's deferred per-module sub-question; consolidated
+the 3× ad-hoc SAP fidelity into one canonical §1.
+
+### ▶ Cycle 17 (do next): **Domain Pack #7 — SharePoint (source-shaped, near-pure fidelity reuse)** *(or the runtime pack-load SPI — engineering track)*
+Write `packs/sharepoint/00-sharepoint-pack.md` against the [skeleton](packs/README.md). *Why next:* with
+SAP consolidated, SharePoint is the second source-shaped pack and the **easiest remaining** — it *has* a
+rich item-level document ACL (Entra objectId principals, broken inheritance, sharing links, MIP labels),
+so **no Band-C quarantine story dominates** and it should be materially *shorter* than SAP. Its whole
+content is the canonical [SharePoint `map_acl`](permissions/00-authorization-model.md#51-sharepoint--onedrive-m365)
+reference that Finance/HR/Legal/Audit/KM cite (all five already exercised SharePoint — in restricted
+*and* open mode). *Falsifiability check:* the interesting cases are **sharing links** ("anyone" links on a
+restricted item — a policy flag, not a silent public grant) and **broken inheritance**; expected to ride
+the existing §5.1 rules + conformance suite with zero horizontal change. Then **Email** (Cycle 18) is the
+last source pack (per-message ACL, delegates, shared mailboxes — already exercised via HR/Legal/Audit).
+**Alternative for this slot:** if the engineering track is preferred over more doc packs, pick up the
+**runtime pack-load SPI** (below) — the doc contract (ADR-0016) is fixed; the code mechanism that *loads*
+a pack at runtime is not yet built.
 
 ### Later (backlog)
-- Further **pack specifications** after KM — the **source-shaped** SAP, SharePoint, Email (pure
-  connector-fidelity reuse; both SharePoint modes already exercised), then Document Intelligence /
-  Reporting — reusing the Cycle-11 skeleton; each **inherits** a compliance-map row
-  ([Governance §9](governance/00-governance-and-audit.md)) and the Finance §0-ledger discipline.
+- Further **pack specifications** after SAP — the remaining **source-shaped** SharePoint (Cycle 17,
+  next) and Email (both near-pure connector-fidelity reuse; both *have* document ACLs, both modes
+  already exercised), then Document Intelligence / Reporting — reusing the Cycle-11 skeleton and the
+  Cycle-16 source-pack shape (canonical `map_acl` §1, empty §2/§3, inherited §4); each **inherits** a
+  compliance-map row ([Governance §9](governance/00-governance-and-audit.md)) and the Finance
+  §0-ledger discipline.
 - **Runtime pack-load SPI** (open Q#6-adjacent): how a pack is *loaded* at runtime (the engineering
   form of [ADR-0016](architecture/adr/ADR-0016-domain-pack-contract.md)); the doc contract is fixed,
   the code mechanism is not yet built.
