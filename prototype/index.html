@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Studio — Meridian Industrie GmbH</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Seitenleiste -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">✦</div>
+        <div>
+          <div class="name">AI Studio</div>
+          <div class="sub">Wissensplattform</div>
+        </div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="company-card" id="companyCard"></div>
+    </aside>
+
+    <!-- Hauptbereich -->
+    <main class="main">
+      <header class="topbar">
+        <div class="title" id="topTitle"></div>
+        <div class="status"><span class="dot"></span> Alle Datenquellen verbunden</div>
+      </header>
+
+      <div class="scroll" id="scroll"></div>
+
+      <!-- Eingabe -->
+      <div class="composer" id="composer">
+        <div class="box">
+          <textarea id="input" rows="1" placeholder="Fragen Sie etwas über Ihr Unternehmenswissen …"></textarea>
+          <button class="send" id="send" title="Senden">➤</button>
+        </div>
+        <div class="hint">AI Studio durchsucht nur Dokumente, für die Sie berechtigt sind · Demo mit fiktiven Daten</div>
+      </div>
+
+      <!-- Dokumentenviewer (Slide-over) -->
+      <div class="overlay" id="overlay"></div>
+      <div class="viewer" id="viewer">
+        <div class="vhead">
+          <span class="ficon">▤</span>
+          <div>
+            <h3 id="vTitle"></h3>
+            <div class="type" id="vType"></div>
+          </div>
+          <button class="vclose" id="vClose" title="Schließen">✕</button>
+        </div>
+        <div class="vmeta" id="vMeta"></div>
+        <div class="vbody" id="vBody"></div>
+        <div class="vnote">🔒 Hervorgehobene Absätze = für die Antwort verwendete Belegstellen</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

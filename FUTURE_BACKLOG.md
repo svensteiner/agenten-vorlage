@@ -1,0 +1,32 @@
+# FUTURE_BACKLOG — nach der Demo (Phase 2+)
+
+> Ideen, die **außerhalb** der aktuellen Prototyp-Mission liegen. Hier geparkt, damit
+> der Fokus auf der Kundendemonstration bleibt. **Nicht in Phase 1 bearbeiten.**
+
+## Enterprise-Datenplattform (Phase 2)
+- Echte Konnektoren zu SharePoint, SAP, Fileserver, Exchange (Ingestion-Pipeline).
+- Echtes RAG: Embeddings, Vektor-Index, hybride Retrieval-Pipeline.
+- Permission-faithful Retrieval gegen echte ACLs.
+- **Hinweis:** Für viele dieser Themen existiert bereits ausgearbeitete Architektur-
+  Dokumentation unter [`platform/`](platform/) (31 Zyklen Vorarbeit). Diese ist das
+  technische Fundament für Phase 2 — in Phase 1 aber **eingefroren/nicht anfassen**.
+
+## Agent-Framework (Phase 2)
+- Orchestrator/Planner/Verifier aus [`core/`](core/) an echte Modelle anbinden.
+- Multi-Agent-Workflows, Tool-Scope, Handoffs (in `platform/orchestration/` bereits spezifiziert).
+
+## Skill-Bibliothek (Phase 3)
+- Domänen-Packs (Finance/HR/Legal/Audit/…) — in `platform/packs/` bereits als Specs vorhanden.
+
+## Produktreife
+- Authentifizierung/SSO, Mandantenfähigkeit, Audit-Log, Kosten-Governance.
+- Deployment, DR, regionale Topologie (in `platform/deployment/` spezifiziert).
+- Performance-Optimierung, Skalierung, Monitoring/SLOs.
+
+---
+
+### Warum das hier liegt
+Die Mission (Phase 1) ist **ausschließlich** der Kunden-Demo-Prototyp. Sobald die
+Demonstration abgenommen ist, wird das Projekt mit Enterprise-Datenplattform,
+Agent-Framework und Skill-Bibliothek fortgesetzt — dann wird `platform/` vom
+eingefrorenen IP zum aktiven Bauplan.
