@@ -10,7 +10,7 @@
 
 | # | Dauer | Aktion in der App | Kamera / Fokus |
 |---|-------|-------------------|----------------|
-| 0 | 0:20 | App im Vollbild öffnen (Hero-Ansicht, „Wissen") — optional **▶ Geführte Demo** starten | Langsamer Einzoom auf die Überschrift & Vorschlagskarten |
+| 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
@@ -32,4 +32,6 @@
 - 1920×1080, 60 fps, System-Cursor sichtbar lassen.
 - Heller Modus (Standard). Kein Dark Mode für das Video.
 - Zwischen Szenen Seite neu laden (F5) für saubere Hero-Ansicht.
+- Onboarding-Coachmark erscheint nur beim ersten Laden (`localStorage`-Flag
+  `aistudio.onboarded.v1`). Fürs Intro Storage leeren oder Inkognito-Fenster nutzen.
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

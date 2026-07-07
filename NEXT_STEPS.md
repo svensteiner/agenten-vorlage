@@ -6,10 +6,10 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 5 — **ESG/CO₂-Szenario** (siehe unten).
-- **Zuletzt aktualisiert:** 2026-07-07.
+- **Letzter Zyklus:** Zyklus 6 — **Onboarding-Overlay beim ersten Start** (siehe unten).
+- **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 55 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 58 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +28,26 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 6 gebaut wurde
+
+**Onboarding-Overlay beim ersten Start.** Der erste Video-Eindruck ist jetzt geführt statt
+leer. Beim ersten Laden erscheint ein **leichtgewichtiges Coachmark** oben rechts:
+- Ein **Pfeil zeigt exakt auf den „▶ Geführte Demo"-Button** (Offset 270 px = Buttonmitte,
+  im Browser auf ±10 px verifiziert); der Button **pulsiert** dezent, solange das Overlay
+  offen ist.
+- **Ein Satz** als Headline („Fragen Sie alles über Ihr Unternehmenswissen") + kurzer
+  Erklärtext, der zur Geführten Demo führt.
+- **Primär-CTA „▶ Geführte Demo starten"** schließt das Overlay **und startet direkt die
+  Vorführung** — ein starker Video-Opener (ein Klick → alles läuft automatisch).
+  Sekundär **„Selbst erkunden"** schließt nur; Klick auf den abgedunkelten Hintergrund und
+  **Esc** schließen ebenfalls.
+- **Erscheint nur einmal** (`localStorage`-Flag `aistudio.onboarded.v1`; try/catch, damit es
+  auch unter `file://` ohne Storage sauber weiterläuft — dann eben bei jedem Laden).
+- **Rein additiv** in `index.html` / `styles.css` / `app.js` — `data.js` und der Antwortpfad
+  unverändert. `prefers-reduced-motion` respektiert. Live verifiziert: Anzeige, Pfeil-
+  Ausrichtung, Skip-/Esc-/Backdrop-Schließen, Persistenz über Reload, CTA startet Demo
+  (Fortschritt „1 / 8", Composer gesperrt), keine Konsolenfehler.
 
 ## Was in Zyklus 5 gebaut wurde
 
@@ -108,31 +128,34 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Onboarding-Overlay beim ersten Start.** Die Demo ist inhaltlich jetzt breit und tief
-(8 Szenarien über Finanz/Audit/HR/Verträge/Berichte/ESG), aber ein Video-Zuschauer sieht in
-den ersten Sekunden nur einen leeren Chat und muss selbst verstehen, was er tun kann. Nächster
-Zyklus: ein **leichtgewichtiges Overlay** beim ersten Laden — ein Satz („Fragen Sie alles über
-Ihr Unternehmenswissen") + ein dezenter Pfeil auf den **„▶ Geführte Demo"**-Button, wegklickbar.
-Rein additiv in `index.html`/`styles.css`/`app.js` (kleiner `localStorage`-Flag, damit es nur
-einmal erscheint) — kein Eingriff in `data.js` oder den Antwortpfad.
+**Vertrauens-Story sichtbar machen: ein „gesperrtes" Dokument + prominenteres Berechtigungs-
+Signal.** Die Demo ist jetzt breit, tief und geführt — die stärkste ungenutzte Karte ist die
+**Permission-faithful-Kernidee** („Sie sehen nur, was Sie dürfen"). Nächster Zyklus: ein bewusst
+**gesperrtes Dokument** in der Bibliothek (Schloss-Icon, ausgegraut, „Kein Zugriff — Vorstand")
+plus, in einer Antwort, eine sichtbare Zeile **„2 weitere Treffer für Sie nicht freigegeben"**.
+Das macht Datenschutz/Governance in Sekunden greifbar — genau die CFO/Compliance-Frage
+„Sieht jeder alles?". Rein additiv (neues `locked`-Flag in `data.js` + Rendering in
+Bibliothek/Antwort), kein Umbau des Antwortpfads.
 
-*Warum diese?* Sie hebt den Balken **Video-Reife** und macht die stärkste Funktion (die
-Geführte Demo) sofort auffindbar — der erste Eindruck entscheidet im Verkaufsvideo. Kleiner,
-risikoarmer Eingriff mit großer Wirkung auf die „In-3-Sekunden-verstanden"-Frage.
+*Warum diese?* Sie hebt **Vertrauen/Governance** — das einzige große Wow-Thema, das die Demo
+noch nicht zeigt — und differenziert AI Studio von „ChatGPT auf unseren Dateien". Kleiner,
+risikoarmer Eingriff mit starker Wirkung auf skeptische Entscheider.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(weitere Szenarien HR/Lieferanten-Risiko, Vertrauens-Story, Politur/Animationen).
+(weitere Szenarien HR/Lieferanten-Risiko, Politur/Zahlen-Animationen, Export-Button).
 
 ---
 
-## CEO-Review (Ende Zyklus 5)
+## CEO-Review (Ende Zyklus 6)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo deckt jetzt neben Finanzen
-  auch **Nachhaltigkeit/Governance** ab — genau die Themen eines Aufsichtsrats.
-- *Erzeugt es Aufregung?* — Ja: der CO₂-Reduktionspfad als Tabelle plus die **ehrliche
-  Lücken-Offenlegung** wirkt wie ein echtes ESG-Reporting, nicht wie Marketing.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Sind wir auf Ziel-Kurs, wo ist die Lücke, welche
-  Hebel bleiben?" ist eine Vorstandsfrage, die das System in Sekunden belegbar beantwortet.
-- *Schwächste Stelle → nächster Zyklus:* die **erste Sekunde**. Der Einstieg ist noch leer;
-  ein **Onboarding-Overlay** (oben), das auf die Geführte Demo zeigt, ist der größte Hebel für
-  den ersten Video-Eindruck.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Der Einstieg ist jetzt geführt: ein
+  Zuschauer versteht in der ersten Sekunde, was er tun kann, und ein Klick startet die volle
+  Vorführung.
+- *Erzeugt es Aufregung?* — Ja: „Ein Klick → das System spielt sich selbst vor" ist ein
+  starker Video-Opener; der pulsierende Button mit Pfeil führt das Auge sofort.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: Headline + Geführte Demo beantworten „Was bringt
+  mir das?" ohne dass jemand die Bedienung erklären muss.
+- *Schwächste Stelle → nächster Zyklus:* **Vertrauen/Governance ist noch unsichtbar.** Die
+  Demo zeigt nicht, dass Berechtigungen respektiert werden. Ein **gesperrtes Dokument + „für
+  Sie nicht freigegeben"-Signal** (oben) ist der größte verbleibende Wow-Hebel für skeptische
+  Entscheider.

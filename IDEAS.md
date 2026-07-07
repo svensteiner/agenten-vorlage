@@ -15,7 +15,10 @@
 - ✅ **ESG/CO₂-Szenario** — *erledigt in Zyklus 5*: 8. Szenario mit CO₂-Trend-Tabelle
   (2020→2025→Ziel 2030) und ehrlicher Lücken-Offenlegung; neues Doc „Energie- &
   Emissionskennzahlen 2025"; ESG-Bericht vertieft. Breite über Finanz/Audit hinaus.
-- **Onboarding-Overlay** beim ersten Start — ein Satz + Pfeil auf das Eingabefeld. *(Nächster Zyklus.)*
+- ✅ **Onboarding-Overlay** beim ersten Start — *erledigt in Zyklus 6*: Coachmark oben rechts,
+  Pfeil auf den pulsierenden „Geführte Demo"-Button, Primär-CTA startet die Demo direkt; nur
+  einmal (localStorage), Esc/Backdrop/Skip schließen.
+- **Vertrauens-Story** — gesperrtes Dokument + „für Sie nicht freigegeben"-Signal. *(Nächster Zyklus.)*
 - **Sanfte Zahlen-Animation** — Konfidenz-Meter und Relevanz-% zählen hoch (Politur).
 
 ## Mehr Substanz

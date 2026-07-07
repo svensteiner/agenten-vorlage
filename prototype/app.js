@@ -47,6 +47,39 @@
     wireComposer();
     wireViewer();
     wireDemo();
+    wireOnboarding();
+  }
+
+  // ---------- Onboarding-Coachmark (nur beim ersten Start) ----------
+  // Zeigt beim ersten Laden ein leichtgewichtiges Overlay, das auf die
+  // „Geführte Demo" zeigt. localStorage-Flag → erscheint nur einmal.
+  const ONBOARD_KEY = "aistudio.onboarded.v1";
+  function wireOnboarding() {
+    const ob = $("#onboard");
+    if (!ob) return;
+
+    let seen = false;
+    try { seen = localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { seen = false; }
+    if (seen) return; // schon gesehen → nicht mehr zeigen
+
+    // Anzeigen und den Demo-Button dezent pulsieren lassen.
+    ob.hidden = false;
+    $("#demoBtn").classList.add("hi");
+
+    const dismiss = () => {
+      if (ob.hidden) return;
+      ob.hidden = true;
+      $("#demoBtn").classList.remove("hi");
+      try { localStorage.setItem(ONBOARD_KEY, "1"); } catch (e) { /* file:// ohne Storage → einfach weiter */ }
+    };
+
+    $("#obSkip").onclick = dismiss;
+    // Klick auf den abgedunkelten Hintergrund schließt ebenfalls.
+    ob.addEventListener("click", (e) => { if (e.target === ob) dismiss(); });
+    // Escape schließt.
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") dismiss(); });
+    // Primär-CTA: schließen und direkt die Geführte Demo starten.
+    $("#obStart").onclick = () => { dismiss(); startDemo(); };
   }
 
   // ---------- Geführte Demo (hands-free Auto-Play) ----------

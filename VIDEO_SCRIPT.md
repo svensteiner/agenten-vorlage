@@ -14,6 +14,12 @@ Demo läuft aus [`prototype/index.html`](prototype/index.html). Firma: fiktive
 Verträgen und Protokollen. Niemand findet es, wenn es zählt.
 Was, wenn Sie es einfach fragen könnten?"
 **Bild:** App öffnet — ruhige, professionelle Oberfläche, Seitenleiste, „AI Studio".
+Beim ersten Laden erscheint ein **Onboarding-Coachmark**: ein Satz *„Fragen Sie alles über
+Ihr Unternehmenswissen"* mit **Pfeil auf den pulsierenden „▶ Geführte Demo"-Button**. Der
+Klick auf **„▶ Geführte Demo starten"** schließt das Overlay und **startet die Vorführung** —
+danach läuft alles automatisch (idealer, freihändiger Video-Einstieg).
+**Hinweis Aufnahme:** vor dem Dreh `localStorage` leeren (bzw. privates Fenster), damit das
+Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 
 ## Szene 1 — Die einfache Frage (0:20–0:45)
 **Aktion:** Auf die Vorschlagskarte *„Wo finde ich die aktuelle Reiserichtlinie?"* klicken.
@@ -74,6 +80,9 @@ erneuerbarer Stromanteil, Fazit „erreichbar, erfordert Beschleunigung". Quelle
 - Für einzelne Szenen (oben) alternativ manuell klicken/tippen.
 - Vollbild-Browser, 1920×1080, 100 % Zoom.
 - Vor jeder Szene evtl. Seite neu laden für einen frischen Chat (Hero-Ansicht).
+- **Onboarding-Overlay fürs Intro:** es erscheint nur beim allerersten Laden (`localStorage`-
+  Flag `aistudio.onboarded.v1`). Zum Wieder-Anzeigen im Browser den Storage leeren oder ein
+  privates/Inkognito-Fenster nutzen. Der Primär-Button startet direkt die Geführte Demo.
 - Streaming-Tempo ist bewusst gesetzt (wirkt „lebendig", nicht träge).
 - Cursor ruhig führen; nach dem Klick auf eine Quelle 2 Sek. auf dem Highlight verweilen.
 - Details der Kameraführung: [VIDEO_SCENES.md](VIDEO_SCENES.md).

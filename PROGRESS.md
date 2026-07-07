@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 55 % (Ende Zyklus 5)
+## Gesamtfortschritt: ≈ 58 % (Ende Zyklus 6)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -13,17 +13,21 @@
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 88 % | 13.2 |
 | Demo-Firma & realistische Dokumente | 15 % | 58 % | 8.7 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 68 % | 6.8 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 72 % | 3.6 |
-| **Summe** | **100 %** | — | **≈ 80 %** gewichtet der begonnenen Bereiche |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 86 % | 4.3 |
+| **Summe** | **100 %** | — | **≈ 81 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 55 %** berücksichtigt, dass Tiefe (mehr Dokumente, Onboarding,
-> Politur) noch fehlt. Das ESG-Szenario hebt vor allem **Szenarien** (58 % → 68 %, jetzt
-> 8 statt 7, neue Domäne Nachhaltigkeit) und **Demo-Firma** (52 % → 58 %, neues Doc +
-> vertiefter ESG-Bericht). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 58 %** berücksichtigt, dass Tiefe (mehr Dokumente, Vertrauens-Story,
+> Politur) noch fehlt. Das Onboarding-Overlay hebt vor allem **Video-Reife** (72 % → 86 %,
+> geführter erster Eindruck + starker Opener). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 6 (2026-07-08) ≈ 58 %** — Onboarding-Overlay beim ersten Start: leichtgewichtiges
+  Coachmark oben rechts, Pfeil auf den pulsierenden „Geführte Demo"-Button, ein Satz +
+  Primär-CTA, der das Overlay schließt und die Demo direkt startet. Nur einmal (localStorage),
+  Esc/Backdrop/Skip schließen, `prefers-reduced-motion` respektiert. Rein additiv in
+  `index.html`/`styles.css`/`app.js`. Live verifiziert. (Video-Reife 72 % → 86 %.)
 - **Zyklus 5 (2026-07-07) ≈ 55 %** — ESG/CO₂-Szenario: neues 8. Szenario „CO₂-Fußabdruck/
   ESG-Kurs?" mit Trend-Tabelle (2020→2025→Ziel 2030) und ehrlicher Lücken-Offenlegung; neues
   Doc „Energie- & Emissionskennzahlen 2025"; `esg-bericht-2025` von 2 auf 6 Absätze vertieft.
@@ -49,6 +53,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Onboarding-Overlay beim ersten Start (Pfeil auf „Geführte Demo") → Video-Reife, erster Eindruck.
+1. Vertrauens-Story: gesperrtes Dokument + „für Sie nicht freigegeben"-Signal → Governance/Vertrauen.
 2. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien.
 3. Politur: Zahlen-Hochzähl-Animation, sanfte Übergänge, „Antwort in X s"-Signal → Video-Reife.

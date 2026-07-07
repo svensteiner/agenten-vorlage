@@ -2,6 +2,33 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 6 — 2026-07-08 — Onboarding-Overlay beim ersten Start 👋
+
+**Der erste Video-Eindruck ist jetzt geführt statt leer.** Beim ersten Laden erscheint ein
+leichtgewichtiges Coachmark oben rechts, dessen Pfeil exakt auf den „▶ Geführte Demo"-Button
+zeigt — der Button pulsiert dazu dezent. Headline in einem Satz („Fragen Sie alles über Ihr
+Unternehmenswissen") plus ein Primär-Button, der das Overlay schließt **und die Vorführung
+sofort startet**: ein starker Opener fürs Verkaufsvideo (ein Klick → alles läuft automatisch).
+
+### Neu (rein additiv in `index.html` / `styles.css` / `app.js`)
+- **Onboarding-Coachmark** (`#onboard`) — abgedunkelter Backdrop + Karte mit Spark-Icon,
+  Headline, Erklärtext und zwei Aktionen: **„▶ Geführte Demo starten"** (schließt + startet
+  `startDemo()`) und **„Selbst erkunden"** (schließt nur).
+- **Pfeil zielt auf den Button** (Offset 270 px = Buttonmitte 298 px vom rechten Rand −
+  Kartenrand 28 px), im Browser auf ±10 px verifiziert. Der Demo-Button erhält währenddessen
+  die Klasse `.hi` und **pulsiert**.
+- **Nur einmal:** `localStorage`-Flag `aistudio.onboarded.v1` (try/catch → unter `file://`
+  ohne Storage läuft es sauber weiter, erscheint dann bei jedem Laden).
+- **Schließen** per Skip-Button, Klick auf den Backdrop oder **Esc**.
+- **`prefers-reduced-motion`** respektiert (keine Animationen für empfindliche Nutzer).
+
+### Funktioniert (live im Browser verifiziert, text-basiert)
+- Overlay sichtbar beim ersten Laden, Pfeil auf ±10 px am Button, Button pulsiert.
+- Skip setzt das Flag → nach Reload erscheint das Overlay **nicht** mehr.
+- Primär-CTA schließt das Overlay und startet die Geführte Demo (Fortschritt „1 / 8",
+  Composer gesperrt, Frage wird getippt).
+- Keine Konsolenfehler. `data.js` und der Antwortpfad blieben unverändert.
+
 ## Zyklus 5 — 2026-07-07 — ESG/CO₂-Szenario: Breite über Finanzen hinaus 🌱
 
 **Die Demo spricht jetzt auch Vorstands-/Aufsichtsratssprache.** Ein neues 8. Szenario
