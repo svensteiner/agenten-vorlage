@@ -3,26 +3,31 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 48 % (Ende Zyklus 3)
+## Gesamtfortschritt: ≈ 52 % (Ende Zyklus 4)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 82 % | 16.4 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 85 % | 12.75 |
-| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 80 % | 12.0 |
-| Demo-Firma & realistische Dokumente | 15 % | 45 % | 6.75 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 55 % | 5.5 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 70 % | 3.5 |
-| **Summe** | **100 %** | — | **≈ 76 %** gewichtet der begonnenen Bereiche |
+| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 88 % | 13.2 |
+| Demo-Firma & realistische Dokumente | 15 % | 52 % | 7.8 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 58 % | 5.8 |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 72 % | 3.6 |
+| **Summe** | **100 %** | — | **≈ 78 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 48 %** berücksichtigt, dass Tiefe (mehr Dokumente,
-> Positionstabellen, weitere Szenarien, Politur) noch fehlt. Die „Geführte Demo" hebt vor
-> allem die **Video-Reife** deutlich (40 % → 70 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 52 %** berücksichtigt, dass Tiefe (mehr Dokumente, weitere
+> Szenarien, Politur) noch fehlt. Die Positionstabelle hebt vor allem **Viewer** (80 % →
+> 88 %) und die **Prüf-Glaubwürdigkeit** der Belege. Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 4 (2026-07-07) ≈ 52 %** — Rechnungs-Positionstabelle im Beleg-Skin: echte
+  Buchungstabelle (Pos./Bezeichnung/Menge/Einzelpreis/Summe) + optionale Netto/USt/Brutto-
+  Fußzeile für Rechnung/Bestellung/Wareneingang. Datengetrieben über optionales
+  `doc.lineItems` (Fallback = Text). Drei-Wege-Abgleich jetzt prüfungsecht (gleiche Menge/
+  Beträge über alle 3 Belege). Rein additiv, alle 3 Belege live verifiziert. (Viewer 80 % → 88 %.)
 - **Zyklus 3 (2026-07-07) ≈ 48 %** — „Geführte Demo": Play-Button in der Topbar spielt alle
   7 Szenarien hands-free ab (Frage sichtbar tippen → bestehender `ask()`-Flow → Lesepause),
   Fortschritt „n / 7", jederzeit stoppbar, Composer während der Demo gesperrt. Rein additiv,
@@ -38,6 +43,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Rechnungs-Positionstabelle im Beleg-Skin (`doc.lineItems`) → prüfungsechter Drei-Wege-Abgleich.
-2. 2–3 weitere Szenarien (HR-Onboarding, ESG/CO₂, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien.
+1. Neues ESG/CO₂-Szenario (nutzt vorhandenen `Nachhaltigkeitsbericht` + 1 Doc) → Breite beweisen, Balken „Demo-Firma" & „Szenarien" heben.
+2. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien.
 3. Politur: Onboarding-Overlay, Zahlen-Animation, sanfte Übergänge → Video-Reife.

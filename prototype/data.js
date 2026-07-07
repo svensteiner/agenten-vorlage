@@ -84,7 +84,7 @@ const DOCS = {
     path: "SAP › FI › Belege › 2026 › ER_2026-1843.pdf",
     author: "Stahlwerk Donau AG (Lieferant)",
     date: "2026-03-22",
-    snippet: "Lieferung Baustahl S355 · 84.640 € brutto · Bestellbezug PO-2026-0512.",
+    snippet: "Lieferung Baustahl S355 · 87.584 € brutto · Bestellbezug PO-2026-0512.",
     body: [
       { t: "Rechnung Nr. 2026-1843 — Stahlwerk Donau AG an Meridian Industrie GmbH.", highlight: false },
       { t: "Position: 80 t Baustahl S355, Preis 920 €/t = 73.600 € netto.", highlight: true },
@@ -92,6 +92,17 @@ const DOCS = {
       { t: "Bestellbezug: PO-2026-0512. Lieferung erfolgt am 20.03.2026, Werk 2 Ingolstadt.", highlight: true },
       { t: "Zahlungsziel: 30 Tage netto, 2 % Skonto bei Zahlung innerhalb 14 Tagen.", highlight: false },
     ],
+    lineItems: {
+      doc: "Rechnung 2026-1843",
+      ref: "Bestellbezug PO-2026-0512",
+      rows: [
+        { pos: "1", desc: "Baustahl S355, Warmband — Materialzeugnis 3.1 (EN 10204)", qty: "80,000 t", unit: "920,00 €", sum: "73.600,00 €" },
+      ],
+      net: "73.600,00 €",
+      vatRate: "19 %",
+      vat: "13.984,00 €",
+      gross: "87.584,00 €",
+    },
   },
   "bestellung-po-2026-0512": {
     id: "bestellung-po-2026-0512",
@@ -108,6 +119,14 @@ const DOCS = {
       { t: "Freigabe: Thomas Krüger (Einkaufsleiter) am 05.03.2026, Kostenstelle Werk 2 / Projekt Alpha.", highlight: true },
       { t: "Liefertermin vereinbart: 20.03.2026, Werk 2 Ingolstadt.", highlight: false },
     ],
+    lineItems: {
+      doc: "Bestellung PO-2026-0512",
+      ref: "Kostenstelle Werk 2 / Projekt Alpha",
+      rows: [
+        { pos: "1", desc: "Baustahl S355, Warmband — Liefertermin 20.03.2026", qty: "80,000 t", unit: "920,00 €", sum: "73.600,00 €" },
+      ],
+      net: "73.600,00 €",
+    },
   },
   "wareneingang-we-2026-0778": {
     id: "wareneingang-we-2026-0778",
@@ -124,6 +143,13 @@ const DOCS = {
       { t: "Bestellbezug: PO-2026-0512. Menge stimmt mit Bestellung überein, keine Abweichung.", highlight: true },
       { t: "Qualitätsprüfung: bestanden (Materialzeugnis 3.1 nach EN 10204 liegt vor).", highlight: false },
     ],
+    lineItems: {
+      doc: "Wareneingang WE-2026-0778",
+      ref: "Bestellbezug PO-2026-0512 · keine Abweichung",
+      rows: [
+        { pos: "1", desc: "Baustahl S355, Warmband — Qualitätsprüfung bestanden", qty: "80,000 t", unit: "—", sum: "vollständig" },
+      ],
+    },
   },
   "rahmenvertrag-stahlwerk-donau": {
     id: "rahmenvertrag-stahlwerk-donau",

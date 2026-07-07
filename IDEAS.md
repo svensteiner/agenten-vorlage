@@ -9,8 +9,11 @@
   Vertrags-Unterschriftszeilen, Klausel-Marken, Highlights im Layout.
 - ✅ **„Guided Demo"-Modus** — *erledigt in Zyklus 3*: Play-Button in der Topbar spielt alle
   7 Szenarien hands-free ab (Frage tippen → Antwort → Lesepause), Fortschritt „n / 7", stoppbar.
-- **Rechnungs-Positionstabelle** — Beleg-Skin um echte Positionszeilen (Menge · Preis ·
-  Summe · USt) ergänzen; optionales `doc.lineItems`-Feld, Fallback = Text. *(Nächster Zyklus.)*
+- ✅ **Rechnungs-Positionstabelle** — *erledigt in Zyklus 4*: echte Positionszeilen (Menge ·
+  Einzelpreis · Summe) + Netto/USt/Brutto-Fußzeile für Rechnung/Bestellung/Wareneingang;
+  optionales `doc.lineItems`-Feld, Fallback = Text. Drei-Wege-Abgleich prüfungsecht.
+- **ESG/CO₂-Szenario** — vorhandenen `Nachhaltigkeitsbericht` in ein Szenario einbinden,
+  zeigt Breite über Finanz/Audit hinaus. *(Nächster Zyklus.)*
 - **Onboarding-Overlay** beim ersten Start — ein Satz + Pfeil auf das Eingabefeld.
 - **Sanfte Zahlen-Animation** — Konfidenz-Meter und Relevanz-% zählen hoch (Politur).
 

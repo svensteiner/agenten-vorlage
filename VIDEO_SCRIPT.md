@@ -28,13 +28,16 @@ und erklärt das Warum, nicht nur das Was."
 **Bild:** Nachvollziehbarkeit-Schritte, drei Quellen mit Relevanz, Konfidenz 94 %.
 **Punkt (für den CFO):** die Antwort ist belegt und prüfbar.
 
-## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:40)
-**Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → auf eine Quelle klicken.
-**Sprecher:** „Jede Aussage ist belegt. Ein Klick öffnet das Originaldokument —
-die echte Rechnung, mit Lieferanten-Briefkopf, Eingangsstempel und hervorgehobener Fundstelle."
-**Bild:** Dokumentenviewer öffnet als **echtes Rechnungs-Dokument** (Briefkopf, rotierter
-**EINGANG-Stempel**, gelbe Fundstelle im Blatt), Metadaten (Autor, Pfad, Datum).
-**Punkt:** Drei-Wege-Abgleich, prüfungssicher — „das ist mein echtes Dokument".
+## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
+**Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann
+Bestellung und Wareneingang.
+**Sprecher:** „Jede Aussage ist belegt. Ein Klick öffnet die echte Rechnung — mit
+Positionen, Menge, Netto, Umsatzsteuer und Bruttobetrag. Und AI Studio gleicht sie
+automatisch mit Bestellung und Wareneingang ab: gleiche Menge, gleiche Beträge."
+**Bild:** Dokumentenviewer öffnet als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf,
+rotierter **EINGANG-Stempel**) mit **Positionstabelle** (80 t · 920 € · Netto 73.600 € ·
+USt 19 % · **Brutto 87.584 €**); danach Bestellung/Wareneingang mit identischer Position.
+**Punkt (für den CFO):** **Drei-Wege-Abgleich, prüfungssicher** — „das ist meine Buchhaltung".
 
 ## Szene 4 — Die Entscheider-Frage (1:40–2:05)
 **Aktion:** Fragen: *„Finde alle Verträge mit automatischer Verlängerung."*

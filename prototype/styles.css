@@ -311,6 +311,21 @@ body {
 .paper .stamp.stamp-ok { color: var(--ok); border-color: var(--ok); }
 .paper .stamp.stamp-ink { color: #334155; border-color: #334155; }
 
+/* Beleg: Positionszeilen-Tabelle (Rechnung/Bestellung/Wareneingang) */
+.paper .litems { margin: 20px 0 6px; }
+.paper .litems .li-ref { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 8px; }
+.paper .li-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.paper .li-table th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--ink-faint); padding: 0 10px 7px; border-bottom: 1.5px solid var(--ink); }
+.paper .li-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: #1f2937; vertical-align: top; }
+.paper .li-table th.num, .paper .li-table td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.paper .li-table td.pos, .paper .li-table th.pos { width: 34px; color: var(--ink-faint); }
+.paper .li-table td.desc { line-height: 1.5; }
+.paper .li-table td.sum { font-weight: 600; }
+.paper .li-table tfoot td { border-bottom: none; padding: 6px 10px; color: var(--ink-soft); }
+.paper .li-table tfoot td.num { color: var(--ink); }
+.paper .li-table tfoot .li-foot td { text-align: right; }
+.paper .li-table tfoot .li-foot.total td { padding-top: 10px; border-top: 2px solid var(--ink); font-weight: 800; font-size: 13.5px; color: var(--ink); }
+
 .viewer .vnote { font-size: 11.5px; color: var(--ink-faint); border-top: 1px solid var(--line); padding: 12px 22px; display: flex; align-items: center; gap: 8px; }
 
 /* Scrollbars */

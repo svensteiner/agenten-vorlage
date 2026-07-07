@@ -2,6 +2,39 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 4 — 2026-07-07 — Rechnungs-Positionstabelle im Beleg-Skin 🧾
+
+**Belege zeigen jetzt eine echte Positionszeilen-Tabelle statt Fließtext.** Rechnung,
+Bestellung und Wareneingang öffnen im Viewer mit einer prüfungsechten Buchungstabelle
+(Pos. · Bezeichnung · Menge · Einzelpreis · Summe) samt Netto/USt/Brutto-Fußzeile. Das
+ist der stärkste **„das ist echte Buchhaltung"-Moment** für einen CFO im Video: der
+**Drei-Wege-Abgleich** (Szenario 3) zeigt jetzt sichtbar übereinstimmende Positionen und
+Beträge über alle drei Belege.
+
+### Neu
+- **`buildLineItems()`** in `app.js` (+ `footRow`) — rendert eine `.li-table` nur für die
+  `beleg`-Kategorie, wenn `doc.lineItems` gesetzt ist. Netto/USt/Brutto-Fußzeilen sind
+  **optional** (nur gerendert, wenn im Datensatz vorhanden). Alle Werte HTML-escaped.
+- **`.li-table`-Styling** in `styles.css` — rechtsbündige, tabellarische Zahlen
+  (`tabular-nums`), Ober-/Unterlinien, hervorgehobene Brutto-Endsumme.
+- **Optionales `doc.lineItems`-Feld** in `data.js` für die 3 Belege — Fallback = bisheriger
+  Fließtext, wenn nicht gesetzt (bestehende Dokumente unverändert).
+  - Rechnung 2026-1843: 80,000 t Baustahl S355 · 920,00 € · Netto 73.600 € · USt 19 %
+    13.984 € · **Brutto 87.584 €**.
+  - Bestellung PO-2026-0512: identische Position · nur Netto 73.600 €.
+  - Wareneingang WE-2026-0778: identische Position · Einzelpreis „—" · Summe „vollständig",
+    keine Betrags-Fußzeile.
+- **Korrektur:** Rechnungs-Snippet-Brutto von falsch „84.640 €" auf konsistente
+  **„87.584 €"** (= 73.600 € × 1,19) gesetzt — die Tabelle hätte die Abweichung sichtbar
+  gemacht.
+
+### Funktioniert (live im Browser verifiziert)
+- Rechnung → Positionszeile + Fußzeile Netto/USt 19 %/Brutto; Brutto-Endsumme fett (800),
+  rechtsbündig, dunkel. Header-Labels korrekt uppercase/faint.
+- Bestellung → identische Position, nur **Netto**-Fußzeile (keine USt/Brutto).
+- Wareneingang → identische Position, **keine** Betrags-Fußzeile.
+- Mengen (80,000 t) und Netto (73.600 €) stimmen über alle drei Belege überein → Abgleich schlüssig.
+
 ## Zyklus 3 — 2026-07-07 — „Geführte Demo" (hands-free Auto-Play) ▶
 
 **Ein Klick spielt die komplette Demo selbst ab.** Ein prominenter Play-Button in der

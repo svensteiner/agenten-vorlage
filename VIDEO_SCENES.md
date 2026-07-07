@@ -13,7 +13,7 @@
 | 0 | 0:20 | App im Vollbild öffnen (Hero-Ansicht, „Wissen") — optional **▶ Geführte Demo** starten | Langsamer Einzoom auf die Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
-| 3 | 0:25 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); 2 Sek. auf gelbem Highlight im Blatt verweilen |
+| 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:20 | *„Erstelle eine Zusammenfassung für den Vorstand."* | Ganze Antwort im Bild; langsam nach unten scrollen |
 | 6 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |

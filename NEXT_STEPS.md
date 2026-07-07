@@ -6,10 +6,10 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 3 — **„Geführte Demo" (hands-free Auto-Play)** (siehe unten).
+- **Letzter Zyklus:** Zyklus 4 — **Rechnungs-Positionstabelle im Beleg-Skin** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-07.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 48 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 52 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +28,23 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 4 gebaut wurde
+
+**Rechnungs-Positionstabelle im Beleg-Skin** — Rechnung/Bestellung/Wareneingang öffnen im
+Viewer jetzt mit einer echten **Buchungstabelle** (Pos. · Bezeichnung · Menge · Einzelpreis ·
+Summe) statt Fließtext:
+- Neue `buildLineItems()`/`footRow()` in `app.js`, `.li-table`-Styling in `styles.css`
+  (rechtsbündige `tabular-nums`, hervorgehobene Brutto-Endsumme).
+- **Optionales `doc.lineItems`-Feld** in `data.js` für die 3 Belege; Fallback = bisheriger
+  Text. Netto/USt/Brutto-Fußzeilen nur, wenn im Datensatz vorhanden.
+- **Drei-Wege-Abgleich jetzt prüfungsecht:** identische Menge (80,000 t) und Netto
+  (73.600 €) über alle drei Belege; Rechnung mit USt 19 % → **Brutto 87.584 €**, Bestellung
+  nur Netto, Wareneingang „vollständig" ohne Betrags-Fußzeile.
+- Falsches Snippet-Brutto der Rechnung (84.640 €) auf konsistente **87.584 €** korrigiert.
+- **Rein additiv** — bestehende Dokumente ohne `lineItems` bleiben unverändert. Alle drei
+  Belege live im Browser verifiziert (DOM + CSS geprüft; Screenshot-Capture im Harness
+  aktuell instabil, daher text-basiert verifiziert).
 
 ## Was in Zyklus 3 gebaut wurde
 
@@ -74,30 +91,30 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Rechnungs-Positionstabelle im Beleg-Skin** — Belege haben jetzt Briefkopf + Stempel;
-als nächste Vertiefung bekommt der Viewer für Rechnung/Bestellung/Wareneingang eine echte
-**Positionszeilen-Tabelle** (Pos. · Bezeichnung · Menge · Einzelpreis · Summe · USt) mit
-Zwischensumme/USt/Endbetrag. Umsetzung datengetrieben über ein optionales
-**`doc.lineItems`-Feld in `data.js`** (Fallback = bisheriger Fließtext, wenn nicht gesetzt),
-gerendert in `buildPaper()` nur für die `beleg`-Kategorie.
+**Breite beweisen: neues ESG/CO₂-Szenario** — die Demo ist jetzt in Finanz/Audit sehr tief,
+aber ein CEO soll sehen, dass AI Studio **nicht nur ein Buchhaltungs-Trick** ist. Der
+`Nachhaltigkeitsbericht` (ESG-Dokument) existiert bereits, wird aber von keinem Szenario
+genutzt. Nächster Zyklus: **ein neues Szenario** „Wie hat sich unser CO₂-Fußabdruck
+entwickelt / sind wir auf ESG-Kurs?" in `data.js` ergänzen (Antwort · Nachvollziehbarkeit ·
+Quellen aus dem ESG-Bericht + 1 ergänzendes Dokument, z. B. Energie-/Emissions-Kennzahlen ·
+Konfidenz · Folgefragen). Die „Geführte Demo" nimmt neue Szenarien **automatisch** auf.
 
-*Warum diese?* Sie macht den **Drei-Wege-Abgleich (Szenario 3)** für einen CFO endgültig
-prüfungsecht: Rechnung ↔ Bestellung ↔ Wareneingang zeigen dann übereinstimmende Positionen
-und Beträge — der stärkste „das ist echte Buchhaltung"-Moment im Video. Baut auf dem
-vorhandenen Beleg-Skin auf und bleibt rein additiv.
+*Warum diese?* Sie hebt die beiden **schwächsten Balken** (Demo-Firma 45 %, Szenarien 55 %)
+und erweitert die Story von „Finanzen" auf **Nachhaltigkeit/Vorstandsthemen** — genau die
+Sprache, die einen CEO/Aufsichtsrat überzeugt. Rein additiv über `data.js` (kein Code-Umbau).
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(Onboarding-Overlay, weitere Szenarien, Politur).
+(Onboarding-Overlay, weitere Szenarien HR/Lieferanten-Risiko, Politur).
 
 ---
 
-## CEO-Review (Ende Zyklus 3)
+## CEO-Review (Ende Zyklus 4)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Mit der „Geführten Demo" läuft die
-  komplette Story auf Knopfdruck durch — ideal für Video und Messestand.
-- *Erzeugt es Aufregung?* — Ja: das automatische Tippen der Fragen + streamende Antworten
-  wirken wie ein echter Assistent, der selbst arbeitet.
-- *Versteht ein CFO den Nutzen?* — Ja, weil die 7 Szenarien in kuratierter Reihenfolge
-  ohne Ablenkung nacheinander laufen (Reiserichtlinie → Materialkosten → Beleg-Abgleich …).
-- *Schwächste Stelle → nächster Zyklus:* die Belege wirken noch textlastig. Eine echte
-  **Positionstabelle** (oben) hebt die Prüf-Glaubwürdigkeit für Finanz-Entscheider am meisten.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Der Drei-Wege-Abgleich sieht jetzt
+  aus wie ein echtes ERP-Buchungsblatt; für einen CFO ist das der Beweis „prüfungssicher".
+- *Erzeugt es Aufregung?* — Ja: übereinstimmende Positionen/Beträge über drei Belege hinweg
+  sind ein starker, sofort verständlicher „genau, das ist meine Buchhaltung"-Moment.
+- *Versteht ein CFO den Nutzen?* — Ja: Netto/USt/Brutto-Tabelle spricht direkt seine Sprache.
+- *Schwächste Stelle → nächster Zyklus:* die Demo ist **inhaltlich stark auf Finanz/Audit
+  konzentriert**. Ein **ESG/CO₂-Szenario** (oben) zeigt die Breite und adressiert Vorstands-/
+  Aufsichtsratsthemen — der größte Hebel für die nächste Vorführung.

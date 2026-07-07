@@ -502,9 +502,43 @@
       paper.appendChild(para);
     });
 
+    if (skin.cat === "beleg" && doc.lineItems) paper.appendChild(buildLineItems(doc.lineItems));
+
     if (skin.stamp) paper.appendChild(buildStamp(skin.stamp, doc));
     if (skin.sign) paper.appendChild(buildSignature(doc));
     return paper;
+  }
+
+  // Positionszeilen-Tabelle für Belege (Rechnung/Bestellung/Wareneingang).
+  // Rein datengetrieben aus doc.lineItems; Netto/USt/Brutto-Fußzeilen optional.
+  function buildLineItems(li) {
+    const box = el("div", "litems");
+    const rows = (li.rows || []).map((r) =>
+      `<tr><td class="pos">${escapeHtml(r.pos)}</td>` +
+      `<td class="desc">${escapeHtml(r.desc)}</td>` +
+      `<td class="num">${escapeHtml(r.qty || "—")}</td>` +
+      `<td class="num">${escapeHtml(r.unit || "—")}</td>` +
+      `<td class="num sum">${escapeHtml(r.sum || "—")}</td></tr>`
+    ).join("");
+
+    const foot = [];
+    if (li.net) foot.push(footRow("Netto", li.net, false));
+    if (li.vat) foot.push(footRow("USt" + (li.vatRate ? " " + escapeHtml(li.vatRate) : ""), li.vat, false));
+    if (li.gross) foot.push(footRow("Rechnungsbetrag brutto", li.gross, true));
+
+    box.innerHTML =
+      (li.ref ? `<div class="li-ref">${escapeHtml(li.ref)}</div>` : "") +
+      `<table class="li-table"><thead><tr>` +
+      `<th class="pos">Pos.</th><th class="desc">Bezeichnung</th>` +
+      `<th class="num">Menge</th><th class="num">Einzelpreis</th><th class="num">Summe</th>` +
+      `</tr></thead><tbody>${rows}</tbody>` +
+      (foot.length ? `<tfoot>${foot.join("")}</tfoot>` : "") +
+      `</table>`;
+    return box;
+  }
+  function footRow(label, value, strong) {
+    const cls = strong ? "li-foot total" : "li-foot";
+    return `<tr class="${cls}"><td colspan="4">${label}</td><td class="num">${escapeHtml(value)}</td></tr>`;
   }
 
   function buildLetterhead(doc, skin) {
