@@ -25,8 +25,10 @@ python -m http.server 8123
 - **Chat als Zentrum** — Frage in natürlicher Sprache, gestreamte Antwort.
 - **Jede Antwort belegt** — Antwort · Nachvollziehbarkeit · Quellen (mit Zitat & Relevanz) ·
   Konfidenz · verwandte Dokumente · Folgefragen.
-- **Dokumentenviewer** — Klick auf eine Quelle öffnet das Dokument mit
-  hervorgehobenen Belegstellen und Metadaten (Pfad, Autor, Datum, Typ).
+- **Dokumentenviewer mit echten Dokument-Skins** — Klick auf eine Quelle öffnet das
+  Dokument als **Papierblatt**: Briefkopf, Beleg-Stempel (EINGANG/GEPRÜFT/BESTANDEN),
+  Vertrags-Unterschriftszeilen — mit hervorgehobenen Belegstellen im Layout und
+  Metadaten (Pfad, Autor, Datum, Typ). Das Skin richtet sich automatisch nach `doc.type`.
 - **Module** — Wissen, Finanzen, Audit, HR, Verträge, Berichte, Einstellungen.
 
 ## Beste Demo-Reihenfolge (7 Szenarien)

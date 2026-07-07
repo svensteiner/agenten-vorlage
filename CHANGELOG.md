@@ -2,6 +2,31 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 2 — 2026-07-07 — Dokument-Skins im Viewer 📄
+
+**Der Dokumentenviewer zeigt jetzt echte Dokumente statt Textabsätzen.** Jede Quelle
+wird als Papierblatt auf einem Schreibtisch dargestellt — der stärkste Vertrauens-Trigger
+für nicht-technische Entscheider: „Das System öffnet mein tatsächliches Dokument."
+
+### Neu
+- **Papier-Darstellung pro Dokumenttyp** (`buildPaper` in `app.js`, `.paper*` in `styles.css`):
+  - **Briefkopf** mit Logo-Initialen, Aussteller und Referenzblock (Typ · Titel · Datum).
+    Bei Eingangsrechnungen ist der Aussteller korrekt der **Lieferant** (z. B. „Stahlwerk Donau AG").
+  - **Belege** (Rechnung/Bestellung/Wareneingang) erhalten einen rotierten **Stempel**
+    (EINGANG · GENEHMIGT · GEPRÜFT).
+  - **Verträge** erhalten eine **Ort/Datum-Zeile + zwei Unterschriftszeilen** (beide Parteien).
+  - **Prüfnachweise** (Feuerbeschau) erhalten einen grünen **BESTANDEN**-Stempel.
+  - **Klausel-Marken** (§9, Teil B §5, TOP 1) werden im Fließtext hervorgehoben.
+  - Die **gelben Highlights liegen jetzt IM Dokument-Layout** statt in einer Textliste.
+- Rein CSS/HTML, datengetrieben aus `doc.type` — **keine Änderung an `data.js` nötig**,
+  neue Dokumente bekommen ihr Skin automatisch.
+
+### Funktioniert (live im Browser verifiziert)
+- Rechnung 2026-1843 → `paper-beleg`, Lieferant-Briefkopf, EINGANG-Stempel, 3 Highlights im Blatt.
+- Rahmenvertrag → `paper-vertrag`, §9-Klauselmarke, Unterschriftszeilen (Meridian · Dr. Elena Wagner).
+- Feuerbeschau → `paper-nachweis`, grüner BESTANDEN-Stempel (rotiert).
+- Quartalsbericht → sauberer Briefkopf-Fallback (`paper-bericht`).
+
 ## Zyklus 1 — 2026-07-07 — Prototyp-Bootstrap 🎉
 
 **Der Kunden-Demo-Prototyp existiert jetzt.** (Zuvor: 31 Zyklen ausschließlich

@@ -31,9 +31,10 @@ und erklärt das Warum, nicht nur das Was."
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:40)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → auf eine Quelle klicken.
 **Sprecher:** „Jede Aussage ist belegt. Ein Klick öffnet das Originaldokument —
-mit hervorgehobener Fundstelle."
-**Bild:** Dokumentenviewer öffnet, gelbe Highlights, Metadaten (Autor, Pfad, Datum).
-**Punkt:** Drei-Wege-Abgleich, prüfungssicher.
+die echte Rechnung, mit Lieferanten-Briefkopf, Eingangsstempel und hervorgehobener Fundstelle."
+**Bild:** Dokumentenviewer öffnet als **echtes Rechnungs-Dokument** (Briefkopf, rotierter
+**EINGANG-Stempel**, gelbe Fundstelle im Blatt), Metadaten (Autor, Pfad, Datum).
+**Punkt:** Drei-Wege-Abgleich, prüfungssicher — „das ist mein echtes Dokument".
 
 ## Szene 4 — Die Entscheider-Frage (1:40–2:05)
 **Aktion:** Fragen: *„Finde alle Verträge mit automatischer Verlängerung."*

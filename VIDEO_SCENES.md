@@ -8,7 +8,7 @@
 | 0 | 0:20 | App im Vollbild öffnen (Hero-Ansicht, „Wissen") | Langsamer Einzoom auf die Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
-| 3 | 0:25 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts; 2 Sek. auf gelbem Highlight verweilen; Metadaten zeigen |
+| 3 | 0:25 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); 2 Sek. auf gelbem Highlight im Blatt verweilen |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:20 | *„Erstelle eine Zusammenfassung für den Vorstand."* | Ganze Antwort im Bild; langsam nach unten scrollen |
 | 6 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |
@@ -17,7 +17,10 @@
 - Modul **Verträge** öffnen → Dokumentenbibliothek als Raster zeigen (Breite des Wissens).
 - Modul **Einstellungen** → „Datenquellen" (SharePoint, SAP, Fileserver … ● verbunden)
   — untermauert „Ihr Unternehmen besitzt die Daten bereits".
-- Modul **Audit** → *Brandschutzdokumentation Werk 2* → behördlicher Nachweis „bestanden".
+- Modul **Audit** → *Feuerbeschau-Protokoll Werk 2* öffnen → grüner **BESTANDEN-Stempel**
+  auf dem behördlichen Nachweis (starkes „prüfungssicher"-Signal).
+- Modul **Verträge** → *Rahmenvertrag Stahlwerk Donau* öffnen → **Unterschriftszeilen**
+  beider Parteien am Blattende (wirkt wie ein echter Vertrag).
 
 ## Technisch
 - 1920×1080, 60 fps, System-Cursor sichtbar lassen.

@@ -19,6 +19,22 @@
   let currentModule = "wissen";
   const chatState = []; // Verlauf, damit ein Modulwechsel den Chat nicht zerstört
 
+  // Dokument-Skins: geben jedem Dokumenttyp im Viewer eine realistische
+  // Papier-Anmutung (Briefkopf, Beleg-Stempel, Unterschriftszeile).
+  const DOC_SKINS = {
+    "Eingangsrechnung":     { cat: "beleg", extIssuer: true, stamp: { text: "EINGANG", tone: "ink" } },
+    "Bestellung":           { cat: "beleg", stamp: { text: "GENEHMIGT", tone: "ok" } },
+    "Wareneingang":         { cat: "beleg", stamp: { text: "GEPRÜFT", tone: "ok" } },
+    "Rahmenvertrag":        { cat: "vertrag", sign: true },
+    "Wartungsvertrag":      { cat: "vertrag", sign: true },
+    "Lizenzvertrag":        { cat: "vertrag", sign: true },
+    "Mietvertrag":          { cat: "vertrag", sign: true },
+    "Richtlinie":           { cat: "richtlinie" },
+    "Sicherheitsdokument":  { cat: "richtlinie" },
+    "Prüfnachweis":         { cat: "nachweis", stamp: { text: "BESTANDEN", tone: "ok" } },
+  };
+  const defaultSkin = { cat: "bericht" };
+
   // ---------- Bootstrapping ----------
   function init() {
     renderSidebar();
@@ -388,14 +404,74 @@
 
     const body = $("#vBody");
     body.innerHTML = "";
-    doc.body.forEach((p) => {
-      const hl = p.highlight || (highlightQuote && p.t.includes(highlightQuote.slice(0, 24)));
-      const para = el("p", hl ? "hl" : null, escapeHtml(p.t));
-      body.appendChild(para);
-    });
+    body.appendChild(buildPaper(doc, highlightQuote));
+    body.scrollTop = 0;
 
     $("#overlay").classList.add("open");
     $("#viewer").classList.add("open");
+  }
+
+  // Baut die „Papier"-Darstellung eines Dokuments (Briefkopf, Beleg-Text,
+  // Stempel/Unterschrift je nach Typ). Highlights liegen jetzt IM Dokument.
+  function buildPaper(doc, highlightQuote) {
+    const skin = DOC_SKINS[doc.type] || defaultSkin;
+    const paper = el("div", `paper paper-${skin.cat}`);
+
+    paper.appendChild(buildLetterhead(doc, skin));
+
+    const title = el("div", "dtitle", escapeHtml(doc.title));
+    paper.appendChild(title);
+
+    doc.body.forEach((p, i) => {
+      if (i === 0) return; // erste Zeile ist die Dokument-Überschrift → als Titel oben
+      const hl = p.highlight || (highlightQuote && p.t.includes(highlightQuote.slice(0, 24)));
+      const para = el("p", hl ? "dp hl" : "dp", markupClause(escapeHtml(p.t)));
+      paper.appendChild(para);
+    });
+
+    if (skin.stamp) paper.appendChild(buildStamp(skin.stamp, doc));
+    if (skin.sign) paper.appendChild(buildSignature(doc));
+    return paper;
+  }
+
+  function buildLetterhead(doc, skin) {
+    const iss = skin.extIssuer
+      ? { name: doc.author.replace(/\s*\(.*\)$/, ""), sub: "Lieferant" }
+      : { name: COMPANY.name, sub: COMPANY.tagline };
+    const initials = iss.name.replace(/[^A-Za-zÄÖÜ]/g, "").slice(0, 2).toUpperCase() || "AI";
+    const lh = el("div", "lh");
+    lh.innerHTML =
+      `<div class="org"><span class="mark">${initials}</span>` +
+      `<span><span class="on">${escapeHtml(iss.name)}</span>` +
+      `<span class="os">${escapeHtml(iss.sub)}</span></span></div>` +
+      `<div class="ref"><span class="rt">${escapeHtml(doc.type)}</span>` +
+      `<span class="rl">${escapeHtml(doc.title)}</span>` +
+      `<span class="rl">Datum: ${escapeHtml(doc.date)}</span></div>`;
+    return lh;
+  }
+
+  function buildStamp(stamp, doc) {
+    const s = el("div", `stamp stamp-${stamp.tone}`);
+    s.innerHTML = `<span class="st">${escapeHtml(stamp.text)}</span><span class="sd">${escapeHtml(doc.date)}</span>`;
+    return s;
+  }
+
+  function buildSignature(doc) {
+    const box = el("div", "sig");
+    const place = el("div", "sig-place", `München, ${escapeHtml(doc.date)}`);
+    const row = el("div", "sig-row");
+    row.innerHTML =
+      `<div class="col"><div class="line">Meridian Industrie GmbH</div></div>` +
+      `<div class="col"><div class="line">${escapeHtml(doc.author.replace(/\s*\(.*\)$/, ""))}</div></div>`;
+    box.appendChild(place);
+    box.appendChild(row);
+    return box;
+  }
+
+  // Hebt führende Klausel-/Gliederungsmarken (§3, Teil B §5, TOP 1) fett hervor.
+  function markupClause(escaped) {
+    return escaped.replace(/^(§\s?\d+[a-z]?|Teil [A-C] §\s?\d+|TOP \d+)(:|\b)/,
+      '<b class="cl">$1</b>$2');
   }
   function metaRow(k, v) { return `<div class="row"><span>${k}</span><span>${escapeHtml(v)}</span></div>`; }
   function closeViewer() { $("#overlay").classList.remove("open"); $("#viewer").classList.remove("open"); }

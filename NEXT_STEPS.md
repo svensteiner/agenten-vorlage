@@ -6,10 +6,10 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 1 — **Prototyp erstmals aufgesetzt** (siehe unten).
+- **Letzter Zyklus:** Zyklus 2 — **Dokument-Skins im Viewer** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-07.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 35 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 42 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +28,19 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 2 gebaut wurde
+
+**Dokument-Skins im Viewer** — der Viewer zeigt jede Quelle jetzt als **echtes Papier-
+Dokument** statt als Textliste:
+- **Briefkopf** (Logo-Initialen · Aussteller · Referenzblock mit Typ/Titel/Datum).
+  Eingangsrechnungen tragen korrekt den **Lieferanten** als Aussteller.
+- **Belege** → rotierter Stempel (EINGANG/GENEHMIGT/GEPRÜFT), **Verträge** →
+  Ort/Datum + zwei **Unterschriftszeilen**, **Prüfnachweise** → grüner **BESTANDEN**-Stempel.
+- **Klausel-Marken** (§9, Teil B §5, TOP 1) hervorgehoben; **gelbe Highlights liegen im
+  Dokument-Layout**.
+- Rein CSS/HTML, datengetrieben aus `doc.type` — neue Dokumente bekommen ihr Skin
+  automatisch, **`data.js` blieb unverändert**. Alle 4 Skin-Kategorien live verifiziert.
 
 ## Was in Zyklus 1 gebaut wurde
 
@@ -48,25 +61,28 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Bebilderte Dokument-Previews im Viewer** (statt reinem Text). Derzeit zeigt der
-Viewer Text-Absätze mit gelben Highlights. Für den „Wow"-Effekt eines CFO sollte er
-wie ein **echtes Dokument** aussehen: ein PDF-/Brief-/Rechnungs-Layout (Briefkopf,
-Tabellenraster für die Rechnung, Unterschriftszeile im Vertrag) mit dem gelben
-Highlight *im Dokument-Layout*. Rein CSS/HTML, keine echten PDFs — als „Dokumenten-
-Skin" pro `type` in `prototype/app.js`/`styles.css`.
+**„Guided Demo"-Modus** — ein prominenter **Play-Button** (z. B. in der Topbar oder auf
+dem Hero), der die 7 Szenarien **automatisch nacheinander abspielt**: Frage wird in den
+Composer „getippt", Antwort streamt, kurze Pause, dann das nächste Szenario. Mit
+Pause/Stop und einem dezenten Fortschritts-Indikator (z. B. „Szenario 3 / 7").
 
-*Warum diese?* Der Sprung von „Chatbot mit Textschnipseln" zu „das System öffnet mein
-tatsächliches Dokument und zeigt mir die Stelle" ist der stärkste Einzel-Vertrauens-
-Trigger für nicht-technische Entscheider — genau die Zielgruppe des Videos.
+*Warum diese?* Damit läuft die komplette Demo **hands-free** — ideal für die Video-
+Aufnahme (keine sichtbaren Mausbewegungen/Tippfehler) **und** für einen Messestand- bzw.
+Empfangs-Loop, der Kunden ohne Bediener überzeugt. Baut vollständig auf dem vorhandenen
+`ask()`-Flow in `prototype/app.js` auf (nur Orchestrierung + ein Button) und verändert die
+bestehende Logik nicht.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 ---
 
-## CEO-Review (Ende Zyklus 1)
+## CEO-Review (Ende Zyklus 2)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja**, der Kern-Flow ist überzeugend.
-- *Erzeugt es Aufregung?* — Ja: die Belege + Konfidenz + Viewer wirken „enterprise-echt".
-- *Versteht ein CFO den Nutzen?* — Ja, Szenario 2/3/5 sind direkt CFO-relevant.
-- *Schwächste Stelle → nächster Zyklus:* der Viewer zeigt Text, nicht ein *echtes*
-  Dokument-Layout. Das ist der nächste Hebel (oben).
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja**, deutlich stärker: der Viewer
+  öffnet jetzt sichtbar „echte" Rechnungen/Verträge mit Stempel und Unterschrift.
+- *Erzeugt es Aufregung?* — Ja: der EINGANG-Stempel und die Unterschriftszeilen sind ein
+  spürbarer „das ist mein echtes Dokument"-Moment.
+- *Versteht ein CFO den Nutzen?* — Ja, der Drei-Wege-Abgleich (Szenario 3) wirkt mit den
+  Belegskins nun wie eine echte Prüfungsakte.
+- *Schwächste Stelle → nächster Zyklus:* die Demo braucht noch Bedienung. Ein
+  hands-free „Guided Demo"-Modus (oben) hebt die Video-/Messe-Reife am meisten.

@@ -253,9 +253,44 @@ body {
 .viewer .vmeta .row span:first-child { color: var(--ink-faint); width: 92px; flex: none; }
 .viewer .vmeta .row span:last-child { color: var(--ink); word-break: break-word; }
 
-.viewer .vbody { padding: 22px; overflow-y: auto; flex: 1; }
-.viewer .vbody p { margin: 0 0 14px; font-size: 14.5px; line-height: 1.7; }
-.viewer .vbody p.hl { background: #fef9c3; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 4px; }
+/* „Schreibtisch" hinter dem Papier */
+.viewer .vbody { padding: 20px; overflow-y: auto; flex: 1; background: #eceff4; }
+
+/* Papierblatt — lässt jede Quelle wie ein echtes Dokument wirken */
+.paper {
+  position: relative; background: #fff; border: 1px solid #e1e6ee; border-radius: 5px;
+  padding: 30px 32px 34px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .07), 0 10px 26px rgba(15, 23, 42, .10);
+}
+/* Briefkopf */
+.paper .lh { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; }
+.paper .lh .org { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.paper .lh .org .mark { width: 34px; height: 34px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 13px; letter-spacing: .5px; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.paper .lh .org .on { display: block; font-weight: 700; font-size: 14.5px; line-height: 1.25; }
+.paper .lh .org .os { display: block; font-size: 11px; color: var(--ink-faint); }
+.paper .lh .ref { text-align: right; flex: none; }
+.paper .lh .ref .rt { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--brand-ink); }
+.paper .lh .ref .rl { display: block; font-size: 11.5px; color: var(--ink-soft); }
+
+.paper .dtitle { font-size: 16.5px; font-weight: 700; margin: 18px 0 12px; }
+.paper .dp { margin: 0 0 13px; font-size: 14px; line-height: 1.72; color: #1f2937; }
+.paper .dp .cl { color: var(--brand-ink); }
+.paper .dp.hl { background: #fef9c3; border-left: 3px solid #f59e0b; padding: 9px 12px; border-radius: 4px; box-shadow: 0 1px 2px rgba(245, 158, 11, .18); }
+
+/* Vertrag: Ort/Datum + zwei Unterschriftszeilen */
+.paper .sig { margin-top: 30px; padding-top: 4px; }
+.paper .sig .sig-place { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 26px; }
+.paper .sig .sig-row { display: flex; gap: 36px; }
+.paper .sig .col { flex: 1; }
+.paper .sig .line { border-top: 1px solid var(--ink); padding-top: 6px; font-size: 11.5px; color: var(--ink-soft); }
+
+/* Beleg-/Prüf-Stempel */
+.paper .stamp { position: absolute; top: 90px; right: 26px; transform: rotate(-9deg); text-align: center; padding: 6px 14px; border: 2.5px solid; border-radius: 7px; opacity: .82; }
+.paper .stamp .st { display: block; font-weight: 800; font-size: 15px; letter-spacing: 1.5px; }
+.paper .stamp .sd { display: block; font-size: 10px; letter-spacing: .5px; }
+.paper .stamp.stamp-ok { color: var(--ok); border-color: var(--ok); }
+.paper .stamp.stamp-ink { color: #334155; border-color: #334155; }
+
 .viewer .vnote { font-size: 11.5px; color: var(--ink-faint); border-top: 1px solid var(--line); padding: 12px 22px; display: flex; align-items: center; gap: 8px; }
 
 /* Scrollbars */
