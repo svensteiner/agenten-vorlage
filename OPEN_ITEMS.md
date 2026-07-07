@@ -5,17 +5,20 @@
 
 ## Offen (nach Priorität)
 
-1. **[P2] Vertrauens-Story sichtbar machen** — ein bewusst „gesperrtes" Dokument (Schloss,
-   ausgegraut, „Kein Zugriff") in der Bibliothek + in einer Antwort eine Zeile „N weitere
-   Treffer für Sie nicht freigegeben". → macht Berechtigungs-Treue/Governance greifbar,
-   differenziert von „ChatGPT auf unseren Dateien".
+1. **[P3] Politur — Tempo/Souveränität fühlbar machen** — „Antwort in X s"-Signal im
+   Antwortkopf + dezentes Hochzählen der Kernzahlen (Konfidenz/Relevanz, Beträge, Prozente),
+   sanftere Übergänge. → lässt das System im Video schnell und „live" wirken.
 2. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
    `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.)
-3. **[P4] Politur** — Zahlen-Hochzähl-Animation (Konfidenz/Relevanz), sanftere Übergänge,
-   „Antwort in X s"-Signal.
-4. **[P4] Export-Button** für eine Antwort inkl. Quellen.
+3. **[P4] Export-/„An Vorstand senden"-Button** für eine Antwort inkl. Quellen.
 
 ## Erledigt
+
+- **[Zyklus 7] Vertrauens-Story** — 2 gesperrte Dokumente (M&A-Akquisitionsvorlage,
+  Vorstandsvergütung) ausgegraut mit Schloss + „Kein Zugriff — <Rolle>" in der Bibliothek;
+  Klick öffnet „Zugriff verweigert" statt Inhalt (kein Leak). Neues 9. Szenario
+  „Wachstumsstrategie" mit Governance-Signal „2 weitere Treffer für Sie nicht freigegeben"
+  (neuer `appendWithheld()`-Block, anklickbare gesperrte Treffer). Rein additiv. Live verifiziert.
 
 - **[Zyklus 6] Onboarding-Overlay** beim ersten Start — leichtgewichtiges Coachmark oben
   rechts, Pfeil auf den pulsierenden „Geführte Demo"-Button, ein Satz + Primär-CTA, der das

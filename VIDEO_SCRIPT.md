@@ -2,7 +2,7 @@
 
 > Drehbuch für das Kunden-Verkaufsvideo. Zielgruppe: **CEO / CFO / Geschäftsführung** —
 > nicht-technisch. Kernbotschaft: *„Ihr Unternehmen besitzt bereits alle Informationen.
-> AI Studio macht sie endlich nutzbar."* Länge: ~2:55 Min.
+> AI Studio macht sie endlich nutzbar."* Länge: ~3:20 Min.
 
 Demo läuft aus [`prototype/index.html`](prototype/index.html). Firma: fiktive
 **Meridian Industrie GmbH**. Alle Daten erfunden.
@@ -60,20 +60,34 @@ erneuerbarer Stromanteil, Fazit „erreichbar, erfordert Beschleunigung". Quelle
 *Energie- & Emissionskennzahlen 2025* kurz öffnen.
 **Punkt (für CEO/Aufsichtsrat):** Vorstandsthemen in Sekunden belegt — nicht nur Finanzen.
 
-## Szene 6 — Das Board-Briefing (2:30–2:50)
+## Szene 6 — „Sieht dann jeder alles?" (2:30–2:55)
+**Aktion:** Fragen: *„Was hat der Vorstand für die Wachstumsstrategie beschlossen?"* → nach der
+Antwort auf den roten Block **„2 weitere Treffer für Sie nicht freigegeben"** halten; einen
+gesperrten Treffer anklicken → **„Zugriff verweigert"**.
+**Sprecher:** „Und die wichtigste Frage: Sieht dann jeder alles? Nein. AI Studio respektiert
+Ihre bestehenden Berechtigungen. Vertrauliche Vorstandsunterlagen bleiben verborgen — sie
+fließen nicht einmal in die Antwort ein. Das System erfindet nichts und zeigt nichts, was Sie
+nicht sehen dürfen."
+**Bild:** Antwort nur mit **freigegebenen** Beschlüssen, darunter das rote Governance-Signal;
+Klick auf ein gesperrtes Dokument öffnet **„Zugriff verweigert"** (Klassifizierung „Streng
+vertraulich", nur „Vorstand").
+**Punkt (für CFO/Compliance):** **Berechtigungstreue sichtbar** — der klare Unterschied zu
+„ChatGPT auf unseren Dateien".
+
+## Szene 7 — Das Board-Briefing (2:55–3:15)
 **Aktion:** Fragen: *„Erstelle eine Zusammenfassung für den Vorstand."*
 **Sprecher:** „In Sekunden ein Vorstands-Briefing — über alle Abteilungen hinweg."
 **Bild:** Bereichsübergreifende Zusammenfassung (Finanzen, Projekt, Verträge, ESG).
 
-## Szene 7 — Abschluss (2:50–2:55)
+## Szene 8 — Abschluss (3:15–3:20)
 **Sprecher:** „AI Studio. Ihr Wissen. Sofort nutzbar."
 **Bild:** Logo + Claim, ruhiges Fade-out.
 
 ---
 
 ## Aufnahme-Hinweise
-- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 8
-  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 8").
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 9
+  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 9").
   Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
   nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
   die Tipp-/Streaming-Geschwindigkeit im Browser).

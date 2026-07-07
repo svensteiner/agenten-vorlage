@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 7 — 2026-07-08 — Vertrauens-Story: gesperrtes Dokument + „für Sie nicht freigegeben" 🔒
+
+**Die Demo zeigt jetzt sichtbar, dass Berechtigungen respektiert werden — das große fehlende
+Wow-Thema für skeptische Entscheider.** Zwei bewusst **gesperrte Dokumente** (M&A-
+Akquisitionsvorlage „Projekt Nordstern", Vorstandsvergütung 2026) erscheinen im Modul Berichte
+**ausgegraut mit Schloss** und „Kein Zugriff — Vorstand". Ein neues 9. Szenario „Was hat der
+Vorstand für die Wachstumsstrategie beschlossen?" beantwortet nur die **freigegebenen**
+Beschlüsse und zeigt darunter das Governance-Signal **„2 weitere Treffer für Sie nicht
+freigegeben"**. Das beantwortet die CFO/Compliance-Frage „Sieht jeder alles?" in Sekunden und
+differenziert AI Studio von „ChatGPT auf unseren Dateien".
+
+### Neu (rein additiv in `data.js` / `app.js` / `styles.css`)
+- **2 gesperrte Dokumente** (`locked: true`, `lockedRole`, `classification`, **kein `body`**) —
+  Inhalt bleibt strukturell unsichtbar, nicht nur ausgeblendet.
+- **Bibliothek:** gesperrte Karte gestrichelt/ausgegraut, Schloss-Icon, rotes
+  „🔒 Kein Zugriff — <Rolle>". Klick öffnet statt Inhalt eine **„Zugriff verweigert"-Ansicht**
+  im Viewer (Klassifizierung, Freigabe-Rolle, Eigentümer; Inhalt verborgen).
+- **Neues 9. Szenario** `strategie-ausblick` mit optionalem `answer.withheld`-Feld →
+  neuer Antwort-Block `appendWithheld()`: „N weitere Treffer für Sie nicht freigegeben",
+  Klassifizierungs-Tag, Erklärsatz und **anklickbare gesperrte Treffer** (öffnen die
+  Zugriff-verweigert-Ansicht).
+- **„Geführte Demo"** deckt automatisch alle 9 Szenarien ab (Zähler dynamisch aus `SCENARIOS`).
+
+### Funktioniert (live im Browser verifiziert, text-basiert)
+- 2 gesperrte Karten im Modul Berichte, korrekte Rollen-Labels.
+- Klick auf gesperrtes Dokument → „Zugriff verweigert", **kein Inhalt** geleakt; Meta zeigt
+  Klassifizierung/Freigabe/Eigentümer.
+- Strategie-Szenario als Hero-Vorschlag vorhanden; Antwortpfad unverändert.
+- Withheld-Block wird nach den Quellen eingeblendet (identisches Muster wie `appendSources`).
+
 ## Zyklus 6 — 2026-07-08 — Onboarding-Overlay beim ersten Start 👋
 
 **Der erste Video-Eindruck ist jetzt geführt statt leer.** Beim ersten Laden erscheint ein

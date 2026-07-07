@@ -298,6 +298,7 @@
     // Danach die strukturierten Blöcke einblenden
     appendReasoning(card, answer.reasoning);
     appendSources(card, answer.sources);
+    appendWithheld(card, answer.withheld);
     appendRelated(card, answer.related);
     appendFollowups(card, answer.followups);
     scrollBottom();
@@ -347,6 +348,36 @@
     card.appendChild(b);
   }
 
+  // Governance-Signal: „N weitere Treffer für Sie nicht freigegeben".
+  // Macht Berechtigungstreue in Sekunden greifbar (CFO/Compliance-Frage
+  // „Sieht jeder alles?"). Die gesperrten Dokumente sind anklickbar und öffnen
+  // die „Zugriff verweigert"-Ansicht.
+  function appendWithheld(card, withheld) {
+    if (!withheld || !withheld.count) return;
+    const b = el("div", "block withheld");
+    b.appendChild(el("div", "block-title", "🔒 Nicht freigegeben"));
+    const head = el("div", "wh-head",
+      `<b>${withheld.count} weitere Treffer</b> für Sie nicht freigegeben` +
+      (withheld.role ? ` <span class="wh-tag">Klassifizierung: ${escapeHtml(withheld.role)}</span>` : ""));
+    b.appendChild(head);
+    if (withheld.note) b.appendChild(el("div", "wh-note", escapeHtml(withheld.note)));
+    if (withheld.docs && withheld.docs.length) {
+      const box = el("div", "wh-list");
+      withheld.docs.forEach((id) => {
+        const doc = DOCS[id];
+        if (!doc) return;
+        const row = el("button", "wh-item",
+          `<span class="lk">🔒</span>` +
+          `<span class="wt">${doc.title}<span class="wty">${escapeHtml(doc.type)}</span></span>` +
+          `<span class="wr">Kein Zugriff</span>`);
+        row.onclick = () => openViewer(id);
+        box.appendChild(row);
+      });
+      b.appendChild(box);
+    }
+    card.appendChild(b);
+  }
+
   function appendRelated(card, related) {
     if (!related || !related.length) return;
     const b = el("div", "block");
@@ -393,20 +424,40 @@
 
   function fallbackAnswer(text) {
     // Graceful: sucht die drei relevantesten Dokumente per Stichwort.
+    // Gesperrte Dokumente werden NIE als lesbare Quelle zurückgegeben
+    // (permission-faithful): sie erscheinen nur über das `withheld`-Signal.
     const q = text.toLowerCase();
-    const scored = Object.values(DOCS).map((d) => {
+    const scored = Object.values(DOCS).filter((d) => !d.locked).map((d) => {
       const hay = (d.title + " " + d.snippet + " " + d.type).toLowerCase();
       let s = 0;
       q.split(/\s+/).forEach((w) => { if (w.length > 3 && hay.includes(w)) s += 1; });
       return { d, s };
     }).filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
 
+    // Gesperrte Treffer separat ermitteln → als „nicht freigegeben" ausweisen,
+    // ohne Inhalt/Zitat preiszugeben (permission-faithful auch bei freien Fragen).
+    const lockedHits = Object.values(DOCS).filter((d) => d.locked).filter((d) => {
+      const hay = (d.title + " " + d.snippet + " " + d.type + " " + (d.lockedRole || "")).toLowerCase();
+      return q.split(/\s+/).some((w) => w.length > 3 && hay.includes(w));
+    });
+    const withheld = lockedHits.length ? {
+      count: lockedHits.length,
+      role: lockedHits[0].lockedRole,
+      note: "AI Studio respektiert die bestehenden Berechtigungen Ihres Kontos. Diese Dokumente werden Ihnen nicht angezeigt und flossen nicht in die Antwort ein.",
+      docs: lockedHits.map((d) => d.id),
+    } : null;
+
     if (scored.length === 0) {
       return {
-        text: "Ich konnte zu dieser Frage keine passenden Dokumente in der Demo-Wissensbasis finden. Probieren Sie eine der vorgeschlagenen Beispielfragen — die Demo-Firma umfasst Finanzen, HR, Verträge, Audit und Berichte.",
-        reasoning: ["Frage entgegengenommen.", "Wissensbasis durchsucht — kein ausreichend relevanter Treffer.", "Ehrliche Rückmeldung statt Halluzination (fail-closed)."],
+        text: withheld
+          ? "Zu Ihrer Frage sind ausschließlich Dokumente vorhanden, die <b>für Sie nicht freigegeben</b> sind — siehe unten. AI Studio zeigt deren Inhalt nicht an."
+          : "Ich konnte zu dieser Frage keine passenden Dokumente in der Demo-Wissensbasis finden. Probieren Sie eine der vorgeschlagenen Beispielfragen — die Demo-Firma umfasst Finanzen, HR, Verträge, Audit und Berichte.",
+        reasoning: withheld
+          ? ["Frage entgegengenommen.", "Zugriffsrechte des Kontos geprüft.", `${withheld.count} Treffer als „${withheld.role}" klassifiziert — Inhalt nicht gelesen und nicht angezeigt (fail-closed).`]
+          : ["Frage entgegengenommen.", "Wissensbasis durchsucht — kein ausreichend relevanter Treffer.", "Ehrliche Rückmeldung statt Halluzination (fail-closed)."],
         sources: [],
         confidence: 30,
+        withheld,
         related: [],
         followups: SCENARIOS.slice(0, 3).map((s) => s.question),
       };
@@ -416,6 +467,7 @@
       reasoning: ["Frage per Stichwortsuche über alle Module ausgewertet.", "Nach Relevanz sortiert.", "Nur Dokumente angezeigt, für die eine Leseberechtigung besteht."],
       sources: scored.map((x, i) => ({ docId: x.d.id, relevance: 88 - i * 9, quote: x.d.snippet })),
       confidence: 72,
+      withheld,
       related: scored.map((x) => x.d.id),
       followups: SCENARIOS.slice(0, 2).map((s) => s.question),
     };
@@ -451,11 +503,18 @@
     // Dokumente dieses Moduls
     const grid = el("div", "doc-grid");
     Object.values(DOCS).filter((d) => d.module === key).forEach((d) => {
-      const card = el("div", "doc-card");
-      card.innerHTML =
-        `<div class="top"><span class="ficon">▤</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
-        `<div class="snip">${d.snippet}</div>` +
-        `<div class="foot"><span>${d.author}</span><span>${d.date}</span></div>`;
+      const card = el("div", d.locked ? "doc-card locked" : "doc-card");
+      if (d.locked) {
+        card.innerHTML =
+          `<div class="top"><span class="ficon lock">🔒</span><div><div class="t">${d.title}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
+          `<div class="snip">${d.snippet}</div>` +
+          `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${d.date}</span></div>`;
+      } else {
+        card.innerHTML =
+          `<div class="top"><span class="ficon">▤</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
+          `<div class="snip">${d.snippet}</div>` +
+          `<div class="foot"><span>${d.author}</span><span>${d.date}</span></div>`;
+      }
       card.onclick = () => openViewer(d.id);
       grid.appendChild(card);
     });
@@ -501,20 +560,38 @@
     if (!doc) return;
     $("#vTitle").textContent = doc.title;
     $("#vType").textContent = doc.type;
-    $("#vMeta").innerHTML =
-      metaRow("Pfad", doc.path) +
-      metaRow("Autor", doc.author) +
-      metaRow("Erstellt", doc.date) +
-      (doc.updated ? metaRow("Status", doc.updated) : "") +
-      metaRow("Typ", doc.type);
+    $("#vMeta").innerHTML = doc.locked
+      ? metaRow("Pfad", doc.path) +
+        metaRow("Eigentümer", doc.author) +
+        metaRow("Klassifizierung", doc.classification || "Vertraulich") +
+        metaRow("Freigegeben für", doc.lockedRole) +
+        metaRow("Typ", doc.type)
+      : metaRow("Pfad", doc.path) +
+        metaRow("Autor", doc.author) +
+        metaRow("Erstellt", doc.date) +
+        (doc.updated ? metaRow("Status", doc.updated) : "") +
+        metaRow("Typ", doc.type);
 
     const body = $("#vBody");
     body.innerHTML = "";
-    body.appendChild(buildPaper(doc, highlightQuote));
+    body.appendChild(doc.locked ? buildLockedPaper(doc) : buildPaper(doc, highlightQuote));
     body.scrollTop = 0;
 
     $("#overlay").classList.add("open");
     $("#viewer").classList.add("open");
+  }
+
+  // Gesperrtes Dokument: zeigt bewusst KEINEN Inhalt, sondern eine
+  // „Zugriff verweigert"-Ansicht — die Kernidee „Sie sehen nur, was Sie dürfen".
+  function buildLockedPaper(doc) {
+    const paper = el("div", "paper paper-locked");
+    paper.appendChild(el("div", "lock-badge", "🔒"));
+    paper.appendChild(el("div", "lock-title", "Zugriff verweigert"));
+    paper.appendChild(el("div", "lock-sub",
+      `Dieses Dokument ist als <b>${escapeHtml(doc.classification || "vertraulich")}</b> eingestuft und nur für <b>${escapeHtml(doc.lockedRole)}</b> freigegeben.`));
+    paper.appendChild(el("p", "lock-note",
+      "AI Studio zeigt und verarbeitet ausschließlich Dokumente, für die Ihr Konto berechtigt ist. Der Inhalt bleibt vollständig verborgen — auch in Antworten und Zusammenfassungen."));
+    return paper;
   }
 
   // Baut die „Papier"-Darstellung eines Dokuments (Briefkopf, Beleg-Text,

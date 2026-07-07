@@ -310,6 +310,36 @@ const DOCS = {
       { t: "Größte Hebel bis 2030: Ausbau Photovoltaik (Werk 2 plus geplant Werk 1), Umstellung Prozesswärme auf Wärmepumpe, Grünstrom-PPA.", highlight: false },
     ],
   },
+  // --- Gesperrte Dokumente (Vertrauens-/Governance-Story) --------------------
+  // `locked: true` → für das angemeldete Konto NICHT freigegeben. app.js zeigt
+  // sie ausgegraut in der Bibliothek und öffnet statt Inhalt eine „Zugriff
+  // verweigert"-Ansicht. Der Inhalt (kein `body`) bleibt bewusst unsichtbar.
+  "akquisition-nordstern": {
+    id: "akquisition-nordstern",
+    title: "Projekt Nordstern — Akquisitionsvorlage",
+    type: "Vorstandsvorlage",
+    module: "berichte",
+    path: "SharePoint › Vorstand › Vertraulich › Projekt_Nordstern_M&A.pdf",
+    author: "Markus Brandt (CEO)",
+    date: "2026-03-10",
+    locked: true,
+    lockedRole: "Vorstand",
+    classification: "Streng vertraulich",
+    snippet: "Bewertung und Angebotsrahmen für eine mögliche Akquisition. Zugriff auf den Vorstand beschränkt.",
+  },
+  "vorstandsverguetung-2026": {
+    id: "vorstandsverguetung-2026",
+    title: "Vorstandsvergütung 2026",
+    type: "Personalvorlage",
+    module: "berichte",
+    path: "SharePoint › Vorstand › Vertraulich › Verguetung_Vorstand_2026.xlsx",
+    author: "Aufsichtsrat",
+    date: "2026-02-05",
+    locked: true,
+    lockedRole: "Vorstand & Aufsichtsrat",
+    classification: "Streng vertraulich",
+    snippet: "Individuelle Vergütung und Boni der Geschäftsführung. Zugriff auf Vorstand & Aufsichtsrat beschränkt.",
+  },
 };
 
 // --- Szenarien -------------------------------------------------------------
@@ -497,15 +527,42 @@ const SCENARIOS = [
       followups: ["Welche Maßnahmen senken den CO₂-Ausstoß am stärksten?", "Wie hoch ist der Anteil erneuerbarer Energie?"],
     },
   },
+  {
+    id: "strategie-ausblick",
+    module: "berichte",
+    question: "Was hat der Vorstand für die Wachstumsstrategie beschlossen?",
+    keywords: ["strategie", "wachstum", "wachstumsstrategie", "vorstand beschlossen", "akquisition", "übernahme", "ausblick", "m&a", "zukauf"],
+    answer: {
+      text: "Aus den <b>für Sie freigegebenen</b> Vorstandsunterlagen (Protokoll März 2026) ergeben sich diese strategischen Beschlüsse:<ul><li><b>Lieferkette:</b> Aufnahme von Ferro Nord als Zweitlieferant, um die Stahlpreis-Abhängigkeit zu senken.</li><li><b>Kapazität:</b> Mehrbudget von 0,9 Mio. € für Projekt Alpha genehmigt (neue Fertigungslinie, +35 % Kapazität).</li><li><b>Nachhaltigkeit:</b> ESG-Ziel bekräftigt — 30 % CO₂-Reduktion bis 2030.</li></ul>Weitergehende strategische Vorlagen (u. a. zu einer möglichen Akquisition) sind gesondert klassifiziert und für Ihr Konto <b>nicht freigegeben</b> — siehe unten.",
+      reasoning: [
+        "Anfrage als strategische Vorstandsfrage im Modul Berichte erkannt.",
+        "Zugriffsrechte des angemeldeten Kontos geprüft, bevor Inhalte gelesen wurden.",
+        "2 als „Vorstand\" klassifizierte Dokumente ausgeschlossen — Inhalt nicht gelesen.",
+        "Nur freigegebene Beschlüsse aus dem Vorstandsprotokoll zusammengefasst.",
+      ],
+      sources: [
+        { docId: "vorstandsprotokoll-2026-03", relevance: 90, quote: "Aufnahme von Ferro Nord als Zweitlieferant zur Reduktion der Stahlpreis-Abhängigkeit." },
+      ],
+      confidence: 88,
+      withheld: {
+        count: 2,
+        role: "Vorstand",
+        note: "AI Studio respektiert die bestehenden Berechtigungen Ihres Kontos. Diese Dokumente werden Ihnen nicht angezeigt und flossen nicht in die Antwort ein.",
+        docs: ["akquisition-nordstern", "vorstandsverguetung-2026"],
+      },
+      related: ["vorstandsprotokoll-2026-03", "projekt-alpha-status"],
+      followups: ["Wie steht es um die ESG-Ziele?", "Fasse Projekt Alpha zusammen."],
+    },
+  },
 ];
 
 // Startvorschläge pro Modul (Frage-IDs). „wissen" zeigt die Highlights.
 const MODULE_SUGGESTIONS = {
-  wissen: ["reiserichtlinie", "materialkosten", "beleg-rechnung", "vertraege-verlaengerung", "vorstand-summary", "esg-co2"],
+  wissen: ["reiserichtlinie", "materialkosten", "beleg-rechnung", "vertraege-verlaengerung", "esg-co2", "strategie-ausblick"],
   finanzen: ["materialkosten", "beleg-rechnung"],
   audit: ["beleg-rechnung", "brandschutz"],
   hr: ["reiserichtlinie"],
   vertraege: ["vertraege-verlaengerung"],
-  berichte: ["projekt-alpha", "vorstand-summary", "esg-co2"],
+  berichte: ["projekt-alpha", "vorstand-summary", "esg-co2", "strategie-ausblick"],
   einstellungen: [],
 };

@@ -5,7 +5,7 @@
 
 > **Schnellster Weg zur Aufnahme:** Statt manuell zu klicken kann der **▶-Button
 > „Geführte Demo"** (oben rechts) die gesamte Abfolge unten hands-free abspielen — Frage
-> tippt sich selbst, Antwort streamt, Fortschritt „n / 8". Sprecher nur drüberlegen. Tab
+> tippt sich selbst, Antwort streamt, Fortschritt „n / 9". Sprecher nur drüberlegen. Tab
 > dabei im Vordergrund halten (Hintergrund-Tabs drosseln Tipp-/Streaming-Tempo).
 
 | # | Dauer | Aktion in der App | Kamera / Fokus |
@@ -16,8 +16,9 @@
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:30 | *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"* | Auf die **CO₂-Trend-Tabelle** (2020 → 2025 → Ziel 2030) und das **Fazit** halten; Quelle *Energie- & Emissionskennzahlen 2025* kurz öffnen |
-| 6 | 0:20 | *„Erstelle eine Zusammenfassung für den Vorstand."* | Ganze Antwort im Bild; langsam nach unten scrollen (Finanzen + ESG in einem Briefing) |
-| 7 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |
+| 6 | 0:30 | *„Was hat der Vorstand für die Wachstumsstrategie beschlossen?"* (**Vertrauens-Moment**) | Nach der Antwort auf den roten Block **„2 weitere Treffer für Sie nicht freigegeben"** halten; einen gesperrten Treffer anklicken → **„Zugriff verweigert"**-Ansicht (Klassifizierung „Streng vertraulich", nur „Vorstand") — das System **erfindet nichts** und **respektiert Rechte** |
+| 7 | 0:20 | *„Erstelle eine Zusammenfassung für den Vorstand."* | Ganze Antwort im Bild; langsam nach unten scrollen (Finanzen + ESG in einem Briefing) |
+| 8 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |
 
 ## Alternative B-Roll (optional)
 - Modul **Verträge** öffnen → Dokumentenbibliothek als Raster zeigen (Breite des Wissens).
@@ -27,6 +28,9 @@
   auf dem behördlichen Nachweis (starkes „prüfungssicher"-Signal).
 - Modul **Verträge** → *Rahmenvertrag Stahlwerk Donau* öffnen → **Unterschriftszeilen**
   beider Parteien am Blattende (wirkt wie ein echter Vertrag).
+- Modul **Berichte** → die **zwei gesperrten Dokumente** (gestrichelt, Schloss,
+  „Kein Zugriff — Vorstand") im Raster zeigen → einen anklicken → **„Zugriff verweigert"**.
+  Sehr starkes Governance-/Vertrauens-Signal, auch ohne Chat.
 
 ## Technisch
 - 1920×1080, 60 fps, System-Cursor sichtbar lassen.

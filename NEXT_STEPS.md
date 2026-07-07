@@ -6,10 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 6 — **Onboarding-Overlay beim ersten Start** (siehe unten).
+- **Letzter Zyklus:** Zyklus 7 — **Vertrauens-Story: gesperrtes Dokument + „für Sie nicht
+  freigegeben"-Signal** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 58 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 62 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +29,28 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 7 gebaut wurde
+
+**Vertrauens-/Governance-Story sichtbar gemacht.** Die Kernidee „Sie sehen nur, was Sie
+dürfen" ist jetzt in der Demo greifbar — der größte bisher ungenutzte Wow-Hebel für
+skeptische CFO/Compliance-Entscheider:
+- **Zwei gesperrte Dokumente** im Modul Berichte (`akquisition-nordstern` „Projekt Nordstern
+  — Akquisitionsvorlage", `vorstandsverguetung-2026` „Vorstandsvergütung 2026"). Flag
+  `locked: true` + `lockedRole` + `classification`, **bewusst ohne `body`** → der Inhalt
+  existiert gar nicht im Client, kann also nicht geleakt werden.
+- **Bibliothek:** gesperrte Karte gestrichelt/ausgegraut mit **Schloss** und rotem
+  „🔒 Kein Zugriff — <Rolle>". Klick öffnet **keine** Inhalte, sondern eine
+  **„Zugriff verweigert"-Ansicht** im Viewer (Klassifizierung, Freigabe-Rolle, Eigentümer).
+- **Neues 9. Szenario** „Was hat der Vorstand für die Wachstumsstrategie beschlossen?"
+  beantwortet nur die **freigegebenen** Beschlüsse (aus dem Vorstandsprotokoll) und zeigt
+  darunter das Governance-Signal **„2 weitere Treffer für Sie nicht freigegeben"** mit
+  Klassifizierungs-Tag und **anklickbaren gesperrten Treffern** (öffnen die Zugriff-
+  verweigert-Ansicht). Neues optionales Feld `answer.withheld` → Block `appendWithheld()`.
+- **Rein additiv** in `data.js` / `app.js` / `styles.css`; bestehender Antwortpfad und alle
+  vorhandenen Dokumente unverändert. „Geführte Demo" deckt automatisch 9 Szenarien ab
+  (Zähler dynamisch). Live verifiziert: 2 gesperrte Karten, Zugriff-verweigert ohne
+  Inhalts-Leak, korrekte Meta, Szenario als Hero-Vorschlag.
 
 ## Was in Zyklus 6 gebaut wurde
 
@@ -128,34 +151,35 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Vertrauens-Story sichtbar machen: ein „gesperrtes" Dokument + prominenteres Berechtigungs-
-Signal.** Die Demo ist jetzt breit, tief und geführt — die stärkste ungenutzte Karte ist die
-**Permission-faithful-Kernidee** („Sie sehen nur, was Sie dürfen"). Nächster Zyklus: ein bewusst
-**gesperrtes Dokument** in der Bibliothek (Schloss-Icon, ausgegraut, „Kein Zugriff — Vorstand")
-plus, in einer Antwort, eine sichtbare Zeile **„2 weitere Treffer für Sie nicht freigegeben"**.
-Das macht Datenschutz/Governance in Sekunden greifbar — genau die CFO/Compliance-Frage
-„Sieht jeder alles?". Rein additiv (neues `locked`-Flag in `data.js` + Rendering in
-Bibliothek/Antwort), kein Umbau des Antwortpfads.
+**Politur „Antwort in X Sekunden" + Zahlen-Hochzähl-Animation.** Die Demo ist jetzt breit
+(Finanz/Audit/HR/Verträge/ESG/Governance), tief (Belegtabellen, Skins) und geführt
+(Onboarding + Auto-Play). Der stärkste verbleibende Hebel ist **wahrgenommene Geschwindigkeit
+& Souveränität** im Video: ein sichtbares **„Beantwortet in 1,8 s"-Signal** im Antwortkopf
+und ein dezentes **Hochzählen der Kernzahlen** (z. B. 18,4 %, 87.584 €, -12 %), wenn eine
+Antwort erscheint. Das lässt das System schnell und „live" wirken — genau der Eindruck, der
+im Verkaufsvideo zählt. Rein additiv (Timer-Anzeige im `.head`, kleine Count-up-Funktion für
+markierte Zahlen), kein Umbau des Antwortpfads.
 
-*Warum diese?* Sie hebt **Vertrauen/Governance** — das einzige große Wow-Thema, das die Demo
-noch nicht zeigt — und differenziert AI Studio von „ChatGPT auf unseren Dateien". Kleiner,
-risikoarmer Eingriff mit starker Wirkung auf skeptische Entscheider.
+*Warum diese?* Alle inhaltlichen Wow-Themen (Nutzen, Quellen, Tiefe, Vertrauen) sind jetzt
+abgedeckt. Was fehlt, ist die letzte **Video-Politur**, die Tempo und Vertrauen fühlbar macht.
+Kleiner, risikoarmer Eingriff mit hoher visueller Wirkung.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(weitere Szenarien HR/Lieferanten-Risiko, Politur/Zahlen-Animationen, Export-Button).
+(weitere Szenarien HR/Lieferanten-Risiko, Export-/„An Vorstand senden"-Button, sanfte
+Übergänge).
 
 ---
 
-## CEO-Review (Ende Zyklus 6)
+## CEO-Review (Ende Zyklus 7)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Der Einstieg ist jetzt geführt: ein
-  Zuschauer versteht in der ersten Sekunde, was er tun kann, und ein Klick startet die volle
-  Vorführung.
-- *Erzeugt es Aufregung?* — Ja: „Ein Klick → das System spielt sich selbst vor" ist ein
-  starker Video-Opener; der pulsierende Button mit Pfeil führt das Auge sofort.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: Headline + Geführte Demo beantworten „Was bringt
-  mir das?" ohne dass jemand die Bedienung erklären muss.
-- *Schwächste Stelle → nächster Zyklus:* **Vertrauen/Governance ist noch unsichtbar.** Die
-  Demo zeigt nicht, dass Berechtigungen respektiert werden. Ein **gesperrtes Dokument + „für
-  Sie nicht freigegeben"-Signal** (oben) ist der größte verbleibende Wow-Hebel für skeptische
-  Entscheider.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo beantwortet jetzt auch die
+  heikelste Entscheiderfrage: „Sieht dann jeder alles?" — sichtbar mit „Nein, nur was Sie
+  dürfen".
+- *Erzeugt es Aufregung?* — Ja: Ein gesperrtes M&A-Dokument, das das System **ehrlich
+  verweigert** statt zu erfinden, ist ein starkes Vertrauenssignal und differenziert klar von
+  „ChatGPT auf unseren Dateien".
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: „2 weitere Treffer für Sie nicht freigegeben" +
+  „Zugriff verweigert" sind selbsterklärend, ohne ein Wort über Technik.
+- *Schwächste Stelle → nächster Zyklus:* **Wahrgenommenes Tempo.** Inhaltlich ist die Demo
+  rund; ihr fehlt nur noch die letzte Politur (Antwort-Zeit-Signal, Zahlen-Animation), die im
+  Video Schnelligkeit und Souveränität fühlbar macht.

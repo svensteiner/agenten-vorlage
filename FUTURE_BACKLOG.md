@@ -6,7 +6,10 @@
 ## Enterprise-Datenplattform (Phase 2)
 - Echte Konnektoren zu SharePoint, SAP, Fileserver, Exchange (Ingestion-Pipeline).
 - Echtes RAG: Embeddings, Vektor-Index, hybride Retrieval-Pipeline.
-- Permission-faithful Retrieval gegen echte ACLs.
+- Permission-faithful Retrieval gegen echte ACLs. *(Die Demo visualisiert dieses Versprechen
+  bereits in Zyklus 7 — gesperrte Dokumente + „N weitere Treffer für Sie nicht freigegeben".
+  Phase 2 muss das UI nur an echte Berechtigungs-Checks anbinden; das `withheld`-Feld pro
+  Antwort und das `locked`-Flag pro Dokument sind die vorgesehenen Andockpunkte.)*
 - **Hinweis:** Für viele dieser Themen existiert bereits ausgearbeitete Architektur-
   Dokumentation unter [`platform/`](platform/) (31 Zyklen Vorarbeit). Diese ist das
   technische Fundament für Phase 2 — in Phase 1 aber **eingefroren/nicht anfassen**.
