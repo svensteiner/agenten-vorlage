@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 52 % (Ende Zyklus 4)
+## Gesamtfortschritt: ≈ 55 % (Ende Zyklus 5)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,18 +11,24 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 82 % | 16.4 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 85 % | 12.75 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 88 % | 13.2 |
-| Demo-Firma & realistische Dokumente | 15 % | 52 % | 7.8 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 58 % | 5.8 |
+| Demo-Firma & realistische Dokumente | 15 % | 58 % | 8.7 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 68 % | 6.8 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 72 % | 3.6 |
-| **Summe** | **100 %** | — | **≈ 78 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 80 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 52 %** berücksichtigt, dass Tiefe (mehr Dokumente, weitere
-> Szenarien, Politur) noch fehlt. Die Positionstabelle hebt vor allem **Viewer** (80 % →
-> 88 %) und die **Prüf-Glaubwürdigkeit** der Belege. Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 55 %** berücksichtigt, dass Tiefe (mehr Dokumente, Onboarding,
+> Politur) noch fehlt. Das ESG-Szenario hebt vor allem **Szenarien** (58 % → 68 %, jetzt
+> 8 statt 7, neue Domäne Nachhaltigkeit) und **Demo-Firma** (52 % → 58 %, neues Doc +
+> vertiefter ESG-Bericht). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 5 (2026-07-07) ≈ 55 %** — ESG/CO₂-Szenario: neues 8. Szenario „CO₂-Fußabdruck/
+  ESG-Kurs?" mit Trend-Tabelle (2020→2025→Ziel 2030) und ehrlicher Lücken-Offenlegung; neues
+  Doc „Energie- & Emissionskennzahlen 2025"; `esg-bericht-2025` von 2 auf 6 Absätze vertieft.
+  Rein additiv in `data.js`, „Geführte Demo" 7 → 8. Live verifiziert. (Szenarien 58 % → 68 %,
+  Demo-Firma 52 % → 58 %.)
 - **Zyklus 4 (2026-07-07) ≈ 52 %** — Rechnungs-Positionstabelle im Beleg-Skin: echte
   Buchungstabelle (Pos./Bezeichnung/Menge/Einzelpreis/Summe) + optionale Netto/USt/Brutto-
   Fußzeile für Rechnung/Bestellung/Wareneingang. Datengetrieben über optionales
@@ -43,6 +49,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Neues ESG/CO₂-Szenario (nutzt vorhandenen `Nachhaltigkeitsbericht` + 1 Doc) → Breite beweisen, Balken „Demo-Firma" & „Szenarien" heben.
+1. Onboarding-Overlay beim ersten Start (Pfeil auf „Geführte Demo") → Video-Reife, erster Eindruck.
 2. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien.
-3. Politur: Onboarding-Overlay, Zahlen-Animation, sanfte Übergänge → Video-Reife.
+3. Politur: Zahlen-Hochzähl-Animation, sanfte Übergänge, „Antwort in X s"-Signal → Video-Reife.

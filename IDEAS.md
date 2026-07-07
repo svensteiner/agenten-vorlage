@@ -12,13 +12,14 @@
 - ✅ **Rechnungs-Positionstabelle** — *erledigt in Zyklus 4*: echte Positionszeilen (Menge ·
   Einzelpreis · Summe) + Netto/USt/Brutto-Fußzeile für Rechnung/Bestellung/Wareneingang;
   optionales `doc.lineItems`-Feld, Fallback = Text. Drei-Wege-Abgleich prüfungsecht.
-- **ESG/CO₂-Szenario** — vorhandenen `Nachhaltigkeitsbericht` in ein Szenario einbinden,
-  zeigt Breite über Finanz/Audit hinaus. *(Nächster Zyklus.)*
-- **Onboarding-Overlay** beim ersten Start — ein Satz + Pfeil auf das Eingabefeld.
+- ✅ **ESG/CO₂-Szenario** — *erledigt in Zyklus 5*: 8. Szenario mit CO₂-Trend-Tabelle
+  (2020→2025→Ziel 2030) und ehrlicher Lücken-Offenlegung; neues Doc „Energie- &
+  Emissionskennzahlen 2025"; ESG-Bericht vertieft. Breite über Finanz/Audit hinaus.
+- **Onboarding-Overlay** beim ersten Start — ein Satz + Pfeil auf das Eingabefeld. *(Nächster Zyklus.)*
 - **Sanfte Zahlen-Animation** — Konfidenz-Meter und Relevanz-% zählen hoch (Politur).
 
 ## Mehr Substanz
-- 2–3 weitere Szenarien: HR-Onboarding-Frage, ESG/CO₂-Frage, Lieferanten-Risiko.
+- 2–3 weitere Szenarien: HR-Onboarding-Frage, Lieferanten-Risiko, Investitions-/Cashflow-Frage.
 - Pro Dokument ein Miniatur-Thumbnail in der Bibliothek (SVG-Icon je Typ).
 - Eine „Diese Antwort exportieren"-Schaltfläche (kopiert Antwort + Quellen).
 - Zeitstempel/„Antwort in 1,2 s" als kleines Performance-Signal.

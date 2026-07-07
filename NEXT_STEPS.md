@@ -6,10 +6,10 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 4 — **Rechnungs-Positionstabelle im Beleg-Skin** (siehe unten).
+- **Letzter Zyklus:** Zyklus 5 — **ESG/CO₂-Szenario** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-07.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 52 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 55 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +28,23 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 5 gebaut wurde
+
+**ESG/CO₂-Szenario — Breite über Finanz/Audit hinaus.** Neues 8. Szenario „Wie hat sich
+unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?" hebt die Demo auf Vorstands-/
+Aufsichtsratsthemen:
+- **Antwort mit CO₂-Trend-Tabelle** (2020 46.800 t → 2025 41.200 t / -12 % → Ziel 2030
+  32.760 t / -30 %) und **ehrlicher Lücken-Offenlegung** (linearer Pfad läge bei -15 %) statt
+  Schönfärberei — glaubwürdig für einen CFO/CEO.
+- **Neues Doc `energie-emissionsbericht-2025`** („Energie- & Emissionskennzahlen 2025") als
+  belastbare Zweitquelle (Trend, Zielwert, Energieintensität, Hebel).
+- **`esg-bericht-2025` von 2 auf 6 Absätze vertieft** (Scope 1/2, erneuerbarer Anteil 68 %,
+  Zielpfad, Soziales & Governance).
+- **Rein additiv in `data.js`** — kein Code-Umbau. Zahlen über alle 3 Quellen konsistent
+  (41.200 t = -12 % ggü. 46.800 t; Ziel = 46.800 × 0,70). Wiring in Hero + Modul Berichte;
+  „Geführte Demo" 7 → 8 Szenarien. Live verifiziert (Tabelle, 4 Blöcke, Quellen 97/93/76 %,
+  Viewer-Skin + Highlights; keine Konsolenfehler).
 
 ## Was in Zyklus 4 gebaut wurde
 
@@ -91,30 +108,31 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Breite beweisen: neues ESG/CO₂-Szenario** — die Demo ist jetzt in Finanz/Audit sehr tief,
-aber ein CEO soll sehen, dass AI Studio **nicht nur ein Buchhaltungs-Trick** ist. Der
-`Nachhaltigkeitsbericht` (ESG-Dokument) existiert bereits, wird aber von keinem Szenario
-genutzt. Nächster Zyklus: **ein neues Szenario** „Wie hat sich unser CO₂-Fußabdruck
-entwickelt / sind wir auf ESG-Kurs?" in `data.js` ergänzen (Antwort · Nachvollziehbarkeit ·
-Quellen aus dem ESG-Bericht + 1 ergänzendes Dokument, z. B. Energie-/Emissions-Kennzahlen ·
-Konfidenz · Folgefragen). Die „Geführte Demo" nimmt neue Szenarien **automatisch** auf.
+**Onboarding-Overlay beim ersten Start.** Die Demo ist inhaltlich jetzt breit und tief
+(8 Szenarien über Finanz/Audit/HR/Verträge/Berichte/ESG), aber ein Video-Zuschauer sieht in
+den ersten Sekunden nur einen leeren Chat und muss selbst verstehen, was er tun kann. Nächster
+Zyklus: ein **leichtgewichtiges Overlay** beim ersten Laden — ein Satz („Fragen Sie alles über
+Ihr Unternehmenswissen") + ein dezenter Pfeil auf den **„▶ Geführte Demo"**-Button, wegklickbar.
+Rein additiv in `index.html`/`styles.css`/`app.js` (kleiner `localStorage`-Flag, damit es nur
+einmal erscheint) — kein Eingriff in `data.js` oder den Antwortpfad.
 
-*Warum diese?* Sie hebt die beiden **schwächsten Balken** (Demo-Firma 45 %, Szenarien 55 %)
-und erweitert die Story von „Finanzen" auf **Nachhaltigkeit/Vorstandsthemen** — genau die
-Sprache, die einen CEO/Aufsichtsrat überzeugt. Rein additiv über `data.js` (kein Code-Umbau).
+*Warum diese?* Sie hebt den Balken **Video-Reife** und macht die stärkste Funktion (die
+Geführte Demo) sofort auffindbar — der erste Eindruck entscheidet im Verkaufsvideo. Kleiner,
+risikoarmer Eingriff mit großer Wirkung auf die „In-3-Sekunden-verstanden"-Frage.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(Onboarding-Overlay, weitere Szenarien HR/Lieferanten-Risiko, Politur).
+(weitere Szenarien HR/Lieferanten-Risiko, Vertrauens-Story, Politur/Animationen).
 
 ---
 
-## CEO-Review (Ende Zyklus 4)
+## CEO-Review (Ende Zyklus 5)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Der Drei-Wege-Abgleich sieht jetzt
-  aus wie ein echtes ERP-Buchungsblatt; für einen CFO ist das der Beweis „prüfungssicher".
-- *Erzeugt es Aufregung?* — Ja: übereinstimmende Positionen/Beträge über drei Belege hinweg
-  sind ein starker, sofort verständlicher „genau, das ist meine Buchhaltung"-Moment.
-- *Versteht ein CFO den Nutzen?* — Ja: Netto/USt/Brutto-Tabelle spricht direkt seine Sprache.
-- *Schwächste Stelle → nächster Zyklus:* die Demo ist **inhaltlich stark auf Finanz/Audit
-  konzentriert**. Ein **ESG/CO₂-Szenario** (oben) zeigt die Breite und adressiert Vorstands-/
-  Aufsichtsratsthemen — der größte Hebel für die nächste Vorführung.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo deckt jetzt neben Finanzen
+  auch **Nachhaltigkeit/Governance** ab — genau die Themen eines Aufsichtsrats.
+- *Erzeugt es Aufregung?* — Ja: der CO₂-Reduktionspfad als Tabelle plus die **ehrliche
+  Lücken-Offenlegung** wirkt wie ein echtes ESG-Reporting, nicht wie Marketing.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Sind wir auf Ziel-Kurs, wo ist die Lücke, welche
+  Hebel bleiben?" ist eine Vorstandsfrage, die das System in Sekunden belegbar beantwortet.
+- *Schwächste Stelle → nächster Zyklus:* die **erste Sekunde**. Der Einstieg ist noch leer;
+  ein **Onboarding-Overlay** (oben), das auf die Geführte Demo zeigt, ist der größte Hebel für
+  den ersten Video-Eindruck.

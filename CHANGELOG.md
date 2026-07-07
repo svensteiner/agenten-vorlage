@@ -2,6 +2,39 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 5 — 2026-07-07 — ESG/CO₂-Szenario: Breite über Finanzen hinaus 🌱
+
+**Die Demo spricht jetzt auch Vorstands-/Aufsichtsratssprache.** Ein neues 8. Szenario
+„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?" hebt die Demo von
+„Buchhaltungs-Trick" auf **Nachhaltigkeit & Governance**. Die Antwort zeigt einen echten
+**CO₂-Reduktionspfad als Tabelle** (2020 → 2025 → Ziel 2030) und legt die Lücke zum
+linearen Zielpfad **ehrlich offen** (-12 % ist vs. -15 % Pfad) statt sie zu beschönigen —
+genau der glaubwürdige, entscheidungsreife Ton, der einen CEO/CFO überzeugt.
+
+### Neu (rein additiv in `data.js`, kein Code-Umbau)
+- **Neues Szenario `esg-co2`** (Modul Berichte) — Antwort mit **Trend-Tabelle**
+  (Jahr · CO₂ Scope 1+2 · ggü. 2020), erneuerbarem Stromanteil, benannter Ziel-Lücke und
+  Handlungshebeln bis 2030; Konfidenz 92 %, 3 Quellen (97/93/76 %), 4 Nachvollziehbarkeits-
+  schritte, 2 Folgefragen.
+- **Neues Belegdokument `energie-emissionsbericht-2025`** („Energie- & Emissionskennzahlen
+  2025", Typ Kennzahlenbericht) — CO₂-Trend 2020–2025, Zielwert 2030 (32.760 t / -30 %),
+  Stromverbrauch/Energieintensität, Reduktionshebel. Rendert im Viewer als `paper-bericht`.
+- **`esg-bericht-2025` vertieft** — von 2 auf 6 Absätze: Scope-1/2-Aufteilung
+  (12.400 t / 28.800 t), erneuerbarer Anteil 68 % (Vorjahr 61 %), Zielpfad-Bewertung,
+  Soziales & Governance (Unfallquote, Frauenanteil Führung, Lieferanten-Kodex).
+- **Zahlenkonsistenz geprüft:** 41.200 t (2025) = -12,0 % ggü. Basis 46.800 t (2020);
+  Ziel 2030 = 46.800 × 0,70 = 32.760 t; verbleibend 8.440 t. Über alle 3 Quellen identisch.
+- **Wiring:** `esg-co2` in Hero-Vorschlägen (`wissen`) und im Modul `berichte`. Die
+  „Geführte Demo" nimmt das 8. Szenario **automatisch** auf (7 → 8).
+
+### Funktioniert (live im Browser verifiziert, text-basiert)
+- Frage → gestreamte Antwort mit **5-zeiliger Trend-Tabelle**, alle 4 Blöcke
+  (Nachvollziehbarkeit · Quellen 3 · Verwandte Dokumente 3 · Folgefragen 2), Konfidenz 92 %.
+- Quellen-Relevanzen 97 / 93 / 76 %; alle Quellen & verwandten Dokumente lösen auf.
+- Klick auf Quelle „Energie- & Emissionskennzahlen 2025" → Viewer öffnet `paper-bericht`
+  mit 3 hervorgehobenen KPI-Absätzen. Keine Konsolenfehler.
+- (Screenshot-Capture im Harness weiterhin instabil → DOM/CSS-Prüfung wie in Zyklus 4.)
+
 ## Zyklus 4 — 2026-07-07 — Rechnungs-Positionstabelle im Beleg-Skin 🧾
 
 **Belege zeigen jetzt eine echte Positionszeilen-Tabelle statt Fließtext.** Rechnung,

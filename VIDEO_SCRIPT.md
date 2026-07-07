@@ -2,7 +2,7 @@
 
 > Drehbuch für das Kunden-Verkaufsvideo. Zielgruppe: **CEO / CFO / Geschäftsführung** —
 > nicht-technisch. Kernbotschaft: *„Ihr Unternehmen besitzt bereits alle Informationen.
-> AI Studio macht sie endlich nutzbar."* Länge: ~2:30 Min.
+> AI Studio macht sie endlich nutzbar."* Länge: ~2:55 Min.
 
 Demo läuft aus [`prototype/index.html`](prototype/index.html). Firma: fiktive
 **Meridian Industrie GmbH**. Alle Daten erfunden.
@@ -45,20 +45,29 @@ USt 19 % · **Brutto 87.584 €**); danach Bestellung/Wareneingang mit identisch
 **Bild:** Tabelle mit 3 Verträgen und ⚠ Kündigungsfrist 28.02.2026.
 **Punkt:** konkretes Geld/Risiko, das sonst übersehen wird.
 
-## Szene 5 — Das Board-Briefing (2:05–2:25)
+## Szene 5 — Nachhaltigkeit & Aufsichtsrat (2:05–2:30)
+**Aktion:** Fragen: *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"*
+**Sprecher:** „Es geht nicht nur um Zahlen im Rechnungswesen. Auch Nachhaltigkeit wird
+belegbar — mit Reduktionspfad, Zielabgleich und einer ehrlich benannten Lücke."
+**Bild:** Antwort mit **CO₂-Trend-Tabelle** (2020 46.800 t → 2025 -12 % → Ziel 2030 -30 %),
+erneuerbarer Stromanteil, Fazit „erreichbar, erfordert Beschleunigung". Quelle
+*Energie- & Emissionskennzahlen 2025* kurz öffnen.
+**Punkt (für CEO/Aufsichtsrat):** Vorstandsthemen in Sekunden belegt — nicht nur Finanzen.
+
+## Szene 6 — Das Board-Briefing (2:30–2:50)
 **Aktion:** Fragen: *„Erstelle eine Zusammenfassung für den Vorstand."*
 **Sprecher:** „In Sekunden ein Vorstands-Briefing — über alle Abteilungen hinweg."
 **Bild:** Bereichsübergreifende Zusammenfassung (Finanzen, Projekt, Verträge, ESG).
 
-## Szene 6 — Abschluss (2:25–2:30)
+## Szene 7 — Abschluss (2:50–2:55)
 **Sprecher:** „AI Studio. Ihr Wissen. Sofort nutzbar."
 **Bild:** Logo + Claim, ruhiges Fade-out.
 
 ---
 
 ## Aufnahme-Hinweise
-- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 7
-  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 7").
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 8
+  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 8").
   Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
   nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
   die Tipp-/Streaming-Geschwindigkeit im Browser).

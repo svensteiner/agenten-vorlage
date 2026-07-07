@@ -286,8 +286,28 @@ const DOCS = {
     snippet: "CO₂-Bilanz, Energie, Lieferkette · Fortschritt gegen Ziel 2030.",
     body: [
       { t: "ESG-Bericht 2025 der Meridian Industrie GmbH nach CSRD/ESRS.", highlight: false },
-      { t: "CO₂-Emissionen 2025: 41.200 t (Scope 1+2), -12 % ggü. 2020. Ziel: -30 % bis 2030.", highlight: true },
-      { t: "Anteil erneuerbarer Energie am Strombezug: 68 %. Photovoltaik Werk 2 seit Q3 2025 aktiv.", highlight: true },
+      { t: "CO₂-Emissionen 2025: 41.200 t (Scope 1+2), -12 % ggü. Basisjahr 2020. Ziel: -30 % bis 2030.", highlight: true },
+      { t: "Scope 1 (eigene Anlagen und Fuhrpark): 12.400 t. Scope 2 (Strombezug): 28.800 t.", highlight: true },
+      { t: "Anteil erneuerbarer Energie am Strombezug: 68 % (Vorjahr 61 %). Photovoltaik Werk 2 seit Q3 2025 aktiv (4,2 GWh/Jahr).", highlight: true },
+      { t: "Zielpfad: Ein linearer Reduktionspfad läge 2025 bei rund -15 %; mit -12 % liegen wir leicht dahinter, holen aber durch PV-Ausbau und Grünstrom auf.", highlight: true },
+      { t: "Soziales & Governance: Arbeitsunfallquote -18 %, Frauenanteil in Führung 27 %, Lieferanten-Kodex von 94 % der A-Lieferanten unterzeichnet.", highlight: false },
+    ],
+  },
+  "energie-emissionsbericht-2025": {
+    id: "energie-emissionsbericht-2025",
+    title: "Energie- & Emissionskennzahlen 2025",
+    type: "Kennzahlenbericht",
+    module: "berichte",
+    path: "Fileserver › Controlling › Nachhaltigkeit › Energie_Emissionen_2025.xlsx",
+    author: "Controlling & Nachhaltigkeit",
+    date: "2026-02-12",
+    snippet: "CO₂-Trend 2020–2025, Zielpfad 2030 und Energieintensität auf einen Blick.",
+    body: [
+      { t: "Energie- & Emissionskennzahlen 2025 — Meridian Industrie GmbH, Bereich Controlling.", highlight: false },
+      { t: "CO₂-Trend (Scope 1+2): 2020 46.800 t · 2023 44.100 t · 2024 42.600 t · 2025 41.200 t.", highlight: true },
+      { t: "Zielwert 2030: 32.760 t (-30 % ggü. 2020). Verbleibende Reduktion: 8.440 t in 5 Jahren.", highlight: true },
+      { t: "Stromverbrauch 2025: 96 GWh, davon 68 % erneuerbar. Energieintensität: 157 kWh je 1.000 € Umsatz (-6 % ggü. Vorjahr).", highlight: true },
+      { t: "Größte Hebel bis 2030: Ausbau Photovoltaik (Werk 2 plus geplant Werk 1), Umstellung Prozesswärme auf Wärmepumpe, Grünstrom-PPA.", highlight: false },
     ],
   },
 };
@@ -454,15 +474,38 @@ const SCENARIOS = [
       followups: ["Wurde die Auflage aus der Feuerbeschau umgesetzt?", "Wer ist Brandschutzbeauftragter?"],
     },
   },
+  {
+    id: "esg-co2",
+    module: "berichte",
+    question: "Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?",
+    keywords: ["co2", "co₂", "esg", "nachhaltigkeit", "emission", "klima", "fußabdruck", "erneuerbar", "grün", "csrd", "scope"],
+    answer: {
+      text: "Meridian ist <b>auf Kurs zum Klimaziel</b> — mit einer klar benannten Lücke, die wir nicht beschönigen:<table><tr><th>Jahr</th><th>CO₂ (Scope 1+2)</th><th>ggü. 2020</th></tr><tr><td>2020 (Basis)</td><td>46.800 t</td><td>—</td></tr><tr><td>2024</td><td>42.600 t</td><td>-9,0 %</td></tr><tr><td>2025</td><td><b>41.200 t</b></td><td><b>-12,0 %</b></td></tr><tr><td>2030 (Ziel)</td><td>32.760 t</td><td><b>-30,0 %</b></td></tr></table><ul><li><b>Erneuerbarer Strom:</b> 68 % (Vorjahr 61 %) — Photovoltaik Werk 2 seit Q3 2025 aktiv (4,2 GWh/Jahr).</li><li><b>Die Lücke:</b> Ein linearer Zielpfad läge 2025 bei ca. -15 %; mit -12 % liegen wir rund 3 Punkte dahinter.</li><li><b>Hebel bis 2030:</b> PV-Ausbau, Prozesswärme auf Wärmepumpe, Grünstrom-PPA — zu reduzieren bleiben 8.440 t.</li></ul><b>Fazit:</b> Das Ziel -30 % bis 2030 ist erreichbar, erfordert aber eine Beschleunigung ab 2026. Der Vorstand hat das Ziel im März 2026 bekräftigt (TOP 3).",
+      reasoning: [
+        "Anfrage als ESG-/Klima-Frage im Modul Berichte erkannt.",
+        "ESG-Bericht 2025 und die Energie-/Emissionskennzahlen als Quellen geladen.",
+        "CO₂-Trend 2020 → 2025 gegen den linearen Zielpfad bis 2030 gerechnet.",
+        "Abweichung offengelegt (-12 % ist vs. -15 % Zielpfad) statt beschönigt; Vorstandsbeschluss ergänzt.",
+      ],
+      sources: [
+        { docId: "esg-bericht-2025", relevance: 97, quote: "CO₂-Emissionen 2025: 41.200 t (Scope 1+2), -12 % ggü. Basisjahr 2020. Ziel: -30 % bis 2030." },
+        { docId: "energie-emissionsbericht-2025", relevance: 93, quote: "CO₂-Trend (Scope 1+2): 2020 46.800 t · 2023 44.100 t · 2024 42.600 t · 2025 41.200 t." },
+        { docId: "vorstandsprotokoll-2026-03", relevance: 76, quote: "ESG-Ziel bekräftigt — 30 % CO₂-Reduktion bis 2030 gegenüber 2020." },
+      ],
+      confidence: 92,
+      related: ["esg-bericht-2025", "energie-emissionsbericht-2025", "vorstandsprotokoll-2026-03"],
+      followups: ["Welche Maßnahmen senken den CO₂-Ausstoß am stärksten?", "Wie hoch ist der Anteil erneuerbarer Energie?"],
+    },
+  },
 ];
 
 // Startvorschläge pro Modul (Frage-IDs). „wissen" zeigt die Highlights.
 const MODULE_SUGGESTIONS = {
-  wissen: ["reiserichtlinie", "materialkosten", "beleg-rechnung", "vertraege-verlaengerung", "vorstand-summary", "brandschutz"],
+  wissen: ["reiserichtlinie", "materialkosten", "beleg-rechnung", "vertraege-verlaengerung", "vorstand-summary", "esg-co2"],
   finanzen: ["materialkosten", "beleg-rechnung"],
   audit: ["beleg-rechnung", "brandschutz"],
   hr: ["reiserichtlinie"],
   vertraege: ["vertraege-verlaengerung"],
-  berichte: ["projekt-alpha", "vorstand-summary"],
+  berichte: ["projekt-alpha", "vorstand-summary", "esg-co2"],
   einstellungen: [],
 };

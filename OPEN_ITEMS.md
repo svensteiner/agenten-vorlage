@@ -5,22 +5,23 @@
 
 ## Offen (nach Priorität)
 
-1. **[P1] ESG/CO₂-Szenario** — der `Nachhaltigkeitsbericht` existiert, wird aber von keinem
-   Szenario genutzt. Neues Szenario „CO₂-Fußabdruck/ESG-Kurs?" in `data.js` (Antwort ·
-   Nachvollziehbarkeit · Quellen aus ESG-Bericht + 1 Kennzahlen-Doc · Konfidenz ·
-   Folgefragen). → beweist **Breite** über Finanz/Audit hinaus, adressiert Vorstands-/
-   Aufsichtsratsthemen. Die „Geführte Demo" nimmt es automatisch auf.
-2. **[P2] Onboarding-Overlay** beim ersten Start (ein Satz + Pfeil auf den Composer bzw.
-   auf den „Geführte Demo"-Button).
-3. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
+1. **[P2] Onboarding-Overlay** beim ersten Start (ein Satz + Pfeil auf den Composer bzw.
+   auf den „Geführte Demo"-Button). → senkt die „Was mach ich hier?"-Hürde in den ersten
+   3 Sekunden eines Video-Zuschauers.
+2. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
    `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.)
-4. **[P3] Vertrauens-Story sichtbar machen** — ein „gesperrtes" Dokument + Badge
+3. **[P3] Vertrauens-Story sichtbar machen** — ein „gesperrtes" Dokument + Badge
    „Nur berechtigte Dokumente" prominenter.
-5. **[P4] Politur** — Zahlen-Hochzähl-Animation (Konfidenz/Relevanz), sanftere Übergänge,
+4. **[P4] Politur** — Zahlen-Hochzähl-Animation (Konfidenz/Relevanz), sanftere Übergänge,
    „Antwort in X s"-Signal.
-6. **[P4] Export-Button** für eine Antwort inkl. Quellen.
+5. **[P4] Export-Button** für eine Antwort inkl. Quellen.
 
 ## Erledigt
+
+- **[Zyklus 5] ESG/CO₂-Szenario** — neues 8. Szenario „CO₂-Fußabdruck/ESG-Kurs?" mit
+  Trend-Tabelle (2020→2025→Ziel 2030) und ehrlicher Lücken-Offenlegung; neues Doc
+  „Energie- & Emissionskennzahlen 2025"; `esg-bericht-2025` von 2 auf 6 Absätze vertieft.
+  Rein additiv in `data.js`; „Geführte Demo" 7 → 8 Szenarien. Live verifiziert.
 
 - **[Zyklus 4] Rechnungs-Positionstabelle** — echte Buchungstabelle (Pos./Bezeichnung/Menge/
   Einzelpreis/Summe) + optionale Netto/USt/Brutto-Fußzeile für Rechnung/Bestellung/Waren-

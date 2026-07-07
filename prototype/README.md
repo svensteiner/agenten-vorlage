@@ -22,9 +22,9 @@ python -m http.server 8123
 
 ## Was die Demo zeigt
 
-- **Geführte Demo (▶ oben rechts)** — spielt alle 7 Szenarien **hands-free** nacheinander
+- **Geführte Demo (▶ oben rechts)** — spielt alle 8 Szenarien **hands-free** nacheinander
   ab: die Frage tippt sich selbst in den Composer, die Antwort streamt, kurze Lesepause,
-  dann das nächste Szenario (Fortschritt „n / 7", jederzeit stoppbar). Ideal für die
+  dann das nächste Szenario (Fortschritt „n / 8", jederzeit stoppbar). Ideal für die
   Videoaufnahme und einen Messestand-Loop. *(Tab beim Aufnehmen im Vordergrund halten.)*
 - **Chat als Zentrum** — Frage in natürlicher Sprache, gestreamte Antwort.
 - **Jede Antwort belegt** — Antwort · Nachvollziehbarkeit · Quellen (mit Zitat & Relevanz) ·
@@ -35,7 +35,7 @@ python -m http.server 8123
   Metadaten (Pfad, Autor, Datum, Typ). Das Skin richtet sich automatisch nach `doc.type`.
 - **Module** — Wissen, Finanzen, Audit, HR, Verträge, Berichte, Einstellungen.
 
-## Beste Demo-Reihenfolge (7 Szenarien)
+## Beste Demo-Reihenfolge (8 Szenarien)
 
 1. „Wo finde ich die aktuelle Reiserichtlinie?" — sofortige, präzise Richtlinien-Antwort.
 2. „Warum sind die Materialkosten gestiegen?" — verknüpft Bericht ↔ Vertrag ↔ Rechnung.
@@ -44,6 +44,8 @@ python -m http.server 8123
 5. „Finde alle Verträge mit automatischer Verlängerung." — Tabelle mit Kündigungsfristen ⚠.
 6. „Erstelle eine Zusammenfassung für den Vorstand." — bereichsübergreifendes Briefing.
 7. „Wo ist die Brandschutzdokumentation für Werk 2?" — Richtlinie + behördlicher Nachweis.
+8. „Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?" — CO₂-Trend-Tabelle
+   (2020→2025→Ziel 2030) mit ehrlicher Lücken-Offenlegung; Nachhaltigkeit & Governance.
 
 Das komplette Drehbuch steht in [`../VIDEO_SCRIPT.md`](../VIDEO_SCRIPT.md).
 
