@@ -1,7 +1,9 @@
 """Small CLI for the reusable automation-agent template.
 
 Commands:
-  - setup: interactive onboarding that generates a new project pack
+  - setup: interactive onboarding that generates a new project pack, then
+           runs a structural self-test so the user immediately sees that the
+           generated project is internally consistent ("es funktioniert").
   - init:  same as setup, but explicit for creating a new agent
   - status: show current template/project status
   - run:   execute the existing agent loop
@@ -48,6 +50,22 @@ class OnboardingAnswers:
     remember_between_runs: str
     recurring_tasks: list[str] = field(default_factory=list)
     external_sources: str = ""
+
+
+@dataclass(frozen=True)
+class SelfTestReport:
+    """Result of the post-onboarding structural self-test.
+
+    Immutable by design (frozen): the check functions build a fresh report,
+    they never mutate an existing one.
+    """
+
+    passed: tuple[str, ...]
+    problems: tuple[str, ...]
+
+    @property
+    def ok(self) -> bool:
+        return not self.problems
 
 
 BEGINNER_QUESTIONS = [
@@ -579,6 +597,86 @@ def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
     (docs_dir / "project-brief.md").write_text(_render_project_brief(ans), encoding="utf-8")
 
 
+# ─── Self-test ────────────────────────────────────────────────────────────────
+
+def _self_test_project(target_dir: Path) -> SelfTestReport:
+    """Structurally validate a freshly generated project instance.
+
+    Deterministic and offline (no network / no API call), so the same
+    generated tree always yields the same report. Catches a broken generation
+    — a missing core file, invalid JSON, or a manifest that references a file
+    that was never written (e.g. a listed skill without its SKILL.md).
+    """
+    project_dir = target_dir / "project"
+    passed: list[str] = []
+    problems: list[str] = []
+
+    # 1. Required, non-empty core files.
+    required = [
+        ("SOUL.md", "Identität (SOUL.md)"),
+        ("config.json", "Konfiguration (config.json)"),
+        ("manifest.json", "Manifest (manifest.json)"),
+        ("workflows/main.md", "Haupt-Workflow (workflows/main.md)"),
+        ("connectors.yaml", "Datenquellen (connectors.yaml)"),
+        ("steering-examples.json", "Planner-Beispiele (steering-examples.json)"),
+    ]
+    for rel, label in required:
+        path = project_dir / rel
+        if path.is_file() and path.read_text(encoding="utf-8").strip():
+            passed.append(label)
+        else:
+            problems.append(f"{label}: Datei fehlt oder ist leer ({rel})")
+
+    # 2. JSON files parse.
+    manifest: dict[str, Any] | None = None
+    for rel in ("config.json", "manifest.json", "steering-examples.json"):
+        path = project_dir / rel
+        if not path.is_file():
+            continue  # already reported as missing in step 1
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            passed.append(f"{rel} ist gültiges JSON")
+            if rel == "manifest.json" and isinstance(data, dict):
+                manifest = data
+        except json.JSONDecodeError as exc:
+            problems.append(f"{rel}: ungültiges JSON — {exc}")
+
+    # 3. Manifest cross-references resolve to files that actually exist.
+    if isinstance(manifest, dict):
+        config_file = (manifest.get("connectors") or {}).get("config_file")
+        if config_file:
+            if (project_dir / config_file).is_file():
+                passed.append(f"Connector-Datei referenziert & vorhanden ({config_file})")
+            else:
+                problems.append(f"Manifest verweist auf fehlende Connector-Datei: {config_file}")
+        for slug in manifest.get("skills") or []:
+            skill_file = project_dir / "skills" / slug / "SKILL.md"
+            if skill_file.is_file() and skill_file.read_text(encoding="utf-8").strip():
+                passed.append(f"Skill vorhanden: {slug}")
+            else:
+                problems.append(
+                    f"Manifest listet Skill '{slug}', aber skills/{slug}/SKILL.md fehlt"
+                )
+
+    return SelfTestReport(passed=tuple(passed), problems=tuple(problems))
+
+
+def _print_self_test(report: SelfTestReport) -> None:
+    print()
+    print("  ── Selbsttest ──────────────────────────")
+    print("  Wir prüfen kurz, ob alles zusammenpasst …")
+    print()
+    for label in report.passed:
+        print(f"    ✓  {label}")
+    for problem in report.problems:
+        print(f"    ✗  {problem}")
+    print()
+    if report.ok:
+        print("  Alles geprüft — dein Projekt ist einsatzbereit.")
+    else:
+        print(f"  {len(report.problems)} Problem(e) gefunden — bitte die ✗-Zeilen oben ansehen.")
+
+
 # ─── Commands ─────────────────────────────────────────────────────────────────
 
 def cmd_setup(args: argparse.Namespace) -> int:
@@ -603,6 +701,16 @@ def cmd_setup(args: argparse.Namespace) -> int:
             return 1
 
     _write_template_project(target_dir, answers)
+
+    if not args.no_self_test:
+        report = _self_test_project(target_dir)
+        _print_self_test(report)
+        if not report.ok:
+            print("\n  Hinweis: Das Projekt wurde erstellt, aber der Selbsttest")
+            print("  hat Probleme gefunden. Bitte oben nachsehen und ggf. erneut ausführen.")
+            _print_success(target_dir, answers)
+            return 1
+
     _print_success(target_dir, answers)
     return 0
 
@@ -635,7 +743,11 @@ def _print_banner() -> None:
     print("  ╚══════════════════════════════════════╝")
     print()
     print("  Wir erstellen jetzt dein Agent-Projekt.")
-    print("  Beantworte ein paar kurze Fragen — fertig.\n")
+    print("  So läuft es ab:")
+    print("    1. Du beantwortest ein paar kurze Fragen")
+    print("    2. Alle Dateien werden automatisch ausgefüllt")
+    print("    3. Wir testen kurz, ob alles zusammenpasst")
+    print()
 
 
 def _print_success(target_dir: Path, ans: OnboardingAnswers) -> None:
@@ -650,9 +762,9 @@ def _print_success(target_dir: Path, ans: OnboardingAnswers) -> None:
     print(f"  Projektordner:  {target_dir}")
     print()
     print("  Erstellt:")
-    print(f"    ✓  SOUL.md               — Identität und Regeln")
-    print(f"    ✓  manifest.json         — Konfiguration")
-    print(f"    ✓  workflows/main.md     — Haupt-Workflow")
+    print("    ✓  SOUL.md               — Identität und Regeln")
+    print("    ✓  manifest.json         — Konfiguration")
+    print("    ✓  workflows/main.md     — Haupt-Workflow")
     print(f"    ✓  connectors.yaml       — {connector_count} Datenquelle(n) vorkonfiguriert")
     print(f"    ✓  steering-examples.json— {len(ans.recurring_tasks) + (1 if ans.main_problem else 0)} Beispiele für den Planner")
     if skill_count:
@@ -671,15 +783,15 @@ def _print_success(target_dir: Path, ans: OnboardingAnswers) -> None:
     if connector_count:
         print("  2. Datenquellen konfigurieren")
         print(f"     Öffne: {target_dir}/project/connectors.yaml")
-        print(f"     → Trage die URL oder den API-Key für deine Quelle ein.")
+        print("     → Trage die URL oder den API-Key für deine Quelle ein.")
         print()
     print("  3. Agenten testen")
-    print(f"     python agent_cli.py run")
+    print("     python agent_cli.py run")
     if ans.recurring_tasks:
         print(f'     → Probiere: "{ans.recurring_tasks[0]}"')
     print()
     print("  4. Feindetails ergänzen (optional)")
-    print(f"     python agent_cli.py setup --full")
+    print("     python agent_cli.py setup --full")
     print()
     print("  Dokumentation: docs/architecture.md")
     print()
@@ -699,6 +811,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--output", help="Zielordner für das generierte Projekt")
         p.add_argument("--force", action="store_true", help="Vorhandenes Projekt ohne Rückfrage überschreiben")
         p.add_argument("--full", action="store_true", help="Alle erweiterten Fragen stellen")
+        p.add_argument("--no-self-test", action="store_true", help="Selbsttest nach dem Erstellen überspringen")
         p.set_defaults(func=cmd_setup)
 
     run = sub.add_parser("run", help="Agenten starten")
