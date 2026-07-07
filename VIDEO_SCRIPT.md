@@ -54,6 +54,12 @@ die echte Rechnung, mit Lieferanten-Briefkopf, Eingangsstempel und hervorgehoben
 ---
 
 ## Aufnahme-Hinweise
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 7
+  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 7").
+  Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
+  nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
+  die Tipp-/Streaming-Geschwindigkeit im Browser).
+- Für einzelne Szenen (oben) alternativ manuell klicken/tippen.
 - Vollbild-Browser, 1920×1080, 100 % Zoom.
 - Vor jeder Szene evtl. Seite neu laden für einen frischen Chat (Hero-Ansicht).
 - Streaming-Tempo ist bewusst gesetzt (wirkt „lebendig", nicht träge).

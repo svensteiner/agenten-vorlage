@@ -5,23 +5,26 @@
 
 ## Offen (nach Priorität)
 
-1. **[P1] „Guided Demo"-Modus** — ein Play-Button, der die 7 Szenarien automatisch
-   nacheinander abspielt (Frage tippen → Antwort → kurze Pause → nächstes). Perfekt für
-   eine hands-free Videoaufnahme oder einen Messestand-Loop. → nächster Wow-Hebel.
-2. **[P2] Onboarding-Overlay** beim ersten Start (ein Satz + Pfeil auf den Composer).
-3. **[P2] Rechnungs-Positionstabelle** — Belege haben jetzt Briefkopf + Stempel; als
-   Vertiefung eine echte **Positionszeilen-Tabelle** (Menge · Einzelpreis · Summe · USt)
-   für Rechnung/Bestellung. Optionales `doc.lineItems`-Feld in `data.js`, Fallback = Text.
-4. **[P3] 2–3 zusätzliche Szenarien** (HR-Onboarding, ESG/CO₂, Lieferanten-Risiko) +
-   passende Dokumente in `data.js`.
-5. **[P3] Vertrauens-Story sichtbar machen** — ein „gesperrtes" Dokument + Badge
+1. **[P1] Rechnungs-Positionstabelle** — Belege haben jetzt Briefkopf + Stempel; als
+   Vertiefung eine echte **Positionszeilen-Tabelle** (Pos. · Bezeichnung · Menge ·
+   Einzelpreis · Summe · USt) für Rechnung/Bestellung/Wareneingang. Optionales
+   `doc.lineItems`-Feld in `data.js`, Fallback = bisheriger Text. → prüfungsechter
+   Drei-Wege-Abgleich (Szenario 3), stärkster CFO-Moment.
+2. **[P2] Onboarding-Overlay** beim ersten Start (ein Satz + Pfeil auf den Composer bzw.
+   auf den „Geführte Demo"-Button).
+3. **[P3] 2–3 zusätzliche Szenarien** (HR-Onboarding, ESG/CO₂, Lieferanten-Risiko) +
+   passende Dokumente in `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.)
+4. **[P3] Vertrauens-Story sichtbar machen** — ein „gesperrtes" Dokument + Badge
    „Nur berechtigte Dokumente" prominenter.
-6. **[P4] Politur** — Zahlen-Hochzähl-Animation (Konfidenz/Relevanz), sanftere Übergänge,
+5. **[P4] Politur** — Zahlen-Hochzähl-Animation (Konfidenz/Relevanz), sanftere Übergänge,
    „Antwort in X s"-Signal.
-7. **[P4] Export-Button** für eine Antwort inkl. Quellen.
+6. **[P4] Export-Button** für eine Antwort inkl. Quellen.
 
 ## Erledigt
 
+- **[Zyklus 3] „Geführte Demo" (hands-free Auto-Play)** — Play-Button in der Topbar spielt
+  alle 7 Szenarien automatisch ab (Frage tippen → `ask()` → Lesepause → nächstes),
+  Fortschritt „n / 7", jederzeit stoppbar, Composer während der Demo gesperrt.
 - **[Zyklus 2] Dokument-Skins im Viewer** — Papierblatt + Briefkopf pro `doc.type`,
   Beleg-/Prüf-Stempel, Vertrags-Unterschriftszeilen, Klausel-Marken, Highlights im Layout.
 - **[Zyklus 1] Prototyp-Grundgerüst** — App-Rahmen, Chat-Streaming, Belege/Quellen/

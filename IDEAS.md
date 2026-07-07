@@ -7,10 +7,10 @@
 ## Hohe Wirkung fürs Video
 - ✅ **Dokument-Skins im Viewer** — *erledigt in Zyklus 2*: Briefkopf, Beleg-/Prüf-Stempel,
   Vertrags-Unterschriftszeilen, Klausel-Marken, Highlights im Layout.
-- **„Guided Demo"-Modus** — ein Play-Button, der die 7 Szenarien automatisch abspielt
-  (perfekt für eine hands-free Videoaufnahme oder Messestand-Loop). *(Nächster Zyklus.)*
+- ✅ **„Guided Demo"-Modus** — *erledigt in Zyklus 3*: Play-Button in der Topbar spielt alle
+  7 Szenarien hands-free ab (Frage tippen → Antwort → Lesepause), Fortschritt „n / 7", stoppbar.
 - **Rechnungs-Positionstabelle** — Beleg-Skin um echte Positionszeilen (Menge · Preis ·
-  Summe · USt) ergänzen; optionales `doc.lineItems`-Feld, Fallback = Text.
+  Summe · USt) ergänzen; optionales `doc.lineItems`-Feld, Fallback = Text. *(Nächster Zyklus.)*
 - **Onboarding-Overlay** beim ersten Start — ein Satz + Pfeil auf das Eingabefeld.
 - **Sanfte Zahlen-Animation** — Konfidenz-Meter und Relevanz-% zählen hoch (Politur).
 

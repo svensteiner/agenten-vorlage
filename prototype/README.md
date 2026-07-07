@@ -22,6 +22,10 @@ python -m http.server 8123
 
 ## Was die Demo zeigt
 
+- **Geführte Demo (▶ oben rechts)** — spielt alle 7 Szenarien **hands-free** nacheinander
+  ab: die Frage tippt sich selbst in den Composer, die Antwort streamt, kurze Lesepause,
+  dann das nächste Szenario (Fortschritt „n / 7", jederzeit stoppbar). Ideal für die
+  Videoaufnahme und einen Messestand-Loop. *(Tab beim Aufnehmen im Vordergrund halten.)*
 - **Chat als Zentrum** — Frage in natürlicher Sprache, gestreamte Antwort.
 - **Jede Antwort belegt** — Antwort · Nachvollziehbarkeit · Quellen (mit Zitat & Relevanz) ·
   Konfidenz · verwandte Dokumente · Folgefragen.

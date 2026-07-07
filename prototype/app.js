@@ -19,6 +19,10 @@
   let currentModule = "wissen";
   const chatState = []; // Verlauf, damit ein Modulwechsel den Chat nicht zerstört
 
+  // „Geführte Demo": spielt alle Szenarien hands-free nacheinander ab.
+  // token: monoton steigend; ein Stopp erhöht ihn und lässt laufende Schleifen aussteigen.
+  const demo = { running: false, token: 0 };
+
   // Dokument-Skins: geben jedem Dokumenttyp im Viewer eine realistische
   // Papier-Anmutung (Briefkopf, Beleg-Stempel, Unterschriftszeile).
   const DOC_SKINS = {
@@ -42,6 +46,75 @@
     selectModule("wissen");
     wireComposer();
     wireViewer();
+    wireDemo();
+  }
+
+  // ---------- Geführte Demo (hands-free Auto-Play) ----------
+  function wireDemo() {
+    $("#demoBtn").onclick = () => (demo.running ? stopDemo() : startDemo());
+  }
+
+  async function startDemo() {
+    if (demo.running) return;
+    demo.running = true;
+    const token = ++demo.token;
+
+    const btn = $("#demoBtn");
+    btn.classList.add("running");
+    $(".di", btn).textContent = "⏹";
+    $(".dl", btn).textContent = "Demo stoppen";
+    const prog = $("#demoProgress");
+    prog.hidden = false;
+    $("#input").readOnly = true;
+
+    // Frisch starten: zurück auf „Wissen", Verlauf leeren → Demo beginnt am Hero.
+    chatState.length = 0;
+    selectModule("wissen");
+    await sleep(650);
+
+    const list = SCENARIOS; // die 7 Szenarien in kuratierter Reihenfolge
+    for (let i = 0; i < list.length; i++) {
+      if (token !== demo.token) return;
+      prog.textContent = `${i + 1} / ${list.length}`;
+      await typeIntoComposer(list[i].question, token);
+      if (token !== demo.token) return;
+      await ask(list[i].question);
+      if (token !== demo.token) return;
+      await sleep(i === list.length - 1 ? 1600 : 2800); // Lesepause
+    }
+    if (token === demo.token) resetDemoUi();
+  }
+
+  function stopDemo() {
+    demo.token++; // laufende Schleife steigt beim nächsten Check aus
+    resetDemoUi();
+  }
+
+  function resetDemoUi() {
+    demo.running = false;
+    const btn = $("#demoBtn");
+    btn.classList.remove("running");
+    $(".di", btn).textContent = "▶";
+    $(".dl", btn).textContent = "Geführte Demo";
+    $("#demoProgress").hidden = true;
+    const ta = $("#input");
+    if (ta) { ta.readOnly = false; ta.value = ""; ta.style.height = "auto"; }
+  }
+
+  // Tippt die Frage sichtbar in den Composer (für die Video-Aufnahme).
+  async function typeIntoComposer(text, token) {
+    const ta = $("#input");
+    ta.value = "";
+    for (let i = 0; i < text.length; i++) {
+      if (token !== demo.token) return;
+      ta.value = text.slice(0, i + 1);
+      ta.style.height = "auto";
+      ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+      await sleep(28);
+    }
+    await sleep(440);
+    ta.value = "";
+    ta.style.height = "auto";
   }
 
   // ---------- Sidebar ----------
@@ -485,7 +558,7 @@
   function wireComposer() {
     const ta = $("#input");
     const send = $("#send");
-    const submit = () => { const v = ta.value; ta.value = ""; ta.style.height = "auto"; ask(v); };
+    const submit = () => { if (demo.running) return; const v = ta.value; ta.value = ""; ta.style.height = "auto"; ask(v); };
     send.onclick = submit;
     ta.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }

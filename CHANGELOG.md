@@ -2,6 +2,31 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 3 — 2026-07-07 — „Geführte Demo" (hands-free Auto-Play) ▶
+
+**Ein Klick spielt die komplette Demo selbst ab.** Ein prominenter Play-Button in der
+Topbar tippt jede der 7 Beispielfragen sichtbar in den Composer, lässt die Antwort
+streamen, pausiert kurz und geht zur nächsten — vollständig ohne Bedienung. Perfekt für
+die **Videoaufnahme** (keine Mausbewegungen/Tippfehler im Bild) und für einen
+**Messestand-/Empfangs-Loop**, der Kunden ohne Bediener überzeugt.
+
+### Neu
+- **Play-Button „Geführte Demo"** in der Topbar (`#demoBtn` in `index.html`, `.demo-btn`
+  in `styles.css`) — Markenfarbe, wird im Lauf zu „⏹ Demo stoppen".
+- **Fortschritts-Indikator** „Szenario n / 7" (`#demoProgress`) direkt im Button.
+- **Auto-Play-Orchestrierung** (`startDemo`/`stopDemo`/`typeIntoComposer` in `app.js`):
+  Chat wird frisch am Hero gestartet, Frage wird Zeichen für Zeichen „getippt", dann läuft
+  der bestehende `ask()`-Flow, danach eine Lesepause. Jederzeit per Klick stoppbar
+  (Token-Mechanik lässt die laufende Schleife sauber aussteigen).
+- Composer ist während der Demo gesperrt (readonly) und manuelles Senden ist geblockt,
+  damit sich nichts überlagert.
+- **Rein additiv** — keine Änderung an `data.js` und am bestehenden `ask()`-Antwortpfad.
+
+### Funktioniert (live im Browser verifiziert)
+- Start → Button „⏹ Demo stoppen", Fortschritt „1 / 7", Composer gesperrt.
+- Frage tippt sich sichtbar in den Composer, danach streamt die bestehende Antwort.
+- Stopp → voller Reset (Button „▶ Geführte Demo", Fortschritt aus, Composer wieder frei).
+
 ## Zyklus 2 — 2026-07-07 — Dokument-Skins im Viewer 📄
 
 **Der Dokumentenviewer zeigt jetzt echte Dokumente statt Textabsätzen.** Jede Quelle

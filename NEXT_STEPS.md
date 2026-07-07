@@ -6,10 +6,10 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 2 — **Dokument-Skins im Viewer** (siehe unten).
+- **Letzter Zyklus:** Zyklus 3 — **„Geführte Demo" (hands-free Auto-Play)** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-07.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 42 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 48 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -28,6 +28,19 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 3 gebaut wurde
+
+**„Geführte Demo" — hands-free Auto-Play** aller 7 Szenarien über einen Play-Button in
+der Topbar:
+- Ein Klick auf **„▶ Geführte Demo"** startet die Vorführung: Chat wird frisch am Hero
+  gestartet, jede Frage wird **sichtbar in den Composer getippt**, danach läuft der
+  bestehende `ask()`-Flow (Retrieval-Schritte → gestreamte Antwort → Quellen), danach eine
+  kurze **Lesepause**, dann das nächste Szenario.
+- **Fortschritt** „Szenario n / 7" direkt im Button; Button wird zu **„⏹ Demo stoppen"**.
+- Jederzeit **stoppbar** (saubere Token-Mechanik); Composer ist während der Demo gesperrt.
+- **Rein additiv** in `index.html` / `styles.css` / `app.js` — `data.js` und der bestehende
+  Antwortpfad blieben unverändert. Start/Typing/Fortschritt/Stopp live im Browser verifiziert.
 
 ## Was in Zyklus 2 gebaut wurde
 
@@ -61,28 +74,30 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**„Guided Demo"-Modus** — ein prominenter **Play-Button** (z. B. in der Topbar oder auf
-dem Hero), der die 7 Szenarien **automatisch nacheinander abspielt**: Frage wird in den
-Composer „getippt", Antwort streamt, kurze Pause, dann das nächste Szenario. Mit
-Pause/Stop und einem dezenten Fortschritts-Indikator (z. B. „Szenario 3 / 7").
+**Rechnungs-Positionstabelle im Beleg-Skin** — Belege haben jetzt Briefkopf + Stempel;
+als nächste Vertiefung bekommt der Viewer für Rechnung/Bestellung/Wareneingang eine echte
+**Positionszeilen-Tabelle** (Pos. · Bezeichnung · Menge · Einzelpreis · Summe · USt) mit
+Zwischensumme/USt/Endbetrag. Umsetzung datengetrieben über ein optionales
+**`doc.lineItems`-Feld in `data.js`** (Fallback = bisheriger Fließtext, wenn nicht gesetzt),
+gerendert in `buildPaper()` nur für die `beleg`-Kategorie.
 
-*Warum diese?* Damit läuft die komplette Demo **hands-free** — ideal für die Video-
-Aufnahme (keine sichtbaren Mausbewegungen/Tippfehler) **und** für einen Messestand- bzw.
-Empfangs-Loop, der Kunden ohne Bediener überzeugt. Baut vollständig auf dem vorhandenen
-`ask()`-Flow in `prototype/app.js` auf (nur Orchestrierung + ein Button) und verändert die
-bestehende Logik nicht.
+*Warum diese?* Sie macht den **Drei-Wege-Abgleich (Szenario 3)** für einen CFO endgültig
+prüfungsecht: Rechnung ↔ Bestellung ↔ Wareneingang zeigen dann übereinstimmende Positionen
+und Beträge — der stärkste „das ist echte Buchhaltung"-Moment im Video. Baut auf dem
+vorhandenen Beleg-Skin auf und bleibt rein additiv.
 
-**Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
+**Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
+(Onboarding-Overlay, weitere Szenarien, Politur).
 
 ---
 
-## CEO-Review (Ende Zyklus 2)
+## CEO-Review (Ende Zyklus 3)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja**, deutlich stärker: der Viewer
-  öffnet jetzt sichtbar „echte" Rechnungen/Verträge mit Stempel und Unterschrift.
-- *Erzeugt es Aufregung?* — Ja: der EINGANG-Stempel und die Unterschriftszeilen sind ein
-  spürbarer „das ist mein echtes Dokument"-Moment.
-- *Versteht ein CFO den Nutzen?* — Ja, der Drei-Wege-Abgleich (Szenario 3) wirkt mit den
-  Belegskins nun wie eine echte Prüfungsakte.
-- *Schwächste Stelle → nächster Zyklus:* die Demo braucht noch Bedienung. Ein
-  hands-free „Guided Demo"-Modus (oben) hebt die Video-/Messe-Reife am meisten.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Mit der „Geführten Demo" läuft die
+  komplette Story auf Knopfdruck durch — ideal für Video und Messestand.
+- *Erzeugt es Aufregung?* — Ja: das automatische Tippen der Fragen + streamende Antworten
+  wirken wie ein echter Assistent, der selbst arbeitet.
+- *Versteht ein CFO den Nutzen?* — Ja, weil die 7 Szenarien in kuratierter Reihenfolge
+  ohne Ablenkung nacheinander laufen (Reiserichtlinie → Materialkosten → Beleg-Abgleich …).
+- *Schwächste Stelle → nächster Zyklus:* die Belege wirken noch textlastig. Eine echte
+  **Positionstabelle** (oben) hebt die Prüf-Glaubwürdigkeit für Finanz-Entscheider am meisten.

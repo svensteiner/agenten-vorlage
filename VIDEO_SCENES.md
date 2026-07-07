@@ -3,9 +3,14 @@
 > Konkrete Klick-/Kamera-Abfolge zur Aufnahme des Videos aus
 > [`prototype/index.html`](prototype/index.html). Ergänzt [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md).
 
+> **Schnellster Weg zur Aufnahme:** Statt manuell zu klicken kann der **▶-Button
+> „Geführte Demo"** (oben rechts) die gesamte Abfolge unten hands-free abspielen — Frage
+> tippt sich selbst, Antwort streamt, Fortschritt „n / 7". Sprecher nur drüberlegen. Tab
+> dabei im Vordergrund halten (Hintergrund-Tabs drosseln Tipp-/Streaming-Tempo).
+
 | # | Dauer | Aktion in der App | Kamera / Fokus |
 |---|-------|-------------------|----------------|
-| 0 | 0:20 | App im Vollbild öffnen (Hero-Ansicht, „Wissen") | Langsamer Einzoom auf die Überschrift & Vorschlagskarten |
+| 0 | 0:20 | App im Vollbild öffnen (Hero-Ansicht, „Wissen") — optional **▶ Geführte Demo** starten | Langsamer Einzoom auf die Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
 | 3 | 0:25 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); 2 Sek. auf gelbem Highlight im Blatt verweilen |
