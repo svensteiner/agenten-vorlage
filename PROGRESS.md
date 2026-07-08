@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 78 % (Ende Zyklus 15)
+## Gesamtfortschritt: ≈ 79 % (Ende Zyklus 16)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,19 +11,31 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 94 % | 14.1 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
-| Demo-Firma & realistische Dokumente | 15 % | 77 % | 11.55 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 87 % | 8.7 |
+| Demo-Firma & realistische Dokumente | 15 % | 81 % | 12.15 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 90 % | 9.0 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
-| **Summe** | **100 %** | — | **≈ 90 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 91 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 78 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (weitere Ressorts, mehr authentische Dokumente). Zyklus 15
-> macht die **Entscheidungskette auch im Viewer navigierbar** (Ketten-Navigator „Schritt n von 3"
-> mit Vor/Zurück; Kette als einzige Quelle der Wahrheit `DECISION_CHAIN`) und hebt **Viewer**
-> (92 % → 95 %), **Belege** (93 % → 94 %) und **Szenarien** (86 % → 87 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 79 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (globale Suche, mehr authentische Dokumente). Zyklus 16 öffnet ein
+> **neues Entscheider-Ressort (DSGVO/Datenschutz)** mit Szenario + 2 Dokumenten und hebt
+> **Demo-Firma** (77 % → 81 %) und **Szenarien** (87 % → 90 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 16 (2026-07-08) ≈ 79 %** — DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort): neues
+  Szenario `datenschutz-audit` (Modul Audit, Konfidenz 93 %) „Sind wir DSGVO-konform — wann war das
+  letzte Datenschutz-Audit?" mit Status-Tabelle (5 Prüffelder Art. 30/32/28/Betroffenenrechte/72-h-
+  Meldeprozess, je ✓ / ⚠ 1 offen) und ehrlicher Auflagen-Offenlegung (2 offen, Frist 31.03.2026).
+  Zwei neue Dokumente (Modul Audit): `datenschutz-audit-2025` (Typ „Prüfnachweis" → BESTANDEN-Stempel,
+  ext. DSB Dr. Julia Sander, 6 Highlights) und `verarbeitungsverzeichnis-2026` (Typ „Verzeichnis" →
+  Fallback Bericht-Skin, Art. 30 VVT, 34 Tätigkeiten). Nach `brandschutz` einsortiert → zwei
+  Audit-/Compliance-Beats hintereinander in der Geführten Demo; Hero 9 → 10, `audit`-Vorschläge 2 → 3.
+  Rein additiv in `data.js`. Deterministisch verifiziert: 23 Docs (war 21), 2 E-Mails, 13 Szenarien
+  (war 12), 1 chain, 0 kaputte Referenzen; live geprüft (DSGVO-Hero-Kachel, beide Karten im Audit-
+  Modul, Datenschutz-Audit als `paper-nachweis` + BESTANDEN + 6 Highlights, VVT als `paper-bericht`
+  + 3 Highlights, keine Konsolenfehler). (Demo-Firma 77 % → 81 %, Szenarien 87 % → 90 %.)
 
 - **Zyklus 15 (2026-07-08) ≈ 78 %** — Ketten-Navigator im Dokumentenviewer (Option B aus Zyklus 14):
   öffnet man einen der drei Ketten-Belege (Lieferanten-E-Mail → Weiterleitung → Vorstandsprotokoll),
@@ -136,9 +148,9 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Ein weiteres Ressort** (z. B. IT-Sicherheit/Datenschutz-DSGVO) mit eigenem Szenario + 1–2
-   Dokumenten → hebt die zwei schwächsten Bereiche (Demo-Firma & Szenarien-Breite). Reuse der
-   bestehenden Tabellen-/Skin-Renderer, rein additiv in `data.js`.
+1. **Globale Live-Suche über die Bibliothek** (Filter über Titel/Typ/Snippet aller 23 Dokumente, mit
+   Modul-Tag + Sofort-Öffnen) → macht die Menge des erschlossenen Wissens sichtbar; starker Video-Beat.
+   Reuse Doc-Karten-Renderer + `openViewer()`, rein additiv (kleiner Filter-Helfer in `app.js`).
 2. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).

@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 16 — 2026-07-08 — DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort) 🛡
+
+**Die Demo öffnet ein neues Entscheider-Ressort: Datenschutz/Compliance.** Bisher finanzlastig, deckt
+sie jetzt auch DSGVO ab — ein Thema, das jeden CEO/CFO betrifft. Rein additiv in `data.js`, bestehende
+Tabellen- und Skin-Renderer wiederverwendet.
+
+### Neu
+- **Szenario `datenschutz-audit`** (Modul Audit, Konfidenz 93 %): „Sind wir DSGVO-konform — wann war
+  das letzte Datenschutz-Audit?" Antwort mit **Status-Tabelle** über 5 Prüffelder (Art. 30 VVT,
+  Art. 32 TOM, Art. 28 Auftragsverarbeitung, Betroffenenrechte/Löschkonzept, 72-h-Meldeprozess), je
+  Status ✓ / ⚠ 1 offen. **Ehrlich:** zwei offene Auflagen mit Frist 31.03.2026, „kein akutes
+  Bußgeldrisiko".
+- **Dokument `datenschutz-audit-2025`** (Typ „Prüfnachweis" → grüner **BESTANDEN**-Stempel im Viewer):
+  jährliches DSGVO-Audit vom 20.11.2025, externe Datenschutzbeauftragte Dr. Julia Sander, 8 Absätze /
+  6 Highlights.
+- **Dokument `verarbeitungsverzeichnis-2026`** (Typ „Verzeichnis" → Fallback Bericht-Skin
+  `paper-bericht`): Verzeichnis nach Art. 30 DSGVO, 34 Verarbeitungstätigkeiten mit Rechtsgrundlage
+  und Löschfrist.
+- **Verdrahtung:** Szenario nach `brandschutz` einsortiert (zwei Audit-/Compliance-Beats in Folge in
+  der Geführten Demo); Hero (Wissen) 9 → 10 Kacheln, `audit`-Vorschläge 2 → 3. Jetzt **13 Szenarien**.
+
+### Verifikation (deterministisch via Node-VM + Browser-DOM/CSS)
+- **23 Dokumente** (war 21), **2 E-Mails**, **13 Szenarien** (war 12), **1 chain**, **0 kaputte
+  Referenzen** über alle `sources`/`related`/`withheld`/`chain`/`MODULE_SUGGESTIONS`.
+- Live: DSGVO-Hero-Kachel vorhanden (10 Kacheln), beide neue Karten im Audit-Modul, Datenschutz-Audit
+  öffnet als `paper-nachweis` mit BESTANDEN-Stempel + 6 Highlights, VVT als `paper-bericht` + 3
+  Highlights, kein Ketten-Navigator bei den Nicht-Ketten-Docs, **keine Konsolenfehler**. (Voll-
+  Streaming-Pfad timer-gedrosselt, Screenshot-Capture instabil — bekannte Harness-Grenzen; DOM/CSS-
+  basiert verifiziert.)
+
 ## Zyklus 15 — 2026-07-08 — Ketten-Navigator im Dokumentenviewer („Schritt n von 3") ⛓
 
 **Die Entscheidungskette ist jetzt auch beim Lesen der Einzelbelege navigierbar (Option B aus

@@ -10,6 +10,10 @@
   `answer.chain`) noch handkuratiert. Phase 2 könnte die Kette **automatisch** aus Dokument-Metadaten
   (E-Mail-Threads, Referenzen, Zeitstempel) rekonstruieren — das `answer.chain`-Feld ist der
   vorgesehene UI-Andockpunkt.
+- **Compliance-/DSGVO-Automatisierung:** Das Datenschutz-Szenario (Zyklus 16) zeigt Audit-Status und
+  Verzeichnis von Verarbeitungstätigkeiten noch handkuratiert. Phase 2 könnte VVT-Einträge und offene
+  Auflagen **automatisch** aus den angebundenen Systemen ableiten und Fristen aktiv überwachen (der
+  Status-Tabellen-Renderer ist der vorgesehene UI-Andockpunkt).
 - Permission-faithful Retrieval gegen echte ACLs. *(Die Demo visualisiert dieses Versprechen
   bereits in Zyklus 7 — gesperrte Dokumente + „N weitere Treffer für Sie nicht freigegeben".
   Phase 2 muss das UI nur an echte Berechtigungs-Checks anbinden; das `withheld`-Feld pro

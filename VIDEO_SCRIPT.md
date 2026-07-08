@@ -96,6 +96,12 @@ Quelle. Und die Personalabteilung? Dieselbe Frage, dieselbe belegte Antwort."
 **Bild:** Erst die **Konzentrations-Tabelle** (*Stahlwerk Donau AG **23,9 %*** zählt hoch) mit
 **Single-Source-Warnung** und Gegenmaßnahme *Ferro Nord*; dann die **Onboarding-Checkliste** mit
 der hervorgehobenen **Pflicht-Sicherheitsunterweisung**.
+**Optionaler dritter Beat (Compliance):** Frage *„Sind wir DSGVO-konform — wann war das letzte
+Datenschutz-Audit?"*. **Bild:** die **Status-Tabelle** (Art. 30 VVT ✓, TOM ✓, zwei Auflagen ⚠ mit
+Frist 31.03.2026, 0 Datenpannen); danach das **Datenschutz-Audit 2025** kurz öffnen — grüner
+**BESTANDEN**-Stempel. **Sprecher:** „Und die Frage, die vor jeder Aufsichtsratssitzung kommt —
+sind wir sauber beim Datenschutz? — beantwortet dasselbe System: konform, zwei terminierte Auflagen,
+nichts beschönigt."
 **Punkt (für die ganze Geschäftsleitung):** ein System — **jedes Ressort** findet sein eigenes
 Problem wieder.
 

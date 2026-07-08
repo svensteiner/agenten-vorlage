@@ -5,9 +5,10 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Ein weiteres Ressort** (z. B. IT-Sicherheit/Datenschutz-DSGVO) mit eigenem Szenario +
-   1–2 Dokumenten in `data.js` → hebt die zwei schwächsten Bereiche (Demo-Firma & Szenarien-Breite).
-   Reuse bestehender Tabellen-/Skin-Renderer, rein additiv. → oberstes Item für den nächsten Zyklus.
+1. **[P5] Globale Live-Suche über die Bibliothek** — Suchfeld im Bibliotheks-Header, das beim Tippen
+   live über Titel/Typ/Snippet aller 23 Dokumente filtert (Modul-Tag + Sofort-Öffnen via `openViewer()`).
+   Rein additiv (kleiner Filter-Helfer in `app.js` + ein Input). Macht die Menge des erschlossenen
+   Wissens sichtbar → starker Video-Beat. → oberstes Item für den nächsten Zyklus.
 2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
@@ -16,6 +17,15 @@
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 16] DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort)** — neues Szenario
+  `datenschutz-audit` (Modul Audit, 93 %) „Sind wir DSGVO-konform?" mit Status-Tabelle (5 Prüffelder,
+  je ✓ / ⚠ 1 offen) und ehrlicher Auflagen-Offenlegung (2 offen, Frist 31.03.2026); zwei neue
+  Dokumente `datenschutz-audit-2025` (Prüfnachweis → BESTANDEN-Stempel, ext. DSB Dr. Julia Sander) und
+  `verarbeitungsverzeichnis-2026` (Art. 30 VVT, 34 Tätigkeiten). Nach `brandschutz` einsortiert;
+  Hero 9 → 10, audit-Vorschläge 2 → 3. Rein additiv in `data.js`. Deterministisch + live verifiziert
+  (23 Docs, 13 Szenarien, 0 kaputte Referenzen; beide Docs öffnen mit korrektem Skin, keine
+  Konsolenfehler).
 
 - **[Zyklus 15] Ketten-Navigator im Dokumentenviewer** — kompakter „⛓ Entscheidungskette · Schritt n
   von 3"-Navigator, der automatisch bei den drei Ketten-Belegen (Lieferanten-E-Mail → Weiterleitung →

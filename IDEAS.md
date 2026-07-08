@@ -50,6 +50,15 @@
   „⛓ Entscheidungskette · Schritt n von 3" mit Vor/Zurück + anklickbarem Stepper, erscheint
   automatisch bei den drei Ketten-Belegen. Kette entdoppelt zu `const DECISION_CHAIN` (einzige
   Quelle für Chat-Block **und** Viewer). Rein additiv.
+- ✅ **DSGVO-/Datenschutz-Szenario (neues Ressort)** — *erledigt in Zyklus 16*: Szenario
+  `datenschutz-audit` (Modul Audit, 93 %) mit Status-Tabelle (Art. 30/32/28/Betroffenenrechte/72-h-
+  Meldeprozess, je ✓ / ⚠ 1 offen) + ehrlicher Auflagen-Offenlegung; zwei neue Dokumente
+  (Datenschutz-Audit 2025 mit BESTANDEN-Stempel, Verzeichnis von Verarbeitungstätigkeiten Art. 30).
+  Rein additiv in `data.js`. Öffnet ein Vorstands-relevantes Compliance-Ressort.
+- **Globale Live-Suche über die Bibliothek** — Suchfeld im Bibliotheks-Header, das beim Tippen live
+  über Titel/Typ/Snippet aller Dokumente filtert (Modul-Tag + Sofort-Öffnen). Macht die Menge des
+  erschlossenen Wissens sichtbar → starker Video-Beat. Reuse Doc-Karten + `openViewer()`. *(Nächster
+  Zyklus — Breite-Moment.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

@@ -6,12 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 15 — **Ketten-Navigator im Dokumentenviewer** („Schritt n von 3" mit
-  Vor/Zurück quer durch die drei Belege) + Kette als einzige Quelle der Wahrheit (`DECISION_CHAIN`)
-  (siehe unten).
+- **Letzter Zyklus:** Zyklus 16 — **DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort)**: neues
+  Szenario „Sind wir DSGVO-konform?" (Modul Audit) mit Status-Tabelle + zwei neuen Dokumenten
+  (Datenschutz-Audit 2025, Verzeichnis von Verarbeitungstätigkeiten) (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 78 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 79 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -30,6 +30,38 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 16 gebaut wurde
+
+**DSGVO-/Datenschutz-Szenario — die Demo öffnet ein neues Entscheider-Ressort (Compliance/Datenschutz).**
+Die Demo war bisher finanzlastig; die schwächsten Fortschrittsbereiche waren **Demo-Firma & Dokumente**
+und **Szenarien-Breite**. Zyklus 16 hebt beide mit einem Thema, das jeden CEO/CFO betrifft — rein
+additiv in `data.js`, kein Code-Umbau (bestehende Tabellen- und Skin-Renderer wiederverwendet):
+- **Neues Szenario `datenschutz-audit`** (Modul Audit, Konfidenz 93 %): „Sind wir DSGVO-konform — wann
+  war das letzte Datenschutz-Audit?" Antwort mit **Status-Tabelle** (5 Prüffelder: Art. 30 VVT,
+  Art. 32 TOM, Art. 28 Auftragsverarbeitung, Betroffenenrechte/Löschkonzept, 72-h-Meldeprozess), je
+  Status **✓** / **⚠ 1 offen**. **Ehrlich statt beschönigt:** zwei offene Auflagen (AV-Vertrag
+  Cloud-Backup, Löschkonzept Bewerberdaten) mit klarer Frist **31.03.2026**, „kein akutes Bußgeldrisiko".
+- **Zwei neue Dokumente** (Modul Audit):
+  - **`datenschutz-audit-2025`** (Typ „Prüfnachweis" → grüner **BESTANDEN**-Stempel im Viewer): das
+    jährliche DSGVO-Audit vom 20.11.2025, externe Datenschutzbeauftragte **Dr. Julia Sander**,
+    8 Absätze / 6 Highlights (Ergebnis, VVT, TOM, beide Auflagen, Meldeprozess, 0 meldepflichtige
+    Vorfälle 2025).
+  - **`verarbeitungsverzeichnis-2026`** (Typ „Verzeichnis" → sauberer Fallback aufs Bericht-Skin,
+    `paper-bericht`): Verzeichnis nach **Art. 30 DSGVO**, 34 Verarbeitungstätigkeiten, Rechtsgrundlagen
+    und Löschfristen (Beschäftigten-/Bewerberdaten).
+- **Verdrahtung:** Szenario nach `brandschutz` einsortiert → in der Geführten Demo laufen die beiden
+  Audit-/Compliance-Beats direkt hintereinander (jetzt **13 Szenarien**). Hero (Modul Wissen) 9 → **10
+  Kacheln**, `audit`-Modul-Vorschläge 2 → 3.
+- **Rein additiv** in `data.js`; `app.js`/`styles.css`/`index.html` unverändert. Deterministisch
+  verifiziert (Node-VM gegen `data.js`): **23 Dokumente** (war 21), **2 E-Mails**, **13 Szenarien**
+  (war 12), **1 chain**, **0 kaputte Referenzen** über alle `sources`/`related`/`withheld`/`chain`/
+  `MODULE_SUGGESTIONS`. Live im Browser gegen die realen Daten geprüft: DSGVO-Hero-Kachel vorhanden
+  (10 Kacheln), beide neue Karten im Audit-Modul, Datenschutz-Audit öffnet als `paper-nachweis` mit
+  **BESTANDEN**-Stempel + 6 Highlights, VVT öffnet als `paper-bericht` mit 3 Highlights, kein
+  Ketten-Navigator bei den Nicht-Ketten-Docs, **keine Konsolenfehler**. (Voll-Streaming-Pfad der
+  Antwort im Headless-Preview timer-gedrosselt, Screenshot-Capture im Harness instabil — bekannte
+  Grenzen; daher DOM/CSS-basiert verifiziert.)
 
 ## Was in Zyklus 15 gebaut wurde
 
@@ -357,18 +389,19 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Breite in ein neues Entscheider-Ressort öffnen: ein IT-Sicherheit-/Datenschutz-Szenario (DSGVO).**
-Die schwächsten Fortschrittsbereiche bleiben **Demo-Firma & Dokumente (77 %)** und **Szenarien-Breite
-(86 %)** — beide heben ein zusätzliches Ressort, das jeden CEO/CFO betrifft. Vorschlag:
-- **Neues Szenario „Sind wir DSGVO-konform / wann war das letzte Datenschutz-Audit?"** (Modul Audit
-  oder ein neues Modul „IT/Sicherheit"), Antwort mit knapper Status-Tabelle (Audit-Datum, offene
-  Maßnahmen, Verantwortlicher/DSB) + 1–2 neuen Dokumenten (z. B. „Datenschutz-Audit 2025",
-  „Verzeichnis von Verarbeitungstätigkeiten"). Reuse: bestehende Tabellen-/Skin-Renderer, kein neuer
-  Code nötig — rein additiv in `data.js` (Muster wie `lieferanten-risiko`/`brandschutz`).
+**Globale Suche über die ganze Bibliothek — ein „Alles durchsuchen"-Feld, das Firmenwissen sichtbar
+macht.** Die Demo hat jetzt **13 Szenarien über 6 Ressorts** und **23 Dokumente**; die Breite ist stark.
+Der größte verbleibende Wow-Hebel für die Story „mein Unternehmen besitzt die Information bereits — dieses
+System macht sie endlich nutzbar" ist ein **sichtbarer Suchmoment**: ein Suchfeld in der Bibliothek
+(oder ein „Was steckt alles drin?"-Overlay), das beim Tippen **live über Titel/Typ/Snippet aller
+Dokumente filtert** und Treffer mit Modul-Tag + Sofort-Öffnen zeigt. Reuse: bestehende Doc-Karten-
+Renderer und `openViewer()`; rein additiv (kleiner Filter-Helfer in `app.js` + ein Input im Bibliotheks-
+Header). Das zeigt physisch, wie viel Material „im Haus" liegt — starker Video-Beat vor der ersten Frage.
 
-*Warum?* Die Kern-Story (Materialkosten → Entscheidungskette) ist jetzt tief und über Chat **und**
-Viewer navigierbar. Der nächste Wirkungshebel ist **Breite**: ein weiteres Vorstands-relevantes Thema
-zeigt „AI Studio deckt mein ganzes Haus ab", nicht nur die Finanz-Story.
+*Warum?* Nach Zyklus 16 ist die **Breite** gut abgedeckt (Finanzen, Audit/Compliance, HR, Verträge,
+Berichte, ESG, Datenschutz). Was der Betrachter noch nicht *fühlt*, ist die schiere **Menge** des
+erschlossenen Wissens. Eine Live-Suche über 23 Dokumente macht den „endlich nutzbar"-Kern greifbar,
+ohne ein neues Ressort zu brauchen.
 
 **Alternative, falls Tiefe vor Breite:** die Entscheidungskette auch an die **`materialkosten`-Antwort**
 hängen (dasselbe `answer.chain` = `DECISION_CHAIN`). Achtung Video-Reihenfolge: dann erschiene die
@@ -378,16 +411,17 @@ die natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst **nicht**
 
 ---
 
-## CEO-Review (Ende Zyklus 15)
+## CEO-Review (Ende Zyklus 16)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Entscheidungskette ist jetzt **doppelt
-  erlebbar**: als Timeline im Chat (Zyklus 14) **und** als Navigator im Viewer — man klickt einen
-  Beleg an und wandert per „Schritt n von 3 · Vor/Zurück" durch den ganzen Pfad, ohne den Kontext zu
-  verlieren.
-- *Erzeugt es Aufregung?* — Ja: Der Presenter kann im Video einen Beleg öffnen und live durch die Kette
-  blättern (Lieferantenbrief → Weiterleitung an CFO → Vorstandsbeschluss) — jeder Schritt ein echtes
-  Dokument. Das macht „lückenlose Nachvollziehbarkeit" physisch greifbar statt nur behauptet.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Schritt 2 von 3" und der Stepper sind ohne jede KI-Erklärung
-  lesbar; der Betrachter sieht sofort, dass hinter der 0,9-Mio-€-Zahl drei nachprüfbare Belege stehen.
-- *Schwächste Stelle → nächster Zyklus:* Die Demo ist finanzlastig. **Breite** in ein weiteres
-  Entscheider-Ressort (IT-Sicherheit/Datenschutz) ist der größte verbleibende Hebel — siehe oben.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo deckt jetzt sichtbar das ganze Haus ab:
+  Finanzen, Audit, HR, Verträge, Berichte, ESG — **und neu Datenschutz/DSGVO**. Ein CFO sieht sofort,
+  dass „AI Studio" nicht nur eine Finanz-Story ist.
+- *Erzeugt es Aufregung?* — Ja: Die DSGVO-Antwort liefert eine **Status-Tabelle auf einen Blick** —
+  „konform, zwei Auflagen bis 31.03.2026, 0 Datenpannen". Genau die Zeile, die ein Geschäftsführer vor
+  einer Aufsichtsrats- oder Auditsitzung braucht — in Sekunden statt Tagen.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: Die Antwort **beschönigt nicht** (zwei offene Auflagen offen
+  ausgewiesen), das schafft Vertrauen. Der grüne **BESTANDEN**-Stempel auf dem echten Audit-Dokument
+  macht die Aussage physisch greifbar.
+- *Schwächste Stelle → nächster Zyklus:* Die **Breite** ist jetzt stark; was fehlt, ist ein sichtbarer
+  Moment für die schiere **Menge** des erschlossenen Wissens. Eine **Live-Suche über alle 23 Dokumente**
+  ist der größte verbleibende Wow-Hebel — siehe oben.
