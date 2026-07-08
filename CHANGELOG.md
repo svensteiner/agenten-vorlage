@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 13 — 2026-07-08 — Zweite E-Mail (interne Weiterleitung) → Entscheidungskette quer durch Postfächer ✉→✉
+
+**Von der einzelnen E-Mail zum belegten E-Mail-Thread.** Zyklus 12 brachte das E-Mail-Skin und die
+auslösende Lieferanten-E-Mail. Jetzt zeigt die Demo, wie AI Studio eine **Entscheidungskette über
+zwei Postfächer** rekonstruiert: Lieferant → Einkauf → CFO → Vorstandsbeschluss.
+
+### Neu (rein additiv in `data.js` — kein Code-Umbau, Skin existiert bereits)
+- **Neues Dokument `email-weiterleitung-materialbudget`** (Typ **„E-Mail"**, Modul Finanzen):
+  **WG-Weiterleitung** der Donau-Preis-E-Mail von **Thomas Krüger (Einkauf)** an **Dr. Katharina
+  Vogel (CFO)**, Cc Projektleitung Alpha, vom 13.02.2026. Enthält die **Bewertung des Einkaufs**:
+  ~640 t Jahresbedarf × +120 €/t → **rund 0,9 Mio. € Mehrbedarf** für Projekt Alpha, plus die
+  **Empfehlung**, das Mehrbudget als Vorstands-Beschlussvorlage einzubringen und Ferro Nord zu
+  beschleunigen. **Zitat-Verlauf** = die Original-Donau-E-Mail (Andreas Huber) → sichtbarer Thread.
+- **Verzahnt mit der bestehenden Story:** die 0,9 Mio. € stammen genau aus dem
+  **Vorstandsbeschluss TOP 2** (`vorstandsprotokoll-2026-03`) — die Weiterleitung ist die
+  **Herkunft dieser Zahl**. Kein neuer Wert, sondern der fehlende Beleg der Entscheidungskette.
+- **In zwei Szenarien eingewoben:**
+  - „**Warum sind die Materialkosten gestiegen?**" — E-Mail als **3. Quelle** (81 %), in „Verwandte
+    Dokumente" und als zusätzlicher Reasoning-Schritt (Einkauf → CFO, 0,9 Mio. €).
+  - „**Fasse Projekt Alpha zusammen.**" — E-Mail als Quelle für die **Herkunft des Mehrbudgets**
+    (Reasoning: Lieferanten-E-Mail → Weiterleitung an CFO → Vorstandsbeschluss).
+- Bestehende Dokumente, Skins und der Antwortpfad **unverändert**.
+
+### Verifikation (deterministisch via Node-VM gegen `data.js`)
+- **21 Dokumente** (war 20), davon **2 E-Mails** (`email-preisanpassung-donau`,
+  `email-weiterleitung-materialbudget`), **11 Szenarien**.
+- **0 kaputte Referenzen** über alle `sources` / `related` / `withheld` / `MODULE_SUGGESTIONS`.
+- Neue E-Mail nutzt das identische Feldschema (`from`/`to`/`cc`/`subject`/`sent`/`attachment`/
+  `quoted`) → `buildPaper()`-`cat==="email"`-Zweig rendert Postfach-Kopf + Zitat automatisch.
+
 ## Zyklus 12 — 2026-07-08 — E-Mail-Skin im Viewer + Lieferanten-E-Mail als Beleg der Materialkosten-Story ✉
 
 **„Wissen steckt in E-Mails" ist jetzt im Bild.** Die Mission-Story nennt E-Mails ausdrücklich als

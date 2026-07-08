@@ -5,15 +5,25 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Zweites E-Mail-Dokument** (interne Weiterleitung der Donau-Preis-E-Mail vom Einkauf an die
-   CFO, mit kurzer Bewertung „+0,9 Mio. € Projekt Alpha"). Zeigt den **Thread über zwei Nachrichten**
-   und verbindet E-Mail → Vorstandsbeschluss. Kein Code-Umbau (E-Mail-Skin existiert). → oberstes
-   Item für den nächsten Zyklus.
+1. **[P5] Explizites Ketten-/Timeline-Element in der Antwort** — die Entscheidungskette
+   (Lieferant → Einkauf → CFO → Vorstand) als eigenes, sichtbares Antwort-Element (kompakte
+   Timeline/Kette) statt nur über Quellen-Chips. Optional `answer.chain` + `appendChain()`-Renderer
+   analog zu `appendWithheld()`, oder als HTML-Block in `answer.text` (rein datengetrieben). Stärkster
+   CFO-Moment fürs Video. → oberstes Item für den nächsten Zyklus.
 2. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
 3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 13] Zweite E-Mail (interne Weiterleitung) → Entscheidungskette** — neues Dokument
+  `email-weiterleitung-materialbudget` (Typ „E-Mail", Finanzen): WG-Weiterleitung der Donau-Preis-
+  E-Mail von Thomas Krüger (Einkauf) an Dr. Katharina Vogel (CFO), Cc Projektleitung Alpha, mit
+  Bewertung **0,9 Mio. € Mehrbedarf** für Projekt Alpha + Empfehlung Vorstands-Beschlussvorlage;
+  Zitat-Verlauf = Original-Donau-E-Mail (sichtbarer Thread). 0,9 Mio. € = Herkunft der Zahl aus
+  Vorstandsbeschluss TOP 2. Eingewoben in „Materialkosten" (3. Quelle, 81 %) und „Projekt Alpha".
+  Rein additiv in `data.js`, kein Code-Umbau. Deterministisch verifiziert (21 Docs, 2 E-Mails,
+  0 kaputte Referenzen).
 
 - **[Zyklus 12] E-Mail-Skin im Viewer + Lieferanten-E-Mail** — neues Dokument
   `email-preisanpassung-donau` (Typ „E-Mail", Finanzen): Original-Ankündigung der Donau-

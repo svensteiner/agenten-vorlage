@@ -12,7 +12,7 @@
 |---|-------|-------------------|----------------|
 | 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
-| 2 | 0:35 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter → nach der Antwort die 2. Quelle ***Preisanpassung Baustahl S355*** (E-Mail) anklicken | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit & Quellen schwenken. Klick auf die E-Mail-Quelle → Viewer öffnet als **echte E-Mail** (Postfach-Kopf **Von/An/Cc**, Avatar, **📎 Anhang-Chip**, **Zitat-Verlauf**) — Kernaussage „**+15 % Preisgleitklausel §6**" ist gelb hervorgehoben. **Wow-Beleg: „Das System zieht sogar die auslösende E-Mail aus dem Posteingang."** |
+| 2 | 0:40 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter → nach der Antwort **nacheinander** die 2. Quelle ***Preisanpassung Baustahl S355*** (Lieferanten-E-Mail) und die 3. Quelle ***WG: Preisanpassung Baustahl — Auswirkung Projekt Alpha*** (interne Weiterleitung) anklicken | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit & Quellen schwenken. Klick auf die 1. E-Mail → Viewer öffnet als **echte E-Mail** (Postfach-Kopf **Von/An/Cc**, Avatar, **📎 Anhang-Chip**, **Zitat-Verlauf**) — „**+15 % Preisgleitklausel §6**" gelb hervorgehoben. Dann die **Weiterleitung** öffnen (Einkauf → CFO): Highlight „**~0,9 Mio. € Mehrbedarf**" + Empfehlung Vorstandsvorlage, Zitat = die Donau-E-Mail. **Wow-Beleg: „Das System rekonstruiert die ganze Kette — vom Lieferantenbrief über die interne Weiterleitung bis zum Mehrbudget."** |
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:30 | *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"* | Auf die **CO₂-Trend-Tabelle** (2020 → 2025 → Ziel 2030) und das **Fazit** halten; Quelle *Energie- & Emissionskennzahlen 2025* kurz öffnen |
@@ -30,9 +30,11 @@
   auf dem behördlichen Nachweis (starkes „prüfungssicher"-Signal).
 - Modul **Verträge** → *Rahmenvertrag Stahlwerk Donau* öffnen → **Unterschriftszeilen**
   beider Parteien am Blattende (wirkt wie ein echter Vertrag).
-- Modul **Finanzen** → die E-Mail *Preisanpassung Baustahl S355* (✉-Karte) öffnen → **echter
-  Postfach-Look** mit Von/An/Cc, Anhang-Chip und Zitat-Verlauf. Untermauert „Wissen steckt in
-  E-Mails" auch außerhalb des Chat-Flows.
+- Modul **Finanzen** → die **beiden E-Mails** (✉-Karten) nacheinander öffnen: *Preisanpassung
+  Baustahl S355* (Lieferant → Einkauf) und *WG: Preisanpassung — Auswirkung Projekt Alpha*
+  (Einkauf → CFO). **Echter Postfach-Look** mit Von/An/Cc, Anhang-Chip und Zitat-Verlauf; die
+  Weiterleitung zeigt den **Thread über zwei Nachrichten**. Untermauert „Wissen steckt in E-Mails"
+  und die **Entscheidungskette quer durch Postfächer** auch außerhalb des Chat-Flows.
 - Modul **Berichte** → die **zwei gesperrten Dokumente** (gestrichelt, Schloss,
   „Kein Zugriff — Vorstand") im Raster zeigen → einen anklicken → **„Zugriff verweigert"**.
   Sehr starkes Governance-/Vertrauens-Signal, auch ohne Chat.

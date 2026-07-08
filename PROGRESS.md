@@ -3,28 +3,38 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 73 % (Ende Zyklus 12)
+## Gesamtfortschritt: ≈ 74 % (Ende Zyklus 13)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 91 % | 18.2 |
-| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 89 % | 13.35 |
+| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 91 % | 13.65 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 92 % | 13.8 |
-| Demo-Firma & realistische Dokumente | 15 % | 74 % | 11.1 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 82 % | 8.2 |
+| Demo-Firma & realistische Dokumente | 15 % | 77 % | 11.55 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 84 % | 8.4 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
-| **Summe** | **100 %** | — | **≈ 88 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 89 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 73 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (zweites E-Mail-Dokument, weitere Ressorts). Zyklus 12 fügt das
-> **E-Mail-Skin** + eine Lieferanten-E-Mail als Beleg der Materialkosten-Story hinzu und hebt
-> **Dokumentenviewer** (89 % → 92 %), **Demo-Firma** (70 % → 74 %) und **Belege** (88 % → 89 %).
-> Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 74 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (explizites Ketten-/Timeline-Element, weitere Ressorts). Zyklus 13 fügt eine
+> **zweite E-Mail** (interne Weiterleitung Einkauf → CFO) hinzu, die die **Entscheidungskette quer
+> durch Postfächer** belegt, und hebt **Belege** (89 % → 91 %), **Demo-Firma** (74 % → 77 %) und
+> **Szenarien** (82 % → 84 %). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 13 (2026-07-08) ≈ 74 %** — Zweite E-Mail (interne Weiterleitung): neues Dokument
+  `email-weiterleitung-materialbudget` (Typ „E-Mail", Finanzen) — die WG-Weiterleitung der
+  Donau-Preis-E-Mail von Thomas Krüger (Einkauf) an Dr. Katharina Vogel (CFO), Cc Projektleitung
+  Alpha, mit der Bewertung **0,9 Mio. € Mehrbedarf** für Projekt Alpha und der Empfehlung einer
+  Vorstands-Beschlussvorlage; **Zitat-Verlauf** = die Original-Donau-E-Mail (sichtbarer Thread). Die
+  0,9 Mio. € stammen exakt aus dem Vorstandsbeschluss TOP 2 → die Weiterleitung ist die **Herkunft
+  dieser Zahl**. Eingewoben in „Materialkosten" (3. Quelle, 81 %) und „Projekt Alpha" (Herkunft des
+  Mehrbudgets, neuer Reasoning-Schritt). Rein additiv in `data.js`, kein Code-Umbau (E-Mail-Skin
+  rendert automatisch). Deterministisch verifiziert: 21 Docs (war 20), 2 E-Mails, 11 Szenarien,
+  0 kaputte Referenzen. (Belege 89 % → 91 %, Demo-Firma 74 % → 77 %, Szenarien 82 % → 84 %.)
 - **Zyklus 12 (2026-07-08) ≈ 73 %** — E-Mail-Skin im Viewer: neues Dokument
   `email-preisanpassung-donau` (Typ „E-Mail", Finanzen) — die Original-Ankündigung von Stahlwerk
   Donau über die 15-%-Preisanpassung, mit Postfach-Kopf (Avatar-Initialen, Von/An/Cc/Betreff/
@@ -101,6 +111,7 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Zweites E-Mail-Dokument (interne Weiterleitung an die CFO) → E-Mail-Thread, Entscheidungskette.
+1. Explizites Ketten-/Timeline-Element in der Antwort (Lieferant → Einkauf → CFO → Vorstand) →
+   macht die Entscheidungskette ohne Klickarbeit sichtbar, stärkster CFO-Moment fürs Video.
 2. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
 3. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.

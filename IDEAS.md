@@ -36,6 +36,14 @@
   Look — Von/An/Cc/Betreff/Gesendet-Kopf mit Avatar, Anhang-Chip, Zitat-Verlauf (`DOC_SKINS["E-Mail"]`,
   `buildMailHead()`/`buildQuoted()`). Als 2. Quelle in die Materialkosten-Story eingewoben. Belegt
   die Kern-Erzählung „Wissen steckt in E-Mails".
+- ✅ **Zweite E-Mail (interne Weiterleitung Einkauf → CFO)** — *erledigt in Zyklus 13*: neues
+  Dokument `email-weiterleitung-materialbudget` (WG der Donau-Preis-E-Mail, Krüger → Dr. Vogel,
+  Cc Projektleitung Alpha) mit Bewertung 0,9 Mio. € Mehrbedarf + Empfehlung Vorstands-Beschlussvorlage;
+  Zitat-Verlauf = Original-Donau-E-Mail (Thread). Belegt die **Entscheidungskette quer durch
+  Postfächer** (Lieferant → Einkauf → CFO → Vorstand). Rein additiv in `data.js`.
+- **Explizites Ketten-/Timeline-Element in der Antwort** — die Entscheidungskette als sichtbares
+  Antwort-Element (kompakte Timeline) statt nur über Quellen-Chips. *(Nächstes Item — stärkster
+  CFO-Moment fürs Video.)*
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
   Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
   nächste Feinpolitur.)*
@@ -44,8 +52,8 @@
 - ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +
   Dokumente (Onboarding-Checkliste, Lieferanten-Risikoanalyse mit Konzentrations-Tabelle),
   verzahnt mit der Stahl-/Ferro-Nord-Story. „Geführte Demo" 9 → 11.
-- **Zweite E-Mail (interne Weiterleitung an die CFO)** — Thread über zwei Nachrichten, verbindet
-  E-Mail → Vorstandsbeschluss (Entscheidungskette quer durch Postfächer). *(Nächstes Item.)*
+- ✅ **Zweite E-Mail (interne Weiterleitung an die CFO)** — *erledigt in Zyklus 13*: Thread über
+  zwei Nachrichten, verbindet E-Mail → Vorstandsbeschluss (Entscheidungskette quer durch Postfächer).
 - Weiteres Szenario: Investitions-/Cashflow-Frage; optional ein IT-/Datenschutz-Ressort.
 - Pro Dokument ein Miniatur-Thumbnail in der Bibliothek (SVG-Icon je Typ).
 - ✅ **„Diese Antwort exportieren / An Vorstand senden"** — *erledigt in Zyklus 10* (Handlungs-

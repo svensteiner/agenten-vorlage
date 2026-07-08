@@ -28,19 +28,22 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 **Punkt:** Sofort, präzise, mit Beleg.
 
 ## Szene 2 — Der Geschäftswert (0:45–1:20)
-**Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"* → danach die E-Mail-Quelle
-*Preisanpassung Baustahl S355* öffnen.
+**Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"* → danach **zwei** E-Mail-Quellen
+nacheinander öffnen: *Preisanpassung Baustahl S355* (Lieferant → Einkauf) und *WG: Preisanpassung —
+Auswirkung Projekt Alpha* (Einkauf → CFO).
 **Sprecher:** „AI Studio verbindet Quartalsbericht, Liefervertrag und Rechnung —
 und erklärt das Warum, nicht nur das Was."
 **Bild:** Antwortkopf zeigt **„⚡ Beantwortet in ~1,9 s"** (zählt hoch), die **Kernzahlen
 zählen hoch** (18,4 %, 31,6 %); dann Nachvollziehbarkeit-Schritte, Quellen mit Relevanz,
-Konfidenz 94 %. Klick auf die **E-Mail-Quelle** → Viewer öffnet als **echte E-Mail** aus dem
+Konfidenz 94 %. Klick auf die **1. E-Mail** → Viewer öffnet als **echte E-Mail** aus dem
 Einkaufs-Postfach (Von/An/Cc, Avatar, **📎 Anhang**, Zitat-Verlauf); die Zeile „**+15 %
-Preisgleitklausel §6**" ist hervorgehoben.
-**Sprecher-Zusatz:** „Und es findet sogar die eine E-Mail, die die Preiserhöhung ausgelöst hat —
-im Original, mit Anhang."
-**Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar — bis zur
-auslösenden E-Mail im Posteingang.
+Preisgleitklausel §6**" ist hervorgehoben. Dann die **Weiterleitung** öffnen — der Einkauf leitet
+sie an die **CFO** weiter mit der Bewertung „**~0,9 Mio. € Mehrbedarf**" und der Empfehlung einer
+**Vorstands-Beschlussvorlage**; das Zitat darunter ist die Original-Donau-E-Mail (**Thread**).
+**Sprecher-Zusatz:** „Und es rekonstruiert die ganze Kette — von der auslösenden Lieferanten-E-Mail
+über die interne Weiterleitung an die Finanz bis zum Mehrbudget, das der Vorstand beschließt."
+**Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar — und zeigt die
+**Entscheidungskette quer durch Postfächer**, bis zum Vorstandsbeschluss.
 
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann

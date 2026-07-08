@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 12 — **E-Mail-Skin im Viewer + Lieferanten-E-Mail als
-  Beleg der Materialkosten-Story** (siehe unten).
+- **Letzter Zyklus:** Zyklus 13 — **Zweite E-Mail (interne Weiterleitung Einkauf → CFO) →
+  Entscheidungskette quer durch Postfächer** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 73 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 74 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,31 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 13 gebaut wurde
+
+**Zweite E-Mail (interne Weiterleitung) — die Entscheidungskette quer durch Postfächer ist jetzt
+belegt.** Zyklus 12 setzte das E-Mail-Skin und die auslösende Lieferanten-E-Mail; eine einzelne
+E-Mail riss die Kern-Erzählung aber nur an. Jetzt zeigt die Demo den **Thread über zwei Nachrichten**
+und verbindet **E-Mail → CFO → Vorstandsbeschluss**:
+- **Neues Dokument `email-weiterleitung-materialbudget`** (Typ **„E-Mail"**, Modul Finanzen): die
+  **WG-Weiterleitung** der Donau-Preis-E-Mail von **Thomas Krüger (Einkauf)** an **Dr. Katharina
+  Vogel (CFO)** (Cc Projektleitung Alpha), 13.02.2026. Kernaussage im Highlight: **~640 t
+  Jahresbedarf × +120 €/t → rund 0,9 Mio. € Mehrbedarf** für Projekt Alpha; **Empfehlung**,
+  das Mehrbudget als Vorstands-Beschlussvorlage einzubringen und Ferro Nord zu beschleunigen.
+  **Zitat-Verlauf** = die Original-Donau-E-Mail → sichtbarer Zwei-Nachrichten-Thread.
+- **Verzahnt mit der bestehenden Story (kein neuer Wert):** die 0,9 Mio. € stammen exakt aus dem
+  **Vorstandsbeschluss TOP 2** (`vorstandsprotokoll-2026-03`). Die Weiterleitung ist die
+  **Herkunft dieser Zahl** — der bisher fehlende Beleg, *warum* der Vorstand das Mehrbudget genehmigt
+  hat.
+- **In zwei Szenarien eingewoben:** „Warum sind die Materialkosten gestiegen?" (E-Mail als **3.
+  Quelle**, 81 %, + Verwandte + Reasoning-Schritt Einkauf → CFO) und „Fasse Projekt Alpha zusammen"
+  (E-Mail als Quelle für die Herkunft des Mehrbudgets, neuer Reasoning-Schritt zur Entscheidungskette).
+  Beide sind Teil der Geführten Demo → das Skin und der Thread erscheinen automatisch im Video.
+- **Rein additiv in `data.js`** — kein Code-Umbau (E-Mail-Skin aus Zyklus 12 rendert das identische
+  Feldschema automatisch). Deterministisch verifiziert (Node-VM gegen `data.js`): **21 Dokumente**
+  (war 20), **2 E-Mails**, **11 Szenarien**, **0 kaputte Referenzen** über alle `sources`/`related`/
+  `withheld`/`MODULE_SUGGESTIONS`.
 
 ## Was in Zyklus 12 gebaut wurde
 
@@ -270,35 +295,39 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Eigener „E-Mail/Postfach"-Einstieg für die Materialkosten-Story — oder ein zweites E-Mail-Dokument
-(interne Weiterleitung).** Das E-Mail-Skin steht jetzt und ist über die Materialkosten-Antwort
-erreichbar. Der nächste sichtbare Sprung: die Quellen-Vielfalt weiter mit E-Mails vertiefen, damit
-das „aus Ihren Postfächern"-Versprechen mehrfach im Bild belegt ist. Konkret die stärkste Option:
-- **Interne Weiterleitung** der Donau-Preis-E-Mail vom Einkauf (Thomas Krüger) an die CFO
-  (Dr. Vogel) mit einer kurzen Bewertung („Auswirkung auf Projekt Alpha: +0,9 Mio. €") — zeigt den
-  **Thread über zwei Nachrichten** und verbindet E-Mail → Vorstandsbeschluss (Mehrbudget). Rein
-  additiv als zweites `type: "E-Mail"`-Dokument; kein Code-Umbau (Skin existiert bereits).
+**Die Entscheidungskette als sichtbaren „Beleg-Pfad" im Chat zeigen — ein eigenes Szenario „Wie kam
+das Mehrbudget von 0,9 Mio. € zustande?" mit einer visuellen Kette Lieferant → Einkauf → CFO →
+Vorstand.** Die Daten dafür liegen jetzt vollständig vor (zwei E-Mails, Rahmenvertrag, Rechnung,
+Vorstandsprotokoll). Der nächste sichtbare Sprung ist, diese **Herkunfts-Kette als eigenes
+Antwort-Element** zu inszenieren statt sie nur über Quellen-Chips anzudeuten:
+- **Neues Szenario** (Modul Finanzen/Berichte): Antwort mit einer **kompakten Timeline/Kette**
+  (E-Mail 12.02. → Weiterleitung 13.02. → Beschluss März) als kleiner HTML-Block in `answer.text`
+  (rein datengetrieben, kein Code-Umbau möglich) **oder** ein optionales `answer.chain`-Feld + kleiner
+  `appendChain()`-Renderer, analog zum bestehenden `appendWithheld()`-Muster.
+- Macht den stärksten CFO-Moment explizit: „Das System zeigt mir nicht nur *dass* die Kosten stiegen,
+  sondern die **ganze Entscheidungskette** — vom Lieferantenbrief bis zum Vorstandsbeschluss."
 
-*Warum diese?* Mit einem einzigen E-Mail-Dokument ist die Kern-Erzählung angerissen, aber noch nicht
-satt belegt. Ein zweites, **inhaltlich verzahntes** E-Mail-Dokument (Weiterleitung mit Entscheidungs-
-Bezug) macht sichtbar, wie AI Studio eine **Entscheidungskette quer durch Postfächer** rekonstruiert
-— genau der „Wow"-Moment für einen CFO.
+*Warum diese?* Zwei E-Mails belegen die Kette jetzt in den Daten, aber der Betrachter muss sie noch
+selbst zusammensetzen (über Quellen-Chips). Ein **explizites Ketten-Element** macht den „Wow" ohne
+Klickarbeit sichtbar — ideal fürs Video, wo der Zuschauer nicht selbst navigiert.
 
 **Alternative, falls Breite wichtiger als Tiefe:** ein weiteres Ressort (IT/Datenschutz) mit
 eigenem Szenario — siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 ---
 
-## CEO-Review (Ende Zyklus 12)
+## CEO-Review (Ende Zyklus 13)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo belegt jetzt sichtbar, dass Wissen
-  in **E-Mails** steckt: Die Antwort auf „Warum sind die Materialkosten gestiegen?" verweist direkt
-  auf die **Original-Lieferanten-E-Mail** — im echten Postfach-Look mit Anhang und Verlauf.
-- *Erzeugt es Aufregung?* — Ja: Genau das ist der intuitive „Aha"-Moment — die Software findet die
-  **eine E-Mail**, die die Preiserhöhung ausgelöst hat, und legt sie prüfbar neben Bericht, Vertrag
-  und Rechnung. Das ist die Kern-Erzählung der Mission, endlich im Bild.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Das System zieht sogar die richtige E-Mail aus dem
-  Posteingang" ist ohne jede KI-Erklärung sofort verständlich.
-- *Schwächste Stelle → nächster Zyklus:* **Tiefe der E-Mail-Kette** — eine einzelne E-Mail reißt die
-  Story an; eine **zweite, verzahnte E-Mail** (interne Weiterleitung an die CFO mit Entscheidungs-
-  Bezug) würde die „Entscheidungskette quer durch Postfächer" vollständig zeigen.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo belegt jetzt eine **vollständige
+  Entscheidungskette quer durch Postfächer**: Lieferanten-E-Mail (Donau) → interne Weiterleitung des
+  Einkaufs an die CFO mit Bewertung (0,9 Mio. €) → Vorstandsbeschluss. Zwei echte Postfach-Ansichten
+  mit sichtbarem Thread.
+- *Erzeugt es Aufregung?* — Ja: Der „Aha"-Moment wird tiefer — das System zeigt nicht nur die *eine*
+  auslösende E-Mail, sondern **wie sich daraus eine Vorstandsentscheidung entwickelt**. Ein CFO sieht
+  seine eigene Realität abgebildet (der Einkauf leitet mit Einschätzung an die Finanz weiter).
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Das System rekonstruiert die komplette Kette vom
+  Lieferantenbrief bis zum Budgetbeschluss" ist ohne jede KI-Erklärung sofort verständlich — und die
+  0,9 Mio. € tauchen konsistent in E-Mail, Projekt-Alpha-Antwort und Vorstandsprotokoll auf.
+- *Schwächste Stelle → nächster Zyklus:* Die Kette ist in den **Daten** vollständig, muss aber vom
+  Betrachter noch über Quellen-Chips selbst zusammengesetzt werden. Ein **explizites Ketten-/Timeline-
+  Element** in der Antwort würde den „Wow" ohne Klickarbeit sichtbar machen — ideal fürs Video.
