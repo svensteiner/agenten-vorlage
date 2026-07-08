@@ -5,14 +5,19 @@
 
 ## Offen (nach Priorität)
 
-1. **[P3] Politur — Tempo/Souveränität fühlbar machen** — „Antwort in X s"-Signal im
-   Antwortkopf + dezentes Hochzählen der Kernzahlen (Konfidenz/Relevanz, Beträge, Prozente),
-   sanftere Übergänge. → lässt das System im Video schnell und „live" wirken.
-2. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
-   `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.)
-3. **[P4] Export-/„An Vorstand senden"-Button** für eine Antwort inkl. Quellen.
+1. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
+   `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.) → hebt Demo-Firma
+   & Szenarien-Breite, der derzeit schwächste Fortschrittsbereich.
+2. **[P4] Export-/„An Vorstand senden"-Button** für eine Antwort inkl. Quellen.
+3. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
+   Rest-Politur.
 
 ## Erledigt
+
+- **[Zyklus 8] Video-Politur — Tempo/Souveränität** — „⚡ Beantwortet in X,X s"-Signal im
+  Antwortkopf (zählt hoch, deterministisch 1,2–2,6 s) + dezentes Hochzählen der fett gesetzten
+  Kernzahlen (`animateCounts()`/`parseGermanNumber()`, easeOutCubic). Sicher gegen
+  Jahre/Datum/PO-Nummern; `prefers-reduced-motion` respektiert. Rein additiv. Live verifiziert.
 
 - **[Zyklus 7] Vertrauens-Story** — 2 gesperrte Dokumente (M&A-Akquisitionsvorlage,
   Vorstandsvergütung) ausgegraut mit Schloss + „Kein Zugriff — <Rolle>" in der Bibliothek;

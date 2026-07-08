@@ -21,8 +21,11 @@
 - ✅ **Vertrauens-Story** — *erledigt in Zyklus 7*: 2 gesperrte Dokumente (Schloss, ausgegraut,
   „Kein Zugriff") + „Zugriff verweigert"-Ansicht; neues 9. Szenario mit „2 weitere Treffer für
   Sie nicht freigegeben"-Signal (`appendWithheld()`).
-- **Sanfte Zahlen-Animation** — Konfidenz-Meter und Relevanz-% zählen hoch (Politur). *(Nächster Zyklus.)*
-- **„Antwort in X s"-Signal** im Antwortkopf — Tempo/Souveränität fürs Video. *(Nächster Zyklus.)*
+- ✅ **„Antwort in X s"-Signal + Zahlen-Count-up** — *erledigt in Zyklus 8*: „⚡ Beantwortet in
+  1,9 s" im Antwortkopf (zählt hoch) + fett gesetzte Kernzahlen zählen hoch (`animateCounts()`,
+  sicher gegen Jahre/Datum/PO-Nummern). Tempo/Souveränität fürs Video.
+- **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
+  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum neuen Zahlen-Count-up. *(Optional.)*
 
 ## Mehr Substanz
 - 2–3 weitere Szenarien: HR-Onboarding-Frage, Lieferanten-Risiko, Investitions-/Cashflow-Frage.

@@ -12,7 +12,7 @@
 |---|-------|-------------------|----------------|
 | 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
-| 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
+| 2 | 0:30 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit-Schritte & 3 Quellen schwenken |
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:30 | *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"* | Auf die **CO₂-Trend-Tabelle** (2020 → 2025 → Ziel 2030) und das **Fazit** halten; Quelle *Energie- & Emissionskennzahlen 2025* kurz öffnen |
@@ -38,4 +38,7 @@
 - Zwischen Szenen Seite neu laden (F5) für saubere Hero-Ansicht.
 - Onboarding-Coachmark erscheint nur beim ersten Laden (`localStorage`-Flag
   `aistudio.onboarded.v1`). Fürs Intro Storage leeren oder Inkognito-Fenster nutzen.
+- **Tempo-Signal & Zahlen-Count-up** laufen bei jeder Antwort automatisch (Antwortzeit zählt
+  hoch, fett gesetzte Kernzahlen zählen hoch). Bei „Bewegung reduzieren" im System zeigt die
+  App sofort die Endwerte — für das Video also **kein** reduced-motion aktivieren.
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

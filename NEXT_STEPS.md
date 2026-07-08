@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 7 — **Vertrauens-Story: gesperrtes Dokument + „für Sie nicht
-  freigegeben"-Signal** (siehe unten).
+- **Letzter Zyklus:** Zyklus 8 — **Video-Politur: „Beantwortet in X,X s"-Signal +
+  Zahlen-Hochzählen** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 62 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 64 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,24 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 8 gebaut wurde
+
+**Video-Politur: Tempo-Signal + Zahlen-Hochzählen.** Die letzte fehlende Politur — die Demo
+wirkt jetzt fühlbar schnell und „live":
+- **„⚡ Beantwortet in X,X s"** im Antwortkopf (links vom Konfidenz-Meter), zählt beim
+  Erscheinen von 0 hoch. Wert ist **deterministisch** aus Antwortumfang (Quellen, Textlänge,
+  Tabelle) im Fenster **1,2–2,6 s** → im Video reproduzierbar, keine Zufallszahl.
+- **Kernzahlen zählen hoch** (18,4 %, 87.584 €, -30,0 % …), sobald die Antwort fertig getippt
+  ist. Neue `animateCounts()` scannt die **fett gesetzten** Zahlen; `parseGermanNumber()`
+  versteht deutsche Formate (Dezimalkomma, Tausenderpunkt, Einheit % € t „Mio. €" GWh).
+- **Sicher:** verlangt Dezimalkomma **oder** Einheit → **Jahre (2026), Datum (28.02.2026),
+  PO-Nummern** bleiben unangetastet. `requestAnimationFrame` (easeOutCubic, ~760 ms),
+  `tabular-nums` gegen Breiten-Zittern, `prefers-reduced-motion` → Endwerte sofort.
+- **Rein additiv** in `app.js` / `styles.css`; `data.js` und der Antwortpfad unverändert.
+  Live verifiziert: Tempo-Signal „1,9 s", Parser exakt gegen alle realen fett-Zahlen (alle
+  Kernwerte animieren, alle Jahre/Datum/PO ausgeschlossen), Count-up-Mechanismus auf realem
+  Fragment (Zwischenframe → korrekter Endwert), keine Konsolenfehler.
 
 ## Was in Zyklus 7 gebaut wurde
 
@@ -151,35 +169,34 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Politur „Antwort in X Sekunden" + Zahlen-Hochzähl-Animation.** Die Demo ist jetzt breit
-(Finanz/Audit/HR/Verträge/ESG/Governance), tief (Belegtabellen, Skins) und geführt
-(Onboarding + Auto-Play). Der stärkste verbleibende Hebel ist **wahrgenommene Geschwindigkeit
-& Souveränität** im Video: ein sichtbares **„Beantwortet in 1,8 s"-Signal** im Antwortkopf
-und ein dezentes **Hochzählen der Kernzahlen** (z. B. 18,4 %, 87.584 €, -12 %), wenn eine
-Antwort erscheint. Das lässt das System schnell und „live" wirken — genau der Eindruck, der
-im Verkaufsvideo zählt. Rein additiv (Timer-Anzeige im `.head`, kleine Count-up-Funktion für
-markierte Zahlen), kein Umbau des Antwortpfads.
+**Zwei neue Szenarien + passende Dokumente (HR-Onboarding & Lieferanten-Risiko).** Die Demo ist
+jetzt breit, tief, geführt **und** poliert (Tempo-Signal, Count-up). Der schwächste
+Fortschrittsbereich ist jetzt **Demo-Firma & Szenarien-Breite** (62 % / 74 %). Der stärkste
+Hebel: **1–2 neue, glaubwürdige Szenarien**, die zusätzliche Entscheider-Ressorts abdecken —
+z. B. **HR-Onboarding** („Was muss ein neuer Mitarbeiter am ersten Tag erledigen?") und
+**Lieferanten-/Klumpen-Risiko** („Wie abhängig sind wir von unserem größten Lieferanten?").
+Beide brauchen je 1–2 neue Dokumente in `data.js` (z. B. Onboarding-Checkliste, Lieferanten-
+Übersicht) plus einen Szenario-Eintrag mit Antwort/Quellen/Konfidenz — die „Geführte Demo"
+nimmt sie **automatisch** auf. Rein additiv in `data.js`, kein Code-Umbau.
 
-*Warum diese?* Alle inhaltlichen Wow-Themen (Nutzen, Quellen, Tiefe, Vertrauen) sind jetzt
-abgedeckt. Was fehlt, ist die letzte **Video-Politur**, die Tempo und Vertrauen fühlbar macht.
-Kleiner, risikoarmer Eingriff mit hoher visueller Wirkung.
+*Warum diese?* Alle Wow-Mechaniken (Nutzen, Quellen, Tiefe, Vertrauen, Tempo) stehen. Was den
+Gesamtfortschritt jetzt am meisten hebt, ist **inhaltliche Breite** — mehr Ressorts = mehr
+Entscheider im Publikum, die „das ist genau mein Problem" denken. Risikoarm, weil datengetrieben.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(weitere Szenarien HR/Lieferanten-Risiko, Export-/„An Vorstand senden"-Button, sanfte
-Übergänge).
+(Export-/„An Vorstand senden"-Button, sanfte Übergänge).
 
 ---
 
-## CEO-Review (Ende Zyklus 7)
+## CEO-Review (Ende Zyklus 8)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo beantwortet jetzt auch die
-  heikelste Entscheiderfrage: „Sieht dann jeder alles?" — sichtbar mit „Nein, nur was Sie
-  dürfen".
-- *Erzeugt es Aufregung?* — Ja: Ein gesperrtes M&A-Dokument, das das System **ehrlich
-  verweigert** statt zu erfinden, ist ein starkes Vertrauenssignal und differenziert klar von
-  „ChatGPT auf unseren Dateien".
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: „2 weitere Treffer für Sie nicht freigegeben" +
-  „Zugriff verweigert" sind selbsterklärend, ohne ein Wort über Technik.
-- *Schwächste Stelle → nächster Zyklus:* **Wahrgenommenes Tempo.** Inhaltlich ist die Demo
-  rund; ihr fehlt nur noch die letzte Politur (Antwort-Zeit-Signal, Zahlen-Animation), die im
-  Video Schnelligkeit und Souveränität fühlbar macht.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo wirkt jetzt auch **schnell**:
+  „⚡ Beantwortet in 1,9 s" und hochzählende Kernzahlen geben ihr das „live & souverän"-Gefühl,
+  das ein Verkaufsvideo trägt.
+- *Erzeugt es Aufregung?* — Ja: Zahlen, die beim Erscheinen hochzählen, lesen sich wie ein
+  Live-System, nicht wie eine statische Folie — subtil, aber wirkungsvoll im Bewegtbild.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja, unverändert stark: Antwort + Quellen + Konfidenz +
+  jetzt sichtbares Tempo, alles ohne ein Wort über Technik.
+- *Schwächste Stelle → nächster Zyklus:* **Inhaltliche Breite.** Mechanik und Politur sind rund;
+  am meisten fehlt noch Ressort-Breite (HR-Onboarding, Lieferanten-Risiko) für noch mehr
+  Entscheider-Resonanz.

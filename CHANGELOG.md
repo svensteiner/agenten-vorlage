@@ -2,6 +2,33 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 8 — 2026-07-08 — Video-Politur: „Beantwortet in X,X s"-Signal + Zahlen-Hochzählen ⚡
+
+**Die Demo fühlt sich jetzt schnell und „live" an — die letzte Politur fürs Verkaufsvideo.**
+Jede Antwort trägt im Kopf ein **Tempo-Signal „⚡ Beantwortet in 1,9 s"**, das direkt beim
+Erscheinen von 0 hochzählt, und die **Kernzahlen im Antworttext** (18,4 %, 87.584 €, -30,0 % …)
+**zählen dezent hoch**, sobald die Antwort fertig getippt ist. Das erzeugt genau den Eindruck
+von Geschwindigkeit und Souveränität, der in einem CEO/CFO-Video zählt — ohne den Antwortpfad
+umzubauen.
+
+### Neu (rein additiv in `app.js` / `styles.css`)
+- **Tempo-Signal im Antwortkopf** (`.speed` „⚡ Beantwortet in <b>X,X s</b>") links vom
+  Konfidenz-Meter. Wert ist **deterministisch** aus Antwortumfang (Quellen, Textlänge, Tabelle)
+  im schnell wirkenden Fenster **1,2–2,6 s** → im Video reproduzierbar, keine Zufallszahl.
+- **Count-up der Kernzahlen:** neue `animateCounts()` scannt die **fett gesetzten** Zahlen und
+  zählt sie per `requestAnimationFrame` (easeOutCubic, ~760 ms) hoch. `parseGermanNumber()`
+  erkennt deutsche Formate (Dezimalkomma, Tausenderpunkt, Einheit % € t „Mio. €" GWh …).
+- **Sicher gegen Fehl-Animation:** verlangt Dezimalkomma **oder** Einheit → **Jahre (2026),
+  Datumsangaben (28.02.2026), PO-Nummern (PO-2026-0512)** bleiben unangetastet. `tabular-nums`
+  während des Zählens verhindert Breiten-Zittern; `prefers-reduced-motion` → Endwerte sofort.
+
+### Funktioniert (live im Browser verifiziert, text-basiert)
+- Tempo-Signal rendert und zählt auf „1,9 s" (Materialkosten-Szenario).
+- Parser exakt gegen alle realen fett-Zahlen geprüft: alle Kernwerte animieren, alle
+  Jahre/Datum/PO-Nummern korrekt ausgeschlossen; German-Format (87.584, 18,4, -30,0) korrekt.
+- Count-up-Mechanismus auf realem Antwort-Fragment: Zwischenframe → korrekter Endwert im DOM.
+- Keine Konsolenfehler. (Screenshot-Capture im Harness weiter instabil → text-basiert verifiziert.)
+
 ## Zyklus 7 — 2026-07-08 — Vertrauens-Story: gesperrtes Dokument + „für Sie nicht freigegeben" 🔒
 
 **Die Demo zeigt jetzt sichtbar, dass Berechtigungen respektiert werden — das große fehlende

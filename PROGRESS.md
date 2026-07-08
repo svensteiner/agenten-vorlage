@@ -3,25 +3,32 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 62 % (Ende Zyklus 7)
+## Gesamtfortschritt: ≈ 64 % (Ende Zyklus 8)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
-| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 84 % | 16.8 |
+| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 86 % | 17.2 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 88 % | 13.2 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 89 % | 13.35 |
 | Demo-Firma & realistische Dokumente | 15 % | 62 % | 9.3 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 74 % | 7.4 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 86 % | 4.3 |
-| **Summe** | **100 %** | — | **≈ 83 %** gewichtet der begonnenen Bereiche |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 94 % | 4.7 |
+| **Summe** | **100 %** | — | **≈ 84 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 62 %** berücksichtigt, dass Tiefe (mehr Dokumente, Politur) noch fehlt.
-> Die Vertrauens-Story hebt vor allem **Szenarien** (68 % → 74 %, neues Governance-Szenario),
-> **Chat-Experience** (Withheld-Block) und **Demo-Firma** (2 weitere Dokumente). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 64 %** berücksichtigt, dass inhaltliche Breite (mehr Ressorts/Dokumente)
+> noch fehlt. Zyklus 8 hebt vor allem **Video-Reife** (86 % → 94 %, Tempo-Signal + Count-up) und
+> **Chat-Experience** (84 % → 86 %, animierte Antwort). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 8 (2026-07-08) ≈ 64 %** — Video-Politur: „⚡ Beantwortet in X,X s"-Signal im
+  Antwortkopf (zählt hoch, deterministisch 1,2–2,6 s) + dezentes Hochzählen der fett gesetzten
+  Kernzahlen (`animateCounts()`/`parseGermanNumber()`, easeOutCubic ~760 ms). Sicher gegen
+  Jahre/Datum/PO-Nummern; `tabular-nums`, `prefers-reduced-motion` respektiert. Rein additiv in
+  `app.js`/`styles.css`. Live verifiziert (Parser exakt gegen reale Zahlen, Mechanismus auf
+  realem Fragment). (Video-Reife 86 % → 94 %, Chat 84 % → 86 %.)
 
 - **Zyklus 7 (2026-07-08) ≈ 62 %** — Vertrauens-/Governance-Story: 2 gesperrte Dokumente
   (M&A-Akquisitionsvorlage, Vorstandsvergütung) ausgegraut mit Schloss + „Kein Zugriff" in der
@@ -59,6 +66,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Politur: „Antwort in X s"-Signal + Zahlen-Hochzähl-Animation → Video-Reife/Tempo.
-2. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien.
-3. Export-/„An Vorstand senden"-Button + sanfte Übergänge → Video-Reife.
+1. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien
+   (derzeit schwächster Bereich).
+2. Export-/„An Vorstand senden"-Button + sanfte Übergänge → Video-Reife.

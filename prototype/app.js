@@ -279,8 +279,11 @@
     const msg = el("div", "msg");
     const card = el("div", "answer");
     const confCls = answer.confidence >= 90 ? "" : "mid";
+    // Kopf: „Beantwortet in X,X s"-Signal (Tempo) links vom Konfidenz-Meter.
+    const secs = answerSeconds(answer);
     card.appendChild(el("div", "head",
       `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">0,0 s</b></span>` +
       `<span class="conf"><span class="conf-meter">Konfidenz` +
       `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
       `<b>${answer.confidence}%</b></span></span>`));
@@ -291,9 +294,15 @@
     wrap.appendChild(msg);
     scrollBottom();
 
+    // Tempo-Signal sofort hochzählen — lässt das System „live" und schnell wirken.
+    countUp($(".sp-val", card), secs, 1, " s");
+
     // Text zeichenweise „tippen" (HTML-sicher: wir tippen den fertigen HTML-String schrittweise)
     await typeHtml(textEl, answer.text);
     textEl.classList.remove("cursor");
+
+    // Kernzahlen in der Antwort dezent hochzählen (18,4 %, 87.584 €, -12,0 % …).
+    animateCounts(textEl);
 
     // Danach die strukturierten Blöcke einblenden
     appendReasoning(card, answer.reasoning);
@@ -302,6 +311,17 @@
     appendRelated(card, answer.related);
     appendFollowups(card, answer.followups);
     scrollBottom();
+  }
+
+  // Plausible, deterministische Antwortzeit (keine Zufallszahl → im Video reproduzierbar).
+  // Basiert auf Umfang der Antwort, bewusst im „schnell wirkenden" Fenster 1,2–2,6 s.
+  function answerSeconds(answer) {
+    let s = 1.2;
+    s += (answer.sources ? answer.sources.length : 0) * 0.16;
+    s += (answer.text || "").length / 2600;
+    if (/<table/.test(answer.text || "")) s += 0.3;
+    s = Math.max(1.2, Math.min(2.6, s));
+    return Math.round(s * 10) / 10;
   }
 
   async function typeHtml(node, html) {
@@ -708,6 +728,79 @@
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
     });
     ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; });
+  }
+
+  // ---------- Zahlen-Count-up (Video-Politur) ----------
+  // Reduzierte Bewegung respektieren: dann Endwerte sofort, ohne Animation.
+  function reducedMotion() {
+    try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+    catch (e) { return false; }
+  }
+
+  // Zerlegt einen deutschen Zahlwert wie „18,4 %", „87.584 €", „-12,0 %", „80 t".
+  // Gibt null zurück, wenn es KEIN reiner Zahlwert ist (Jahre, Datum, PO-Nummern,
+  // Text) → diese bleiben unangetastet. Sicher: verlangt Dezimalkomma ODER Einheit,
+  // damit blanke Ganzzahlen/Jahre (2026) und Datumsangaben nicht animiert werden.
+  const NUM_UNIT = "(%|€|t|Mio\\.\\s*€|Mrd\\.\\s*€|GWh|kWh|Punkte)";
+  const NUM_RE = new RegExp(
+    "^([+\\u2212-]?)((?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,(\\d+))?)(?:\\s*" + NUM_UNIT + ")?$"
+  );
+  function parseGermanNumber(raw) {
+    const m = NUM_RE.exec(raw.trim());
+    if (!m) return null;
+    const decimals = m[3] ? m[3].length : 0;
+    const unit = m[4] || "";
+    if (decimals === 0 && !unit) return null; // blanke Ganzzahl (z. B. Jahr) → nicht animieren
+    const sign = m[1] === "+" ? "+" : (m[1] ? "-" : "");
+    const value = Number(m[2].replace(/\./g, "").replace(",", "."));
+    if (!isFinite(value)) return null;
+    return { sign, value, decimals, unit };
+  }
+
+  function fmtGerman(value, decimals) {
+    const fixed = value.toFixed(decimals);
+    const parts = fixed.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return parts.length > 1 ? parts[0] + "," + parts[1] : parts[0];
+  }
+
+  // Zählt einen Zahl-Knoten von 0 auf den Zielwert (easeOut), ~700 ms.
+  function countUp(node, value, decimals, unit) {
+    if (!node) return;
+    const u = unit || "";
+    const finalText = fmtGerman(value, decimals) + u;
+    if (reducedMotion() || value <= 0) { node.textContent = finalText; return; }
+    node.classList.add("counting");
+    const dur = 720, t0 = performance.now();
+    function frame(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      node.textContent = fmtGerman(value * eased, decimals) + u;
+      if (p < 1) { requestAnimationFrame(frame); }
+      else { node.textContent = finalText; node.classList.remove("counting"); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Findet alle fett gesetzten Kernzahlen im Antworttext und zählt sie dezent hoch.
+  function animateCounts(scope) {
+    if (reducedMotion()) return; // Endwerte stehen bereits im DOM
+    scope.querySelectorAll("b").forEach((b) => {
+      if (b.children.length) return; // nur reine Textknoten
+      const p = parseGermanNumber(b.textContent);
+      if (!p) return;
+      const unit = p.unit ? " " + p.unit : "";
+      const prefix = p.sign; // „-"/„+" bleibt stehen, Betrag zählt hoch
+      b.classList.add("counting");
+      const dur = 760, t0 = performance.now(), final = prefix + fmtGerman(p.value, p.decimals) + unit;
+      (function step(now) {
+        const pr = Math.min(1, (now - t0) / dur);
+        const eased = 1 - Math.pow(1 - pr, 3);
+        b.textContent = prefix + fmtGerman(p.value * eased, p.decimals) + unit;
+        if (pr < 1) requestAnimationFrame(step);
+        else { b.textContent = final; b.classList.remove("counting"); }
+      })(performance.now());
+    });
   }
 
   // ---------- Helfer ----------

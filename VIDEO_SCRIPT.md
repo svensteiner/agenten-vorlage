@@ -31,8 +31,11 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 **Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"*
 **Sprecher:** „AI Studio verbindet Quartalsbericht, Liefervertrag und Rechnung —
 und erklärt das Warum, nicht nur das Was."
-**Bild:** Nachvollziehbarkeit-Schritte, drei Quellen mit Relevanz, Konfidenz 94 %.
-**Punkt (für den CFO):** die Antwort ist belegt und prüfbar.
+**Bild:** Antwortkopf zeigt **„⚡ Beantwortet in ~1,9 s"** (zählt hoch), die **Kernzahlen
+zählen hoch** (18,4 %, 31,6 %); dann Nachvollziehbarkeit-Schritte, drei Quellen mit Relevanz,
+Konfidenz 94 %.
+**Sprecher-Zusatz (optional):** „In unter zwei Sekunden — mit Beleg."
+**Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar.
 
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann
