@@ -6,8 +6,9 @@
 ## Mission: AI STUDIO — PILOT SPRINT (v2) · **Phase B (Video) — Kern-Deliverables fertig, wartet auf Sven**
 
 > **Phase B — Videoproduktion:** Alle drei Kern-Deliverables sind vorhanden —
-> [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md), [VIDEO_SCENES.md](VIDEO_SCENES.md) und neu
-> [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md) (narrensichere Aufnahme-Anleitung). **Gate B→C wartet
+> [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md), [VIDEO_SCENES.md](VIDEO_SCENES.md) und
+> [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md) (narrensichere Aufnahme-Anleitung); dazu neu die
+> **optionale** Untertiteldatei [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt). **Gate B→C wartet
 > allein auf Svens Aufnahme + Freigabe.** Bis dahin nur ändern, was Sven anmerkt.
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
@@ -37,6 +38,19 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase B · VIDEO_SUBTITLES.de.srt (2026-07-08) ≈ 92 %** — die in der Phase-B-Checkliste als „optional,
+  aber wertvoll" genannte **Untertiteldatei** ist erstellt. `VIDEO_SUBTITLES.de.srt`: **47 Cues**, deutsch,
+  direkt aus den `Sprecher`-Zeilen von [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) abgeleitet (je 1–2 Zeilen, alle
+  ≤ 55 Zeichen), monotone Zeitleiste **~0:00–4:22** (entspricht der manuellen Langfassung aller Szenen inkl.
+  optionaler Ressort-Beats 5b). Standard-SRT, in jedes Schnittprogramm/Player einlesbar; kurze Verweis-
+  Sektion „Untertitel (SRT)" in `VIDEO_SCRIPT.md` ergänzt (Timings = Richtwerte, beim finalen Schnitt an die
+  reale Sprechergeschwindigkeit angleichen; nicht gefilmte Cues entfernen). **Reine Handover-Datei** —
+  `prototype/` unverändert (Feature-Freeze gewahrt). Verifikation deterministisch (Node-Parser): 47 Cues,
+  Indizes lückenlos 1–47, alle Timecodes wohlgeformt, **keine Überlappung**, Ende > Start je Cue, kein Cue
+  > 2 Zeilen, keine Zeile > 55 Zeichen. **Damit sind alle Phase-B-Deliverables (inkl. optionaler) fertig —
+  Gate B→C wartet weiter nur auf Svens Aufnahme + Freigabe.** (Video-Reife bleibt 100 %; Gesamtfortschritt
+  konservativ 92 %.)
 
 - **Phase B · RECORDING_CHECKLIST.md (2026-07-08) ≈ 92 %** — die **letzte Phase-B-Kern-Deliverable**: eine
   narrensichere Aufnahme-Anleitung, mit der eine **nicht-technische Person** das Verkaufsvideo ohne

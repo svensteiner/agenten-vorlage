@@ -13,10 +13,15 @@
 > **Alle drei Kern-Deliverables (Skript · Shotlist · Checkliste) fertig.** Gate B→C wartet nur noch auf
 > **Svens Aufnahme + Freigabe** — bis dahin nur ändern, was Sven anmerkt.
 
-1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. Wartepunkt.
-2. **[B-Optional] SRT-Untertitel** aus dem Sprechertext (`VIDEO_SCRIPT.md`); **Skript/Shotlist** ggf. auf die 6er-Kern-Demo angleichen (nur falls Sven es wünscht — die Checkliste ist bereits die Aufnahme-Wahrheit).
+1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. Wartepunkt. (**Skript/Shotlist** ggf. auf die 6er-Kern-Demo angleichen — nur falls Sven es wünscht; die Checkliste ist bereits die Aufnahme-Wahrheit.)
 
 ## Erledigt
+
+- **[Phase B — optional] SRT-Untertitel** — `VIDEO_SUBTITLES.de.srt` erstellt: 47 Cues, deutsch, aus den
+  `Sprecher`-Zeilen von `VIDEO_SCRIPT.md` abgeleitet (1–2 Zeilen je Cue, ≤ 55 Zeichen), Zeitleiste
+  ~0:00–4:22 (manuelle Langfassung, inkl. optionaler 5b-Beats). Verweis-Sektion in `VIDEO_SCRIPT.md`
+  ergänzt (Timings = Richtwerte, beim Schnitt angleichen). Reine Handover-Datei, `prototype/` unverändert.
+  Deterministisch geparst (47 Cues, Indizes lückenlos, keine Überlappung, kein Cue > 2 Zeilen).
 
 - **[Phase B] Video-Deliverables** — `VIDEO_SCRIPT.md` (Sprechertext), `VIDEO_SCENES.md` (Shotlist) und
   neu **`RECORDING_CHECKLIST.md`**: narrensichere Aufnahme-Anleitung für Nicht-Techniker (Browser-Setup,

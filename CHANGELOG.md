@@ -2,6 +2,29 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-08 — `VIDEO_SUBTITLES.de.srt` (optionale, aber wertvolle Deliverable)
+
+**Die in der Phase-B-Checkliste als „optional, aber wertvoll" genannte Untertiteldatei ist erstellt** —
+eine fertige deutsche SRT aus dem Sprechertext von [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md). Damit sind alle
+Phase-B-Deliverables (Skript · Shotlist · Checkliste · **Untertitel**) vorhanden; das Gate B→C wartet
+weiterhin allein auf **Svens Aufnahme + Freigabe**.
+
+### Neu
+- **`VIDEO_SUBTITLES.de.srt`** — **47 Cues**, deutsch, direkt aus den `Sprecher`-Zeilen des Skripts
+  abgeleitet (je 1–2 Zeilen, alle ≤ 55 Zeichen). Monotone Zeitleiste ~0:00–4:22, entspricht der
+  **manuellen Langfassung** aller Szenen (inkl. optionaler Ressort-Beats 5b). Standardformat, in jedes
+  Schnittprogramm/Player einlesbar.
+
+### Verzahnung / Reuse
+- **Reine Handover-Datei** — kein Prototyp-Code berührt (`prototype/` unverändert, Feature-Freeze gewahrt).
+  Kurze Verweis-Sektion „Untertitel (SRT)" in [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) ergänzt (Fundort +
+  Hinweis: Timings sind Richtwerte, beim finalen Schnitt angleichen; nicht gefilmte Cues entfernen).
+
+### Verifikation
+- SRT deterministisch geparst (Node): **47 Cues**, Indizes lückenlos aufsteigend 1–47, alle Timecodes
+  wohlgeformt, **keine Überlappung** (Start ≥ vorheriges Ende), Ende > Start je Cue, **kein Cue > 2 Zeilen**,
+  **keine Zeile > 55 Zeichen**. Letztes Cue endet 00:04:21,500.
+
 ## Phase B — 2026-07-08 — `RECORDING_CHECKLIST.md` (letzte Kern-Deliverable der Videoproduktion)
 
 **Die dritte und letzte Phase-B-Kern-Deliverable ist erstellt** — eine narrensichere Aufnahme-Checkliste,

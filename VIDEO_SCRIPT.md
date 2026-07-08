@@ -182,3 +182,12 @@ Starker Schlussframe.
   echten Browser ohne „Bewegung reduzieren" aufnehmen, sonst zeigt es sofort den Endwert (Zyklus 24).
 - Cursor ruhig führen; nach dem Klick auf eine Quelle 2 Sek. auf dem Highlight verweilen.
 - Details der Kameraführung: [VIDEO_SCENES.md](VIDEO_SCENES.md).
+
+## Untertitel (SRT)
+- **Fertige Untertiteldatei:** [`VIDEO_SUBTITLES.de.srt`](VIDEO_SUBTITLES.de.srt) — 47 Cues, deutsch,
+  aus dem Sprechertext oben abgeleitet (1–2 Zeilen je Cue). Direkt in Schnittprogramm/Player einlesbar.
+- **Timings sind Richtwerte** (monotone Zeitleiste ~0:00–4:22, entspricht der **manuellen Langfassung**
+  aller Szenen inkl. optionaler Ressort-Beats 5b). Beim finalen Schnitt an die reale Sprechergeschwindigkeit
+  anpassen — die meisten Schnittprogramme erlauben das Verschieben ganzer Cue-Blöcke. Wird nur die
+  **kuratierte 6er-Kern-Demo** (siehe [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md)) aufgenommen, die
+  nicht gefilmten Cues (v. a. 5b, Cues 34–39) einfach entfernen.

@@ -17,16 +17,32 @@
 > **Feature-Freeze bleibt in Kraft** — keine neuen Prototyp-Features, nur noch das Verkaufsvideo
 > produktionsreif machen. Neue Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
 
-**Phase-B-Kern-Deliverables sind vollständig:** [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (Sprechertext),
-[VIDEO_SCENES.md](VIDEO_SCENES.md) (Shotlist) und neu [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md)
-(narrensichere Aufnahme-Anleitung für Nicht-Techniker). **Sven kann jetzt aufnehmen.**
+**Phase-B-Deliverables sind vollständig — inkl. der optionalen:** [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md)
+(Sprechertext), [VIDEO_SCENES.md](VIDEO_SCENES.md) (Shotlist), [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md)
+(narrensichere Aufnahme-Anleitung) und neu [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt) (deutsche
+Untertitel, 47 Cues). **Sven kann jetzt aufnehmen.**
 
 **Nächstes Item = Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" **nur** ändern, was
-er anmerkt — nichts anderes. Optionaler Rest (falls gewünscht): SRT-Untertitel aus dem Skript; Skript/
-Shotlist auf die reale 6er-Kern-Demo angleichen (die Checkliste ist bereits die Aufnahme-Wahrheit).
+er anmerkt — nichts anderes. Einziger noch optionaler Rest (falls Sven es wünscht): Skript/Shotlist auf die
+reale 6er-Kern-Demo angleichen (die Checkliste ist bereits die Aufnahme-Wahrheit).
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
-## Was in diesem Zyklus gebaut wurde (RECORDING_CHECKLIST.md)
+## Was in diesem Zyklus gebaut wurde (VIDEO_SUBTITLES.de.srt)
+
+**Die optionale, aber wertvolle Phase-B-Deliverable: eine fertige deutsche Untertiteldatei.** Skript,
+Shotlist und Checkliste standen; die Phase-B-Checkliste nennt zusätzlich „optional, aber wertvoll: SRT-
+Untertitel aus dem Skript". Neu:
+- **`VIDEO_SUBTITLES.de.srt`** — **47 Cues**, direkt aus den `Sprecher`-Zeilen von `VIDEO_SCRIPT.md`
+  abgeleitet (je 1–2 Zeilen, alle ≤ 55 Zeichen), monotone Zeitleiste **~0:00–4:22** (manuelle Langfassung
+  aller Szenen inkl. optionaler Ressort-Beats 5b). Standard-SRT — in jedes Schnittprogramm/Player einlesbar.
+- **Verweis-Sektion „Untertitel (SRT)" in `VIDEO_SCRIPT.md`** ergänzt: Fundort + Hinweis, dass die Timings
+  **Richtwerte** sind (beim finalen Schnitt an die reale Sprechergeschwindigkeit angleichen; wird nur die
+  kuratierte 6er-Kern-Demo gefilmt, die nicht gefilmten Cues — v. a. 5b, Cues 34–39 — entfernen).
+- **Reine Handover-Datei**, `prototype/` unverändert (Feature-Freeze gewahrt). Verifikation deterministisch
+  (Node-Parser): 47 Cues, Indizes lückenlos 1–47, alle Timecodes wohlgeformt, **keine Überlappung**, Ende >
+  Start je Cue, kein Cue > 2 Zeilen, keine Zeile > 55 Zeichen. Letztes Cue endet 00:04:21,500.
+
+## Was im Zyklus davor gebaut wurde (RECORDING_CHECKLIST.md)
 
 **Die letzte Phase-B-Kern-Deliverable — eine Aufnahme-Checkliste, an der eine nicht-technische Person nicht
 scheitern kann.** Skript und Shotlist existierten bereits; es fehlte die Anleitung, die einen Laien sicher

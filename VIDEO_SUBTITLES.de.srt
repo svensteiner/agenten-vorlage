@@ -1,0 +1,209 @@
+1
+00:00:00,000 --> 00:00:07,000
+Ihr Unternehmenswissen steckt in E-Mails,
+PDFs, Excel, SharePoint, Verträgen, Protokollen.
+
+2
+00:00:07,000 --> 00:00:12,500
+Niemand findet es, wenn es zählt.
+
+3
+00:00:12,500 --> 00:00:19,500
+Was, wenn Sie es einfach fragen könnten?
+
+4
+00:00:20,000 --> 00:00:27,000
+Und wie viel liegt eigentlich
+schon im Haus?
+
+5
+00:00:27,000 --> 00:00:31,500
+Ein Tastendruck durchsucht alles auf einmal —
+
+6
+00:00:31,500 --> 00:00:36,500
+ein Stichwort, und Sie sehen sofort,
+wo überall es vorkommt.
+
+7
+00:00:36,500 --> 00:00:41,500
+Eine ganz normale Frage — in Ihrer Sprache.
+
+8
+00:00:41,500 --> 00:00:47,000
+Und diese 98 Prozent? Kein Bauchgefühl —
+
+9
+00:00:47,000 --> 00:00:52,000
+das System zeigt, woraus sie sich ableiten.
+
+10
+00:00:52,000 --> 00:00:58,000
+AI Studio verbindet Quartalsbericht,
+Liefervertrag und Rechnung —
+
+11
+00:00:58,000 --> 00:01:03,000
+und erklärt das Warum, nicht nur das Was.
+
+12
+00:01:03,000 --> 00:01:09,500
+Und es rekonstruiert die ganze Kette —
+von der auslösenden Lieferanten-E-Mail
+
+13
+00:01:09,500 --> 00:01:15,500
+über die interne Weiterleitung an die Finanz
+
+14
+00:01:15,500 --> 00:01:22,000
+bis zum Mehrbudget, das der Vorstand beschließt.
+
+15
+00:01:22,000 --> 00:01:29,000
+Und wenn eine Zahl im Vorstandsbeschluss
+auftaucht — woher kommt sie eigentlich?
+
+16
+00:01:29,000 --> 00:01:34,000
+AI Studio zeigt die ganze Kette.
+
+17
+00:01:34,000 --> 00:01:41,000
+Von der Lieferanten-E-Mail über die interne
+Weiterleitung an die Finanz
+
+18
+00:01:41,000 --> 00:01:46,000
+bis zum Vorstandsbeschluss.
+
+19
+00:01:46,000 --> 00:01:51,000
+Jeder Schritt mit dem Originalbeleg.
+
+20
+00:01:51,000 --> 00:01:55,500
+Jede Aussage ist belegt.
+
+21
+00:01:55,500 --> 00:02:00,500
+Ein Klick öffnet die echte Rechnung —
+
+22
+00:02:00,500 --> 00:02:06,500
+mit Positionen, Menge, Netto,
+Umsatzsteuer und Bruttobetrag.
+
+23
+00:02:06,500 --> 00:02:12,500
+Und AI Studio gleicht sie automatisch mit
+Bestellung und Wareneingang ab:
+
+24
+00:02:12,500 --> 00:02:17,000
+gleiche Menge, gleiche Beträge.
+
+25
+00:02:17,000 --> 00:02:21,500
+Und wenn eine Lieferung mangelhaft ist?
+
+26
+00:02:21,500 --> 00:02:26,500
+Auch die Ausnahme ist lückenlos dokumentiert.
+
+27
+00:02:26,500 --> 00:02:32,500
+Zwölf Tonnen fielen bei der
+Wareneingangsprüfung durch —
+
+28
+00:02:32,500 --> 00:02:38,500
+die Abweichung wurde fristgerecht gerügt,
+der Lieferant hat gutgeschrieben.
+
+29
+00:02:38,500 --> 00:02:43,500
+Elftausend Euro zurück, jeder Schritt mit Beleg.
+
+30
+00:02:43,500 --> 00:02:49,500
+AI Studio findet, was sonst durchrutscht —
+inklusive Fristen.
+
+31
+00:02:49,500 --> 00:02:54,500
+Es geht nicht nur um Zahlen im Rechnungswesen.
+
+32
+00:02:54,500 --> 00:03:00,500
+Auch Nachhaltigkeit wird belegbar —
+mit Reduktionspfad und Zielabgleich,
+
+33
+00:03:00,500 --> 00:03:05,000
+und einer ehrlich benannten Lücke.
+
+34
+00:03:05,000 --> 00:03:10,000
+Und es endet nicht bei der Finanzabteilung.
+
+35
+00:03:10,000 --> 00:03:15,500
+Der Einkauf sieht in Sekunden sein Klumpenrisiko —
+
+36
+00:03:15,500 --> 00:03:21,500
+ein Lieferant, fast ein Viertel des Volumens,
+ein Werkstoff aus einer einzigen Quelle.
+
+37
+00:03:21,500 --> 00:03:26,500
+Und die Personalabteilung?
+Dieselbe Frage, dieselbe belegte Antwort.
+
+38
+00:03:26,500 --> 00:03:33,000
+Und die Frage vor jeder Aufsichtsratssitzung —
+sind wir sauber beim Datenschutz?
+
+39
+00:03:33,000 --> 00:03:39,500
+Dasselbe System antwortet: konform,
+zwei terminierte Auflagen, nichts beschönigt.
+
+40
+00:03:39,500 --> 00:03:44,500
+Und die wichtigste Frage:
+Sieht dann jeder alles?
+
+41
+00:03:44,500 --> 00:03:47,500
+Nein.
+
+42
+00:03:47,500 --> 00:03:52,500
+AI Studio respektiert Ihre
+bestehenden Berechtigungen.
+
+43
+00:03:52,500 --> 00:03:59,000
+Vertrauliche Vorstandsunterlagen bleiben verborgen —
+sie fließen nicht einmal in die Antwort ein.
+
+44
+00:03:59,000 --> 00:04:05,000
+Das System erfindet nichts und zeigt nichts,
+was Sie nicht sehen dürfen.
+
+45
+00:04:05,000 --> 00:04:11,000
+In Sekunden ein Vorstands-Briefing —
+über alle Abteilungen hinweg.
+
+46
+00:04:11,000 --> 00:04:16,000
+Und mit einem Klick liegt es beim Vorstand.
+
+47
+00:04:16,000 --> 00:04:21,500
+AI Studio. Ihr Wissen. Sofort nutzbar.
