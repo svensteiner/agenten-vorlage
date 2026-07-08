@@ -39,6 +39,7 @@
     "Mängelrüge":           { cat: "beleg", stamp: { text: "MÄNGELRÜGE", tone: "warn" } },
     "Gutschrift":           { cat: "beleg", extIssuer: true, stamp: { text: "GUTSCHRIFT", tone: "ok" } },
     "Nachtragsangebot":     { cat: "beleg", stamp: { text: "NACHTRAG", tone: "ink" } },
+    "Auftragsbestätigung":  { cat: "beleg", extIssuer: true, stamp: { text: "BEAUFTRAGT", tone: "ok" } },
     "E-Mail":               { cat: "email" },
   };
   const defaultSkin = { cat: "bericht" };
@@ -123,7 +124,10 @@
       if (token !== demo.token) return;
       await ask(list[i].question);
       if (token !== demo.token) return;
-      await sleep(i === list.length - 1 ? 1600 : 2800); // Lesepause
+      // Letztes Szenario = Money-Shot: längere Schluss-Pause, damit sich der
+      // empfohlene Agent hands-free selbst dazubucht (~1,25 s Wartezeit + ~0,9 s
+      // Einrichtung) und die grüne „Aktiviert"-Bestätigung sichtbar stehen bleibt.
+      await sleep(i === list.length - 1 ? 3400 : 2800); // Lesepause
     }
     if (token === demo.token) resetDemoUi();
   }
@@ -384,20 +388,27 @@
   async function streamAnswer(wrap, answer) {
     const msg = el("div", "msg");
     const card = el("div", "answer");
+    // Konfidenz nur zeigen, wenn die Antwort eine ist (Wissens-Lookup). Der
+    // Money-Shot („Agenten dazubuchen") ist eine Buchungs-Ansicht ohne Quellen →
+    // keine Konfidenzzahl, kein Herleitungs-Tooltip.
+    const hasConf = typeof answer.confidence === "number";
     const confCls = answer.confidence >= 90 ? "" : "mid";
     // Kopf: „Beantwortet in X,X s"-Signal (Tempo) links vom Konfidenz-Meter.
     const secs = answerSeconds(answer);
     // Hover/Focus am Konfidenz-Meter erklärt, woraus sich die Prozentzahl speist.
-    const pop = buildConfPop(answer);
+    const pop = hasConf ? buildConfPop(answer) : "";
+    const confHtml = hasConf
+      ? `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
+        `<span class="conf-meter">Konfidenz` +
+        `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
+        `<b>${answer.confidence}%</b>` +
+        (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
+        `</span>${pop}</span>`
+      : "";
     card.appendChild(el("div", "head",
       `<span class="ai">✦</span><span class="who">AI Studio</span>` +
       `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">0,0 s</b></span>` +
-      `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
-      `<span class="conf-meter">Konfidenz` +
-      `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
-      `<b>${answer.confidence}%</b>` +
-      (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
-      `</span>${pop}</span>`));
+      confHtml));
     const textEl = el("div", "text");
     textEl.classList.add("cursor");
     card.appendChild(textEl);
@@ -411,9 +422,11 @@
     // Konfidenz-Meter „lebendig": die Zahl zählt hoch UND der Balken läuft von 0
     // auf den Zielwert mit (statt hart zu springen) — die letzte Bewegungs-Politur
     // im Antwortkopf. prefers-reduced-motion → beide sofort auf den Endwert.
-    countUp($(".conf-meter > b", card), answer.confidence, 0, "%");
-    animateBar($(".conf-bar i", card), 760);
-    if (pop) wireConfPopBars(card);
+    if (hasConf) {
+      countUp($(".conf-meter > b", card), answer.confidence, 0, "%");
+      animateBar($(".conf-bar i", card), 760);
+      if (pop) wireConfPopBars(card);
+    }
 
     // Text zeichenweise „tippen" (HTML-sicher: wir tippen den fertigen HTML-String schrittweise)
     await typeHtml(textEl, answer.text);
@@ -430,6 +443,7 @@
     appendRelated(card, answer.related);
     appendFollowups(card, answer.followups);
     appendActions(card, answer);
+    appendAgents(card, answer);
     revealBlocks(card);
     scrollBottom();
   }
@@ -651,6 +665,81 @@
     }
     row.replaceWith(done);
     scrollBottom();
+  }
+
+  // ---------- Money-Shot: „Agenten dazubuchen" ----------
+  // Der Abschluss der Story und der Verkaufsmoment des Abos: Die Wissensbasis
+  // steht — jetzt mietet der Kunde spezialisierte KI-Agenten obendrauf, wie neue
+  // Mitarbeiter, monatlich kündbar. Rein UI (keine echte Buchung). Datengetrieben
+  // aus answer.agents; erscheint nur beim Money-Shot-Szenario. In der Geführten
+  // Demo bucht sich der empfohlene Agent hands-free selbst — der Payoff im Video.
+  function appendAgents(card, answer) {
+    if (!answer.agents || !answer.agents.length) return;
+    const b = el("div", "block agents");
+    b.appendChild(el("div", "block-title", "🤝 Agenten dazubuchen — wie neue Mitarbeiter"));
+    const grid = el("div", "agent-grid");
+    answer.agents.forEach((a) => {
+      const item = el("div", "agent-card" + (a.recommended ? " rec" : "") + (a.active ? " on" : ""));
+      const badge = a.active
+        ? `<span class="ag-badge active">● Aktiv</span>`
+        : (a.recommended ? `<span class="ag-badge rec">Empfohlen</span>` : "");
+      item.innerHTML =
+        `<div class="ag-top">` +
+        `<span class="ag-ic">${a.icon}</span>` +
+        `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+        `<span class="ag-role">${escapeHtml(a.role)}</span></span>` +
+        badge +
+        `</div>` +
+        `<div class="ag-desc">${escapeHtml(a.desc)}</div>` +
+        `<div class="ag-foot"><span class="ag-price">${escapeHtml(a.price)}` +
+        (a.active ? `` : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
+      const foot = $(".ag-foot", item);
+      if (!a.active) {
+        const btn = el("button", "ag-book", `<span class="ag-plus">＋</span>Dazubuchen`);
+        btn.onclick = () => bookAgent(item, a);
+        foot.appendChild(btn);
+      } else {
+        foot.insertAdjacentHTML("beforeend", `<span class="ag-live">✓ Teil Ihres Teams</span>`);
+      }
+      grid.appendChild(item);
+    });
+    b.appendChild(grid);
+    if (answer.priceNote) b.appendChild(el("div", "ag-note", escapeHtml(answer.priceNote)));
+    card.appendChild(b);
+
+    // Hands-free-Payoff: In der Geführten Demo bucht sich der empfohlene Agent
+    // nach einer kurzen Lesepause selbst → der „dazubuchen"-Moment ist im Video,
+    // ohne dass jemand klicken muss. Außerhalb der Demo bleibt es interaktiv.
+    if (demo.running) {
+      const recCard = $(".agent-card.rec", b);
+      const rec = answer.agents.find((a) => a.recommended && !a.active);
+      if (recCard && rec) scheduleAutoBook(recCard, rec);
+    }
+  }
+
+  // Spielt die Einrichtungs-Animation ab und ersetzt den Button durch eine grüne
+  // Aktiv-Bestätigung — reuse der Erfolgs-Bildsprache aus dem Aktions-Block.
+  async function bookAgent(item, agent) {
+    if (item.dataset.booked === "1") return;
+    item.dataset.booked = "1";
+    const foot = $(".ag-foot", item);
+    const btn = $(".ag-book", foot);
+    if (btn) btn.replaceWith(el("span", "ag-pending", `<span class="spinner"></span>Agent wird eingerichtet…`));
+    await sleep(reducedMotion() ? 0 : 900);
+    item.classList.add("on", "just-booked");
+    const pend = $(".ag-pending", foot);
+    const done = el("span", "ag-live",
+      `✓ Aktiviert · ab sofort Teil Ihres Teams · erste Auswertung heute Abend`);
+    if (pend) pend.replaceWith(done); else foot.appendChild(done);
+    scrollBottom();
+  }
+
+  // Token-gesicherter Auto-Buchungs-Beat für die Geführte Demo.
+  async function scheduleAutoBook(item, agent) {
+    const token = demo.token;
+    await sleep(reducedMotion() ? 200 : 1250);
+    if (!demo.running || token !== demo.token) return;
+    await bookAgent(item, agent);
   }
 
   // ---------- Matching ----------

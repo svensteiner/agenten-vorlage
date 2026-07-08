@@ -4,18 +4,42 @@
 > **Prototyp-Mission** (AI STUDIO – PROTOTYPE DEVELOPMENT MODE). Am Ende jedes
 > Zyklus fortschreiben. **Nie neu beginnen — immer erweitern.**
 
-- **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
-  Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 24 — **Konfidenz-/Relevanz-Balken laufen mit hoch** (letzte Bewegungs-Politur):
-  Beim Einblenden einer Antwort läuft der **Balken** des Konfidenz-Meters jetzt — passend zum Zahlen-
-  Count-up — **von 0 auf den Zielwert** (~760 ms, easeOutCubic) statt hart zu springen; die Zahl im Kopf
-  zählt zusätzlich mit hoch. Die **Relevanz-Balken** in der Konfidenz-Herleitung (Popover) laufen beim
-  ersten Öffnen einmalig hoch. Rein additiv: ein Helfer `animateBar()` + `wireConfPopBars()` in `app.js`,
-  ein `will-change`-Hinweis in `styles.css`. `prefers-reduced-motion` → sofort auf den Endwert.
-  `data.js`/`index.html` unverändert.
+> ⚠ **MISSION-WECHSEL (2026-07-08):** Es gilt jetzt **AI STUDIO — PILOT SPRINT MODE (v2)**
+> ([MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md)) — drei Phasen bis zur Ziellinie:
+> **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Feature-Freeze in Phase A:** keine neuen
+> Szenarien/Module/Dokumente außer den Phase-A-Checklistenpunkten; neue Ideen →
+> [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md). Wir sind in **Phase A**. (Die alte „PROTOTYPE
+> DEVELOPMENT MODE"-Zeile oben ist historisch; die Zyklus-Historie unten bleibt gültig.)
+
+## ► Nächster Zyklus (Phase A — oberstes Item)
+
+**Geführte Demo auf ≤ 4 min bringen.** Mit dem Money-Shot sind es **17 Szenarien** + Such-Opener — das
+überschreitet hands-free voraussichtlich das **4-Minuten-Gate** der Phase-A-Checkliste. Eine **kuratierte
+Kern-Reihenfolge** in `startDemo()` definieren (Untermenge der `SCENARIOS`), je Szenario ≤ 25 s, die
+**mit dem Money-Shot `agent-dazubuchen` endet**. Kein neues Feature — nur Auswahl/Reihenfolge. Danach:
+**Ein-Klick „Demo zurücksetzen"** für wiederholbare Video-Takes. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+
+- **Mission (Demo-Teil):** herausragender Kunden-Demo-Prototyp fürs Verkaufsvideo — jetzt im
+  **Freeze/Feinschliff**, damit Sven aufnehmen kann.
+- **Letzter Zyklus:** **Phase A — Money-Shot „Agenten dazubuchen"** (Demo-Finale, verkauft das Abo):
+  neues Abschluss-Szenario `agent-dazubuchen` (letzte Szene der Geführten Demo) mit Agenten-Marktplatz
+  (`answer.agents` + Renderer `appendAgents()`): 4 Karten — Auskunfts-Agent *aktiv/inklusive*,
+  **Reporting-Agent 400 € empfohlen**, Rechnungs-Agent 600 €, Vertrags-Agent 500 € — je „＋ Dazubuchen"
+  → grüne „✓ Aktiviert"-Bestätigung; Preis-Pfad-Fußzeile (Audit 149 € → Wissensbasis ab 5.000 € → Agent
+  ab 400 €/Monat). In der Geführten Demo bucht sich der empfohlene Agent **hands-free** selbst (token-
+  gesichert; letzte Lesepause 1600 → 3400 ms). Antwortkopf **ohne** Konfidenz-Meter (`hasConf`-Guard in
+  `streamAnswer()` — Buchungsansicht ohne Quellen). Zusätzlich Rest-WIP aus dem alten Modus
+  abgeschlossen: `auftrag-nordwind-beta` (Auftragsbestätigung, extIssuer/BEAUFTRAGT) → Betas +0,4 Mio. €
+  jetzt **beidseitig** belegt (4. Quelle in `projekt-beta`). Rein additiv in `data.js`/`app.js`/
+  `styles.css`; verifiziert (29 Docs, 17 Szenarien, 0 kaputte Refs; DOM/CSS live: 4 Karten, Grid
+  2-spaltig @1920×1080, gebuchte Karte grün, Kopf ohne Meter, keine Konsolenfehler).
+- **Vorheriger Zyklus:** Zyklus 24 — **Konfidenz-/Relevanz-Balken laufen mit hoch** (Bewegungs-Politur):
+  der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
+  springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
+  (`animateBar()`/`wireConfPopBars()`).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 89 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Prototyp-Baufortschritt:** **≈ 90 %**; Mission steht am Beginn von **Phase A** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 

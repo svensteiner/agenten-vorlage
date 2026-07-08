@@ -3,6 +3,18 @@
 > Ideen, die **außerhalb** der aktuellen Prototyp-Mission liegen. Hier geparkt, damit
 > der Fokus auf der Kundendemonstration bleibt. **Nicht in Phase 1 bearbeiten.**
 
+## Nach dem Feature-Freeze / Tiefe (nicht in Phase A)
+- **Entscheidungskette an die Materialkosten-Antwort hängen** (vorm. OPEN_ITEMS P5): `answer.chain =
+  DECISION_CHAIN` auch an `materialkosten` — wiederholt den stärksten CFO-Moment am Einstiegs-Beat.
+  Achtung Video-Reihenfolge (Kette erschiene zweimal). Reine Tiefe, kein Freeze-Item.
+- **Latenter Bug `answerCard` (undefiniert):** `renderChatView()` ruft beim **Replay** vorhandener
+  Chat-Antworten (nach Modulwechsel Wissen → anderes Modul → zurück, mit gefülltem Verlauf)
+  `answerCard(m.answer, m.question)` auf — die Funktion ist in `app.js` **nirgends definiert** →
+  ReferenceError. Trifft die Geführte Demo nicht (sie leert `chatState` und bleibt in „Wissen"), aber
+  ein manuelles Herumklicken im Video könnte es auslösen. Fix: `answerCard()` als nicht-streamende
+  Variante von `streamAnswer()` ergänzen (Kopf + Blöcke ohne Tipp-/Zähl-Animation, inkl.
+  `appendAgents`). Kleiner, additiver Fix — Kandidat, sobald die Phase-A-Gates sonst grün sind.
+
 ## Enterprise-Datenplattform (Phase 2)
 - Echte Konnektoren zu SharePoint, SAP, Fileserver, Exchange (Ingestion-Pipeline).
 - Echtes RAG: Embeddings, Vektor-Index, hybride Retrieval-Pipeline.

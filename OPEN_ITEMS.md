@@ -1,21 +1,42 @@
 # OPEN_ITEMS — priorisierte Aufgabenliste (Prototyp)
 
-> Eine Liste, absteigend nach Wirkung auf die Kundendemonstration. Der nächste
-> Zyklus nimmt das **oberste offene** Item. Erledigtes nach unten verschieben.
+> **MISSION-WECHSEL:** Seit 2026-07-08 gilt **AI STUDIO — PILOT SPRINT MODE (v2)**
+> ([MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md)). Feature-Freeze in **Phase A**:
+> keine neuen Szenarien/Module/Dokumente außer den Punkten der Phase-A-Checkliste.
+> Der nächste Zyklus nimmt das **oberste offene** Item. Erledigtes nach unten.
 
-## Offen (nach Priorität)
+## Offen (Phase A — Demo-Freeze, nach Priorität)
 
-1. **[P4] Kunden-Beauftragungsbeleg zu NA-2026-0037** — Nordwind bestätigt den Nachtrag schriftlich →
-   Angebot → Auftrag-Paar, beidseitig belegte +0,4 Mio. €. Reuse `paper-email`/`paper-beleg` (Typ
-   „Auftragsbestätigung"), Aussteller Nordwind (extIssuer), 4. Quelle in `projekt-beta`. → **oberstes Item
-   für den nächsten Zyklus** (schließt den einen offenen kaufmännischen Loop).
-2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
-   `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
-   Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
-   Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
+1. **[A-Timing] Geführte Demo auf ≤ 4 min bringen** — mit dem Money-Shot sind es **17 Szenarien** +
+   Such-Opener; hands-free überschreitet das voraussichtlich das 4-Minuten-Gate. Eine **kuratierte
+   Kern-Reihenfolge** (o. ä.) definieren, die mit dem Money-Shot **endet** und je Szenario ≤ 25 s bleibt.
+   Kein neues Feature — nur Auswahl/Reihenfolge in `startDemo()`/Daten. → **oberstes Item.**
+2. **[A-Reset] Ein-Klick „Demo zurücksetzen"** — sauberer Startzustand (Verlauf leeren, zurück auf Hero)
+   für **wiederholbare Video-Takes**. Reuse `resetDemoUi()` + `chatState`-Clear; ein Topbar-Button.
 
 ## Erledigt
 
+- **[Phase A] Money-Shot „Agenten dazubuchen" (Demo-Finale)** — neues Abschluss-Szenario
+  `agent-dazubuchen` (letztes in `SCENARIOS` → automatisch **letzte** Szene der Geführten Demo): Die
+  Wissensbasis steht, jetzt mietet der Kunde **digitale Mitarbeiter** obendrauf. `answer.agents`-Block +
+  Renderer `appendAgents()`: 4 Agenten-Karten (Auskunfts-Agent *inklusive/aktiv*, **Reporting-Agent
+  400 € empfohlen**, Rechnungs-Agent 600 €, Vertrags-Agent 500 €), „＋ Dazubuchen"-Button → grüne
+  „✓ Aktiviert"-Bestätigung; Preis-Pfad-Fußzeile (Audit 149 € → Wissensbasis ab 5.000 € → Agent ab
+  400 €/Monat). In der Geführten Demo **bucht sich der empfohlene Agent hands-free selbst** (token-
+  gesichert; Schluss-Pause 1600 → 3400 ms). Antwortkopf ohne Konfidenz-Meter (Buchungsansicht, keine
+  Quellen; `hasConf`-Guard in `streamAnswer()`). Rein additiv in `data.js`/`app.js`/`styles.css`.
+  Verifiziert: `node --check` ok, Node-VM (29 Docs, 17 Szenarien, 0 kaputte Refs, Money-Shot letzt);
+  live (DOM/CSS gegen reale Daten): 4 Karten korrekt, 3 Buchen-Buttons + 1 Aktiv-Badge + 1 Empfohlen-
+  Badge, Grid 2-spaltig (377 px) bei 1920×1080, Buchen-Button Marken-Indigo, gebuchte Karte grün, Kopf
+  **ohne** Konfidenz-Meter, keine Konsolenfehler. (Streaming-/Screenshot-Pfad harness-throttled — daher
+  DOM/CSS/Daten-basiert, wie in den Vorzyklen.)
+- **[Phase A / vorm. P4] Kunden-Beauftragung NA-2026-0037** — neues Dokument `auftrag-nordwind-beta`
+  (Typ „Auftragsbestätigung", extIssuer, BEAUFTRAGT-Stempel): Nordwind beauftragt den Nachtrag
+  schriftlich (Bestellung NW-BEST-2026-0091, 400.000 € netto / 476.000 € brutto), Termin Q4 2026
+  akzeptiert, Pönale für den Scope-Change ausgesetzt. Als **4. Quelle** (80 %) + Reasoning-Schritt +
+  Folgefrage in `projekt-beta`; die +0,4 Mio. € sind jetzt **beidseitig** belegt (Angebot + Auftrag).
+  Reuse `paper-beleg`/`lineItems`; ein `DOC_SKINS`-Eintrag in `app.js`. (War Rest-WIP aus dem alten
+  Modus, mit diesem Zyklus abgeschlossen & verifiziert.)
 - **[Zyklus 24] Konfidenz-/Relevanz-Balken laufen mit hoch** — der Meter-Balken läuft beim Einblenden in
   ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu springen; die Konfidenz-Zahl im Kopf zählt
   synchron mit; die drei Popover-Relevanz-Balken laufen beim ersten Öffnen einmalig hoch (640 ms). Neuer

@@ -3,7 +3,15 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 89 % (Ende Zyklus 24)
+## Mission: AI STUDIO — PILOT SPRINT (v2) · aktuell **Phase A (Demo-Freeze)**
+
+> Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
+> Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. Der Demo-Prototyp selbst ist reif
+> (~90 %); die Mission steht am Beginn von **Phase A**. Phase-A-Checkliste (Stand jetzt):
+> ✅ Money-Shot „Agenten dazubuchen" (Finale) · ✅ Deutsch durchgängig · ✅ belegte Antworten/
+> Konfidenz/Kette · ⬜ Geführte Demo ≤ 4 min (17 Szenarien → kuratieren) · ⬜ Ein-Klick Demo-Reset.
+
+## Prototyp-Baufortschritt: ≈ 90 % (Ende Money-Shot-Zyklus)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -22,6 +30,23 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase A · Money-Shot (2026-07-08) ≈ 90 %** — **„Agenten dazubuchen" als Demo-Finale** (der
+  Verkaufsmoment des Abos, bislang das größte Phase-A-Loch). Neues Abschluss-Szenario
+  `agent-dazubuchen` (letztes in `SCENARIOS` → automatisch letzte Szene der Geführten Demo): Die
+  Wissensbasis steht — jetzt mietet der Kunde **digitale Mitarbeiter** obendrauf. Neuer `answer.agents`-
+  Block + Renderer `appendAgents()`: 4 Agenten-Karten (Auskunfts-Agent inklusive/aktiv, **Reporting-
+  Agent 400 € empfohlen**, Rechnungs-Agent 600 €, Vertrags-Agent 500 €), „＋ Dazubuchen" → grüne
+  „✓ Aktiviert"-Bestätigung; Preis-Pfad-Fußzeile (Audit 149 € → Wissensbasis ab 5.000 € → Agent ab
+  400 €/Monat). In der Geführten Demo **bucht sich der empfohlene Agent hands-free selbst** (token-
+  gesichert; letzte Lesepause 1600 → 3400 ms). Antwortkopf ohne Konfidenz-Meter (Buchungsansicht ohne
+  Quellen; `hasConf`-Guard in `streamAnswer()`). Zusätzlich der Rest-WIP aus dem alten Modus
+  abgeschlossen: `auftrag-nordwind-beta` (Auftragsbestätigung, extIssuer/BEAUFTRAGT) → Betas +0,4 Mio. €
+  jetzt **beidseitig** belegt (4. Quelle in `projekt-beta`). Rein additiv in `data.js`/`app.js`/
+  `styles.css`. Verifiziert: `node --check` ok, Node-VM (29 Docs, 17 Szenarien, 0 kaputte Refs); live
+  (DOM/CSS): 4 Karten, 3 Buchen-Buttons + Aktiv/Empfohlen-Badges, Grid 2-spaltig (377 px) @1920×1080,
+  gebuchte Karte grün, Kopf ohne Konfidenz-Meter, keine Konsolenfehler. (Streaming-/Screenshot-Pfad
+  harness-throttled → DOM/CSS/Daten-basiert, wie in den Vorzyklen.)
 
 - **Zyklus 24 (2026-07-08) ≈ 89 %** — Konfidenz-/Relevanz-Balken laufen mit hoch (letzte Bewegungs-Politur):
   Beim Einblenden einer Antwort läuft der Balken des Konfidenz-Meters jetzt — passend zum Zahlen-Count-up —

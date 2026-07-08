@@ -2,6 +2,41 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase A — 2026-07-08 — Money-Shot „Agenten dazubuchen" (Demo-Finale) 🤝
+
+**Mission-Wechsel auf AI STUDIO — PILOT SPRINT (v2); Phase A (Demo-Freeze).** Das größte Phase-A-Loch war
+der **Verkaufsmoment des Abos**: der Moment, in dem der Kunde sieht, wie er **einen weiteren Agenten
+dazubucht — wie einen neuen Mitarbeiter**. Jetzt schließt die Geführte Demo genau damit.
+
+### Neu
+- **Abschluss-Szenario `agent-dazubuchen`** (letztes in `SCENARIOS` → automatisch **letzte Szene** der
+  Geführten Demo): „Kann ich einen weiteren Agenten dazubuchen?" Die Wissensbasis steht — jetzt mietet
+  der Kunde **digitale Mitarbeiter** obendrauf.
+- **Agenten-Marktplatz** (`answer.agents` + Renderer `appendAgents()`): 4 Karten — **Auskunfts-Agent**
+  (inklusive/aktiv), **Reporting-Agent 400 €/Monat (empfohlen)**, **Rechnungs-Agent 600 €**,
+  **Vertrags-Agent 500 €**; je „＋ Dazubuchen"-Button → kurze Einrichtung → grüne **„✓ Aktiviert · Teil
+  Ihres Teams"**-Bestätigung. Preis-Pfad-Fußzeile: Audit 149 € → Wissensbasis ab 5.000 € → Agent ab
+  400 €/Monat.
+- **Hands-free-Payoff:** In der Geführten Demo **bucht sich der empfohlene Agent selbst** (token-
+  gesichert); die Schluss-Pause der Demo wächst 1600 → 3400 ms, damit die „Aktiviert"-Bestätigung
+  sichtbar stehen bleibt.
+- **Beauftragung Nordwind** (`auftrag-nordwind-beta`, Typ „Auftragsbestätigung", BEAUFTRAGT-Stempel):
+  Nordwind beauftragt den Nachtrag schriftlich → Betas **+0,4 Mio. €** sind jetzt **beidseitig** belegt
+  (Angebot + Auftrag; 4. Quelle in `projekt-beta`). *(Rest-WIP aus dem alten Modus, hier abgeschlossen.)*
+
+### Verzahnung / Reuse
+- **Rein additiv:** neuer `answer.agents`-Block + `appendAgents()`/`bookAgent()`/`scheduleAutoBook()` in
+  `app.js`, `.block.agents`-Stile in `styles.css`, Szenario + Doc in `data.js`. Antwortkopf zeigt für die
+  **Buchungsansicht kein Konfidenz-Meter** (`hasConf`-Guard in `streamAnswer()`) — außerhalb des Money-
+  Shots unverändert. Bestehender Antwortpfad, Skins und alle Szenarien unangetastet.
+
+### Verifiziert
+- `node --check` ok; Node-VM gegen `data.js`: **29 Docs, 17 Szenarien, 0 kaputte Referenzen**, Money-Shot
+  ist die letzte Szene (4 Agenten: 1 empfohlen, 1 aktiv). Live (DOM/CSS gegen reale Daten @1920×1080):
+  4 Karten, 3 Buchen-Buttons + Aktiv/Empfohlen-Badge, **Grid 2-spaltig (377 px)**, Buchen-Button Marken-
+  Indigo, gebuchte Karte grün, Antwortkopf **ohne** Konfidenz-Meter, **keine Konsolenfehler**. (Streaming-/
+  Screenshot-Pfad im Headless-Harness gedrosselt → DOM/CSS/Daten-basiert verifiziert, wie in den Vorzyklen.)
+
 ## Zyklus 24 — 2026-07-08 — Konfidenz-/Relevanz-Balken laufen mit hoch 📈
 
 **Die Antwort „springt" nicht mehr — sie wächst.** Beim Einblenden zählten Tempo-Signal und Kernzahlen
