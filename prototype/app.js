@@ -702,11 +702,61 @@
 
     const body = $("#vBody");
     body.innerHTML = "";
+    // Entscheidungskette: gehört dieses Dokument zum Beleg-Pfad, bekommt der
+    // Viewer oben einen kompakten „Schritt n von 3"-Navigator (Vor/Zurück).
+    const chainIdx = chainStepIndex(docId);
+    if (chainIdx >= 0) body.appendChild(buildChainNav(chainIdx));
     body.appendChild(doc.locked ? buildLockedPaper(doc) : buildPaper(doc, highlightQuote));
     body.scrollTop = 0;
 
     $("#overlay").classList.add("open");
     $("#viewer").classList.add("open");
+  }
+
+  // Position eines Dokuments innerhalb der Entscheidungskette (–1 = nicht Teil).
+  function chainStepIndex(docId) {
+    if (typeof DECISION_CHAIN === "undefined" || !DECISION_CHAIN.steps) return -1;
+    return DECISION_CHAIN.steps.findIndex((s) => s.docId === docId);
+  }
+
+  // Kompakter Ketten-Navigator im Viewer: macht die drei Belege der
+  // Entscheidungskette (Lieferant → Einkauf/CFO → Vorstand) direkt beim Lesen
+  // navigierbar — „Schritt n von 3" mit Vor/Zurück und anklickbaren Punkten.
+  // Datengetrieben aus DECISION_CHAIN, dieselbe Quelle wie der Chat-Block.
+  function buildChainNav(idx) {
+    const steps = DECISION_CHAIN.steps;
+    const nav = el("div", "vchain");
+
+    const head = el("div", "vc-head");
+    head.innerHTML =
+      `<span class="vc-title">⛓ Entscheidungskette</span>` +
+      `<span class="vc-count">Schritt <b>${idx + 1}</b> von ${steps.length}</span>`;
+    nav.appendChild(head);
+
+    const track = el("div", "vc-track");
+    steps.forEach((step, i) => {
+      const cls = "vc-step" + (i === idx ? " current" : "") + (i < idx ? " done" : "");
+      const node = el("button", cls,
+        `<span class="vc-dot"></span>` +
+        `<span class="vc-lab"><span class="vc-date">${escapeHtml(step.date)}</span>` +
+        `<span class="vc-actor">${escapeHtml(step.actor)}</span></span>`);
+      node.onclick = () => { if (i !== idx) openViewer(step.docId); };
+      if (i === idx) node.setAttribute("aria-current", "step");
+      track.appendChild(node);
+    });
+    nav.appendChild(track);
+
+    const foot = el("div", "vc-foot");
+    const prev = el("button", "vc-nav" + (idx === 0 ? " disabled" : ""), "← Voriger Beleg");
+    const next = el("button", "vc-nav" + (idx === steps.length - 1 ? " disabled" : ""), "Nächster Beleg →");
+    if (idx > 0) prev.onclick = () => openViewer(steps[idx - 1].docId);
+    if (idx < steps.length - 1) next.onclick = () => openViewer(steps[idx + 1].docId);
+    foot.appendChild(prev);
+    foot.appendChild(el("span", "vc-here", escapeHtml(steps[idx].label)));
+    foot.appendChild(next);
+    nav.appendChild(foot);
+
+    return nav;
   }
 
   // Gesperrtes Dokument: zeigt bewusst KEINEN Inhalt, sondern eine

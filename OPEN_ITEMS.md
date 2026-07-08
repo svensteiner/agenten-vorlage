@@ -5,17 +5,26 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Kette an die Materialkosten-Antwort hängen** — den neuen `answer.chain`-Baustein auch an
-   `materialkosten` anfügen (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat.
-   Achtung Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten + budget-herkunft) —
-   ggf. einen Beat aus der „Geführten Demo" trennen. → oberstes Item für den nächsten Zyklus.
-2. **[P5] Timeline im Dokumentenviewer** — kompakte „Schritt n von 3"-Leiste mit Vor/Zurück für die
-   E-Mail-Kette, damit der Thread auch beim Einzeldokument-Lesen navigierbar ist.
-3. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
-4. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+1. **[P5] Ein weiteres Ressort** (z. B. IT-Sicherheit/Datenschutz-DSGVO) mit eigenem Szenario +
+   1–2 Dokumenten in `data.js` → hebt die zwei schwächsten Bereiche (Demo-Firma & Szenarien-Breite).
+   Reuse bestehender Tabellen-/Skin-Renderer, rein additiv. → oberstes Item für den nächsten Zyklus.
+2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+   `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
+   Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
+   Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
+3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 15] Ketten-Navigator im Dokumentenviewer** — kompakter „⛓ Entscheidungskette · Schritt n
+  von 3"-Navigator, der automatisch bei den drei Ketten-Belegen (Lieferanten-E-Mail → Weiterleitung →
+  Vorstandsprotokoll) oben im Viewer erscheint: horizontaler Stepper (Datum/Akteur, aktueller Schritt
+  in Marken-Farbe, erledigte markiert) + „← Voriger / Nächster Beleg →"; Punkte und Buttons öffnen
+  direkt den jeweiligen Beleg. Nur bei Ketten-Dokumenten (`chainStepIndex()`); Prev/Next an den Enden
+  deaktiviert. Kette entdoppelt: `const DECISION_CHAIN` als einzige Quelle für Chat-Block **und**
+  Viewer. Rein additiv in `data.js`/`app.js`/`styles.css`. Deterministisch + live verifiziert
+  (21 Docs, 12 Szenarien, 0 kaputte Referenzen; Navigation korrekt, kein Strip bei Nicht-Ketten-Docs).
 
 - **[Zyklus 14] Entscheidungskette als sichtbarer „Beleg-Pfad"** — neues Szenario `budget-herkunft`
   („Wie kam das Mehrbudget von 0,9 Mio. € zustande?") + neues Feld `answer.chain` und Renderer

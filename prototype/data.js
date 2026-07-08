@@ -462,6 +462,20 @@ const DOCS = {
   },
 };
 
+// --- Entscheidungskette (Beleg-Pfad) ---------------------------------------
+// Eine einzige Quelle der Wahrheit für die Herkunfts-Kette des Mehrbudgets:
+// Lieferant → Einkauf → CFO → Vorstand. Wird sowohl im Chat-Block
+// (answer.chain → appendChain()) als auch im Dokumentenviewer
+// (Ketten-Navigator „Schritt n von 3") verwendet — beide bleiben synchron.
+const DECISION_CHAIN = {
+  title: "Herkunft des Mehrbudgets — die Entscheidungskette",
+  steps: [
+    { date: "12.02.2026", actor: "Stahlwerk Donau → Einkauf", label: "Preisanpassung angekündigt", desc: "Der Lieferant kündigt +15 % auf Baustahl S355 an (800 € → 920 €/t), gedeckt durch die Preisgleitklausel §6 des Rahmenvertrags.", docId: "email-preisanpassung-donau" },
+    { date: "13.02.2026", actor: "Einkauf → CFO", label: "Auswirkung bewertet & weitergeleitet", desc: "Thomas Krüger beziffert den Mehrbedarf auf ~0,9 Mio. € (640 t × +120 €/t) und empfiehlt eine Vorstands-Beschlussvorlage.", docId: "email-weiterleitung-materialbudget", strong: false },
+    { date: "März 2026", actor: "Vorstand", label: "Mehrbudget genehmigt", desc: "Der Vorstand beschließt +0,9 Mio. € für Projekt Alpha und die Aufnahme von Ferro Nord als Zweitlieferant.", docId: "vorstandsprotokoll-2026-03", strong: true },
+  ],
+};
+
 // --- Szenarien -------------------------------------------------------------
 // Jedes Szenario: Frage → strukturierte Antwort. `keywords` steuert das
 // Matching bei frei getippten Fragen. `confidence` 0..100.
@@ -521,14 +535,7 @@ const SCENARIOS = [
     keywords: ["mehrbudget", "0,9 mio", "900.000", "herkunft", "wie kam", "wie kam es", "entscheidungskette", "beleg-pfad", "budget zustande", "wer hat entschieden", "genehmigung", "beschlossen"],
     answer: {
       text: "Das <b>Mehrbudget von 0,9 Mio. €</b> für Projekt Alpha lässt sich lückenlos zurückverfolgen — von der auslösenden Lieferanten-E-Mail bis zum Vorstandsbeschluss:<ul><li>Auslöser: Stahlwerk Donau hob den Tonnenpreis für Baustahl S355 vertraglich um <b>15 %</b> an (von 800 € auf 920 €).</li><li>Bewertung: Bei rund <b>640 t</b> Jahresbedarf für Projekt Alpha ergibt der Aufschlag von 120 €/t einen Mehrbedarf von <b>0,9 Mio. €</b>.</li><li>Entscheidung: Der Vorstand genehmigte das Mehrbudget und beschleunigte den Zweitlieferanten Ferro Nord.</li></ul>AI Studio rekonstruiert die vollständige Kette über drei Postfächer und den Vorstandsbeschluss — jeder Schritt ist mit dem Originalbeleg hinterlegt.",
-      chain: {
-        title: "Herkunft des Mehrbudgets — die Entscheidungskette",
-        steps: [
-          { date: "12.02.2026", actor: "Stahlwerk Donau → Einkauf", label: "Preisanpassung angekündigt", desc: "Der Lieferant kündigt +15 % auf Baustahl S355 an (800 € → 920 €/t), gedeckt durch die Preisgleitklausel §6 des Rahmenvertrags.", docId: "email-preisanpassung-donau" },
-          { date: "13.02.2026", actor: "Einkauf → CFO", label: "Auswirkung bewertet & weitergeleitet", desc: "Thomas Krüger beziffert den Mehrbedarf auf ~0,9 Mio. € (640 t × +120 €/t) und empfiehlt eine Vorstands-Beschlussvorlage.", docId: "email-weiterleitung-materialbudget", strong: false },
-          { date: "März 2026", actor: "Vorstand", label: "Mehrbudget genehmigt", desc: "Der Vorstand beschließt +0,9 Mio. € für Projekt Alpha und die Aufnahme von Ferro Nord als Zweitlieferant.", docId: "vorstandsprotokoll-2026-03", strong: true },
-        ],
-      },
+      chain: DECISION_CHAIN,
       reasoning: [
         "Frage als Herkunfts-/Lineage-Analyse zur Zahl 0,9 Mio. € erkannt.",
         "Auslösende Lieferanten-E-Mail (Preisanpassung, 12.02.2026) im Einkaufs-Postfach gefunden.",

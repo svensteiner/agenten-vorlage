@@ -53,10 +53,13 @@ Finanz bis zum Vorstandsbeschluss. Jeder Schritt mit dem Originalbeleg."
 **Bild:** Direkt unter der Antwort baut sich die **Timeline „⛓ Herkunft des Mehrbudgets"** auf —
 drei Schritte mit Datum und Akteur: **12.02. Stahlwerk Donau → Einkauf** (Preisanpassung +15 %),
 **13.02. Einkauf → CFO** (Bewertung 0,9 Mio. €, Empfehlung Vorstandsvorlage), **März Vorstand**
-(Mehrbudget genehmigt, hervorgehoben). Einen Schritt anklicken → der zugehörige **Originalbeleg**
-öffnet im Viewer.
+(Mehrbudget genehmigt, hervorgehoben). Den ersten Schritt anklicken → der **Originalbeleg** öffnet im
+Viewer, oben der Navigator **„⛓ Entscheidungskette · Schritt 1 von 3"**. Mit **„Nächster Beleg →"**
+durch alle drei Belege blättern — Lieferanten-E-Mail → Weiterleitung → Vorstandsprotokoll; der
+Stepper füllt sich mit.
 **Punkt (der stärkste CFO-Moment):** nicht nur *dass* die Kosten stiegen — die **komplette
-Herkunfts-Kette**, vom Lieferantenbrief bis zum Budgetbeschluss, ohne selbst zu suchen.
+Herkunfts-Kette**, vom Lieferantenbrief bis zum Budgetbeschluss, ohne selbst zu suchen. Und man kann
+die drei Belege **im Viewer durchblättern**, ohne den roten Faden zu verlieren.
 
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann

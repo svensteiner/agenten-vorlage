@@ -2,6 +2,42 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 15 — 2026-07-08 — Ketten-Navigator im Dokumentenviewer („Schritt n von 3") ⛓
+
+**Die Entscheidungskette ist jetzt auch beim Lesen der Einzelbelege navigierbar (Option B aus
+Zyklus 14).** Öffnete man bisher einen der drei Ketten-Belege im Viewer, verlor man den Kontext
+„wo im Beleg-Pfad bin ich?". Jetzt zeigt der Viewer oben einen kompakten Navigator und man klickt
+sich durch die ganze Kette, ohne ihn zu verlassen.
+
+### Neu
+- **Ketten-Navigator im Viewer** (`buildChainNav()` in `app.js`): erscheint automatisch, sobald eines
+  der drei Ketten-Dokumente geöffnet wird (Lieferanten-E-Mail → interne Weiterleitung → Vorstands-
+  protokoll). Zeigt **„⛓ Entscheidungskette · Schritt n von 3"**, einen **horizontalen Stepper** mit
+  Datum + Akteur je Schritt (aktueller Schritt gefüllt in Marken-Farbe, erledigte markiert) und eine
+  Fußzeile **„← Voriger Beleg / Nächster Beleg →"** plus das Label des aktuellen Schritts. Stepper-
+  Punkte **und** Vor/Zurück-Buttons öffnen direkt den jeweiligen Beleg.
+- **`chainStepIndex()`** ordnet ein Dokument seiner Position in der Kette zu (−1 = nicht Teil) → der
+  Navigator erscheint **nur** bei den drei Ketten-Dokumenten; jeder andere Beleg öffnet unverändert.
+  Prev am 1. / Next am letzten Schritt deaktiviert.
+- **Kette entdoppelt:** neue **`const DECISION_CHAIN`** (`data.js`) ist jetzt **einzige Quelle der
+  Wahrheit** — der Chat-Block (`answer.chain` in `budget-herkunft`) **und** der Viewer-Navigator lesen
+  dieselbe Definition; garantiert synchron, keine doppelte Datenpflege.
+- **Navigator-CSS** (`styles.css`): `.vchain`/`.vc-track`/`.vc-step`/`.vc-dot`/`.vc-nav` …, bindet an
+  die Marken-Tokens (`--brand`, `--brand-soft`, `--brand-ink`). Bestehende Skins, Dokumente und der
+  Antwortpfad **unverändert**.
+
+### Verifikation (deterministisch via Node-VM + Browser-DOM/CSS)
+- **21 Dokumente**, **2 E-Mails**, **12 Szenarien**, **1 chain**, `budget-herkunft.chain ===
+  DECISION_CHAIN`, **0 kaputte Referenzen** über `sources`/`related`/`withheld`/`chain`/
+  `MODULE_SUGGESTIONS` + die 3 `DECISION_CHAIN`-`docId`s.
+- Navigator live gegen die realen Daten geprüft: auf allen 3 Belegen mit korrektem „Schritt n/3"-
+  Zähler; **Vor/Zurück und Stepper-Punkt-Klick** wechseln das Dokument korrekt (Titel/Zähler/erledigt-
+  Status stimmen); Prev am 1. und Next am letzten Schritt deaktiviert; **kein** Strip bei einem Nicht-
+  Ketten-Dokument (Quartalsbericht); aktueller Punkt bindet an `--brand`/`--brand-soft`; keine
+  Konsolenfehler. (Screenshot-Capture im Harness instabil — bekannte Grenze; daher DOM/CSS-basiert.)
+
+---
+
 ## Zyklus 14 — 2026-07-08 — Entscheidungskette als sichtbarer „Beleg-Pfad" im Chat ⛓
 
 **Vom Daten-Beleg zum sichtbaren Element.** Zyklus 12/13 legten die Daten der Entscheidungskette

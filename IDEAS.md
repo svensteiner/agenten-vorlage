@@ -46,9 +46,13 @@
   vertikale Timeline Lieferant → Einkauf → CFO → Vorstand, je Datum/Akteur/Label und anklickbarem
   Beleg, letzter Schritt hervorgehoben. Als erster Block unter der Antwort. Der stärkste CFO-Moment
   ist jetzt ohne Klickarbeit im Bild.
-- **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein auch an die Materialkosten-
-  Antwort (Einstiegs-Beat) anfügen, kein neuer Code. *(Nächstes Item.)*
-- **Timeline im Dokumentenviewer** — „Schritt n von 3"-Leiste mit Vor/Zurück für die E-Mail-Kette.
+- ✅ **Timeline im Dokumentenviewer** — *erledigt in Zyklus 15*: Ketten-Navigator
+  „⛓ Entscheidungskette · Schritt n von 3" mit Vor/Zurück + anklickbarem Stepper, erscheint
+  automatisch bei den drei Ketten-Belegen. Kette entdoppelt zu `const DECISION_CHAIN` (einzige
+  Quelle für Chat-Block **und** Viewer). Rein additiv.
+- **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
+  Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
+  (Kette erschiene zweimal). *(Tiefe-Option.)*
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
   Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
   nächste Feinpolitur.)*

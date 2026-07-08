@@ -6,11 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 14 — **Entscheidungskette als sichtbarer „Beleg-Pfad" im Chat**
-  (neues Szenario + `appendChain()`-Timeline) (siehe unten).
+- **Letzter Zyklus:** Zyklus 15 — **Ketten-Navigator im Dokumentenviewer** („Schritt n von 3" mit
+  Vor/Zurück quer durch die drei Belege) + Kette als einzige Quelle der Wahrheit (`DECISION_CHAIN`)
+  (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 76 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 78 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +30,38 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 15 gebaut wurde
+
+**Ketten-Navigator im Dokumentenviewer — die Entscheidungskette ist jetzt auch beim Lesen der
+Einzelbelege navigierbar (Option B aus Zyklus 14).** Zyklus 14 zeigte die Kette als Timeline im Chat;
+öffnete man aber einen der drei Belege im Viewer, verlor man den Kontext „wo im Beleg-Pfad bin ich?".
+Neu:
+- **Kompakter Navigator oben im Viewer** — erscheint automatisch, sobald eines der drei Ketten-
+  Dokumente geöffnet wird (Lieferanten-E-Mail → interne Weiterleitung → Vorstandsprotokoll). Zeigt
+  **„⛓ Entscheidungskette · Schritt n von 3"**, einen **horizontalen Stepper** mit Datum + Akteur je
+  Schritt (aktueller Schritt gefüllt in Marken-Farbe, erledigte Schritte markiert) und eine Fußzeile
+  **„← Voriger Beleg / Nächster Beleg →"** plus das Label des aktuellen Schritts. Die Stepper-Punkte
+  **und** die Vor/Zurück-Buttons öffnen direkt den jeweiligen Beleg — man klickt sich durch die ganze
+  Kette, ohne den Viewer zu verlassen.
+- **Fail-safe/ehrlich:** Der Navigator erscheint **nur** bei den drei Ketten-Dokumenten (per
+  `chainStepIndex()`); jeder andere Beleg (Quartalsbericht etc.) öffnet unverändert ohne Strip.
+  Erster Schritt → „Voriger" deaktiviert, letzter Schritt → „Nächster" deaktiviert (`.disabled`,
+  `pointer-events:none`).
+- **Kette entdoppelt — eine Quelle der Wahrheit:** die Ketten-Definition liegt jetzt als
+  **`const DECISION_CHAIN`** in `data.js` und wird sowohl vom Chat-Block (`answer.chain` in
+  `budget-herkunft`) **als auch** vom Viewer-Navigator gelesen. Chat-Timeline und Viewer-Stepper
+  bleiben damit garantiert synchron; keine doppelten Datenpflege-Stellen mehr.
+- **Rein additiv** in `data.js` (Extraktion + Referenz, kein Inhaltswechsel), `app.js`
+  (`chainStepIndex()`/`buildChainNav()`, ein Aufruf in `openViewer()`) und `styles.css`
+  (`.vchain`-Block). Bestehende Skins, Dokumente und der Antwortpfad unverändert. Deterministisch
+  verifiziert (Node-VM gegen `data.js`): **21 Dokumente**, **2 E-Mails**, **12 Szenarien**, **1 chain**,
+  `budget-herkunft.chain === DECISION_CHAIN`, **0 kaputte Referenzen**. Live im Browser gegen die
+  realen Daten geprüft: Navigator auf allen 3 Belegen mit korrektem „Schritt n/3"-Zähler, Vor/Zurück
+  **und** Stepper-Punkt-Klick wechseln das Dokument korrekt (Titel/Zähler/erledigt-Status stimmen),
+  Prev am 1. Schritt und Next am letzten deaktiviert, **kein** Strip bei Nicht-Ketten-Dokumenten,
+  aktueller Punkt bindet an `--brand`/`--brand-soft`, keine Konsolenfehler. (Screenshot-Capture im
+  Harness instabil — bekannte Grenze; daher DOM/CSS-basiert verifiziert.)
 
 ## Was in Zyklus 14 gebaut wurde
 
@@ -324,39 +357,37 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Die Kette in der Materialkosten-Antwort verankern *oder* die Timeline im Viewer spiegeln — den
-neuen Ketten-Baustein an der stärksten Stelle der Demo wiederverwenden.** Der `appendChain()`-Renderer
-existiert jetzt und ist rein datengetrieben (`answer.chain`). Der nächste sichtbare Sprung, ohne neuen
-Code:
-- **Option A (empfohlen):** die Kette auch an die **`materialkosten`-Antwort** hängen (dasselbe
-  `answer.chain`-Feld) — das ist der Einstiegs-Beat der Demo und der Moment, in dem ein CFO die
-  Herkunfts-Frage zuerst stellt. Achtung Video-Reihenfolge: dann erscheint die Kette zweimal
-  (materialkosten + budget-herkunft) — ggf. eines der beiden aus der „Geführten Demo"-Sequenz
-  herausnehmen oder die Beats trennen.
-- **Option B:** eine **kompakte Fortschritts-/Timeline-Leiste im Dokumentenviewer** für die beiden
-  E-Mails, die zeigt „Schritt 1 von 3 der Entscheidungskette" mit Vor/Zurück zwischen den Belegen —
-  macht den Thread auch beim Einzeldokument-Lesen navigierbar.
+**Breite in ein neues Entscheider-Ressort öffnen: ein IT-Sicherheit-/Datenschutz-Szenario (DSGVO).**
+Die schwächsten Fortschrittsbereiche bleiben **Demo-Firma & Dokumente (77 %)** und **Szenarien-Breite
+(86 %)** — beide heben ein zusätzliches Ressort, das jeden CEO/CFO betrifft. Vorschlag:
+- **Neues Szenario „Sind wir DSGVO-konform / wann war das letzte Datenschutz-Audit?"** (Modul Audit
+  oder ein neues Modul „IT/Sicherheit"), Antwort mit knapper Status-Tabelle (Audit-Datum, offene
+  Maßnahmen, Verantwortlicher/DSB) + 1–2 neuen Dokumenten (z. B. „Datenschutz-Audit 2025",
+  „Verzeichnis von Verarbeitungstätigkeiten"). Reuse: bestehende Tabellen-/Skin-Renderer, kein neuer
+  Code nötig — rein additiv in `data.js` (Muster wie `lieferanten-risiko`/`brandschutz`).
 
-*Warum?* Der Ketten-Baustein ist gebaut und verifiziert; ihn an der **prominentesten Antwort** (Material­
-kosten) zu zeigen, multipliziert die Wirkung mit null zusätzlichem Renderer-Code.
+*Warum?* Die Kern-Story (Materialkosten → Entscheidungskette) ist jetzt tief und über Chat **und**
+Viewer navigierbar. Der nächste Wirkungshebel ist **Breite**: ein weiteres Vorstands-relevantes Thema
+zeigt „AI Studio deckt mein ganzes Haus ab", nicht nur die Finanz-Story.
 
-**Alternative, falls Breite wichtiger als Tiefe:** ein weiteres Ressort (IT/Datenschutz) mit
-eigenem Szenario — siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
+**Alternative, falls Tiefe vor Breite:** die Entscheidungskette auch an die **`materialkosten`-Antwort**
+hängen (dasselbe `answer.chain` = `DECISION_CHAIN`). Achtung Video-Reihenfolge: dann erschiene die
+Kette zweimal in der Geführten Demo (materialkosten direkt vor budget-herkunft) — die beiden Beats
+müsste man trennen oder einen aus der Sequenz nehmen. Da `materialkosten` → `budget-herkunft` bereits
+die natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst **nicht** dupliziert.
 
 ---
 
-## CEO-Review (Ende Zyklus 14)
+## CEO-Review (Ende Zyklus 15)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo zeigt die **Entscheidungskette jetzt
-  als eigenes visuelles Element** — eine Timeline Lieferant → Einkauf → CFO → Vorstand, jeder Schritt
-  mit Datum, Akteur und anklickbarem Originalbeleg. Der Betrachter muss nichts mehr selbst
-  zusammensetzen.
-- *Erzeugt es Aufregung?* — Ja: Das ist der „Wow" für Entscheider — „das System zeigt mir nicht nur
-  *dass* die Kosten stiegen, sondern die **ganze Kette vom Lieferantenbrief bis zum Vorstandsbeschluss**"
-  — auf einen Blick, ohne Klickarbeit. Ideal fürs Video, wo der Zuschauer nicht selbst navigiert.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: Die Timeline ist ohne jede KI-Erklärung sofort lesbar; die
-  0,9 Mio. € entstehen sichtbar aus 640 t × 120 €/t und münden im Vorstandsbeschluss — konsistent über
-  E-Mail, Weiterleitung und Protokoll.
-- *Schwächste Stelle → nächster Zyklus:* Die Kette erscheint bisher nur im **neuen** Szenario. Sie an
-  der **Materialkosten-Antwort** (dem Einstiegs-Beat) zu verankern würde den Effekt an der
-  prominentesten Stelle wiederholen — ohne neuen Renderer-Code.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Entscheidungskette ist jetzt **doppelt
+  erlebbar**: als Timeline im Chat (Zyklus 14) **und** als Navigator im Viewer — man klickt einen
+  Beleg an und wandert per „Schritt n von 3 · Vor/Zurück" durch den ganzen Pfad, ohne den Kontext zu
+  verlieren.
+- *Erzeugt es Aufregung?* — Ja: Der Presenter kann im Video einen Beleg öffnen und live durch die Kette
+  blättern (Lieferantenbrief → Weiterleitung an CFO → Vorstandsbeschluss) — jeder Schritt ein echtes
+  Dokument. Das macht „lückenlose Nachvollziehbarkeit" physisch greifbar statt nur behauptet.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Schritt 2 von 3" und der Stepper sind ohne jede KI-Erklärung
+  lesbar; der Betrachter sieht sofort, dass hinter der 0,9-Mio-€-Zahl drei nachprüfbare Belege stehen.
+- *Schwächste Stelle → nächster Zyklus:* Die Demo ist finanzlastig. **Breite** in ein weiteres
+  Entscheider-Ressort (IT-Sicherheit/Datenschutz) ist der größte verbleibende Hebel — siehe oben.

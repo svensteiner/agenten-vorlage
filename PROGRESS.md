@@ -3,27 +3,41 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 76 % (Ende Zyklus 14)
+## Gesamtfortschritt: ≈ 78 % (Ende Zyklus 15)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
-| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 93 % | 13.95 |
-| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 92 % | 13.8 |
+| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 94 % | 14.1 |
+| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
 | Demo-Firma & realistische Dokumente | 15 % | 77 % | 11.55 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 86 % | 8.6 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 87 % | 8.7 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
 | **Summe** | **100 %** | — | **≈ 90 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 76 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (Kette an weiteren Antworten, Viewer-Timeline, weitere Ressorts). Zyklus 14
-> macht die **Entscheidungskette als sichtbares Timeline-Element** (`answer.chain` + `appendChain()`)
-> im Chat sichtbar — der stärkste CFO-Moment ohne Klickarbeit — und hebt **Chat** (91 % → 93 %),
-> **Belege** (91 % → 93 %) und **Szenarien** (84 % → 86 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 78 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (weitere Ressorts, mehr authentische Dokumente). Zyklus 15
+> macht die **Entscheidungskette auch im Viewer navigierbar** (Ketten-Navigator „Schritt n von 3"
+> mit Vor/Zurück; Kette als einzige Quelle der Wahrheit `DECISION_CHAIN`) und hebt **Viewer**
+> (92 % → 95 %), **Belege** (93 % → 94 %) und **Szenarien** (86 % → 87 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 15 (2026-07-08) ≈ 78 %** — Ketten-Navigator im Dokumentenviewer (Option B aus Zyklus 14):
+  öffnet man einen der drei Ketten-Belege (Lieferanten-E-Mail → Weiterleitung → Vorstandsprotokoll),
+  erscheint oben ein kompakter Navigator **„⛓ Entscheidungskette · Schritt n von 3"** — horizontaler
+  Stepper mit Datum/Akteur je Schritt (aktueller Schritt in Marken-Farbe, erledigte markiert) +
+  Fußzeile „← Voriger Beleg / Nächster Beleg →". Stepper-Punkte **und** Vor/Zurück öffnen direkt den
+  jeweiligen Beleg → man blättert durch die ganze Kette, ohne den Viewer zu verlassen. Nur bei den drei
+  Ketten-Dokumenten (per `chainStepIndex()`); Prev am 1. / Next am letzten Schritt deaktiviert. Kette
+  **entdoppelt**: `const DECISION_CHAIN` in `data.js` ist jetzt einzige Quelle der Wahrheit für Chat-
+  Block **und** Viewer-Navigator. Rein additiv in `data.js`/`app.js`/`styles.css`. Deterministisch
+  verifiziert: 21 Docs, 2 E-Mails, 12 Szenarien, 1 chain, `budget-herkunft.chain === DECISION_CHAIN`,
+  0 kaputte Referenzen; Navigation live gegen reale Daten geprüft (Vor/Zurück + Punkt-Klick wechseln
+  korrekt, kein Strip bei Nicht-Ketten-Docs, Marken-Tokens gebunden, keine Konsolenfehler).
+  (Viewer 92 % → 95 %, Belege 93 % → 94 %, Szenarien 86 % → 87 %.)
 
 - **Zyklus 14 (2026-07-08) ≈ 76 %** — Entscheidungskette als sichtbarer „Beleg-Pfad": neues Szenario
   `budget-herkunft` („Wie kam das Mehrbudget von 0,9 Mio. € zustande?") + neues optionales Feld
@@ -122,8 +136,9 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Den neuen Ketten-Baustein (`answer.chain`) auch an die **Materialkosten-Antwort** hängen (kein
-   neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat der Demo.
-2. Timeline-/Fortschritts-Leiste im Dokumentenviewer für die E-Mail-Kette (Schritt n von 3, Vor/Zurück).
-3. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
-4. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
+1. **Ein weiteres Ressort** (z. B. IT-Sicherheit/Datenschutz-DSGVO) mit eigenem Szenario + 1–2
+   Dokumenten → hebt die zwei schwächsten Bereiche (Demo-Firma & Szenarien-Breite). Reuse der
+   bestehenden Tabellen-/Skin-Renderer, rein additiv in `data.js`.
+2. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
+3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
+   — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).

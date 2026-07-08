@@ -271,6 +271,46 @@ body {
 }
 .chain-step.clickable:hover .cs-src { text-decoration: underline; }
 
+/* Ketten-Navigator im Viewer — „Schritt n von 3" mit anklickbaren Belegen.
+   Sitzt als Karte oben auf dem Viewer-„Desk", über dem Papierblatt. */
+.vchain {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm); padding: 12px 14px; margin: 0 auto 18px; max-width: 720px;
+}
+.vchain .vc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.vchain .vc-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--brand-ink); }
+.vchain .vc-count { font-size: 12px; color: var(--ink-soft); }
+.vchain .vc-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.vc-track { position: relative; display: flex; gap: 6px; margin: 12px 0 2px; }
+.vc-track::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: 8px; height: 2px; background: var(--line);
+}
+.vc-step {
+  position: relative; z-index: 1; flex: 1; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 6px; background: none; border: none; cursor: pointer;
+  padding: 0 2px; font-family: var(--font); text-align: center;
+}
+.vc-step:last-child { cursor: default; }
+.vc-dot {
+  width: 18px; height: 18px; border-radius: 999px; background: var(--surface);
+  border: 2px solid var(--line); box-shadow: 0 0 0 3px var(--surface); transition: all .15s;
+}
+.vc-step.done .vc-dot { border-color: var(--brand); background: var(--brand-soft); }
+.vc-step.current .vc-dot { border-color: var(--brand); background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.vc-lab { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.vc-date { font-size: 10.5px; font-weight: 700; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.vc-actor { font-size: 10.5px; font-weight: 600; color: var(--ink-soft); line-height: 1.3; }
+.vc-step.current .vc-date, .vc-step.current .vc-actor { color: var(--brand-ink); }
+.vc-step:not(.current):hover .vc-dot { border-color: var(--brand); }
+.vc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.vc-nav {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px;
+  font-size: 12.5px; font-weight: 600; color: var(--brand-ink); cursor: pointer; font-family: var(--font); white-space: nowrap;
+}
+.vc-nav:hover { background: var(--brand-soft); border-color: var(--brand); }
+.vc-nav.disabled { color: var(--ink-faint); background: var(--bg); cursor: default; pointer-events: none; opacity: .6; }
+.vc-here { font-size: 12px; font-weight: 650; color: var(--ink); text-align: center; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .related { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill {
   display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft);
