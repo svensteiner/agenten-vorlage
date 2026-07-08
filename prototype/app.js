@@ -306,6 +306,7 @@
     animateCounts(textEl);
 
     // Danach die strukturierten Blöcke einblenden
+    appendChain(card, answer.chain);
     appendReasoning(card, answer.reasoning);
     appendSources(card, answer.sources);
     appendWithheld(card, answer.withheld);
@@ -411,6 +412,37 @@
       });
       b.appendChild(box);
     }
+    card.appendChild(b);
+  }
+
+  // ---------- Beleg-Pfad / Entscheidungskette ----------
+  // Zeigt die Herkunft einer Kernaussage als sichtbare Timeline quer durch
+  // Postfächer und Gremien (Lieferant → Einkauf → CFO → Vorstand). Jeder Schritt
+  // ist anklickbar und öffnet den zugehörigen Beleg im Viewer. Rein additiv,
+  // datengetrieben aus answer.chain — analog zu appendWithheld(). Macht den
+  // stärksten CFO-Moment (die ganze Entscheidungskette) ohne Klickarbeit sichtbar.
+  function appendChain(card, chain) {
+    if (!chain || !chain.steps || !chain.steps.length) return;
+    const b = el("div", "block chain");
+    b.appendChild(el("div", "block-title", "⛓ " + (chain.title || "Entscheidungskette")));
+    const line = el("div", "chain-line");
+    chain.steps.forEach((step) => {
+      const doc = step.docId ? DOCS[step.docId] : null;
+      const node = el("div", step.strong ? "chain-step strong" : "chain-step");
+      node.innerHTML =
+        `<span class="cs-dot"></span>` +
+        `<div class="cs-body">` +
+        `<div class="cs-head">` +
+        `<span class="cs-date">${escapeHtml(step.date)}</span>` +
+        `<span class="cs-actor">${escapeHtml(step.actor)}</span></div>` +
+        `<div class="cs-label">${escapeHtml(step.label)}</div>` +
+        (step.desc ? `<div class="cs-desc">${escapeHtml(step.desc)}</div>` : "") +
+        (doc ? `<span class="cs-src">▤ ${escapeHtml(doc.title)}</span>` : "") +
+        `</div>`;
+      if (doc) { node.classList.add("clickable"); node.onclick = () => openViewer(step.docId); }
+      line.appendChild(node);
+    });
+    b.appendChild(line);
     card.appendChild(b);
   }
 

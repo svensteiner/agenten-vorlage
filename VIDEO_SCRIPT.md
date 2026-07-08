@@ -45,6 +45,19 @@ sie an die **CFO** weiter mit der Bewertung „**~0,9 Mio. € Mehrbedarf**" und
 **Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar — und zeigt die
 **Entscheidungskette quer durch Postfächer**, bis zum Vorstandsbeschluss.
 
+## Szene 2b — Die ganze Entscheidungskette auf einen Blick (1:20–1:55)
+**Aktion:** Fragen: *„Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?"*
+**Sprecher:** „Und wenn eine Zahl im Vorstandsbeschluss auftaucht — woher kommt sie eigentlich?
+AI Studio zeigt die ganze Kette. Von der Lieferanten-E-Mail über die interne Weiterleitung an die
+Finanz bis zum Vorstandsbeschluss. Jeder Schritt mit dem Originalbeleg."
+**Bild:** Direkt unter der Antwort baut sich die **Timeline „⛓ Herkunft des Mehrbudgets"** auf —
+drei Schritte mit Datum und Akteur: **12.02. Stahlwerk Donau → Einkauf** (Preisanpassung +15 %),
+**13.02. Einkauf → CFO** (Bewertung 0,9 Mio. €, Empfehlung Vorstandsvorlage), **März Vorstand**
+(Mehrbudget genehmigt, hervorgehoben). Einen Schritt anklicken → der zugehörige **Originalbeleg**
+öffnet im Viewer.
+**Punkt (der stärkste CFO-Moment):** nicht nur *dass* die Kosten stiegen — die **komplette
+Herkunfts-Kette**, vom Lieferantenbrief bis zum Budgetbeschluss, ohne selbst zu suchen.
+
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann
 Bestellung und Wareneingang.
@@ -115,8 +128,8 @@ Starker Schlussframe.
 ---
 
 ## Aufnahme-Hinweise
-- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 11
-  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 11").
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 12
+  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 12").
   Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
   nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
   die Tipp-/Streaming-Geschwindigkeit im Browser).

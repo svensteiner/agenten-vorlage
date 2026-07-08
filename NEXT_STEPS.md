@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 13 — **Zweite E-Mail (interne Weiterleitung Einkauf → CFO) →
-  Entscheidungskette quer durch Postfächer** (siehe unten).
+- **Letzter Zyklus:** Zyklus 14 — **Entscheidungskette als sichtbarer „Beleg-Pfad" im Chat**
+  (neues Szenario + `appendChain()`-Timeline) (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 74 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 76 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,35 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 14 gebaut wurde
+
+**Entscheidungskette als sichtbarer „Beleg-Pfad" im Chat — der stärkste CFO-Moment ist jetzt ohne
+Klickarbeit im Bild.** Zyklus 12/13 legten die Daten (zwei E-Mails → CFO → Vorstand); der Betrachter
+musste die Kette aber selbst über Quellen-Chips zusammensetzen. Jetzt zeigt die Antwort die
+**Herkunfts-Kette als eigenes visuelles Element** — eine kompakte vertikale Timeline:
+- **Neues Szenario `budget-herkunft`** (Modul Finanzen, Konfidenz 95 %): „Wie kam das Mehrbudget von
+  0,9 Mio. € für Projekt Alpha zustande?" Antwort mit knappem Text **plus** dem neuen Ketten-Block.
+- **Neues optionales Feld `answer.chain`** + Renderer **`appendChain()`** (analog zu `appendWithheld()`):
+  vertikale Timeline mit **3 Schritten** — je **Datum-Badge**, **Akteur** (z. B. „Einkauf → CFO"),
+  **Label**, Beschreibung und **anklickbarem Beleg** (öffnet das Originaldokument im Viewer). Der letzte
+  Schritt (Vorstandsbeschluss) ist als `strong` hervorgehoben (gefüllter Punkt, Marken-Farbe).
+  Verbindungslinie läuft durch die Punkte und endet sauber am letzten Schritt.
+- **Die drei Schritte sind die echten Belege:** Lieferanten-E-Mail (12.02.) → interne Weiterleitung
+  Einkauf→CFO mit Bewertung 0,9 Mio. € (13.02.) → Vorstandsbeschluss (März 2026). Alle Zahlen
+  konsistent mit der bestehenden Story (640 t × 120 €/t ≈ 0,9 Mio. € = beschlossenes Mehrbudget).
+- **Als erster strukturierter Block** unter der Antwort platziert (vor Nachvollziehbarkeit/Quellen) →
+  maximale Wirkung; wird vom bestehenden gestaffelten Block-Reveal automatisch mitanimiert.
+- **Rein additiv** in `data.js` / `app.js` / `styles.css`; bestehender Antwortpfad und alle Dokumente
+  unverändert. Hero 8 → **9 Kacheln**, „Geführte Demo" nimmt das Szenario automatisch auf (jetzt
+  **12 Szenarien**). Deterministisch verifiziert (Node-VM gegen `data.js`): **21 Dokumente**, **2
+  E-Mails**, **12 Szenarien**, **1 Szenario mit `chain`**, **0 kaputte Referenzen** über alle
+  `sources`/`related`/`withheld`/`chain`/`MODULE_SUGGESTIONS`. Chain-Markup + CSS live im Browser gegen
+  die realen Szenariodaten geprüft: 3 Schritte, alle anklickbar, 1 `strong`, Punkte/Datum-Badges/
+  Beleg-Links binden korrekt an die Marken-Tokens (--brand/--brand-soft/--brand-ink), Verbindungslinie
+  2 px und am letzten Schritt beendet; keine Konsolenfehler. (Voll-Streaming-Pfad im Headless-Preview
+  timer-gedrosselt, Screenshot-Capture im Harness instabil — bekannte Grenzen; daher DOM/CSS-basiert
+  verifiziert.)
 
 ## Was in Zyklus 13 gebaut wurde
 
@@ -295,39 +324,39 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Die Entscheidungskette als sichtbaren „Beleg-Pfad" im Chat zeigen — ein eigenes Szenario „Wie kam
-das Mehrbudget von 0,9 Mio. € zustande?" mit einer visuellen Kette Lieferant → Einkauf → CFO →
-Vorstand.** Die Daten dafür liegen jetzt vollständig vor (zwei E-Mails, Rahmenvertrag, Rechnung,
-Vorstandsprotokoll). Der nächste sichtbare Sprung ist, diese **Herkunfts-Kette als eigenes
-Antwort-Element** zu inszenieren statt sie nur über Quellen-Chips anzudeuten:
-- **Neues Szenario** (Modul Finanzen/Berichte): Antwort mit einer **kompakten Timeline/Kette**
-  (E-Mail 12.02. → Weiterleitung 13.02. → Beschluss März) als kleiner HTML-Block in `answer.text`
-  (rein datengetrieben, kein Code-Umbau möglich) **oder** ein optionales `answer.chain`-Feld + kleiner
-  `appendChain()`-Renderer, analog zum bestehenden `appendWithheld()`-Muster.
-- Macht den stärksten CFO-Moment explizit: „Das System zeigt mir nicht nur *dass* die Kosten stiegen,
-  sondern die **ganze Entscheidungskette** — vom Lieferantenbrief bis zum Vorstandsbeschluss."
+**Die Kette in der Materialkosten-Antwort verankern *oder* die Timeline im Viewer spiegeln — den
+neuen Ketten-Baustein an der stärksten Stelle der Demo wiederverwenden.** Der `appendChain()`-Renderer
+existiert jetzt und ist rein datengetrieben (`answer.chain`). Der nächste sichtbare Sprung, ohne neuen
+Code:
+- **Option A (empfohlen):** die Kette auch an die **`materialkosten`-Antwort** hängen (dasselbe
+  `answer.chain`-Feld) — das ist der Einstiegs-Beat der Demo und der Moment, in dem ein CFO die
+  Herkunfts-Frage zuerst stellt. Achtung Video-Reihenfolge: dann erscheint die Kette zweimal
+  (materialkosten + budget-herkunft) — ggf. eines der beiden aus der „Geführten Demo"-Sequenz
+  herausnehmen oder die Beats trennen.
+- **Option B:** eine **kompakte Fortschritts-/Timeline-Leiste im Dokumentenviewer** für die beiden
+  E-Mails, die zeigt „Schritt 1 von 3 der Entscheidungskette" mit Vor/Zurück zwischen den Belegen —
+  macht den Thread auch beim Einzeldokument-Lesen navigierbar.
 
-*Warum diese?* Zwei E-Mails belegen die Kette jetzt in den Daten, aber der Betrachter muss sie noch
-selbst zusammensetzen (über Quellen-Chips). Ein **explizites Ketten-Element** macht den „Wow" ohne
-Klickarbeit sichtbar — ideal fürs Video, wo der Zuschauer nicht selbst navigiert.
+*Warum?* Der Ketten-Baustein ist gebaut und verifiziert; ihn an der **prominentesten Antwort** (Material­
+kosten) zu zeigen, multipliziert die Wirkung mit null zusätzlichem Renderer-Code.
 
 **Alternative, falls Breite wichtiger als Tiefe:** ein weiteres Ressort (IT/Datenschutz) mit
 eigenem Szenario — siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 ---
 
-## CEO-Review (Ende Zyklus 13)
+## CEO-Review (Ende Zyklus 14)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo belegt jetzt eine **vollständige
-  Entscheidungskette quer durch Postfächer**: Lieferanten-E-Mail (Donau) → interne Weiterleitung des
-  Einkaufs an die CFO mit Bewertung (0,9 Mio. €) → Vorstandsbeschluss. Zwei echte Postfach-Ansichten
-  mit sichtbarem Thread.
-- *Erzeugt es Aufregung?* — Ja: Der „Aha"-Moment wird tiefer — das System zeigt nicht nur die *eine*
-  auslösende E-Mail, sondern **wie sich daraus eine Vorstandsentscheidung entwickelt**. Ein CFO sieht
-  seine eigene Realität abgebildet (der Einkauf leitet mit Einschätzung an die Finanz weiter).
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Das System rekonstruiert die komplette Kette vom
-  Lieferantenbrief bis zum Budgetbeschluss" ist ohne jede KI-Erklärung sofort verständlich — und die
-  0,9 Mio. € tauchen konsistent in E-Mail, Projekt-Alpha-Antwort und Vorstandsprotokoll auf.
-- *Schwächste Stelle → nächster Zyklus:* Die Kette ist in den **Daten** vollständig, muss aber vom
-  Betrachter noch über Quellen-Chips selbst zusammengesetzt werden. Ein **explizites Ketten-/Timeline-
-  Element** in der Antwort würde den „Wow" ohne Klickarbeit sichtbar machen — ideal fürs Video.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo zeigt die **Entscheidungskette jetzt
+  als eigenes visuelles Element** — eine Timeline Lieferant → Einkauf → CFO → Vorstand, jeder Schritt
+  mit Datum, Akteur und anklickbarem Originalbeleg. Der Betrachter muss nichts mehr selbst
+  zusammensetzen.
+- *Erzeugt es Aufregung?* — Ja: Das ist der „Wow" für Entscheider — „das System zeigt mir nicht nur
+  *dass* die Kosten stiegen, sondern die **ganze Kette vom Lieferantenbrief bis zum Vorstandsbeschluss**"
+  — auf einen Blick, ohne Klickarbeit. Ideal fürs Video, wo der Zuschauer nicht selbst navigiert.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: Die Timeline ist ohne jede KI-Erklärung sofort lesbar; die
+  0,9 Mio. € entstehen sichtbar aus 640 t × 120 €/t und münden im Vorstandsbeschluss — konsistent über
+  E-Mail, Weiterleitung und Protokoll.
+- *Schwächste Stelle → nächster Zyklus:* Die Kette erscheint bisher nur im **neuen** Szenario. Sie an
+  der **Materialkosten-Antwort** (dem Einstiegs-Beat) zu verankern würde den Effekt an der
+  prominentesten Stelle wiederholen — ohne neuen Renderer-Code.

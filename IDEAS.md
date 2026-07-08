@@ -41,9 +41,14 @@
   Cc Projektleitung Alpha) mit Bewertung 0,9 Mio. € Mehrbedarf + Empfehlung Vorstands-Beschlussvorlage;
   Zitat-Verlauf = Original-Donau-E-Mail (Thread). Belegt die **Entscheidungskette quer durch
   Postfächer** (Lieferant → Einkauf → CFO → Vorstand). Rein additiv in `data.js`.
-- **Explizites Ketten-/Timeline-Element in der Antwort** — die Entscheidungskette als sichtbares
-  Antwort-Element (kompakte Timeline) statt nur über Quellen-Chips. *(Nächstes Item — stärkster
-  CFO-Moment fürs Video.)*
+- ✅ **Explizites Ketten-/Timeline-Element in der Antwort** — *erledigt in Zyklus 14*: neues Szenario
+  `budget-herkunft` + Feld `answer.chain` und Renderer `appendChain()` (analog `appendWithheld()`):
+  vertikale Timeline Lieferant → Einkauf → CFO → Vorstand, je Datum/Akteur/Label und anklickbarem
+  Beleg, letzter Schritt hervorgehoben. Als erster Block unter der Antwort. Der stärkste CFO-Moment
+  ist jetzt ohne Klickarbeit im Bild.
+- **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein auch an die Materialkosten-
+  Antwort (Einstiegs-Beat) anfügen, kein neuer Code. *(Nächstes Item.)*
+- **Timeline im Dokumentenviewer** — „Schritt n von 3"-Leiste mit Vor/Zurück für die E-Mail-Kette.
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
   Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
   nächste Feinpolitur.)*

@@ -6,6 +6,10 @@
 ## Enterprise-Datenplattform (Phase 2)
 - Echte Konnektoren zu SharePoint, SAP, Fileserver, Exchange (Ingestion-Pipeline).
 - Echtes RAG: Embeddings, Vektor-Index, hybride Retrieval-Pipeline.
+- **Echte Provenance-/Lineage-Graphen:** Die Demo inszeniert die Entscheidungskette (Zyklus 14,
+  `answer.chain`) noch handkuratiert. Phase 2 könnte die Kette **automatisch** aus Dokument-Metadaten
+  (E-Mail-Threads, Referenzen, Zeitstempel) rekonstruieren — das `answer.chain`-Feld ist der
+  vorgesehene UI-Andockpunkt.
 - Permission-faithful Retrieval gegen echte ACLs. *(Die Demo visualisiert dieses Versprechen
   bereits in Zyklus 7 — gesperrte Dokumente + „N weitere Treffer für Sie nicht freigegeben".
   Phase 2 muss das UI nur an echte Berechtigungs-Checks anbinden; das `withheld`-Feld pro

@@ -5,7 +5,7 @@
 
 > **Schnellster Weg zur Aufnahme:** Statt manuell zu klicken kann der **▶-Button
 > „Geführte Demo"** (oben rechts) die gesamte Abfolge unten hands-free abspielen — Frage
-> tippt sich selbst, Antwort streamt, Fortschritt „n / 11". Sprecher nur drüberlegen. Tab
+> tippt sich selbst, Antwort streamt, Fortschritt „n / 12". Sprecher nur drüberlegen. Tab
 > dabei im Vordergrund halten (Hintergrund-Tabs drosseln Tipp-/Streaming-Tempo).
 
 | # | Dauer | Aktion in der App | Kamera / Fokus |
@@ -13,6 +13,7 @@
 | 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
 | 1 | 0:25 | Klick auf Karte *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:40 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter → nach der Antwort **nacheinander** die 2. Quelle ***Preisanpassung Baustahl S355*** (Lieferanten-E-Mail) und die 3. Quelle ***WG: Preisanpassung Baustahl — Auswirkung Projekt Alpha*** (interne Weiterleitung) anklicken | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit & Quellen schwenken. Klick auf die 1. E-Mail → Viewer öffnet als **echte E-Mail** (Postfach-Kopf **Von/An/Cc**, Avatar, **📎 Anhang-Chip**, **Zitat-Verlauf**) — „**+15 % Preisgleitklausel §6**" gelb hervorgehoben. Dann die **Weiterleitung** öffnen (Einkauf → CFO): Highlight „**~0,9 Mio. € Mehrbedarf**" + Empfehlung Vorstandsvorlage, Zitat = die Donau-E-Mail. **Wow-Beleg: „Das System rekonstruiert die ganze Kette — vom Lieferantenbrief über die interne Weiterleitung bis zum Mehrbudget."** |
+| 2b | 0:35 | *„Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?"* (**stärkster CFO-Moment**) | Direkt unter der Antwort erscheint der **Ketten-Block „⛓ Herkunft des Mehrbudgets"** — eine **vertikale Timeline** mit 3 Schritten: **12.02. Stahlwerk Donau → Einkauf** (Preisanpassung), **13.02. Einkauf → CFO** (Bewertung 0,9 Mio. €), **März Vorstand** (Beschluss, hervorgehoben). Langsam über die Kette schwenken; einen Schritt anklicken → der zugehörige **Originalbeleg** öffnet im Viewer. **Wow: „Das System zeigt die ganze Entscheidungskette vom Lieferantenbrief bis zum Vorstandsbeschluss — auf einen Blick."** |
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:30 | *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"* | Auf die **CO₂-Trend-Tabelle** (2020 → 2025 → Ziel 2030) und das **Fazit** halten; Quelle *Energie- & Emissionskennzahlen 2025* kurz öffnen |
@@ -53,6 +54,11 @@
   von oben nach unten), Modulwechsel blenden weich über. Läuft automatisch — ebenfalls **nur ohne**
   „Bewegung reduzieren". Wirkung: die Demo sieht „fertig" aus; nach dem Ende des Streamings 1–2 Sek.
   ruhig halten, damit der gestaffelte Aufbau sichtbar ausklingt, bevor der Schnitt kommt.
+- **Entscheidungskette (Zyklus 14):** Bei der Frage *„Wie kam das Mehrbudget … zustande?"* erscheint
+  als **erster** Block unter der Antwort die Timeline **„⛓ Herkunft des Mehrbudgets"** (Lieferant →
+  Einkauf → CFO → Vorstand). Jeder Schritt ist **anklickbar** und öffnet den Originalbeleg. Nach dem
+  Streaming 1–2 Sek. ruhig auf die Kette halten, bevor ein Schritt geöffnet wird — das ist der
+  stärkste Einzelframe fürs Video.
 - **Handlungs-Abschluss:** Unter jeder belegten Antwort steht der Block **„↗ Ergebnis
   weiterreichen"** mit **„✉ An Vorstand senden"** / **„⤓ Als Briefing exportieren"**. Der Klick
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.

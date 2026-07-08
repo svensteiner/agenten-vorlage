@@ -2,6 +2,37 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 14 — 2026-07-08 — Entscheidungskette als sichtbarer „Beleg-Pfad" im Chat ⛓
+
+**Vom Daten-Beleg zum sichtbaren Element.** Zyklus 12/13 legten die Daten der Entscheidungskette
+(zwei E-Mails → CFO → Vorstand); der Betrachter musste sie aber über Quellen-Chips selbst
+zusammensetzen. Jetzt zeigt die Antwort die **Herkunfts-Kette als eigene vertikale Timeline** —
+Lieferant → Einkauf → CFO → Vorstand, jeder Schritt mit anklickbarem Originalbeleg.
+
+### Neu
+- **Neues Szenario `budget-herkunft`** (Modul Finanzen, Konfidenz 95 %): „**Wie kam das Mehrbudget von
+  0,9 Mio. € für Projekt Alpha zustande?**" — knapper Antworttext plus der neue Ketten-Block. Als
+  Hero-Kachel (8 → 9) und in „Geführte Demo" (automatisch, jetzt **12 Szenarien**).
+- **Neues optionales Feld `answer.chain`** (`data.js`) + **Renderer `appendChain()`** (`app.js`),
+  analog zum bestehenden `appendWithheld()`-Muster: vertikale **Timeline mit 3 Schritten**, je
+  **Datum-Badge**, **Akteur** („Einkauf → CFO"), **Label**, Beschreibung und **anklickbarem Beleg**
+  (öffnet das Originaldokument im Viewer). Letzter Schritt (Vorstandsbeschluss) als `strong`
+  hervorgehoben (gefüllter Punkt), Verbindungslinie läuft durch die Punkte und endet am letzten Schritt.
+- **Timeline-CSS** (`styles.css`): `.chain-line`/`.chain-step`/`.cs-dot`/`.cs-date`/`.cs-src` …,
+  bindet an die Marken-Tokens (`--brand`, `--brand-soft`, `--brand-ink`). Als **erster** strukturierter
+  Block unter der Antwort → maximale Wirkung; wird vom bestehenden gestaffelten Block-Reveal mitanimiert.
+- **Zahlen konsistent mit der Story:** 640 t × 120 €/t ≈ 0,9 Mio. € = beschlossenes Mehrbudget
+  (Vorstandsprotokoll). Bestehende Szenarien, Dokumente und der Antwortpfad **unverändert**.
+
+### Verifikation (deterministisch via Node-VM + Browser-DOM/CSS)
+- **21 Dokumente**, **2 E-Mails**, **12 Szenarien**, **1 Szenario mit `chain`**, **0 kaputte
+  Referenzen** über `sources`/`related`/`withheld`/`chain`/`MODULE_SUGGESTIONS`.
+- Chain-Markup + CSS live gegen die realen Szenariodaten gerendert: 3 Schritte, alle **anklickbar**,
+  1 `strong`; Punkte-Rahmen/Datum-Badge/Beleg-Link binden korrekt an die Marken-Tokens,
+  Verbindungslinie 2 px und am letzten Schritt beendet; **keine Konsolenfehler**.
+- (Voll-Streaming-Pfad im Headless-Preview timer-gedrosselt, Screenshot-Capture instabil — bekannte
+  Harness-Grenzen; daher DOM/CSS-basiert verifiziert.)
+
 ## Zyklus 13 — 2026-07-08 — Zweite E-Mail (interne Weiterleitung) → Entscheidungskette quer durch Postfächer ✉→✉
 
 **Von der einzelnen E-Mail zum belegten E-Mail-Thread.** Zyklus 12 brachte das E-Mail-Skin und die

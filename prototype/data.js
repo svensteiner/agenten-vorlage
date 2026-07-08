@@ -515,6 +515,38 @@ const SCENARIOS = [
     },
   },
   {
+    id: "budget-herkunft",
+    module: "finanzen",
+    question: "Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?",
+    keywords: ["mehrbudget", "0,9 mio", "900.000", "herkunft", "wie kam", "wie kam es", "entscheidungskette", "beleg-pfad", "budget zustande", "wer hat entschieden", "genehmigung", "beschlossen"],
+    answer: {
+      text: "Das <b>Mehrbudget von 0,9 Mio. €</b> für Projekt Alpha lässt sich lückenlos zurückverfolgen — von der auslösenden Lieferanten-E-Mail bis zum Vorstandsbeschluss:<ul><li>Auslöser: Stahlwerk Donau hob den Tonnenpreis für Baustahl S355 vertraglich um <b>15 %</b> an (von 800 € auf 920 €).</li><li>Bewertung: Bei rund <b>640 t</b> Jahresbedarf für Projekt Alpha ergibt der Aufschlag von 120 €/t einen Mehrbedarf von <b>0,9 Mio. €</b>.</li><li>Entscheidung: Der Vorstand genehmigte das Mehrbudget und beschleunigte den Zweitlieferanten Ferro Nord.</li></ul>AI Studio rekonstruiert die vollständige Kette über drei Postfächer und den Vorstandsbeschluss — jeder Schritt ist mit dem Originalbeleg hinterlegt.",
+      chain: {
+        title: "Herkunft des Mehrbudgets — die Entscheidungskette",
+        steps: [
+          { date: "12.02.2026", actor: "Stahlwerk Donau → Einkauf", label: "Preisanpassung angekündigt", desc: "Der Lieferant kündigt +15 % auf Baustahl S355 an (800 € → 920 €/t), gedeckt durch die Preisgleitklausel §6 des Rahmenvertrags.", docId: "email-preisanpassung-donau" },
+          { date: "13.02.2026", actor: "Einkauf → CFO", label: "Auswirkung bewertet & weitergeleitet", desc: "Thomas Krüger beziffert den Mehrbedarf auf ~0,9 Mio. € (640 t × +120 €/t) und empfiehlt eine Vorstands-Beschlussvorlage.", docId: "email-weiterleitung-materialbudget", strong: false },
+          { date: "März 2026", actor: "Vorstand", label: "Mehrbudget genehmigt", desc: "Der Vorstand beschließt +0,9 Mio. € für Projekt Alpha und die Aufnahme von Ferro Nord als Zweitlieferant.", docId: "vorstandsprotokoll-2026-03", strong: true },
+        ],
+      },
+      reasoning: [
+        "Frage als Herkunfts-/Lineage-Analyse zur Zahl 0,9 Mio. € erkannt.",
+        "Auslösende Lieferanten-E-Mail (Preisanpassung, 12.02.2026) im Einkaufs-Postfach gefunden.",
+        "Interne Weiterleitung an die CFO (13.02.2026) mit der Bewertung 0,9 Mio. € verknüpft.",
+        "Vorstandsbeschluss (März 2026) als genehmigende Instanz zugeordnet.",
+        "Zahlen über die ganze Kette gegengeprüft: 640 t × 120 €/t ≈ 0,9 Mio. € = beschlossenes Mehrbudget.",
+      ],
+      sources: [
+        { docId: "email-preisanpassung-donau", relevance: 92, quote: "…passen wir gemäß der Preisgleitklausel (§6) den Tonnenpreis für Baustahl S355 zum 01.03.2026 um 15 % an." },
+        { docId: "email-weiterleitung-materialbudget", relevance: 90, quote: "Mehrbedarf von rund 0,9 Mio. € für 2026 … Empfehlung: Aufnahme in die nächste Vorstandssitzung als Beschlussvorlage." },
+        { docId: "vorstandsprotokoll-2026-03", relevance: 85, quote: "Vorstand genehmigt Mehrbudget von 0,9 Mio. € für Materialpreissteigerung." },
+      ],
+      confidence: 95,
+      related: ["email-preisanpassung-donau", "email-weiterleitung-materialbudget", "vorstandsprotokoll-2026-03", "projekt-alpha-status"],
+      followups: ["Fasse Projekt Alpha zusammen.", "Wie abhängig sind wir von unserem größten Lieferanten?"],
+    },
+  },
+  {
     id: "beleg-rechnung",
     module: "audit",
     question: "Zeig mir die Belege zu Rechnung 2026-1843.",
@@ -729,11 +761,11 @@ const SCENARIOS = [
 
 // Startvorschläge pro Modul (Frage-IDs). „wissen" zeigt die Highlights.
 const MODULE_SUGGESTIONS = {
-  wissen: ["reiserichtlinie", "materialkosten", "beleg-rechnung", "vertraege-verlaengerung", "lieferanten-risiko", "onboarding-tag1", "esg-co2", "strategie-ausblick"],
-  finanzen: ["materialkosten", "beleg-rechnung", "lieferanten-risiko"],
+  wissen: ["reiserichtlinie", "materialkosten", "budget-herkunft", "beleg-rechnung", "vertraege-verlaengerung", "lieferanten-risiko", "onboarding-tag1", "esg-co2", "strategie-ausblick"],
+  finanzen: ["materialkosten", "budget-herkunft", "beleg-rechnung", "lieferanten-risiko"],
   audit: ["beleg-rechnung", "brandschutz"],
   hr: ["reiserichtlinie", "onboarding-tag1"],
   vertraege: ["vertraege-verlaengerung"],
-  berichte: ["projekt-alpha", "vorstand-summary", "esg-co2", "strategie-ausblick"],
+  berichte: ["projekt-alpha", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick"],
   einstellungen: [],
 };

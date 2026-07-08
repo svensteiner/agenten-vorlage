@@ -3,28 +3,39 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 74 % (Ende Zyklus 13)
+## Gesamtfortschritt: ≈ 76 % (Ende Zyklus 14)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
-| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 91 % | 18.2 |
-| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 91 % | 13.65 |
+| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
+| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 93 % | 13.95 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 92 % | 13.8 |
 | Demo-Firma & realistische Dokumente | 15 % | 77 % | 11.55 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 84 % | 8.4 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 86 % | 8.6 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
-| **Summe** | **100 %** | — | **≈ 89 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 90 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 74 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (explizites Ketten-/Timeline-Element, weitere Ressorts). Zyklus 13 fügt eine
-> **zweite E-Mail** (interne Weiterleitung Einkauf → CFO) hinzu, die die **Entscheidungskette quer
-> durch Postfächer** belegt, und hebt **Belege** (89 % → 91 %), **Demo-Firma** (74 % → 77 %) und
-> **Szenarien** (82 % → 84 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 76 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (Kette an weiteren Antworten, Viewer-Timeline, weitere Ressorts). Zyklus 14
+> macht die **Entscheidungskette als sichtbares Timeline-Element** (`answer.chain` + `appendChain()`)
+> im Chat sichtbar — der stärkste CFO-Moment ohne Klickarbeit — und hebt **Chat** (91 % → 93 %),
+> **Belege** (91 % → 93 %) und **Szenarien** (84 % → 86 %). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 14 (2026-07-08) ≈ 76 %** — Entscheidungskette als sichtbarer „Beleg-Pfad": neues Szenario
+  `budget-herkunft` („Wie kam das Mehrbudget von 0,9 Mio. € zustande?") + neues optionales Feld
+  `answer.chain` und Renderer `appendChain()` (analog `appendWithheld()`). Vertikale Timeline mit 3
+  Schritten (Lieferanten-E-Mail 12.02. → Weiterleitung Einkauf→CFO 13.02. → Vorstandsbeschluss März),
+  je Datum-Badge, Akteur, Label, Beschreibung und **anklickbarem Beleg** (öffnet Viewer); letzter
+  Schritt `strong` hervorgehoben, Verbindungslinie durch die Punkte. Als erster Block unter der
+  Antwort → maximale Wirkung, wird vom Block-Reveal mitanimiert. Rein additiv in `data.js`/`app.js`/
+  `styles.css`; Hero 8 → 9, Geführte Demo 11 → 12 Szenarien. Deterministisch verifiziert: 21 Docs,
+  2 E-Mails, 12 Szenarien, 1 chain, 0 kaputte Referenzen; Chain-Markup+CSS live gegen reale
+  Szenariodaten geprüft (Tokens/Linie/Klickbarkeit korrekt), keine Konsolenfehler.
+  (Chat 91 % → 93 %, Belege 91 % → 93 %, Szenarien 84 % → 86 %.)
 - **Zyklus 13 (2026-07-08) ≈ 74 %** — Zweite E-Mail (interne Weiterleitung): neues Dokument
   `email-weiterleitung-materialbudget` (Typ „E-Mail", Finanzen) — die WG-Weiterleitung der
   Donau-Preis-E-Mail von Thomas Krüger (Einkauf) an Dr. Katharina Vogel (CFO), Cc Projektleitung
@@ -111,7 +122,8 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Explizites Ketten-/Timeline-Element in der Antwort (Lieferant → Einkauf → CFO → Vorstand) →
-   macht die Entscheidungskette ohne Klickarbeit sichtbar, stärkster CFO-Moment fürs Video.
-2. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
-3. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
+1. Den neuen Ketten-Baustein (`answer.chain`) auch an die **Materialkosten-Antwort** hängen (kein
+   neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat der Demo.
+2. Timeline-/Fortschritts-Leiste im Dokumentenviewer für die E-Mail-Kette (Schritt n von 3, Vor/Zurück).
+3. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
+4. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.

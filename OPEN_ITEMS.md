@@ -5,16 +5,26 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Explizites Ketten-/Timeline-Element in der Antwort** — die Entscheidungskette
-   (Lieferant → Einkauf → CFO → Vorstand) als eigenes, sichtbares Antwort-Element (kompakte
-   Timeline/Kette) statt nur über Quellen-Chips. Optional `answer.chain` + `appendChain()`-Renderer
-   analog zu `appendWithheld()`, oder als HTML-Block in `answer.text` (rein datengetrieben). Stärkster
-   CFO-Moment fürs Video. → oberstes Item für den nächsten Zyklus.
-2. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
-3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+1. **[P5] Kette an die Materialkosten-Antwort hängen** — den neuen `answer.chain`-Baustein auch an
+   `materialkosten` anfügen (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat.
+   Achtung Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten + budget-herkunft) —
+   ggf. einen Beat aus der „Geführten Demo" trennen. → oberstes Item für den nächsten Zyklus.
+2. **[P5] Timeline im Dokumentenviewer** — kompakte „Schritt n von 3"-Leiste mit Vor/Zurück für die
+   E-Mail-Kette, damit der Thread auch beim Einzeldokument-Lesen navigierbar ist.
+3. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
+4. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 14] Entscheidungskette als sichtbarer „Beleg-Pfad"** — neues Szenario `budget-herkunft`
+  („Wie kam das Mehrbudget von 0,9 Mio. € zustande?") + neues Feld `answer.chain` und Renderer
+  `appendChain()` (analog `appendWithheld()`): vertikale Timeline mit 3 Schritten (Lieferanten-E-Mail
+  → Weiterleitung Einkauf→CFO → Vorstandsbeschluss), je Datum-Badge, Akteur, Label, Beschreibung und
+  anklickbarem Beleg; letzter Schritt `strong`, Verbindungslinie durch die Punkte. Als erster Block
+  unter der Antwort. Rein additiv in `data.js`/`app.js`/`styles.css`; Hero 8 → 9, Geführte Demo
+  11 → 12. Deterministisch verifiziert (21 Docs, 12 Szenarien, 1 chain, 0 kaputte Referenzen;
+  Markup+CSS live geprüft).
 
 - **[Zyklus 13] Zweite E-Mail (interne Weiterleitung) → Entscheidungskette** — neues Dokument
   `email-weiterleitung-materialbudget` (Typ „E-Mail", Finanzen): WG-Weiterleitung der Donau-Preis-
