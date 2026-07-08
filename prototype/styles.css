@@ -185,6 +185,42 @@ body {
 .conf-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #16a34a, #22c55e); }
 .conf-bar.mid i { background: linear-gradient(90deg, #d97706, #f59e0b); }
 
+/* Konfidenz-Herleitung: Hover/Focus am Meter erklärt, woraus sich die Prozentzahl
+   speist (Quellenzahl, höchste Relevanz, Übereinstimmung). Rein additiv, öffnet
+   ein kleines Popover unterhalb des Meters. */
+.answer .head .conf.has-pop { position: relative; cursor: help; outline: none; }
+.conf-i { margin-left: 5px; font-size: 11px; color: var(--ink-soft); opacity: .65; transition: color .15s, opacity .15s; }
+.conf.has-pop:hover .conf-i,
+.conf.has-pop:focus-within .conf-i { opacity: 1; color: var(--brand); }
+.conf-pop {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 40;
+  width: 274px; padding: 13px 14px; text-align: left; cursor: default;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+  pointer-events: none;
+}
+.conf.has-pop:hover .conf-pop,
+.conf.has-pop:focus-within .conf-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+.conf-pop::before {
+  content: ""; position: absolute; top: -6px; right: 18px; width: 11px; height: 11px;
+  background: var(--surface); border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+.cp-title { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 11px; }
+.cp-title b { color: var(--ink); font-weight: 700; }
+.cp-factor { display: block; margin-bottom: 10px; }
+.cp-factor:last-of-type { margin-bottom: 2px; }
+.cp-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.cp-k { font-size: 12.5px; color: var(--ink); }
+.cp-v { font-size: 12.5px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cp-bar { display: block; height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 6px; }
+.cp-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--brand), #8b5cf6); }
+.cp-sub { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+.cp-foot { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+@media (prefers-reduced-motion: reduce) { .conf-pop { transition: none; } }
+
 /* Blöcke innerhalb der Antwort */
 .block { padding: 6px 18px 16px; }
 /* Gestaffelter Fade-/Slide-in: die Antwortblöcke bauen sich souverän auf,

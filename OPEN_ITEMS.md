@@ -5,20 +5,26 @@
 
 ## Offen (nach Priorität)
 
-1. **[P6] Konfidenz-Tooltip am Meter** — Hover zeigt, *woraus* sich die Zahl speist (Anzahl Quellen,
-   höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. Klein, additiv
-   (`app.js`/`styles.css`), datengetrieben aus `answer.sources`. → oberstes Item für den nächsten Zyklus.
-2. **[P5] Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
+1. **[P5] Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
    Frage „Wie steht Projekt Beta?". Rein additiv in `data.js` (Reuse Bericht-Skins). Hebt Demo-Firma
-   und Szenarien weiter.
-3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+   und Szenarien weiter. → **oberstes Item für den nächsten Zyklus** (schwächster Bereich: Demo-Firma 86 %).
+2. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
-4. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+3. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
 
 ## Erledigt
+
+- **[Zyklus 20] Konfidenz-Tooltip am Meter** — Hover/Focus am Konfidenz-Meter öffnet ein Popover, das die
+  Prozentzahl aus den Quellen herleitet: **Quellen herangezogen · höchste Relevanz · Übereinstimmung der
+  Belege** (einzeln/teilweise/hoch, „X von N ≥ 80 %"), je mit Mini-Balken; Fußzeile „Keine Behauptung —
+  eine Ableitung aus konkreten Quellen." Rein datengetrieben aus `answer.sources` (keine neuen Felder),
+  erscheint nur bei Antworten mit Quellen, tastatur-erreichbar (`tabindex`/`:focus-within`). Rein additiv:
+  `buildConfPop()` + Kopf-Markup in `app.js`, `.conf-pop` in `styles.css`. Deterministisch + live
+  verifiziert (14 Szenarien mit Quellen erhalten Tooltip, 0 ungültige Relevanz, Popover-Inhalt korrekt
+  hergeleitet, Balken 25/98/55 %, keine Konsolenfehler).
 
 - **[Zyklus 19] Reklamations-Vorgang (mangelhafte Stahllieferung → Gutschrift)** — neues Audit-Szenario
   `reklamation-stahl` (95 %) + zwei Belege: `maengelruege-mr-2026-0091` (Typ „Mängelrüge", roter

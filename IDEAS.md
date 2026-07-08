@@ -73,10 +73,13 @@
   13.137,60 € brutto, grüner GUTSCHRIFT-Stempel). §12 Gewährleistung im Rahmenvertrag ergänzt. Zeigt
   den *Ausnahme*-Belegpfad als Gegenpol zum sauberen Drei-Wege-Abgleich. Rein additiv. Hero 10 → 11,
   Demo 13 → 14.
-- **Konfidenz-Tooltip am Meter** — Hover zeigt, woraus sich die Konfidenz speist (Anzahl Quellen,
-  höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. *(Nächster Zyklus.)*
+- ✅ **Konfidenz-Tooltip am Meter** — *erledigt in Zyklus 20*: Hover/Focus am Konfidenz-Meter öffnet ein
+  Popover, das die Zahl aus den Quellen herleitet (Quellen herangezogen · höchste Relevanz ·
+  Übereinstimmung einzeln/teilweise/hoch, je Mini-Balken; Fußzeile „Keine Behauptung — eine Ableitung aus
+  konkreten Quellen."). Datengetrieben aus `answer.sources`, tastatur-erreichbar. Rein additiv in
+  `app.js` (`buildConfPop()`) + `styles.css`.
 - **Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
-  Frage „Wie steht Projekt Beta?". Rein additiv in `data.js`. *(Breiten-Option.)*
+  Frage „Wie steht Projekt Beta?". Rein additiv in `data.js`. *(Nächster Zyklus — Breiten-Option.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

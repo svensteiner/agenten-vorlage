@@ -3,26 +3,42 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 84 % (Ende Zyklus 19)
+## Gesamtfortschritt: ≈ 85 % (Ende Zyklus 20)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 95 % | 19.0 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
-| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 94 % | 14.1 |
+| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 96 % | 14.4 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
 | Demo-Firma & realistische Dokumente | 15 % | 86 % | 12.9 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 92 % | 9.2 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
-| **Summe** | **100 %** | — | **≈ 92 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 93 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 84 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur. Zyklus 19 fügt einen **vollständigen Reklamations-Vorgang**
-> (mangelhafte Stahllieferung → §377-HGB-Rüge → Gutschrift) hinzu und hebt **Demo-Firma**
-> (81 % → 86 %) und **Szenarien** (90 % → 92 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 85 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur. Zyklus 20 macht die **Konfidenzzahl erklärbar** (Hover-Tooltip am
+> Meter, hergeleitet aus den Quellen) und hebt **Belege pro Antwort** (94 % → 96 %).
+> Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 20 (2026-07-08) ≈ 85 %** — Konfidenz-Herleitung als Hover/Focus-Tooltip am Konfidenz-Meter:
+  hovert der Cursor die Prozentzahl im Antwortkopf, öffnet sich ein kleines Popover, das zeigt, *woraus*
+  sich die Zahl speist — **Quellen herangezogen** (Anzahl), **höchste Relevanz** (Top-Quelle) und **Grad
+  der Übereinstimmung der Belege** (einzeln / teilweise / hoch, je „X von N Belegen ≥ 80 % Relevanz"),
+  jeweils mit Mini-Balken. Fußzeile: *„Keine Behauptung — eine Ableitung aus konkreten Quellen."*
+  Entkräftet den letzten CFO-Einwand („woher weiß das System das?") direkt am Meter. Rein datengetrieben
+  aus dem bestehenden `answer.sources`-Array (keine neuen Datenfelder), erscheint nur bei Antworten mit
+  Quellen. Rein additiv: `buildConfPop()` + Kopf-Markup in `app.js`, `.conf-pop`-Block in `styles.css`;
+  `data.js`/`index.html` unverändert. Deterministisch verifiziert (Node-VM gegen `data.js`): alle **14
+  Szenarien** mit Quellen erhalten den Tooltip, **0 ungültige Relevanzwerte**, Labels korrekt (einzeln/
+  teilweise/hoch). Live im Browser gegen reale Daten geprüft: Kopf trägt `conf has-pop` + `tabindex`,
+  Popover-Inhalt korrekt hergeleitet (Reiserichtlinie: 1 Quelle, Top 98 %, „einzeln"), Mini-Balken
+  25/98/55 % passend, Popover erscheint per `:focus-within` (opacity 1, sichtbar), keyboard-erreichbar,
+  keine Konsolenfehler. (Screenshot-Capture im Harness instabil — DOM/CSS-basiert verifiziert.)
+  (Belege pro Antwort 94 % → 96 %.)
 
 - **Zyklus 19 (2026-07-08) ≈ 84 %** — Reklamations-Vorgang (mangelhafte Stahllieferung → Gutschrift):
   neues Szenario `reklamation-stahl` (Modul Audit, Konfidenz 95 %) „Wie haben wir die mangelhafte

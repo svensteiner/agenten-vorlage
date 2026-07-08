@@ -2,6 +2,39 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 20 — 2026-07-08 — Konfidenz-Herleitung: das Meter erklärt sich selbst 🔍
+
+**Die Konfidenzzahl im Antwortkopf ist jetzt erklärbar.** Der letzte Skeptiker-Einwand eines CFOs zielt
+auf die Konfidenzzahl selbst („woher weiß das System das?"). Neu: hovert der Cursor das Konfidenz-Meter
+(oder erreicht es per Tab), öffnet sich ein Popover, das die Zahl **aus den Quellen herleitet** —
+Anzahl der Quellen, höchste Relevanz und Grad der Übereinstimmung. Rein datengetrieben aus dem
+bestehenden `answer.sources`-Array; keine neuen Datenfelder.
+
+### Neu
+- **Konfidenz-Tooltip** am Meter (`.conf-pop`): drei Faktoren mit Mini-Balken — **Quellen herangezogen**
+  (Anzahl), **Höchste Relevanz** (Top-Quelle in %), **Übereinstimmung der Belege** (qualitativ
+  *einzeln / teilweise / hoch* mit Unterzeile „X von N Belegen ≥ 80 % Relevanz"). Titel „So ergibt sich
+  die **Konfidenz X %**", Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Quellen."*
+- **Ehrlich, nicht beschönigt:** `projekt-alpha` (3 Quellen, nur 1 ≥ 80 %) → „teilweise";
+  `reiserichtlinie` (1 Quelle) → „einzeln"; `materialkosten` (5 Quellen) → „hoch".
+- **Zugänglich:** Meter ist `tabindex="0"` + `aria-label`; Popover öffnet per `:focus-within` (Tastatur),
+  nicht nur per Maus. `prefers-reduced-motion` → keine Transition.
+
+### Geändert
+- `app.js`: neue `buildConfPop(answer)`; Kopf-Markup in `streamAnswer()` trägt jetzt `conf has-pop` +
+  `tabindex` + optionalen ⓘ-Marker, wenn Quellen vorhanden sind.
+- `styles.css`: `.conf-pop`-Block (Popover, Pfeil, Faktor-Zeilen, Mini-Balken) hinter den vorhandenen
+  `.conf-bar`-Regeln.
+- `data.js` und `index.html` unverändert; bestehender Antwortpfad, Skins und Dokumente unangetastet.
+
+### Verifikation
+- Deterministisch (Node-VM gegen `data.js`): **14 Szenarien mit Quellen** erhalten den Tooltip,
+  **0 ungültige Relevanzwerte**, Labels korrekt über alle Fälle.
+- Live im Browser (DOM/CSS gegen reale Daten): Kopf `conf has-pop` + `tabindex="0"`, Popover-Inhalt
+  korrekt hergeleitet (Reiserichtlinie 1 Quelle · Top 98 % · „einzeln"), Mini-Balken 25/98/55 % passend,
+  Popover per `:focus-within` sichtbar (opacity 1), **keine Konsolenfehler**. (Screenshot-Capture im
+  Harness instabil, `:focus-within`-Icon-Tint headless unzuverlässig — bekannte Grenzen.)
+
 ## Zyklus 19 — 2026-07-08 — Reklamations-Vorgang: mangelhafte Stahllieferung → Gutschrift 🧾
 
 **Ein neuer, authentischer Beleg-Vorgang zeigt, dass auch die Ausnahme lückenlos dokumentiert ist —

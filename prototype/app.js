@@ -341,6 +341,44 @@
     return m;
   }
 
+  // ---------- Konfidenz-Herleitung ----------
+  // Macht die Prozentzahl im Antwortkopf greifbar: sie ist keine Behauptung,
+  // sondern eine Ableitung aus den herangezogenen Quellen — Anzahl, höchste
+  // Relevanz und Grad der Übereinstimmung der Belege. Rein datengetrieben aus
+  // answer.sources (keine neuen Datenfelder); ohne Quellen (Fallback-Antwort)
+  // erscheint kein Tooltip. Entkräftet den letzten CFO-Einwand „woher weiß das
+  // System das?" direkt am Meter (Cursor hovert → Zahl wird erklärt).
+  function buildConfPop(answer) {
+    const sources = (answer.sources || []).filter((s) => DOCS[s.docId]);
+    if (!sources.length) return "";
+    const rels = sources.map((s) => s.relevance).sort((a, b) => b - a);
+    const n = sources.length;
+    const top = rels[0];
+    const strong = rels.filter((r) => r >= 80).length;
+    let agreeVal, agreeSub, agreePct;
+    if (n === 1) {
+      agreeVal = "einzeln"; agreeSub = "eine belastbare Quelle"; agreePct = 55;
+    } else if (strong >= 2) {
+      agreeVal = "hoch"; agreeSub = strong + " von " + n + " Belegen ≥ 80 % Relevanz"; agreePct = 92;
+    } else {
+      agreeVal = "teilweise"; agreeSub = strong + " von " + n + " Belegen ≥ 80 % Relevanz"; agreePct = 70;
+    }
+    const nPct = (Math.min(n, 4) / 4) * 100;
+    const row = (label, val, pct, sub) =>
+      `<span class="cp-factor">` +
+      `<span class="cp-line"><span class="cp-k">${label}</span><span class="cp-v">${val}</span></span>` +
+      `<span class="cp-bar"><i style="width:${pct}%"></i></span>` +
+      (sub ? `<span class="cp-sub">${sub}</span>` : "") +
+      `</span>`;
+    return `<span class="conf-pop" role="tooltip">` +
+      `<span class="cp-title">So ergibt sich die <b>Konfidenz ${answer.confidence}%</b></span>` +
+      row("Quellen herangezogen", n, nPct) +
+      row("Höchste Relevanz", top + "%", top) +
+      row("Übereinstimmung der Belege", agreeVal, agreePct, agreeSub) +
+      `<span class="cp-foot">Keine Behauptung — eine Ableitung aus konkreten Quellen.</span>` +
+      `</span>`;
+  }
+
   // ---------- Antwort streamen ----------
   async function streamAnswer(wrap, answer) {
     const msg = el("div", "msg");
@@ -348,12 +386,17 @@
     const confCls = answer.confidence >= 90 ? "" : "mid";
     // Kopf: „Beantwortet in X,X s"-Signal (Tempo) links vom Konfidenz-Meter.
     const secs = answerSeconds(answer);
+    // Hover/Focus am Konfidenz-Meter erklärt, woraus sich die Prozentzahl speist.
+    const pop = buildConfPop(answer);
     card.appendChild(el("div", "head",
       `<span class="ai">✦</span><span class="who">AI Studio</span>` +
       `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">0,0 s</b></span>` +
-      `<span class="conf"><span class="conf-meter">Konfidenz` +
+      `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
+      `<span class="conf-meter">Konfidenz` +
       `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
-      `<b>${answer.confidence}%</b></span></span>`));
+      `<b>${answer.confidence}%</b>` +
+      (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
+      `</span>${pop}</span>`));
     const textEl = el("div", "text");
     textEl.classList.add("cursor");
     card.appendChild(textEl);

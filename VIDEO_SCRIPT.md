@@ -22,10 +22,14 @@ danach läuft alles automatisch (idealer, freihändiger Video-Einstieg).
 Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 
 ## Szene 1 — Die einfache Frage (0:20–0:45)
-**Aktion:** Auf die Vorschlagskarte *„Wo finde ich die aktuelle Reiserichtlinie?"* klicken.
-**Sprecher:** „Eine ganz normale Frage — in Ihrer Sprache."
-**Bild:** Antwort streamt ein, Konfidenz 98 %, klare Regeln, eine Quelle.
-**Punkt:** Sofort, präzise, mit Beleg.
+**Aktion:** Auf die Vorschlagskarte *„Wo finde ich die aktuelle Reiserichtlinie?"* klicken. Nach der
+Antwort mit dem **Cursor auf das Konfidenz-Meter** fahren — ein Popover klappt auf.
+**Sprecher:** „Eine ganz normale Frage — in Ihrer Sprache. Und diese 98 Prozent? Kein Bauchgefühl —
+das System zeigt, woraus sie sich ableiten."
+**Bild:** Antwort streamt ein, Konfidenz 98 %, klare Regeln, eine Quelle. Beim Verweilen auf dem Meter
+erscheint die **Herleitung**: *Quellen herangezogen · höchste Relevanz 98 % · Übereinstimmung* mit
+Mini-Balken, Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Quellen."*
+**Punkt:** Sofort, präzise, mit **nachvollziehbarem** Beleg — die Konfidenzzahl erklärt sich selbst.
 
 ## Szene 0b — „Was steckt eigentlich alles drin?" (Opener der Geführten Demo, 0:20–0:35)
 **Aktion:** **Automatisch** — direkt nach dem Start der „▶ Geführten Demo" und **vor** der ersten Frage

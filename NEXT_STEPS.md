@@ -6,12 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 19 — **Reklamations-Vorgang**: neues Audit-Szenario „Wie haben wir die
-  mangelhafte Stahllieferung reklamiert?" mit zwei neuen Belegen (Mängelrüge + Gutschrift) — mangelhafte
-  Teillieferung → §377-HGB-Rüge → Gutschrift 11.040 € netto. Auch die *Ausnahme* ist lückenlos belegt.
+- **Letzter Zyklus:** Zyklus 20 — **Konfidenz-Herleitung**: Hover/Focus-Tooltip am Konfidenz-Meter, der
+  die Prozentzahl aus den Quellen herleitet (Anzahl · höchste Relevanz · Grad der Übereinstimmung). Macht
+  die zentrale „belastbare-Belege"-Story greifbar — die 95 % sind keine Behauptung, sondern eine Ableitung.
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 84 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 85 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -30,6 +30,30 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 20 gebaut wurde
+
+**Konfidenz-Herleitung — die Prozentzahl im Antwortkopf ist jetzt erklärbar.** Der letzte Skeptiker-
+Einwand eines CFOs zielt auf die **Konfidenzzahl selbst** („woher weiß das System das?"). Neu: hovert der
+Cursor das Konfidenz-Meter, öffnet sich ein kleines Popover direkt darunter, das die Zahl **aus den
+Quellen herleitet**:
+- **Drei datengetriebene Faktoren**, je mit Mini-Balken: **Quellen herangezogen** (Anzahl, skaliert auf
+  bis zu 4 = voll), **Höchste Relevanz** (Top-Quelle in %), **Übereinstimmung der Belege** — qualitativ
+  **einzeln / teilweise / hoch** mit ehrlicher Unterzeile „X von N Belegen ≥ 80 % Relevanz". Titel „So
+  ergibt sich die **Konfidenz X %**", Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Quellen."*
+- **Rein datengetrieben** aus dem bestehenden `answer.sources`-Array — **keine neuen Datenfelder**. Ohne
+  Quellen (Fallback-Antwort) erscheint **kein** Tooltip. Ehrlich statt beschönigt: `projekt-alpha` (3
+  Quellen, aber nur 1 ≥ 80 %) zeigt korrekt **„teilweise"**, `reiserichtlinie` (1 Quelle) **„einzeln"**.
+- **Zugänglich:** das Meter ist `tabindex="0"` + `aria-label`; das Popover öffnet auch per Tastatur
+  (`:focus-within`), nicht nur per Maus. `prefers-reduced-motion` → keine Transition.
+- **Rein additiv:** neue `buildConfPop(answer)` + erweitertes Kopf-Markup in `app.js`, `.conf-pop`-Block
+  in `styles.css`; `data.js`/`index.html` unverändert. Bestehender Antwortpfad, Skins und alle Dokumente
+  unangetastet. Deterministisch verifiziert (Node-VM gegen `data.js`): **14 Szenarien mit Quellen** (alle
+  erhalten den Tooltip), **0 ungültige Relevanzwerte**, Labels korrekt über alle Fälle. Live im Browser
+  gegen reale Daten geprüft: Kopf trägt `conf has-pop` + `tabindex="0"`, Popover-Inhalt korrekt hergeleitet
+  (Reiserichtlinie 1 Quelle · Top 98 % · „einzeln"), Mini-Balken **25/98/55 %** passend, Popover per
+  `:focus-within` sichtbar (opacity 1), **keine Konsolenfehler**. (Screenshot-Capture im Harness instabil,
+  `:focus-within`-Tint headless unzuverlässig — bekannte Grenzen; daher DOM/CSS-basiert verifiziert.)
 
 ## Was in Zyklus 19 gebaut wurde
 
@@ -484,23 +508,23 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Konfidenz visuell erklären — ein Tooltip/Hover am Konfidenz-Meter.** Nach Zyklus 19 ist der
-Reklamations-Vorgang der empfohlene Breiten-Schritt (Demo-Firma 81 % → 86 %). Der jetzt stärkste
-verbleibende Hebel ist **Politur der Belegbarkeit**: ein kleiner Hover/Tooltip am Konfidenz-Meter, der
-zeigt, *woraus* sich die Prozentzahl speist — **Anzahl Quellen**, **höchste Relevanz**, **Grad der
-Übereinstimmung** der Belege. Rein additiv (`app.js` Renderer + `styles.css`), datengetrieben aus dem
-bestehenden `answer.sources`-Array (keine neuen Datenfelder nötig). Macht die zentrale
-„belastbare-Belege"-Story für skeptische CFOs greifbar: die 95 % sind keine Behauptung, sondern eine
-Ableitung aus konkreten Quellen.
+**Ein zweites Projekt („Projekt Beta") als Breiten-Schritt.** Nach Zyklus 20 sind Belegbarkeit und
+Konfidenz-Politur rund; der schwächste verbleibende Fortschrittsbereich ist wieder **Demo-Firma &
+realistische Dokumente (86 %)**. Der wirkungsvollste additive Schritt ist ein **zweites Projekt neben
+„Alpha"** — z. B. „Projekt Beta" (anderer Kunde/Standort, eigener Status) — mit eigenem **Statusbericht**
+und einer belegten Frage **„Wie steht Projekt Beta?"** (Fortschritt, Budget, Risiken/Termine). Zeigt, dass
+die Demo-Firma **mehrere parallele Vorhaben** trägt, nicht nur eine Vorzeige-Story. Rein additiv in
+`data.js` (Reuse der bestehenden Bericht-Skins + `answer`-Struktur); optional eine kleine Ampel/Statustabelle.
+Hebt Demo-Firma **und** Szenarien-Breite.
 
-*Warum?* Die Demo hat jetzt Breite (14 Szenarien, 25 Dokumente über 6 Ressorts) **und** Tiefe (saubere
-und Ausnahme-Belegpfade). Der letzte Skeptiker-Einwand eines CFOs zielt auf die **Konfidenzzahl selbst**
-(„woher weiß das System das?"). Ein Tooltip, der die Herleitung sichtbar macht, entkräftet genau diesen
-Einwand — mit minimalem Aufwand und hoher Wirkung im Video (Cursor hovert, Zahl wird erklärt).
+*Warum?* Die Demo hat jetzt Breite (14 Szenarien, 25 Dokumente über 6 Ressorts), Tiefe (saubere **und**
+Ausnahme-Belegpfade) **und** erklärte Belegbarkeit (Konfidenz-Tooltip). Was ein skeptischer CFO als
+Nächstes prüft: *„Ist das nur diese eine schöne Geschichte, oder trägt es meinen ganzen Betrieb?"* Ein
+zweites, gleichwertig belegtes Projekt beantwortet genau das.
 
-**Alternative, falls Breite vor Politur:** ein **zweites Projekt** neben „Alpha" (z. B. „Projekt Beta")
-mit eigenem Statusbericht, das eine Frage „Wie steht Projekt Beta?" belegt — hebt Demo-Firma und
-Szenarien weiter. Rein additiv in `data.js` (Reuse der Bericht-Skins).
+**Alternative (Politur):** die Konfidenz-Faktoren auch **im Antwortkopf minimal andeuten** (z. B. ein
+dezenter „◉ 3 Quellen"-Chip neben dem Meter), damit die Herleitung schon ohne Hover sichtbar ist — nur
+falls der Hover im Video zu subtil wirkt.
 
 **Nicht dupliziert (bewusst):** die Entscheidungskette (`DECISION_CHAIN`) auch an die
 `materialkosten`-Antwort hängen — dann erschiene die Kette **zweimal** in der Geführten Demo
@@ -508,6 +532,18 @@ Szenarien weiter. Rein additiv in `data.js` (Reuse der Bericht-Skins).
 natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst nicht dupliziert.
 
 ---
+
+## CEO-Review (Ende Zyklus 20)
+
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo beweist Belege pro Antwort nicht mehr
+  nur (Quellen, Relevanz, Konfidenzzahl) — sie **erklärt** die Konfidenzzahl jetzt am Meter: hovert der
+  Cursor, zeigt ein Popover *„3 Quellen · höchste Relevanz 97 % · Übereinstimmung hoch"*. Die 95 % sind
+  sichtbar keine Behauptung, sondern eine Ableitung.
+- *Versteht ein CFO den Nutzen?* — Ja, sofort: der häufigste Skeptiker-Reflex („woher weiß das System
+  das?") wird in einer Sekunde entkräftet, ohne dass jemand eine Formel erklären muss. Und es bleibt
+  **ehrlich** — bei nur teilweiser Beleglage sagt der Tooltip „teilweise", nicht „hoch".
+- *Schwächste Stelle → nächster Zyklus:* Breite der Demo-Firma — ein **zweites Projekt (Beta)** neben
+  Alpha, gleichwertig belegt. Siehe oben.
 
 ## CEO-Review (Ende Zyklus 19)
 
