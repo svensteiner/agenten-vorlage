@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 81 % (Ende Zyklus 17)
+## Gesamtfortschritt: ≈ 82 % (Ende Zyklus 18)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -13,16 +13,32 @@
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
 | Demo-Firma & realistische Dokumente | 15 % | 81 % | 12.15 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 90 % | 9.0 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
 | **Summe** | **100 %** | — | **≈ 91 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 81 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (mehr authentische Dokumente, Ketten-Tiefe). Zyklus 17 liefert die
-> **globale Live-Suche (Command-Palette)** über alle 23 Dokumente — der lang offene „Was steckt
-> alles drin?"-Moment — und hebt **App-Grundgerüst** (92 % → 95 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 82 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (mehr authentische Dokumente, Ketten-Tiefe). Zyklus 18 webt den
+> **Such-Beat als automatischen Opener in die Geführte Demo** — die Command-Palette wird jetzt
+> hands-free vorgeführt (erstes Bild des Videos) und hebt **Video-Reife** (99 % → 100 %).
+> Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 18 (2026-07-08) ≈ 82 %** — Such-Beat als Opener der Geführten Demo: die in Zyklus 17
+  gebaute globale Suche wird jetzt **hands-free vorgeführt**. `startDemo()` ruft vor der Szenario-
+  Schleife `demoSearchBeat(token)` — die Command-Palette öffnet automatisch („23 Dokumente im
+  Wissensspeicher"), tippt sichtbar **„stahl"** → **8 Treffer quer über Finanzen + Audit** mit
+  `<mark>`-Highlight, öffnet kurz einen **freigegebenen** Beleg im Viewer (gesperrte übergangen → kein
+  „Zugriff verweigert" als Opener) und schließt Palette + Viewer, *dann* startet die Frage-Sequenz. Die
+  Menge des erschlossenen Wissens ist damit das **erste Bild** des Videos. `resetDemoUi()` schließt
+  jetzt zusätzlich Viewer/Palette → Stoppen mitten im Beat hinterlässt keinen offenen Zustand; voll
+  token-gesteuert, `prefers-reduced-motion` respektiert. Rein additiv in `app.js`; `data.js`/
+  `styles.css`/`index.html` unverändert. Live im Browser gegen reale Daten verifiziert: Beat läuft
+  automatisch (Palette → „stahl" → 8/23, Module Finanzen/Audit/Verträge, Viewer „Quartalsbericht Q1
+  2026" öffnet+schließt → Fortschritt „1 / 13", Composer gesperrt); Stopp mitten im Beat räumt sauber
+  auf; keine Konsolenfehler. (Screenshot-Capture im Harness instabil — DOM-basiert verifiziert.)
+  (Video-Reife 99 % → 100 %.)
 
 - **Zyklus 17 (2026-07-08) ≈ 81 %** — Globale Live-Suche (Command-Palette): sichtbarer
   „Was steckt alles drin?"-Moment über den **gesamten** Wissensspeicher. Neuer Sidebar-Auslöser
@@ -166,9 +182,11 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Suchmoment in die Geführte Demo / ins Video aufnehmen** — die Command-Palette als eigener Beat
-   (Strg+K → „stahl" → 8 Treffer quer über Ressorts → Klick öffnet Beleg) vor der ersten Frage; macht
-   die schiere Menge des Wissens zum Opener. Reuse vorhanden; nur Sequenz/Skript.
-2. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
+1. **Mehr Tiefe in der Demo-Firma** (weitere authentische Dokumente) → schwächster Bereich (81 %).
+   Z. B. ein Lieferschein/Reklamations-Vorgang oder ein zweites Projekt (neben Alpha), das eine weitere
+   Frage belegbar macht — hebt Demo-Firma **und** Szenarien-Breite.
+2. **Konfidenz visuell erklären** — ein Tooltip/Hover am Konfidenz-Meter, der zeigt, *woraus* sich die
+   Zahl speist (Quellenanzahl, Relevanz, Übereinstimmung); macht die „belastbaren Belege"-Story noch
+   greifbarer für skeptische CFOs.
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).

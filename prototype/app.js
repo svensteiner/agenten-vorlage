@@ -107,6 +107,11 @@
     selectModule("wissen");
     await sleep(650);
 
+    // Opener-Beat: die globale Suche als erstes Bild — „mein Unternehmen besitzt das alles bereits".
+    if (token !== demo.token) return;
+    await demoSearchBeat(token);
+    if (token !== demo.token) return;
+
     const list = SCENARIOS; // die 7 Szenarien in kuratierter Reihenfolge
     for (let i = 0; i < list.length; i++) {
       if (token !== demo.token) return;
@@ -127,6 +132,9 @@
 
   function resetDemoUi() {
     demo.running = false;
+    // Falls die Demo während des Such-Beats gestoppt wurde: Palette/Viewer sauber schließen.
+    closeViewer();
+    closeSearch();
     const btn = $("#demoBtn");
     btn.classList.remove("running");
     $(".di", btn).textContent = "▶";
@@ -150,6 +158,61 @@
     await sleep(440);
     ta.value = "";
     ta.style.height = "auto";
+  }
+
+  // Opener-Beat der Geführten Demo: öffnet automatisch die Command-Palette, tippt
+  // sichtbar „stahl", zeigt die Treffer quer über die Ressorts und öffnet kurz einen
+  // Beleg — bevor die erste Frage läuft. Macht die schiere Menge des erschlossenen
+  // Wissens zum ersten Bild des Videos. Rein choreografisch; nutzt die bestehenden
+  // Such-/Viewer-Bausteine wieder und respektiert den token-Mechanismus + reduced-motion.
+  async function demoSearchBeat(token) {
+    const overlay = $("#searchOverlay");
+    const input = $("#searchInput");
+    if (!overlay || !input) return;
+    const reduce = reducedMotion();
+
+    // Palette öffnen (openSearch() ist während der Demo bewusst gesperrt → hier inline).
+    search.open = true;
+    overlay.hidden = false;
+    input.value = "";
+    renderSearchResults("");
+    input.focus();
+    await sleep(reduce ? 300 : 750); // „23 Dokumente im Wissensspeicher" wirken lassen
+    if (token !== demo.token) return;
+
+    // „stahl" sichtbar eintippen → live gefilterte Treffer quer über Finanzen + Audit.
+    const query = "stahl";
+    if (reduce) {
+      input.value = query;
+      renderSearchResults(query);
+    } else {
+      for (let i = 0; i < query.length; i++) {
+        if (token !== demo.token) return;
+        input.value = query.slice(0, i + 1);
+        renderSearchResults(input.value);
+        await sleep(95);
+      }
+    }
+    await sleep(reduce ? 400 : 1000); // Trefferliste zeigen
+    if (token !== demo.token) return;
+
+    // Einen freigegebenen Beleg kurz öffnen (gesperrte übergehen → kein „Zugriff verweigert"
+    // als Opener). Auswahl auf die geöffnete Zeile setzen, damit Highlight und Viewer passen.
+    const idx = search.results.findIndex((d) => !d.locked);
+    if (idx >= 0) {
+      setSel(idx);
+      await sleep(reduce ? 200 : 520);
+      if (token !== demo.token) return;
+      openViewer(search.results[idx].id);
+      await sleep(reduce ? 500 : 1500); // Beleg lesen lassen
+      if (token !== demo.token) return;
+      closeViewer();
+      await sleep(reduce ? 200 : 520);
+    }
+    if (token !== demo.token) return;
+
+    closeSearch();
+    await sleep(reduce ? 250 : 650);
   }
 
   // ---------- Sidebar ----------

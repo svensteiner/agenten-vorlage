@@ -6,12 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 17 — **Globale Live-Suche (Command-Palette)**: „🔍 Alles durchsuchen" in
-  der Sidebar (+ Strg/⌘ + K) öffnet ein Modal, das live über alle 23 Dokumente filtert (Titel/Typ/
-  Snippet/Autor/Modul) — der „Was steckt alles drin?"-Moment (siehe unten).
+- **Letzter Zyklus:** Zyklus 18 — **Such-Beat als Opener der Geführten Demo**: die „▶ Geführte Demo"
+  eröffnet jetzt automatisch mit der Command-Palette (öffnet sich, tippt „stahl", zeigt 8 Treffer quer
+  über Finanzen + Audit, öffnet kurz einen Beleg) — *dann* startet die Frage-Sequenz (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 81 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 82 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -30,6 +30,33 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 18 gebaut wurde
+
+**Such-Beat als automatischer Opener der Geführten Demo — die Command-Palette wird jetzt hands-free
+vorgeführt.** Zyklus 17 baute den Such-**Mechanismus**; sein Wert entfaltete sich im Video aber nur,
+wenn der Betrachter Strg+K selbst drückte. Jetzt eröffnet die „▶ Geführte Demo" mit einem 6–8-Sekunden-
+Such-Beat, *bevor* die erste Frage getippt wird:
+- **Neue `demoSearchBeat(token)`** (nur `app.js`): öffnet die Palette **inline** — die manuelle
+  `openSearch()` bleibt während der Demo bewusst gesperrt, daher öffnet der Beat den Overlay direkt
+  (`search.open`, `hidden=false`, `renderSearchResults("")`, Fokus). Zeigt kurz **„23 Dokumente im
+  Wissensspeicher"**, tippt dann **„stahl"** Zeichen-für-Zeichen (je Keystroke `renderSearchResults`) →
+  **8 von 23** Treffer quer über **Finanzen · Audit · Verträge** mit gelbem `<mark>`-Highlight.
+- **Öffnet einen Beleg:** wählt den ersten **freigegebenen** Treffer (`findIndex(d => !d.locked)`) —
+  gesperrte werden übersprungen, damit als Opener **kein** „Zugriff verweigert" erscheint — setzt die
+  Auswahl (`setSel`) und öffnet ihn im bestehenden Viewer (`openViewer`), Lesepause, `closeViewer`,
+  `closeSearch`; *dann* läuft die bestehende Szenario-Schleife weiter.
+- **Verdrahtung:** ein Aufruf in `startDemo()` nach dem Frisch-Start und **vor** der Schleife, in
+  `token`-Guards eingefasst. **Fail-safe:** `resetDemoUi()` schließt jetzt zusätzlich `closeViewer()` +
+  `closeSearch()` → wird die Demo **mitten im Beat** gestoppt, bleibt kein Overlay/Viewer offen. Voll
+  token-gesteuert (Abbruch an jedem Schritt); `prefers-reduced-motion` → sofortiges Tippen + kurze Pausen.
+- **Rein additiv** in `app.js`; `data.js`/`styles.css`/`index.html` unverändert (Reuse von
+  `renderSearchResults()`/`setSel()`/`openViewer()`/`closeViewer()`/`closeSearch()`/`reducedMotion()`).
+  Live im Browser gegen die realen Daten verifiziert: Beat läuft automatisch (Palette → „stahl" → 8/23,
+  Module Finanzen/Audit/Verträge, `<mark>` vorhanden), Viewer öffnet auf „Quartalsbericht Q1 2026" und
+  schließt wieder, danach **Fortschritt „1 / 13"** + Composer gesperrt (nahtloser Übergang); Stopp mitten
+  im Beat räumt Palette + Viewer sauber ab und reaktiviert den Composer; **keine Konsolenfehler**.
+  (Screenshot-Capture im Harness instabil — bekannte Grenze; daher DOM-basiert verifiziert.)
 
 ## Was in Zyklus 17 gebaut wurde
 
@@ -420,40 +447,42 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Den Suchmoment in die Geführte Demo einweben — die Command-Palette als eigener Video-Beat.** Die
-globale Suche steht (Zyklus 17), läuft aber nur, wenn der Betrachter sie selbst auslöst — in der
-hands-free „Geführten Demo" taucht sie noch nicht auf. Der stärkste nächste Schritt ist ein **kurzer
-Such-Beat als Opener der Vorführung**: bevor die erste Frage getippt wird, öffnet die Demo automatisch
-die Palette, tippt sichtbar z. B. **„stahl"**, zeigt **8 Treffer quer über Finanzen + Audit**, öffnet
-kurz einen Beleg und schließt wieder — *dann* startet die Frage-Sequenz. Das macht die schiere **Menge**
-des erschlossenen Wissens zum ersten Bild des Videos („mein Unternehmen besitzt das alles bereits").
-Reuse: `openSearch()`/`renderSearchResults()`/`openViewer()` sind vorhanden; nötig ist nur eine kleine
-Choreografie in `startDemo()` (Palette öffnen, Query tippen, Pause, schließen) hinter dem bestehenden
-`token`-Mechanismus. Rein additiv, `data.js` unverändert.
+**Mehr Tiefe in der Demo-Firma — ein zusätzlicher, glaubwürdiger Beleg-Vorgang.** Nach Zyklus 18 sind
+alle Video-relevanten Politur- und Choreografie-Hebel gezogen (Video-Reife 100 %). Der jetzt schwächste
+Fortschrittsbereich ist **Demo-Firma & realistische Dokumente (81 %)**. Der stärkste nächste Schritt ist
+**ein weiterer authentischer Vorgang**, der eine bislang unbelegte Entscheider-Frage beantwortbar macht —
+z. B. ein **Reklamations-/Mängel-Vorgang** (Lieferschein → Mängelrüge → Gutschrift) zur Stahllieferung
+Donau (verzahnt mit der bestehenden Story) **oder** ein **zweites Projekt** neben „Alpha", das eine Frage
+wie „Wie steht Projekt Beta?" belegt. Rein additiv in `data.js` (Reuse der Beleg-/Tabellen-Skins);
+neues Szenario + 1–2 Dokumente, in Hero + Modul + Geführte Demo einweben. Hebt **Demo-Firma und
+Szenarien-Breite** gleichzeitig.
 
-*Warum?* Zyklus 17 hat den Such-**Mechanismus** gebaut; sein Wert entfaltet sich im Video aber erst,
-wenn er **ohne Zutun des Betrachters** vorgeführt wird. Ein 6–8-Sekunden-Beat verwandelt ein Feature in
-einen Wow-Moment.
+*Warum?* Die Demo überzeugt mechanisch und visuell bereits vollständig; was den letzten Zweifel bei
+einem CFO nimmt, ist **Dichte** — je mehr echte, quervernetzte Vorgänge sichtbar sind, desto stärker
+der Eindruck „mein Unternehmen besitzt das alles bereits, und es hängt zusammen".
 
-**Alternative, falls Tiefe vor Breite:** die Entscheidungskette auch an die **`materialkosten`-Antwort**
-hängen (dasselbe `answer.chain` = `DECISION_CHAIN`). Achtung Video-Reihenfolge: dann erschiene die
-Kette zweimal in der Geführten Demo (materialkosten direkt vor budget-herkunft) — die beiden Beats
-müsste man trennen oder einen aus der Sequenz nehmen. Da `materialkosten` → `budget-herkunft` bereits
-die natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst **nicht** dupliziert.
+**Alternative, falls Politur vor Breite:** ein **Konfidenz-Tooltip** am Meter, der beim Hover zeigt,
+*woraus* sich die Zahl speist (Anzahl Quellen, höchste Relevanz, Übereinstimmung) — macht die
+„belastbare Belege"-Story noch greifbarer. Klein, rein additiv (`app.js`/`styles.css`).
+
+**Nicht dupliziert (bewusst):** die Entscheidungskette (`DECISION_CHAIN`) auch an die
+`materialkosten`-Antwort hängen — dann erschiene die Kette **zweimal** in der Geführten Demo
+(materialkosten direkt vor budget-herkunft). Da `materialkosten` → `budget-herkunft` bereits die
+natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst nicht dupliziert.
 
 ---
 
-## CEO-Review (Ende Zyklus 17)
+## CEO-Review (Ende Zyklus 18)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Mit Strg+K öffnet sich jetzt eine
-  Command-Palette wie in Linear/Notion, die den **gesamten** Wissensspeicher durchsucht. Das signalisiert
-  einem Entscheider sofort: „AI Studio kennt *alles* im Haus, nicht nur ein paar kuratierte Fragen."
-- *Erzeugt es Aufregung?* — Ja: Das leere Suchfeld zeigt **„23 Dokumente im Wissensspeicher"**, und ein
-  einziges Wort („stahl") sammelt in Millisekunden Treffer **quer durch Finanzen und Audit** mit
-  hervorgehobenem Suchbegriff. Genau das „endlich nutzbar"-Gefühl, um das sich die ganze Story dreht.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: Man tippt ein Stichwort, sieht sofort *wo überall* es
-  vorkommt, klickt und liest den Originalbeleg. Gesperrte Dokumente tauchen zwar auf, bleiben aber
-  **verschlossen** — die Vertrauens-Story bleibt intakt.
-- *Schwächste Stelle → nächster Zyklus:* Das Feature ist stark, wird aber in der **hands-free
-  Vorführung** noch nicht gezeigt. Es als **automatischen Such-Beat in die Geführte Demo** aufzunehmen
-  ist der größte verbleibende Wow-Hebel — siehe oben.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Geführte Demo eröffnet jetzt mit einem
+  Wow-Bild: die Command-Palette öffnet sich von selbst, tippt „stahl" und sammelt in Millisekunden
+  **8 Treffer quer durch Finanzen und Audit** — bevor überhaupt die erste Frage läuft. Ein Klick, und
+  das ganze Video läuft hands-free.
+- *Erzeugt es Aufregung?* — Ja: Der Betrachter sieht als **Erstes** die schiere Menge des erschlossenen
+  Wissens („23 Dokumente im Wissensspeicher") und wie ein einziges Stichwort quer durchs Haus greift.
+  Genau das „mein Unternehmen besitzt das alles bereits"-Gefühl, am stärksten möglichen Ort platziert.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: erst *„so viel liegt schon da"*, dann *„und ich kann es
+  einfach fragen"*. Der Such-Beat und die Frage-Sequenz erzählen zusammen eine geschlossene Geschichte.
+- *Schwächste Stelle → nächster Zyklus:* Mechanik, Politur und Choreografie sind rund; der letzte Hebel
+  ist **inhaltliche Dichte** — ein weiterer authentischer, quervernetzter Beleg-Vorgang (Demo-Firma 81 %).
+  Siehe oben.

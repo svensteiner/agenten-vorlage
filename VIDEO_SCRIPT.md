@@ -27,15 +27,18 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 **Bild:** Antwort streamt ein, Konfidenz 98 %, klare Regeln, eine Quelle.
 **Punkt:** Sofort, präzise, mit Beleg.
 
-## Szene 1b — „Was steckt eigentlich alles drin?" (optional, +0:15)
-**Aktion:** **Strg + K** drücken (oder Sidebar **„🔍 Alles durchsuchen"**) → das Modal zeigt
-**„23 Dokumente im Wissensspeicher"**; langsam **„stahl"** tippen → die Liste filtert live auf
-**8 Treffer quer über Finanzen und Audit**; einen Treffer anklicken → der Beleg öffnet im Viewer.
+## Szene 0b — „Was steckt eigentlich alles drin?" (Opener der Geführten Demo, 0:20–0:35)
+**Aktion:** **Automatisch** — direkt nach dem Start der „▶ Geführten Demo" und **vor** der ersten Frage
+öffnet sich die Command-Palette von selbst: sie zeigt **„23 Dokumente im Wissensspeicher"**, tippt
+sichtbar **„stahl"** → die Liste filtert live auf **8 Treffer quer über Finanzen und Audit**, öffnet
+kurz einen Beleg im Viewer und schließt wieder — *dann* läuft die Frage-Sequenz weiter.
 **Sprecher:** „Und wie viel liegt eigentlich schon im Haus? Ein Tastendruck durchsucht alles auf
 einmal — ein Stichwort, und Sie sehen sofort, wo überall es vorkommt."
 **Bild:** Command-Palette wie in modernen Enterprise-Tools; Suchbegriff gelb hervorgehoben, Modul-Tag
-je Zeile. **Punkt:** die schiere **Menge** des erschlossenen Wissens — greifbar in einem Bild.
-**Hinweis Aufnahme:** läuft **nicht** in der Geführten Demo → separat aufnehmen (Demo dazu stoppen).
+je Zeile. **Punkt:** die schiere **Menge** des erschlossenen Wissens — das **erste Bild** des Videos.
+**Hinweis Aufnahme:** läuft seit Zyklus 18 **automatisch als Opener** der Geführten Demo — kein
+separater Take mehr nötig. (Manuell jederzeit per **Strg + K** / Sidebar **„🔍 Alles durchsuchen"**
+außerhalb der Demo reproduzierbar.)
 
 ## Szene 2 — Der Geschäftswert (0:45–1:20)
 **Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"* → danach **zwei** E-Mail-Quellen

@@ -61,9 +61,16 @@
   „X von 23", Suchbegriff gelb markiert, ↑/↓+Enter-Navigation, Klick öffnet den Beleg im Viewer.
   Gesperrte Docs erscheinen ohne Inhalts-Leak. Rein additiv. Macht die schiere Menge des Wissens
   sichtbar.
-- **Such-Beat in die Geführte Demo einweben** — die Command-Palette als automatischer Opener der
-  Vorführung (Palette öffnen, „stahl" tippen, Treffer quer über Ressorts zeigen, Beleg öffnen, schließen).
-  Reuse `openSearch()`/`renderSearchResults()`; kleine Choreografie in `startDemo()`. *(Nächster Zyklus.)*
+- ✅ **Such-Beat als Opener der Geführten Demo** — *erledigt in Zyklus 18*: `startDemo()` ruft vor der
+  Szenario-Schleife `demoSearchBeat(token)` — die Command-Palette öffnet automatisch („23 Dokumente"),
+  tippt sichtbar „stahl" → 8 Treffer quer über Finanzen+Audit (`<mark>`), öffnet kurz einen freigegebenen
+  Beleg im Viewer, schließt Palette+Viewer, *dann* die Frage-Sequenz. `resetDemoUi()` fail-safe. Macht die
+  Menge des Wissens zum ersten Bild des Videos. Rein additiv in `app.js`.
+- **Mehr Tiefe in der Demo-Firma** — ein weiterer authentischer, quervernetzter Beleg-Vorgang
+  (Reklamation/Mängelrüge zur Donau-Lieferung **oder** zweites Projekt neben Alpha). Hebt Demo-Firma
+  (81 %) und Szenarien-Breite. Rein additiv in `data.js`. *(Nächster Zyklus.)*
+- **Konfidenz-Tooltip am Meter** — Hover zeigt, woraus sich die Konfidenz speist (Anzahl Quellen,
+  höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. *(Politur-Option.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

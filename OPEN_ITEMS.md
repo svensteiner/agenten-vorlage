@@ -5,19 +5,28 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Such-Beat in die Geführte Demo einweben** — die Command-Palette (Zyklus 17) läuft nur bei
-   manuellem Auslösen; sie fehlt in der hands-free Vorführung. Als **Opener**: Palette automatisch öffnen,
-   sichtbar „stahl" tippen, 8 Treffer quer über Finanzen+Audit zeigen, kurz einen Beleg öffnen, schließen
-   — *dann* die Frage-Sequenz. Reuse `openSearch()`/`renderSearchResults()`/`openViewer()`; kleine
-   Choreografie in `startDemo()` hinter dem `token`-Mechanismus. → oberstes Item für den nächsten Zyklus.
-2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+1. **[P5] Mehr Tiefe in der Demo-Firma** — ein weiterer authentischer, quervernetzter Beleg-Vorgang
+   (schwächster Bereich, 81 %). Z. B. Reklamations-/Mängel-Vorgang (Lieferschein → Mängelrüge →
+   Gutschrift) zur Donau-Stahllieferung **oder** ein zweites Projekt neben „Alpha". Neues Szenario +
+   1–2 Dokumente, rein additiv in `data.js` (Reuse Beleg-/Tabellen-Skins), in Hero + Modul + Geführte
+   Demo einweben. → oberstes Item für den nächsten Zyklus.
+2. **[P6] Konfidenz-Tooltip am Meter** — Hover zeigt, *woraus* sich die Zahl speist (Anzahl Quellen,
+   höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. Klein, additiv.
+3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+   hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
+4. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
-3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
-   hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 18] Such-Beat als Opener der Geführten Demo** — `startDemo()` ruft vor der Szenario-Schleife
+  `demoSearchBeat(token)`: Palette öffnet automatisch („23 Dokumente"), tippt „stahl" → 8 Treffer quer
+  über Finanzen+Audit (`<mark>`), öffnet kurz einen **freigegebenen** Beleg im Viewer, schließt Palette +
+  Viewer, *dann* die Frage-Sequenz. `resetDemoUi()` schließt jetzt zusätzlich Viewer/Palette (fail-safe
+  bei Stopp mitten im Beat). Rein additiv in `app.js`. Live verifiziert (Beat läuft automatisch → 8/23 →
+  Viewer → Fortschritt „1/13"; Stopp räumt sauber auf; keine Konsolenfehler).
 
 - **[Zyklus 17] Globale Live-Suche (Command-Palette)** — Sidebar-Auslöser „🔍 Alles durchsuchen"
   (+ Strg/⌘ + K) öffnet ein zentriertes Modal, das live über **alle 23 Dokumente** filtert

@@ -2,6 +2,32 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 18 — 2026-07-08 — Such-Beat als Opener der Geführten Demo 🎬
+
+**Die Command-Palette wird jetzt hands-free vorgeführt.** Zyklus 17 baute die globale Suche, sie lief
+aber nur bei manueller Auslösung. Jetzt eröffnet die **„▶ Geführte Demo"** mit einem automatischen
+Such-Beat: bevor die erste Frage getippt wird, öffnet die Palette selbsttätig, tippt sichtbar
+**„stahl"**, zeigt **8 Treffer quer über Finanzen + Audit**, öffnet kurz einen Beleg und schließt
+wieder — *dann* startet die Frage-Sequenz. Die schiere **Menge** des erschlossenen Wissens ist damit
+das erste Bild des Videos. Rein additiv in `app.js`; `data.js`/`styles.css`/`index.html` unverändert.
+
+### Neu
+- **`demoSearchBeat(token)`** in `app.js`: öffnet die Palette inline (die manuelle `openSearch()` bleibt
+  während der Demo bewusst gesperrt), tippt „stahl" Zeichen-für-Zeichen mit Live-Filter, zeigt die
+  Treffer, öffnet den ersten **freigegebenen** Beleg im Viewer (gesperrte übergangen → kein „Zugriff
+  verweigert" als Opener), schließt Viewer + Palette. Ein Aufruf in `startDemo()` vor der Szenario-Schleife.
+- **Fail-safe Teardown:** `resetDemoUi()` schließt jetzt zusätzlich Viewer und Palette → Stoppen
+  **mitten im Beat** hinterlässt keinen offenen Zustand. Voll token-gesteuert (sauberer Abbruch an jedem
+  Schritt); `prefers-reduced-motion` → sofortiges Tippen + kurze Pausen.
+
+### Verifikation (Browser-DOM, live gegen reale Daten)
+- Beat läuft automatisch: Palette öffnet mit **„23 Dokumente im Wissensspeicher"**, „stahl" wird
+  getippt → **8 von 23**, Module quer (Finanzen · Audit · Verträge), `<mark>`-Highlight vorhanden;
+  Viewer öffnet auf „Quartalsbericht Q1 2026" und schließt wieder; danach **Fortschritt „1 / 13"**,
+  Composer gesperrt — nahtloser Übergang in die Frage-Sequenz. **Keine Konsolenfehler.**
+- Stopp mitten im Beat: Palette + Viewer geschlossen, Demo-Button zurückgesetzt, Composer wieder
+  editierbar. (Screenshot-Capture im Harness instabil — DOM-basiert verifiziert.)
+
 ## Zyklus 17 — 2026-07-08 — Globale Live-Suche (Command-Palette) 🔍
 
 **Der „Was steckt alles drin?"-Moment.** Ein Sidebar-Auslöser „🔍 Alles durchsuchen" (+ Strg/⌘ + K)
