@@ -19,9 +19,39 @@
   let currentModule = "wissen";
   const chatState = []; // Verlauf, damit ein Modulwechsel den Chat nicht zerstört
 
-  // „Geführte Demo": spielt alle Szenarien hands-free nacheinander ab.
+  // „Geführte Demo": spielt eine kuratierte Kern-Auswahl der Szenarien hands-free ab.
   // token: monoton steigend; ein Stopp erhöht ihn und lässt laufende Schleifen aussteigen.
   const demo = { running: false, token: 0 };
+
+  // Kuratierte Kern-Reihenfolge der Geführten Demo (Phase A: ≤ 4 min, je Szenario ≤ 25 s).
+  // Bewusst eine Untermenge der SCENARIOS — ein straffer Story-Bogen fürs Verkaufsvideo, der
+  // IMMER mit dem Money-Shot „Agenten dazubuchen" endet. Alle übrigen Szenarien bleiben per
+  // Kachel/Frage/Suche erreichbar; nur die hands-free-Vorführung ist kuratiert.
+  const MONEY_SHOT_ID = "agent-dazubuchen";
+  const DEMO_ORDER = [
+    "materialkosten",      // belegte Antwort · Quellen · Konfidenz · E-Mail aus dem Postfach
+    "beleg-rechnung",      // Drei-Wege-Abgleich · prüfungsechte Rechnungsprüfung
+    "budget-herkunft",     // Entscheidungskette als sichtbarer Beleg-Pfad (der CFO-Wow-Moment)
+    "projekt-portfolio",   // Ampel Alpha + Beta · Breite + ehrliche Risiko-Kennzeichnung
+    "strategie-ausblick",  // Governance: „weitere Treffer für Sie nicht freigegeben"
+    MONEY_SHOT_ID,         // MONEY-SHOT · Finale · verkauft das Agenten-Abo
+  ];
+
+  // Löst DEMO_ORDER zu echten Szenario-Objekten auf: unbekannte/doppelte IDs werden
+  // übersprungen (fail-safe), der Money-Shot steht garantiert am Ende (Video-Finale),
+  // und falls die Kuratierung leer liefe, fällt sie sicher auf die volle SCENARIOS-Liste zurück.
+  function demoScenarios() {
+    const seen = new Set();
+    const list = [];
+    DEMO_ORDER.forEach((id) => {
+      if (id === MONEY_SHOT_ID || seen.has(id)) return;
+      const s = SCENARIOS.find((x) => x.id === id);
+      if (s) { list.push(s); seen.add(id); }
+    });
+    const money = SCENARIOS.find((x) => x.id === MONEY_SHOT_ID);
+    if (money) list.push(money);
+    return list.length ? list : SCENARIOS.slice();
+  }
 
   // Dokument-Skins: geben jedem Dokumenttyp im Viewer eine realistische
   // Papier-Anmutung (Briefkopf, Beleg-Stempel, Unterschriftszeile).
@@ -52,6 +82,7 @@
     wireComposer();
     wireViewer();
     wireDemo();
+    wireReset();
     wireSearch();
     wireOnboarding();
   }
@@ -116,7 +147,7 @@
     await demoSearchBeat(token);
     if (token !== demo.token) return;
 
-    const list = SCENARIOS; // die 7 Szenarien in kuratierter Reihenfolge
+    const list = demoScenarios(); // kuratierte Kern-Auswahl, endet mit dem Money-Shot
     for (let i = 0; i < list.length; i++) {
       if (token !== demo.token) return;
       prog.textContent = `${i + 1} / ${list.length}`;
@@ -135,6 +166,22 @@
   function stopDemo() {
     demo.token++; // laufende Schleife steigt beim nächsten Check aus
     resetDemoUi();
+  }
+
+  function wireReset() {
+    const btn = $("#resetBtn");
+    if (btn) btn.onclick = resetDemo;
+  }
+
+  // Ein-Klick „Demo zurücksetzen": bringt die App in den sauberen Startzustand für
+  // wiederholbare Video-Takes — laufende Demo sauber stoppen, Verlauf leeren, Viewer/
+  // Palette schließen und zurück auf den Hero (Modul „Wissen"). Rein UI, kein Datenpfad.
+  function resetDemo() {
+    if (demo.running) stopDemo(); else resetDemoUi();
+    chatState.length = 0;
+    closeViewer();
+    closeSearch();
+    selectModule("wissen");
   }
 
   function resetDemoUi() {

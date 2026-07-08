@@ -2,6 +2,49 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase A — 2026-07-08 — Geführte Demo kuratiert (≤ 4 min) + Ein-Klick „Zurücksetzen" ✅ PHASE A ABGESCHLOSSEN
+
+**Die letzten beiden Phase-A-Kästchen — Timing-Gate und wiederholbarer Startzustand — sind erledigt.**
+Damit ist der Demo-Freeze (Phase A) komplett; die Mission geht auf **Phase B — Videoproduktion** über.
+
+### Neu
+- **Kuratierte Kern-Reihenfolge der Geführten Demo** (`DEMO_ORDER` + `demoScenarios()` in `app.js`): Die
+  hands-free-Vorführung spielt jetzt eine **straffe 6er-Auswahl** statt aller 17 Szenarien — ein klarer
+  Story-Bogen fürs Verkaufsvideo, der **immer mit dem Money-Shot endet**:
+  1. **Materialkosten** (94 %) — belegte Antwort · Quellen · Konfidenz · E-Mail aus dem Postfach
+  2. **Belege zu Rechnung 2026-1843** (97 %) — Drei-Wege-Abgleich · prüfungsechte Rechnungsprüfung
+  3. **Herkunft Mehrbudget 0,9 Mio. €** (95 %) — Entscheidungskette als sichtbarer Beleg-Pfad
+  4. **Welche Projekte laufen aktuell?** (94 %) — Ampel Alpha + Beta · Breite + ehrliche Risiko-Kennzeichnung
+  5. **Wachstumsstrategie** (88 %) — Governance: „weitere Treffer für Sie nicht freigegeben"
+  6. **Agenten dazubuchen** — **MONEY-SHOT** · Finale · verkauft das Abo
+  Fail-safe: unbekannte/doppelte IDs werden übersprungen, der Money-Shot steht garantiert am Ende, leere
+  Kuratierung fällt sicher auf die volle Liste zurück. Alle 17 Szenarien bleiben per Kachel/Frage/Suche
+  erreichbar — nur die *hands-free*-Reihenfolge ist kuratiert. Fortschritt zeigt jetzt „n / 6".
+- **Ein-Klick „Zurücksetzen"** (Topbar-Button `#resetBtn` + `resetDemo()` in `app.js`): bringt die App in
+  den **sauberen Startzustand** für wiederholbare Video-Takes — laufende Demo sauber stoppen, Verlauf
+  leeren, Viewer/Palette schließen, zurück auf den Hero. Sekundär-Stil (Reuse der Marken-Tokens).
+
+### Verzahnung / Reuse
+- **Rein additiv:** `DEMO_ORDER`/`demoScenarios()`/`wireReset()`/`resetDemo()` in `app.js`, `.reset-btn`
+  in `styles.css`, ein Button in `index.html`. **Kein neues Szenario/Dokument/Modul** (Feature-Freeze
+  eingehalten); `data.js` unverändert. Reuse von `stopDemo()`/`resetDemoUi()`/`closeViewer()`/
+  `closeSearch()`/`selectModule()`.
+
+### Verifikation
+- `node --check app.js` ok; Node-VM gegen `data.js`: alle 6 kuratierten IDs existieren, Money-Shot ist
+  **letztes** Element (17 Szenarien gesamt). Live im Browser (DOM gegen reale Daten): Reset-Button
+  rendert („⟲ Zurücksetzen", Pill, `--ink-soft`); Klick nach einer Frage → Hero zurück, 0 User-Bubbles,
+  0 Antworten, 14 Vorschläge, Viewer zu, Composer entsperrt; Geführte Demo zeigt **„1 / 6"**; Reset
+  **mitten in der Demo** stoppt sauber (running=false, Fortschritt verborgen, Hero zurück, Input
+  entsperrt); **keine Konsolenfehler**. (Screenshot-Capture harness-instabil — bekannte Grenze; daher
+  DOM/CSS-basiert verifiziert.)
+
+### Gate A → B
+**PHASE_A_COMPLETE.** Alle sechs Checklisten-Kästchen erfüllt: hands-free Geführte Demo ohne
+Konsolenfehler · Answer/Quellen/Konfidenz/Kette rendern (1920×1080) · Ein-Klick Demo-Reset · Timing
+(6 Szenarien ≈ ≤ 2 min, je ≤ 25 s) · Finale = Money-Shot · durchgängig Deutsch. **Nächste Phase:
+Videoproduktion** (VIDEO_SCRIPT / VIDEO_SCENES / RECORDING_CHECKLIST).
+
 ## Phase A — 2026-07-08 — Money-Shot „Agenten dazubuchen" (Demo-Finale) 🤝
 
 **Mission-Wechsel auf AI STUDIO — PILOT SPRINT (v2); Phase A (Demo-Freeze).** Das größte Phase-A-Loch war

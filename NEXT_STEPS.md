@@ -11,35 +11,40 @@
 > [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md). Wir sind in **Phase A**. (Die alte „PROTOTYPE
 > DEVELOPMENT MODE"-Zeile oben ist historisch; die Zyklus-Historie unten bleibt gültig.)
 
-## ► Nächster Zyklus (Phase A — oberstes Item)
+## ► Nächster Zyklus (Phase B — Videoproduktion)
 
-**Geführte Demo auf ≤ 4 min bringen.** Mit dem Money-Shot sind es **17 Szenarien** + Such-Opener — das
-überschreitet hands-free voraussichtlich das **4-Minuten-Gate** der Phase-A-Checkliste. Eine **kuratierte
-Kern-Reihenfolge** in `startDemo()` definieren (Untermenge der `SCENARIOS`), je Szenario ≤ 25 s, die
-**mit dem Money-Shot `agent-dazubuchen` endet**. Kein neues Feature — nur Auswahl/Reihenfolge. Danach:
-**Ein-Klick „Demo zurücksetzen"** für wiederholbare Video-Takes. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+> ✅ **PHASE A ABGESCHLOSSEN (Gate A→B bestanden, 2026-07-08).** Alle 6 Checklisten-Kästchen erfüllt.
+> **Feature-Freeze bleibt in Kraft** — ab jetzt keine neuen Prototyp-Features, nur noch das Verkaufsvideo
+> produktionsreif machen. Neue Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
 
-- **Mission (Demo-Teil):** herausragender Kunden-Demo-Prototyp fürs Verkaufsvideo — jetzt im
-  **Freeze/Feinschliff**, damit Sven aufnehmen kann.
-- **Letzter Zyklus:** **Phase A — Money-Shot „Agenten dazubuchen"** (Demo-Finale, verkauft das Abo):
-  neues Abschluss-Szenario `agent-dazubuchen` (letzte Szene der Geführten Demo) mit Agenten-Marktplatz
-  (`answer.agents` + Renderer `appendAgents()`): 4 Karten — Auskunfts-Agent *aktiv/inklusive*,
-  **Reporting-Agent 400 € empfohlen**, Rechnungs-Agent 600 €, Vertrags-Agent 500 € — je „＋ Dazubuchen"
-  → grüne „✓ Aktiviert"-Bestätigung; Preis-Pfad-Fußzeile (Audit 149 € → Wissensbasis ab 5.000 € → Agent
-  ab 400 €/Monat). In der Geführten Demo bucht sich der empfohlene Agent **hands-free** selbst (token-
-  gesichert; letzte Lesepause 1600 → 3400 ms). Antwortkopf **ohne** Konfidenz-Meter (`hasConf`-Guard in
-  `streamAnswer()` — Buchungsansicht ohne Quellen). Zusätzlich Rest-WIP aus dem alten Modus
-  abgeschlossen: `auftrag-nordwind-beta` (Auftragsbestätigung, extIssuer/BEAUFTRAGT) → Betas +0,4 Mio. €
-  jetzt **beidseitig** belegt (4. Quelle in `projekt-beta`). Rein additiv in `data.js`/`app.js`/
-  `styles.css`; verifiziert (29 Docs, 17 Szenarien, 0 kaputte Refs; DOM/CSS live: 4 Karten, Grid
-  2-spaltig @1920×1080, gebuchte Karte grün, Kopf ohne Meter, keine Konsolenfehler).
+**Oberstes Item: `VIDEO_SCRIPT.md` schreiben.** 90–120 s, Deutsch, CFO-Sprache (kein RAG/Embeddings/LLM-
+Jargon). Story-Bogen: **Schmerz** („Ihr Wissen steckt in Ordnern und Postfächern") → **Demo-Momente**
+(belegte Antworten · Entscheidungskette · Portfolio-Ampel) → **Money-Shot** („Agenten dazubuchen wie
+Mitarbeiter") → **CTA** („Daten-Audit, 149 €"). Danach `VIDEO_SCENES.md` (Shotlist gemappt auf die
+kuratierte 6er-Reihenfolge) und `RECORDING_CHECKLIST.md`. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+
+- **Ziel Phase B:** Sven kann das Video in **< 30 min** selbst aufnehmen — mit der Geführten Demo, dem
+  Skript und der Aufnahme-Checkliste. Gate B→C: Sven nimmt auf und **gibt das Video frei**.
+- **Aufnahme-Setup steht bereit:** Geführte Demo = **kuratierte 6er-Kern-Auswahl** (Materialkosten →
+  Rechnungsprüfung → Entscheidungskette → Projekt-Portfolio → Governance → **Money-Shot**), Fortschritt
+  „n / 6", ≤ 4 min; **Ein-Klick „Zurücksetzen"** in der Topbar für saubere, wiederholbare Takes.
+- **Letzter Zyklus (Phase-A-Abschluss):** Geführte Demo auf die kuratierte 6er-Reihenfolge
+  (`DEMO_ORDER` + `demoScenarios()`) gekürzt (endet garantiert mit dem Money-Shot; alle 17 bleiben per
+  Kachel/Frage/Suche erreichbar) **und** Ein-Klick „Zurücksetzen" (`resetDemo()` + Topbar-Button) für
+  wiederholbare Video-Takes. Rein additiv in `app.js`/`styles.css`/`index.html`, `data.js` unverändert
+  (kein neues Szenario/Dokument — Feature-Freeze gewahrt). Verifiziert: `node --check` ok, Node-VM (6 IDs
+  existieren, Money-Shot letzt, 17 gesamt); live (DOM): Reset räumt Chat/Viewer/Palette → Hero zurück,
+  Geführte Demo „1 / 6", Reset mitten in der Demo stoppt sauber, keine Konsolenfehler.
+- **Vorletzter Zyklus:** **Phase A — Money-Shot „Agenten dazubuchen"** (Demo-Finale, verkauft das Abo):
+  Abschluss-Szenario `agent-dazubuchen` mit Agenten-Marktplatz (`answer.agents`/`appendAgents()`), in der
+  Geführten Demo bucht sich der empfohlene Agent hands-free selbst; Antwortkopf ohne Konfidenz-Meter.
 - **Vorheriger Zyklus:** Zyklus 24 — **Konfidenz-/Relevanz-Balken laufen mit hoch** (Bewegungs-Politur):
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Prototyp-Baufortschritt:** **≈ 90 %**; Mission steht am Beginn von **Phase A** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Prototyp-Baufortschritt:** **≈ 91 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 

@@ -3,15 +3,17 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Mission: AI STUDIO — PILOT SPRINT (v2) · aktuell **Phase A (Demo-Freeze)**
+## Mission: AI STUDIO — PILOT SPRINT (v2) · **PHASE_A_COMPLETE → jetzt Phase B (Video)**
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
-> Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. Der Demo-Prototyp selbst ist reif
-> (~90 %); die Mission steht am Beginn von **Phase A**. Phase-A-Checkliste (Stand jetzt):
+> Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Phase A ist abgeschlossen
+> (Gate A→B bestanden).** Phase-A-Checkliste — **alle 6 Kästchen erfüllt**:
 > ✅ Money-Shot „Agenten dazubuchen" (Finale) · ✅ Deutsch durchgängig · ✅ belegte Antworten/
-> Konfidenz/Kette · ⬜ Geführte Demo ≤ 4 min (17 Szenarien → kuratieren) · ⬜ Ein-Klick Demo-Reset.
+> Konfidenz/Kette (1920×1080) · ✅ Geführte Demo ≤ 4 min (kuratierte 6er-Kern-Auswahl, „n / 6") ·
+> ✅ Ein-Klick Demo-Reset. **Nächste Phase: Videoproduktion** — VIDEO_SCRIPT / VIDEO_SCENES /
+> RECORDING_CHECKLIST (siehe [NEXT_STEPS.md](NEXT_STEPS.md)).
 
-## Prototyp-Baufortschritt: ≈ 90 % (Ende Money-Shot-Zyklus)
+## Prototyp-Baufortschritt: ≈ 91 % (Phase A abgeschlossen)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -30,6 +32,19 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase A · Freeze abgeschlossen (2026-07-08) ≈ 91 % — PHASE_A_COMPLETE** — die letzten beiden
+  Phase-A-Kästchen erledigt: **(1) Geführte Demo auf ≤ 4 min kuratiert** — neue `DEMO_ORDER` +
+  `demoScenarios()` in `app.js` spielen hands-free eine **straffe 6er-Kern-Auswahl** (Materialkosten →
+  Rechnungsprüfung → Entscheidungskette → Projekt-Portfolio → Governance → **Money-Shot**) statt aller 17
+  Szenarien; Fortschritt „n / 6", Money-Shot garantiert als Finale, Fail-safe-Rückfall auf die volle
+  Liste. Alle 17 bleiben per Kachel/Frage/Suche erreichbar. **(2) Ein-Klick „Zurücksetzen"** (Topbar-
+  Button + `resetDemo()`): sauberer Startzustand für wiederholbare Video-Takes (Demo stoppen, Verlauf
+  leeren, Viewer/Palette zu, zurück auf den Hero). Rein additiv (`app.js`/`styles.css`/`index.html`);
+  **kein neues Szenario/Dokument** (Feature-Freeze gewahrt), `data.js` unverändert. Verifiziert:
+  `node --check` ok, Node-VM (6 IDs existieren, Money-Shot letzt, 17 gesamt); live (DOM): Reset rendert +
+  räumt Chat/Viewer/Palette (Hero zurück, 14 Vorschläge, Composer entsperrt), Geführte Demo „1 / 6",
+  Reset mitten in der Demo stoppt sauber, keine Konsolenfehler. **Gate A→B bestanden → Phase B (Video).**
 
 - **Phase A · Money-Shot (2026-07-08) ≈ 90 %** — **„Agenten dazubuchen" als Demo-Finale** (der
   Verkaufsmoment des Abos, bislang das größte Phase-A-Loch). Neues Abschluss-Szenario
@@ -287,13 +302,16 @@
   Antworten, Belege+Konfidenz+Quellen, Dokumentenviewer, 7 Szenarien, live getestet.
   (Davor: 31 Zyklen `platform/`-Architektur-Doku — nicht Teil der Prototyp-Mission.)
 
-## Was den Fortschritt als Nächstes hebt
+## Was den Fortschritt als Nächstes hebt (Phase B — Videoproduktion)
 
-1. **Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 auf den Zielwert
-   hochlaufen lassen (~760 ms, easeOutCubic), passend zum Zahlen-Count-up (Zyklus 8). Rein additive
-   Feinpolitur (`app.js`/`styles.css`), `prefers-reduced-motion` → sofort. **Jetzt stärkster Hebel** —
-   die letzte sichtbare „springende" Kante (Beta ist mit Zyklus 23 lückenlos belegt).
-2. Optional (Tiefe): **Kunden-Beauftragungsbeleg** — Nordwind bestätigt NA-2026-0037 schriftlich → macht
-   den Nachtrag zum Zwei-Schritt-Vorgang. Dupliziert aber das gerade gebaute Motiv; erst nach der Politur.
-3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
-   — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).
+> **Phase A ist abgeschlossen (Feature-Freeze bleibt in Kraft).** Ab jetzt keine neuen Prototyp-Features
+> mehr — nur noch das Verkaufsvideo produktionsreif machen. Neue Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
+
+1. **VIDEO_SCRIPT.md** — 90–120 s, Deutsch, CFO-Sprache (kein RAG/LLM-Jargon). Bogen: Schmerz („Ihr
+   Wissen steckt in Ordnern und Postfächern") → Demo-Momente (belegte Antworten · Entscheidungskette ·
+   Portfolio-Ampel) → Money-Shot („Agenten dazubuchen wie Mitarbeiter") → CTA („Daten-Audit, 149 €").
+2. **VIDEO_SCENES.md** — Szene-für-Szene-Shotlist, gemappt auf die **kuratierte 6er-Reihenfolge** der
+   Geführten Demo (Timestamps, On-Screen-Momente, Voiceover je Szene).
+3. **RECORDING_CHECKLIST.md** — Auflösung 1920×1080, Browser-Zoom, „Zurücksetzen" vor jedem Take,
+   Szenario-Reihenfolge, Retake-Anweisung — so, dass eine nicht-technische Person nicht scheitern kann.
+   Optional: SRT-Untertitel aus dem Skript.

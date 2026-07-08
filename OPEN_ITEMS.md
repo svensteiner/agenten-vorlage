@@ -5,16 +5,29 @@
 > keine neuen Szenarien/Module/Dokumente außer den Punkten der Phase-A-Checkliste.
 > Der nächste Zyklus nimmt das **oberste offene** Item. Erledigtes nach unten.
 
-## Offen (Phase A — Demo-Freeze, nach Priorität)
+## Offen (Phase B — Videoproduktion, nach Priorität)
 
-1. **[A-Timing] Geführte Demo auf ≤ 4 min bringen** — mit dem Money-Shot sind es **17 Szenarien** +
-   Such-Opener; hands-free überschreitet das voraussichtlich das 4-Minuten-Gate. Eine **kuratierte
-   Kern-Reihenfolge** (o. ä.) definieren, die mit dem Money-Shot **endet** und je Szenario ≤ 25 s bleibt.
-   Kein neues Feature — nur Auswahl/Reihenfolge in `startDemo()`/Daten. → **oberstes Item.**
-2. **[A-Reset] Ein-Klick „Demo zurücksetzen"** — sauberer Startzustand (Verlauf leeren, zurück auf Hero)
-   für **wiederholbare Video-Takes**. Reuse `resetDemoUi()` + `chatState`-Clear; ein Topbar-Button.
+> ✅ **Phase A abgeschlossen (Gate A→B bestanden).** Feature-Freeze bleibt in Kraft — keine neuen
+> Prototyp-Features; nur noch das Verkaufsvideo produktionsreif machen. Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
+
+1. **[B-Script] `VIDEO_SCRIPT.md`** — 90–120 s, Deutsch, CFO-Sprache (kein RAG/LLM-Jargon). Bogen:
+   Schmerz („Wissen steckt in Ordnern & Postfächern") → Demo-Momente → Money-Shot → CTA (Audit 149 €).
+   → **oberstes Item.**
+2. **[B-Scenes] `VIDEO_SCENES.md`** — Shotlist Szene-für-Szene, gemappt auf die kuratierte 6er-Reihenfolge
+   (Timestamps, On-Screen-Momente, Voiceover je Szene).
+3. **[B-Checklist] `RECORDING_CHECKLIST.md`** — 1920×1080, Zoom, „Zurücksetzen" vor jedem Take,
+   Szenario-Reihenfolge, Retake-Anleitung. Optional: SRT-Untertitel aus dem Skript.
 
 ## Erledigt
+
+- **[Phase A — Abschluss] Geführte Demo kuratiert (≤ 4 min) + Ein-Klick „Zurücksetzen"** — die letzten
+  beiden Phase-A-Kästchen: `DEMO_ORDER` + `demoScenarios()` spielen hands-free eine straffe **6er-Kern-
+  Auswahl** (Materialkosten → Rechnungsprüfung → Entscheidungskette → Portfolio → Governance → Money-Shot),
+  endet garantiert mit dem Money-Shot, Fortschritt „n / 6"; alle 17 bleiben per Kachel/Frage/Suche
+  erreichbar. Topbar-Button „⟲ Zurücksetzen" (`resetDemo()`): Demo stoppen, Verlauf leeren, Viewer/Palette
+  zu, zurück auf den Hero. Rein additiv (`app.js`/`styles.css`/`index.html`), `data.js` unverändert.
+  Verifiziert (`node --check`, Node-VM 6 IDs/Money-Shot-letzt, live DOM „1 / 6" + Reset räumt sauber, keine
+  Konsolenfehler). **→ Gate A→B bestanden, PHASE_A_COMPLETE.**
 
 - **[Phase A] Money-Shot „Agenten dazubuchen" (Demo-Finale)** — neues Abschluss-Szenario
   `agent-dazubuchen` (letztes in `SCENARIOS` → automatisch **letzte** Szene der Geführten Demo): Die

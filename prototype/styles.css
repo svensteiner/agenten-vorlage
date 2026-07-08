@@ -118,6 +118,19 @@ body {
 }
 @media (max-width: 720px) { .demo-btn .dl { display: none; } }
 
+/* Ein-Klick „Demo zurücksetzen" — sekundär, für wiederholbare Video-Takes */
+.reset-btn {
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-soft); font-family: var(--font);
+  font-size: 13px; font-weight: 600; letter-spacing: .1px;
+  transition: transform .12s, box-shadow .12s, border-color .12s, color .12s;
+}
+.reset-btn:hover { transform: translateY(-1px); border-color: var(--brand); color: var(--brand); box-shadow: var(--shadow-sm); }
+.reset-btn:active { transform: translateY(0); }
+.reset-btn .ri { font-size: 14px; line-height: 1; }
+@media (max-width: 720px) { .reset-btn .rl { display: none; } }
+
 .scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
 .wrap { max-width: 860px; margin: 0 auto; padding: 32px 28px 40px; }
 /* Sanfter Übergang beim Modulwechsel: der neu gerenderte Panel-Inhalt blendet
