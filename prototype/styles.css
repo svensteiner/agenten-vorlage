@@ -476,6 +476,7 @@ body {
 .paper .stamp .sd { display: block; font-size: 10px; letter-spacing: .5px; }
 .paper .stamp.stamp-ok { color: var(--ok); border-color: var(--ok); }
 .paper .stamp.stamp-ink { color: #334155; border-color: #334155; }
+.paper .stamp.stamp-warn { color: #b91c1c; border-color: #b91c1c; }
 
 /* Beleg: Positionszeilen-Tabelle (Rechnung/Bestellung/Wareneingang) */
 .paper .litems { margin: 20px 0 6px; }

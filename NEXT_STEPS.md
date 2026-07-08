@@ -6,12 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 18 — **Such-Beat als Opener der Geführten Demo**: die „▶ Geführte Demo"
-  eröffnet jetzt automatisch mit der Command-Palette (öffnet sich, tippt „stahl", zeigt 8 Treffer quer
-  über Finanzen + Audit, öffnet kurz einen Beleg) — *dann* startet die Frage-Sequenz (siehe unten).
+- **Letzter Zyklus:** Zyklus 19 — **Reklamations-Vorgang**: neues Audit-Szenario „Wie haben wir die
+  mangelhafte Stahllieferung reklamiert?" mit zwei neuen Belegen (Mängelrüge + Gutschrift) — mangelhafte
+  Teillieferung → §377-HGB-Rüge → Gutschrift 11.040 € netto. Auch die *Ausnahme* ist lückenlos belegt.
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 82 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 84 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -30,6 +30,43 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 19 gebaut wurde
+
+**Reklamations-Vorgang — auch die Ausnahme ist lückenlos belegt, und das Geld kam zurück.** Der
+schwächste Fortschrittsbereich war **Demo-Firma & realistische Dokumente (81 %)**. Bisher zeigte die
+Demo nur den *sauberen* Beleg-Pfad (Drei-Wege-Abgleich ohne Abweichung). Neu ist der *Ausnahme*-Pfad —
+ein vollständiger Qualitäts-/Reklamationsvorgang, bewusst mit der Donau-Story verzahnt:
+- **Neues Szenario `reklamation-stahl`** (Modul Audit, Konfidenz 95 %): „Wie haben wir die mangelhafte
+  Stahllieferung reklamiert?" Antwort in drei belegten Schritten — **Erkannt** (12 t von 60 t fallen bei
+  der Wareneingangsprüfung durch eine **Maßabweichung EN 10029** + Walzhautfehler), **Gerügt**
+  (form-/fristgerecht nach **§377 HGB**, Rüge am 2. Tag, Gewährleistungsklausel §12), **Erstattet**
+  (Gutschrift **11.040 € netto / 13.137,60 € brutto**). Kernbotschaft: *Mangel erkannt, fristgerecht
+  gerügt, Geld zurück.*
+- **Zwei neue Dokumente:**
+  - **`maengelruege-mr-2026-0091`** (Typ **„Mängelrüge"**, Modul Audit): formale Rüge Meridian →
+    Stahlwerk Donau, Bezug Bestellung PO-2026-0684. Neues Beleg-Skin mit rotem **MÄNGELRÜGE**-Stempel,
+    Aussteller = Meridian, 3 Highlights (Mangel, §377-HGB-Rüge, Forderung Nachlieferung/Gutschrift).
+  - **`gutschrift-gs-2026-0203`** (Typ **„Gutschrift"**, Modul Finanzen): Gutschrift Stahlwerk Donau →
+    Meridian mit **Positionstabelle** (12 t × 920 € = 11.040 € netto · USt 19 % 2.097,60 € · brutto
+    13.137,60 €), grüner **GUTSCHRIFT**-Stempel, Aussteller = Lieferant (extIssuer).
+- **Verzahnt, ohne Kollision:** separate Folgelieferung (PO-2026-0684) — der bestehende saubere
+  Drei-Wege-Abgleich (PO-2026-0512 / Rechnung 2026-1843 / WE-2026-0778, 80 t, keine Abweichung) bleibt
+  unangetastet. **Rahmenvertrag** um **§12 Gewährleistung** ergänzt → die Zitate von Mängelrüge und
+  Gutschrift lösen jetzt auf eine sichtbare Vertragsklausel auf.
+- **Rein additiv:** `data.js` (2 Docs + Szenario + §12 + Wiring), `app.js` (2 DOC_SKINS: „Mängelrüge"
+  beleg/warn-Stempel, „Gutschrift" beleg/extIssuer/ok-Stempel), `styles.css` (ein Stempel-Ton
+  `.stamp-warn`, Rot #b91c1c). Bestehende Skins/Belege/Antwortpfad unverändert. Hero 10 → **11**
+  Kacheln, Geführte Demo 13 → **14 Szenarien**; Modul-Vorschläge Audit + Finanzen erweitert.
+- **Verifikation:** deterministisch (Node-VM gegen `data.js`) **25 Dokumente** (war 23), **14
+  Szenarien**, 2 E-Mails, 2 gesperrt, **0 kaputte Referenzen**, Hero 11; Arithmetik geprüft
+  (12 × 920 = 11.040; +19 % = 13.137,60 €). Live im Browser (DOM gegen reale Daten): Suche findet beide
+  Belege mit korrektem Modul-Tag; **Gutschrift** öffnet `paper-beleg`, Aussteller „Stahlwerk Donau AG",
+  GUTSCHRIFT-Stempel grün, Positionstabelle Netto/USt/Brutto korrekt, 3 Highlights; **Mängelrüge**
+  öffnet `paper-beleg`, Aussteller „Meridian Industrie GmbH", MÄNGELRÜGE-Stempel **rot (rgb 185,28,28)**,
+  3 Highlights; Szenario-Kopf rendert mit **95 % Konfidenz**; **keine Konsolenfehler**. (Voll-Streaming-
+  Pfad im Headless-Preview timer-gedrosselt, Screenshot-Capture instabil — bekannte Harness-Grenzen;
+  daher DOM/Daten-basiert verifiziert.)
 
 ## Was in Zyklus 18 gebaut wurde
 
@@ -447,23 +484,23 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Mehr Tiefe in der Demo-Firma — ein zusätzlicher, glaubwürdiger Beleg-Vorgang.** Nach Zyklus 18 sind
-alle Video-relevanten Politur- und Choreografie-Hebel gezogen (Video-Reife 100 %). Der jetzt schwächste
-Fortschrittsbereich ist **Demo-Firma & realistische Dokumente (81 %)**. Der stärkste nächste Schritt ist
-**ein weiterer authentischer Vorgang**, der eine bislang unbelegte Entscheider-Frage beantwortbar macht —
-z. B. ein **Reklamations-/Mängel-Vorgang** (Lieferschein → Mängelrüge → Gutschrift) zur Stahllieferung
-Donau (verzahnt mit der bestehenden Story) **oder** ein **zweites Projekt** neben „Alpha", das eine Frage
-wie „Wie steht Projekt Beta?" belegt. Rein additiv in `data.js` (Reuse der Beleg-/Tabellen-Skins);
-neues Szenario + 1–2 Dokumente, in Hero + Modul + Geführte Demo einweben. Hebt **Demo-Firma und
-Szenarien-Breite** gleichzeitig.
+**Konfidenz visuell erklären — ein Tooltip/Hover am Konfidenz-Meter.** Nach Zyklus 19 ist der
+Reklamations-Vorgang der empfohlene Breiten-Schritt (Demo-Firma 81 % → 86 %). Der jetzt stärkste
+verbleibende Hebel ist **Politur der Belegbarkeit**: ein kleiner Hover/Tooltip am Konfidenz-Meter, der
+zeigt, *woraus* sich die Prozentzahl speist — **Anzahl Quellen**, **höchste Relevanz**, **Grad der
+Übereinstimmung** der Belege. Rein additiv (`app.js` Renderer + `styles.css`), datengetrieben aus dem
+bestehenden `answer.sources`-Array (keine neuen Datenfelder nötig). Macht die zentrale
+„belastbare-Belege"-Story für skeptische CFOs greifbar: die 95 % sind keine Behauptung, sondern eine
+Ableitung aus konkreten Quellen.
 
-*Warum?* Die Demo überzeugt mechanisch und visuell bereits vollständig; was den letzten Zweifel bei
-einem CFO nimmt, ist **Dichte** — je mehr echte, quervernetzte Vorgänge sichtbar sind, desto stärker
-der Eindruck „mein Unternehmen besitzt das alles bereits, und es hängt zusammen".
+*Warum?* Die Demo hat jetzt Breite (14 Szenarien, 25 Dokumente über 6 Ressorts) **und** Tiefe (saubere
+und Ausnahme-Belegpfade). Der letzte Skeptiker-Einwand eines CFOs zielt auf die **Konfidenzzahl selbst**
+(„woher weiß das System das?"). Ein Tooltip, der die Herleitung sichtbar macht, entkräftet genau diesen
+Einwand — mit minimalem Aufwand und hoher Wirkung im Video (Cursor hovert, Zahl wird erklärt).
 
-**Alternative, falls Politur vor Breite:** ein **Konfidenz-Tooltip** am Meter, der beim Hover zeigt,
-*woraus* sich die Zahl speist (Anzahl Quellen, höchste Relevanz, Übereinstimmung) — macht die
-„belastbare Belege"-Story noch greifbarer. Klein, rein additiv (`app.js`/`styles.css`).
+**Alternative, falls Breite vor Politur:** ein **zweites Projekt** neben „Alpha" (z. B. „Projekt Beta")
+mit eigenem Statusbericht, das eine Frage „Wie steht Projekt Beta?" belegt — hebt Demo-Firma und
+Szenarien weiter. Rein additiv in `data.js` (Reuse der Bericht-Skins).
 
 **Nicht dupliziert (bewusst):** die Entscheidungskette (`DECISION_CHAIN`) auch an die
 `materialkosten`-Antwort hängen — dann erschiene die Kette **zweimal** in der Geführten Demo
@@ -471,6 +508,18 @@ der Eindruck „mein Unternehmen besitzt das alles bereits, und es hängt zusamm
 natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst nicht dupliziert.
 
 ---
+
+## CEO-Review (Ende Zyklus 19)
+
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Neben dem Wow-Opener (Such-Beat) zeigt die Demo
+  jetzt einen Vorgang, der jeden CFO/Auditor überzeugt: eine **mangelhafte Stahllieferung** wurde
+  erkannt, **fristgerecht nach §377 HGB gerügt** und per **Gutschrift (11.040 € netto) erstattet** —
+  jeder Schritt mit Originalbeleg. Die Demo beweist damit nicht nur den *sauberen* Pfad
+  (Drei-Wege-Abgleich), sondern auch, dass die **Ausnahme** lückenlos dokumentiert ist.
+- *Versteht ein CFO den Nutzen?* — Ja, sofort: *„auch als etwas schiefging, haben wir es sauber
+  dokumentiert und das Geld kam zurück"*. Das ist Governance und Prüfungssicherheit in einem Satz.
+- *Schwächste Stelle → nächster Zyklus:* Breite und Tiefe stehen; der letzte Hebel ist **Politur der
+  Belegbarkeit** — ein Konfidenz-Tooltip, der die Prozentzahl aus den Quellen herleitet. Siehe oben.
 
 ## CEO-Review (Ende Zyklus 18)
 

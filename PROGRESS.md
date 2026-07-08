@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 82 % (Ende Zyklus 18)
+## Gesamtfortschritt: ≈ 84 % (Ende Zyklus 19)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,19 +11,33 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 94 % | 14.1 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
-| Demo-Firma & realistische Dokumente | 15 % | 81 % | 12.15 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 90 % | 9.0 |
+| Demo-Firma & realistische Dokumente | 15 % | 86 % | 12.9 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 92 % | 9.2 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
-| **Summe** | **100 %** | — | **≈ 91 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 92 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 82 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (mehr authentische Dokumente, Ketten-Tiefe). Zyklus 18 webt den
-> **Such-Beat als automatischen Opener in die Geführte Demo** — die Command-Palette wird jetzt
-> hands-free vorgeführt (erstes Bild des Videos) und hebt **Video-Reife** (99 % → 100 %).
-> Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 84 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur. Zyklus 19 fügt einen **vollständigen Reklamations-Vorgang**
+> (mangelhafte Stahllieferung → §377-HGB-Rüge → Gutschrift) hinzu und hebt **Demo-Firma**
+> (81 % → 86 %) und **Szenarien** (90 % → 92 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 19 (2026-07-08) ≈ 84 %** — Reklamations-Vorgang (mangelhafte Stahllieferung → Gutschrift):
+  neues Szenario `reklamation-stahl` (Modul Audit, Konfidenz 95 %) „Wie haben wir die mangelhafte
+  Stahllieferung reklamiert?" — 12 t (von 60 t) fallen bei der Wareneingangsprüfung durch eine
+  **Maßabweichung EN 10029** + Walzhautfehler, **§377-HGB-Rüge** fristgerecht, **Gutschrift 11.040 €
+  netto / 13.137,60 € brutto**. Zwei neue Belege: `maengelruege-mr-2026-0091` (Typ „Mängelrüge", roter
+  MÄNGELRÜGE-Stempel, Aussteller Meridian) und `gutschrift-gs-2026-0203` (Typ „Gutschrift",
+  Positionstabelle, grüner GUTSCHRIFT-Stempel, Aussteller Lieferant). Rahmenvertrag um **§12
+  Gewährleistung** ergänzt → Zitate lösen auf sichtbare Klausel auf. Bewusst mit der Donau-Story
+  verzahnt (separate Folgelieferung, keine Kollision mit dem sauberen Drei-Wege-Abgleich). Rein additiv
+  in `data.js`; 2 Skins in `app.js`, Stempel-Ton `.stamp-warn` in `styles.css`. Hero 10 → 11, Geführte
+  Demo 13 → 14 Szenarien. Deterministisch verifiziert: 25 Docs (war 23), 14 Szenarien, 0 kaputte
+  Referenzen, Arithmetik korrekt; live geprüft (beide Belege öffnen mit korrektem Skin/Stempel/Aussteller/
+  Positionstabelle, Suche findet sie, Szenario-Kopf 95 %, keine Konsolenfehler). (Demo-Firma 81 % → 86 %,
+  Szenarien 90 % → 92 %.)
 
 - **Zyklus 18 (2026-07-08) ≈ 82 %** — Such-Beat als Opener der Geführten Demo: die in Zyklus 17
   gebaute globale Suche wird jetzt **hands-free vorgeführt**. `startDemo()` ruft vor der Szenario-
@@ -182,11 +196,12 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Mehr Tiefe in der Demo-Firma** (weitere authentische Dokumente) → schwächster Bereich (81 %).
-   Z. B. ein Lieferschein/Reklamations-Vorgang oder ein zweites Projekt (neben Alpha), das eine weitere
-   Frage belegbar macht — hebt Demo-Firma **und** Szenarien-Breite.
-2. **Konfidenz visuell erklären** — ein Tooltip/Hover am Konfidenz-Meter, der zeigt, *woraus* sich die
-   Zahl speist (Quellenanzahl, Relevanz, Übereinstimmung); macht die „belastbaren Belege"-Story noch
-   greifbarer für skeptische CFOs.
+1. **Konfidenz visuell erklären** — ein Tooltip/Hover am Konfidenz-Meter, der zeigt, *woraus* sich die
+   Zahl speist (Quellenanzahl, höchste Relevanz, Übereinstimmung); macht die „belastbaren Belege"-Story
+   noch greifbarer für skeptische CFOs. Klein, rein additiv (`app.js`/`styles.css`). **Jetzt stärkster
+   Hebel**, da Demo-Firma mit Zyklus 19 auf 86 % gehoben ist.
+2. **Mehr Tiefe in der Demo-Firma** (weitere authentische Dokumente) → z. B. ein zweites Projekt
+   (neben Alpha), das eine Frage wie „Wie steht Projekt Beta?" belegt — hebt Demo-Firma **und**
+   Szenarien-Breite.
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).

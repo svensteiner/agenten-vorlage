@@ -36,6 +36,8 @@
     "Richtlinie":           { cat: "richtlinie" },
     "Sicherheitsdokument":  { cat: "richtlinie" },
     "Prüfnachweis":         { cat: "nachweis", stamp: { text: "BESTANDEN", tone: "ok" } },
+    "Mängelrüge":           { cat: "beleg", stamp: { text: "MÄNGELRÜGE", tone: "warn" } },
+    "Gutschrift":           { cat: "beleg", extIssuer: true, stamp: { text: "GUTSCHRIFT", tone: "ok" } },
     "E-Mail":               { cat: "email" },
   };
   const defaultSkin = { cat: "bericht" };
@@ -177,7 +179,7 @@
     input.value = "";
     renderSearchResults("");
     input.focus();
-    await sleep(reduce ? 300 : 750); // „23 Dokumente im Wissensspeicher" wirken lassen
+    await sleep(reduce ? 300 : 750); // „N Dokumente im Wissensspeicher" wirken lassen (Zähler dynamisch)
     if (token !== demo.token) return;
 
     // „stahl" sichtbar eintippen → live gefilterte Treffer quer über Finanzen + Audit.

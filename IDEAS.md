@@ -66,11 +66,17 @@
   tippt sichtbar „stahl" → 8 Treffer quer über Finanzen+Audit (`<mark>`), öffnet kurz einen freigegebenen
   Beleg im Viewer, schließt Palette+Viewer, *dann* die Frage-Sequenz. `resetDemoUi()` fail-safe. Macht die
   Menge des Wissens zum ersten Bild des Videos. Rein additiv in `app.js`.
-- **Mehr Tiefe in der Demo-Firma** — ein weiterer authentischer, quervernetzter Beleg-Vorgang
-  (Reklamation/Mängelrüge zur Donau-Lieferung **oder** zweites Projekt neben Alpha). Hebt Demo-Firma
-  (81 %) und Szenarien-Breite. Rein additiv in `data.js`. *(Nächster Zyklus.)*
+- ✅ **Reklamations-/Mängel-Vorgang (Donau-Stahllieferung)** — *erledigt in Zyklus 19*: Szenario
+  `reklamation-stahl` (Audit, 95 %) „Wie haben wir die mangelhafte Stahllieferung reklamiert?" +
+  zwei Belege — `maengelruege-mr-2026-0091` (Typ „Mängelrüge", roter MÄNGELRÜGE-Stempel, §377 HGB,
+  EN 10029) und `gutschrift-gs-2026-0203` (Typ „Gutschrift", Positionstabelle, 11.040 € netto /
+  13.137,60 € brutto, grüner GUTSCHRIFT-Stempel). §12 Gewährleistung im Rahmenvertrag ergänzt. Zeigt
+  den *Ausnahme*-Belegpfad als Gegenpol zum sauberen Drei-Wege-Abgleich. Rein additiv. Hero 10 → 11,
+  Demo 13 → 14.
 - **Konfidenz-Tooltip am Meter** — Hover zeigt, woraus sich die Konfidenz speist (Anzahl Quellen,
-  höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. *(Politur-Option.)*
+  höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. *(Nächster Zyklus.)*
+- **Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
+  Frage „Wie steht Projekt Beta?". Rein additiv in `data.js`. *(Breiten-Option.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

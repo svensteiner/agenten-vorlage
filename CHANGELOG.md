@@ -2,6 +2,46 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 19 — 2026-07-08 — Reklamations-Vorgang: mangelhafte Stahllieferung → Gutschrift 🧾
+
+**Ein neuer, authentischer Beleg-Vorgang zeigt, dass auch die Ausnahme lückenlos dokumentiert ist —
+und das Geld zurückkam.** Der schwächste Fortschrittsbereich war **Demo-Firma & realistische Dokumente
+(81 %)**. Neu ist ein vollständiger Qualitäts-/Reklamationsvorgang, bewusst mit der bestehenden
+Stahl-/Donau-Story verzahnt (separate Folgelieferung, keine Kollision mit dem sauberen Drei-Wege-
+Abgleich): eine Teillieferung Baustahl S355 war mangelhaft, wurde form- und fristgerecht gerügt und
+per Gutschrift erstattet. Rein additiv in `data.js`; zwei neue Beleg-Skins in `app.js`, ein
+Stempel-Ton in `styles.css`.
+
+### Neu
+- **Szenario `reklamation-stahl`** (Modul Audit, Konfidenz 95 %): „Wie haben wir die mangelhafte
+  Stahllieferung reklamiert?" Antwort: 12 t (von 60 t) fielen bei der Wareneingangsprüfung durch eine
+  **Maßabweichung EN 10029** + Walzhautfehler auf → **§377-HGB-Rüge** (fristgerecht, 2. Tag) →
+  **Gutschrift über 11.040 € netto (13.137,60 € brutto)**. Kernbotschaft: *Mangel erkannt, fristgerecht
+  gerügt, Geld zurück.*
+- **Dokument `maengelruege-mr-2026-0091`** (Typ **„Mängelrüge"**, Modul Audit): formale Rüge Meridian →
+  Stahlwerk Donau, §377 HGB + Gewährleistungsklausel §12 Rahmenvertrag, 3 Highlights. Neues Beleg-Skin
+  mit rotem **MÄNGELRÜGE**-Stempel.
+- **Dokument `gutschrift-gs-2026-0203`** (Typ **„Gutschrift"**, Modul Finanzen): Gutschrift Stahlwerk
+  Donau → Meridian mit **Positionstabelle** (12 t × 920 € = 11.040 € netto · USt 19 % 2.097,60 € ·
+  brutto 13.137,60 €), grüner **GUTSCHRIFT**-Stempel, Aussteller = Lieferant.
+- **§12 Gewährleistung** als neue Klausel im **Rahmenvertrag Stahlwerk Donau** ergänzt → die Zitate der
+  Mängelrüge/Gutschrift lösen jetzt auf eine sichtbare Vertragsklausel auf.
+- Verdrahtung: neuer Stempel-Ton `.stamp-warn` (Rot #b91c1c) in `styles.css`; DOC_SKINS „Mängelrüge"
+  (beleg, warn-Stempel) + „Gutschrift" (beleg, extIssuer, ok-Stempel) in `app.js`. Hero (Wissen)
+  10 → **11 Kacheln**; Modul-Vorschläge Audit + Finanzen erweitert; Geführte Demo 13 → **14 Szenarien**.
+
+### Verifikation
+- **Deterministisch (Node-VM gegen `data.js`):** **25 Dokumente** (war 23), **14 Szenarien** (war 13),
+  2 E-Mails, 2 gesperrt, **0 kaputte Referenzen** über alle `sources`/`related`/`withheld`/`chain`/
+  `MODULE_SUGGESTIONS`; Hero 11 Kacheln. Arithmetik geprüft: 12 × 920 = 11.040; +19 % = 13.137,60 €.
+- **Live im Browser (DOM gegen reale Daten):** Suche findet beide Belege mit korrektem Modul-Tag;
+  **Gutschrift** öffnet als `paper-beleg`, Aussteller „Stahlwerk Donau AG", GUTSCHRIFT-Stempel (grün),
+  Positionstabelle Netto/USt/Brutto korrekt, 3 Highlights; **Mängelrüge** öffnet als `paper-beleg`,
+  Aussteller „Meridian Industrie GmbH", MÄNGELRÜGE-Stempel in **Rot (rgb 185,28,28)**, 3 Highlights;
+  Szenario-Kopf rendert mit **95 % Konfidenz**. **Keine Konsolenfehler.** (Voll-Streaming-Pfad im
+  Headless-Preview timer-gedrosselt, Screenshot-Capture instabil — bekannte Harness-Grenzen; daher
+  DOM/Daten-basiert verifiziert.)
+
 ## Zyklus 18 — 2026-07-08 — Such-Beat als Opener der Geführten Demo 🎬
 
 **Die Command-Palette wird jetzt hands-free vorgeführt.** Zyklus 17 baute die globale Suche, sie lief

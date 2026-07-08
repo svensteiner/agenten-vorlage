@@ -5,13 +5,12 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Mehr Tiefe in der Demo-Firma** — ein weiterer authentischer, quervernetzter Beleg-Vorgang
-   (schwächster Bereich, 81 %). Z. B. Reklamations-/Mängel-Vorgang (Lieferschein → Mängelrüge →
-   Gutschrift) zur Donau-Stahllieferung **oder** ein zweites Projekt neben „Alpha". Neues Szenario +
-   1–2 Dokumente, rein additiv in `data.js` (Reuse Beleg-/Tabellen-Skins), in Hero + Modul + Geführte
-   Demo einweben. → oberstes Item für den nächsten Zyklus.
-2. **[P6] Konfidenz-Tooltip am Meter** — Hover zeigt, *woraus* sich die Zahl speist (Anzahl Quellen,
-   höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. Klein, additiv.
+1. **[P6] Konfidenz-Tooltip am Meter** — Hover zeigt, *woraus* sich die Zahl speist (Anzahl Quellen,
+   höchste Relevanz, Übereinstimmung). Macht die „belastbare Belege"-Story greifbarer. Klein, additiv
+   (`app.js`/`styles.css`), datengetrieben aus `answer.sources`. → oberstes Item für den nächsten Zyklus.
+2. **[P5] Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
+   Frage „Wie steht Projekt Beta?". Rein additiv in `data.js` (Reuse Bericht-Skins). Hebt Demo-Firma
+   und Szenarien weiter.
 3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 4. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
@@ -20,6 +19,15 @@
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
 
 ## Erledigt
+
+- **[Zyklus 19] Reklamations-Vorgang (mangelhafte Stahllieferung → Gutschrift)** — neues Audit-Szenario
+  `reklamation-stahl` (95 %) + zwei Belege: `maengelruege-mr-2026-0091` (Typ „Mängelrüge", roter
+  MÄNGELRÜGE-Stempel) und `gutschrift-gs-2026-0203` (Typ „Gutschrift", Positionstabelle 11.040 € netto /
+  13.137,60 € brutto, grüner GUTSCHRIFT-Stempel). §12 Gewährleistung im Rahmenvertrag ergänzt. Bewusst mit
+  der Donau-Story verzahnt (separate Folgelieferung, kein Widerspruch zum sauberen Drei-Wege-Abgleich).
+  Rein additiv in `data.js`; 2 DOC_SKINS in `app.js`, Stempel-Ton `.stamp-warn` in `styles.css`. Hero
+  10 → 11, Demo 13 → 14 Szenarien. Deterministisch + live verifiziert (25 Docs, 14 Szenarien, 0 kaputte
+  Referenzen; beide Belege öffnen mit korrektem Skin/Stempel/Aussteller/Tabelle; keine Konsolenfehler).
 
 - **[Zyklus 18] Such-Beat als Opener der Geführten Demo** — `startDemo()` ruft vor der Szenario-Schleife
   `demoSearchBeat(token)`: Palette öffnet automatisch („23 Dokumente"), tippt „stahl" → 8 Treffer quer

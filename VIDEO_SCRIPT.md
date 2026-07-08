@@ -29,8 +29,8 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 
 ## Szene 0b — „Was steckt eigentlich alles drin?" (Opener der Geführten Demo, 0:20–0:35)
 **Aktion:** **Automatisch** — direkt nach dem Start der „▶ Geführten Demo" und **vor** der ersten Frage
-öffnet sich die Command-Palette von selbst: sie zeigt **„23 Dokumente im Wissensspeicher"**, tippt
-sichtbar **„stahl"** → die Liste filtert live auf **8 Treffer quer über Finanzen und Audit**, öffnet
+öffnet sich die Command-Palette von selbst: sie zeigt **„25 Dokumente im Wissensspeicher"**, tippt
+sichtbar **„stahl"** → die Liste filtert live auf **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet
 kurz einen Beleg im Viewer und schließt wieder — *dann* läuft die Frage-Sequenz weiter.
 **Sprecher:** „Und wie viel liegt eigentlich schon im Haus? Ein Tastendruck durchsucht alles auf
 einmal — ein Stichwort, und Sie sehen sofort, wo überall es vorkommt."
@@ -84,6 +84,18 @@ automatisch mit Bestellung und Wareneingang ab: gleiche Menge, gleiche Beträge.
 rotierter **EINGANG-Stempel**) mit **Positionstabelle** (80 t · 920 € · Netto 73.600 € ·
 USt 19 % · **Brutto 87.584 €**); danach Bestellung/Wareneingang mit identischer Position.
 **Punkt (für den CFO):** **Drei-Wege-Abgleich, prüfungssicher** — „das ist meine Buchhaltung".
+
+## Szene 3b — Und wenn etwas schiefgeht? (1:45–2:15)
+**Aktion:** Fragen: *„Wie haben wir die mangelhafte Stahllieferung reklamiert?"* → nach der Antwort
+die **Mängelrüge** öffnen, dann die **Gutschrift**.
+**Sprecher:** „Und wenn eine Lieferung mangelhaft ist? Auch die Ausnahme ist lückenlos dokumentiert.
+Zwölf Tonnen fielen bei der Wareneingangsprüfung durch — die Abweichung wurde fristgerecht gerügt,
+der Lieferant hat gutgeschrieben. Elftausend Euro zurück, jeder Schritt mit Beleg."
+**Bild:** Antwort in drei Schritten (Erkannt · Gerügt · Erstattet); Viewer zeigt die **Mängelrüge**
+mit rotem, rotiertem **MÄNGELRÜGE-Stempel** (§377 HGB, EN 10029), danach die **Gutschrift** mit grünem
+**GUTSCHRIFT-Stempel** und **Positionstabelle** (12 t · 920 € · **Netto 11.040 € / Brutto 13.137,60 €**).
+**Punkt (für Audit & CFO):** Governance auch im Ausnahmefall — **Mangel erkannt, fristgerecht gerügt,
+Geld zurück.** Der Gegenpol zum sauberen Drei-Wege-Abgleich.
 
 ## Szene 4 — Die Entscheider-Frage (1:40–2:05)
 **Aktion:** Fragen: *„Finde alle Verträge mit automatischer Verlängerung."*

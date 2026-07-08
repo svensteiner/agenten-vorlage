@@ -5,18 +5,19 @@
 
 > **Schnellster Weg zur Aufnahme:** Statt manuell zu klicken kann der **▶-Button
 > „Geführte Demo"** (oben rechts) die gesamte Abfolge unten hands-free abspielen — sie **eröffnet
-> automatisch mit dem Such-Beat** (Palette öffnet, tippt „stahl", 8 Treffer, öffnet kurz einen Beleg),
-> danach tippt sich jede Frage selbst, Antwort streamt, Fortschritt „n / 13". Sprecher nur drüberlegen.
+> automatisch mit dem Such-Beat** (Palette öffnet, tippt „stahl", 10 Treffer, öffnet kurz einen Beleg),
+> danach tippt sich jede Frage selbst, Antwort streamt, Fortschritt „n / 14". Sprecher nur drüberlegen.
 > Tab dabei im Vordergrund halten (Hintergrund-Tabs drosseln Tipp-/Streaming-Tempo).
 
 | # | Dauer | Aktion in der App | Kamera / Fokus |
 |---|-------|-------------------|----------------|
 | 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
-| 0a | 0:12 | **Automatischer Such-Beat (Opener)** — die Palette öffnet sich von selbst und zeigt **„23 Dokumente im Wissensspeicher"**, tippt sichtbar **„stahl"** → **8 Treffer quer über Finanzen + Audit**, öffnet kurz einen Beleg im Viewer und schließt wieder | Auf den Zähler **„23 Dokumente"** halten, dann das Live-Filtern auf **8 von 23** und das gelbe `<mark>`-Highlight zeigen. **Wow: „So viel liegt schon im Haus — ein Stichwort, und man sieht sofort, wo überall es vorkommt."** |
+| 0a | 0:12 | **Automatischer Such-Beat (Opener)** — die Palette öffnet sich von selbst und zeigt **„25 Dokumente im Wissensspeicher"**, tippt sichtbar **„stahl"** → **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet kurz einen Beleg im Viewer und schließt wieder | Auf den Zähler **„25 Dokumente"** halten, dann das Live-Filtern auf **10 von 25** und das gelbe `<mark>`-Highlight zeigen. **Wow: „So viel liegt schon im Haus — ein Stichwort, und man sieht sofort, wo überall es vorkommt."** |
 | 1 | 0:25 | (Demo tippt selbst) *Reiserichtlinie* | Antwort-Streaming zeigen; kurz auf Konfidenz 98 % halten |
 | 2 | 0:40 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter → nach der Antwort **nacheinander** die 2. Quelle ***Preisanpassung Baustahl S355*** (Lieferanten-E-Mail) und die 3. Quelle ***WG: Preisanpassung Baustahl — Auswirkung Projekt Alpha*** (interne Weiterleitung) anklicken | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit & Quellen schwenken. Klick auf die 1. E-Mail → Viewer öffnet als **echte E-Mail** (Postfach-Kopf **Von/An/Cc**, Avatar, **📎 Anhang-Chip**, **Zitat-Verlauf**) — „**+15 % Preisgleitklausel §6**" gelb hervorgehoben. Dann die **Weiterleitung** öffnen (Einkauf → CFO): Highlight „**~0,9 Mio. € Mehrbedarf**" + Empfehlung Vorstandsvorlage, Zitat = die Donau-E-Mail. **Wow-Beleg: „Das System rekonstruiert die ganze Kette — vom Lieferantenbrief über die interne Weiterleitung bis zum Mehrbudget."** |
 | 2b | 0:45 | *„Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?"* (**stärkster CFO-Moment**) | Direkt unter der Antwort erscheint der **Ketten-Block „⛓ Herkunft des Mehrbudgets"** — eine **vertikale Timeline** mit 3 Schritten: **12.02. Stahlwerk Donau → Einkauf** (Preisanpassung), **13.02. Einkauf → CFO** (Bewertung 0,9 Mio. €), **März Vorstand** (Beschluss, hervorgehoben). Langsam über die Kette schwenken; **den ersten Schritt anklicken** → der Originalbeleg öffnet im Viewer, oben mit dem neuen **Ketten-Navigator „⛓ Entscheidungskette · Schritt 1 von 3"**. Jetzt **„Nächster Beleg →" zweimal klicken** — der Viewer wandert Lieferanten-E-Mail → Weiterleitung → Vorstandsprotokoll, der Stepper füllt sich Schritt für Schritt. **Wow: „Das System zeigt die ganze Entscheidungskette — und man blättert die drei Belege durch, ohne den Kontext zu verlieren."** |
 | 3 | 0:30 | *„Zeig mir die Belege zu Rechnung 2026-1843."* → Quelle *Rechnung 2026-1843* anklicken | Viewer öffnet von rechts als **echtes Rechnungs-Dokument** (Lieferanten-Briefkopf, rotierter **EINGANG-Stempel**); auf die **Positionstabelle** zoomen — Menge 80 t · 920 € · **Netto/USt/Brutto** — dann zusätzlich *Bestellung* & *Wareneingang* öffnen: gleiche Position & Beträge = **Drei-Wege-Abgleich** |
+| 3b | 0:30 | *„Wie haben wir die mangelhafte Stahllieferung reklamiert?"* (**Audit-/Governance-Moment**) | Antwort in drei Schritten (Erkannt · Gerügt · Erstattet) zeigen. Quelle *Mängelrüge MR-2026-0091* öffnen → **echtes Beleg-Dokument** mit rotem, rotiertem **MÄNGELRÜGE-Stempel** (§377 HGB, Maßabweichung EN 10029). Dann *Gutschrift GS-2026-0203* öffnen → grüner **GUTSCHRIFT-Stempel** + **Positionstabelle** (12 t × 920 € = **11.040 € netto / 13.137,60 € brutto**). **Punkt: „Auch als etwas schiefging, wurde es sauber dokumentiert und fristgerecht gerügt — und das Geld kam zurück."** Gegenpol zum sauberen Drei-Wege-Abgleich aus Szene 3. |
 | 4 | 0:25 | Viewer schließen (✕) → *„Finde alle Verträge mit automatischer Verlängerung."* | Auf die Tabelle mit ⚠-Frist zoomen |
 | 5 | 0:30 | *„Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?"* | Auf die **CO₂-Trend-Tabelle** (2020 → 2025 → Ziel 2030) und das **Fazit** halten; Quelle *Energie- & Emissionskennzahlen 2025* kurz öffnen |
 | 6 | 0:30 | *„Wie abhängig sind wir von unserem größten Lieferanten?"* (**CFO-/Einkaufs-Moment**) | Auf die **Konzentrations-Tabelle** halten — *Stahlwerk Donau AG **23,9 %*** zählt hoch — dann auf die **Single-Source-Warnung** für Baustahl S355 und die Gegenmaßnahme *Ferro Nord*; Quelle *Lieferanten-Risikoanalyse 2026* kurz öffnen |
@@ -29,8 +30,8 @@
 ## Alternative B-Roll (optional)
 - **Globale Suche (Command-Palette):** läuft seit Zyklus 18 **automatisch als Opener** der Geführten
   Demo (Szene 0a). Manuell außerhalb der Demo jederzeit per **Strg + K** (oder Sidebar
-  **„🔍 Alles durchsuchen"**) reproduzierbar: Modal zeigt **„23 Dokumente im Wissensspeicher"**, „stahl"
-  filtert live auf **8 Treffer quer über Finanzen und Audit** (Suchbegriff gelb, Modul-Tag je Zeile),
+  **„🔍 Alles durchsuchen"**) reproduzierbar: Modal zeigt **„25 Dokumente im Wissensspeicher"**, „stahl"
+  filtert live auf **10 Treffer quer über Finanzen · Audit · Verträge** (Suchbegriff gelb, Modul-Tag je Zeile),
   Klick öffnet den Beleg. **Punkt: „Ein Stichwort — und man sieht sofort, wo überall im Haus es vorkommt."**
 - Modul **Verträge** öffnen → Dokumentenbibliothek als Raster zeigen (Breite des Wissens).
 - Modul **Einstellungen** → „Datenquellen" (SharePoint, SAP, Fileserver … ● verbunden)
@@ -78,7 +79,7 @@
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
   Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
 - **Globale Suche (Zyklus 17):** **Strg/⌘ + K** öffnet/schließt die Command-Palette von überall (Esc
-  schließt). Leeres Feld = komplettes Inventar (Zähler „23 Dokumente"); Tippen filtert live über alle
+  schließt). Leeres Feld = komplettes Inventar (Zähler „25 Dokumente"); Tippen filtert live über alle
   Dokumente, ↑/↓ + Enter öffnen den markierten Treffer. Der Auslöser ist während der Geführten Demo
   bewusst inaktiv — für den Such-Beat die Demo also **nicht** laufen lassen (separat aufnehmen).
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.
