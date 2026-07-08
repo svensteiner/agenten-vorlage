@@ -4,15 +4,18 @@
 > [`prototype/index.html`](prototype/index.html). Ergänzt [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md).
 
 > **Schnellster Weg zur Aufnahme:** Statt manuell zu klicken kann der **▶-Button
-> „Geführte Demo"** (oben rechts) die gesamte Abfolge unten hands-free abspielen — sie **eröffnet
-> automatisch mit dem Such-Beat** (Palette öffnet, tippt „stahl", 10 Treffer, öffnet kurz einen Beleg),
-> danach tippt sich jede Frage selbst, Antwort streamt, Fortschritt „n / 16". Sprecher nur drüberlegen.
-> Tab dabei im Vordergrund halten (Hintergrund-Tabs drosseln Tipp-/Streaming-Tempo).
+> „Geführte Demo"** (oben rechts) hands-free abspielen — sie **eröffnet automatisch mit dem
+> Such-Beat** (Palette öffnet, tippt „stahl", 10 Treffer, öffnet kurz einen Beleg), danach tippt
+> sich jede Frage selbst, Antwort streamt. **Die Geführte Demo spielt eine kuratierte 6er-Kern-
+> Auswahl** der Szenen unten (Fortschritt **„n / 6"**, endet auf dem Money-Shot, < 4 Min) — die
+> restlichen Szenen der Shotlist sind die **manuelle Langfassung** (per Kachel/Frage selbst
+> aufnehmbar). Sprecher nur drüberlegen. Tab dabei im Vordergrund halten (Hintergrund-Tabs
+> drosseln Tipp-/Streaming-Tempo). Verbindliche Aufnahme-Anleitung: [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md).
 
 | # | Dauer | Aktion in der App | Kamera / Fokus |
 |---|-------|-------------------|----------------|
 | 0 | 0:20 | App im Vollbild öffnen (**Storage vorher leeren** → **Onboarding-Coachmark** erscheint mit Pfeil auf den pulsierenden Demo-Button). Klick auf **„▶ Geführte Demo starten"** — Overlay schließt & die Demo läuft ab hier automatisch | Kurz auf das Coachmark (Satz + Pfeil) halten, dann langsamer Einzoom auf Überschrift & Vorschlagskarten |
-| 0a | 0:12 | **Automatischer Such-Beat (Opener)** — die Palette öffnet sich von selbst und zeigt **„27 Dokumente im Wissensspeicher"**, tippt sichtbar **„stahl"** → **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet kurz einen Beleg im Viewer und schließt wieder | Auf den Zähler **„27 Dokumente"** halten, dann das Live-Filtern auf **10 von 27** und das gelbe `<mark>`-Highlight zeigen. **Wow: „So viel liegt schon im Haus — ein Stichwort, und man sieht sofort, wo überall es vorkommt."** |
+| 0a | 0:12 | **Automatischer Such-Beat (Opener)** — die Palette öffnet sich von selbst und zeigt **„29 Dokumente im Wissensspeicher"**, tippt sichtbar **„stahl"** → **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet kurz einen Beleg im Viewer und schließt wieder | Auf den Zähler **„29 Dokumente"** halten, dann das Live-Filtern auf **10 von 29** und das gelbe `<mark>`-Highlight zeigen. **Wow: „So viel liegt schon im Haus — ein Stichwort, und man sieht sofort, wo überall es vorkommt."** |
 | 1 | 0:25 | (Demo tippt selbst) *Reiserichtlinie* → nach der Antwort mit dem **Cursor auf das Konfidenz-Meter „Konfidenz 98 %"** fahren | Antwort-Streaming zeigen; dann **auf dem Meter verweilen** — ein Popover klappt auf und **erklärt die Zahl**: „So ergibt sich die Konfidenz 98 % — **Quellen herangezogen · Höchste Relevanz 98 % · Übereinstimmung**", Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Quellen."* **Wow für Skeptiker: „Die 98 % sind keine Behauptung — das System zeigt, woraus sie sich ableiten."** |
 | 2 | 0:40 | Composer: *„Warum sind die Materialkosten gestiegen?"* eintippen, Enter → nach der Antwort **nacheinander** die 2. Quelle ***Preisanpassung Baustahl S355*** (Lieferanten-E-Mail) und die 3. Quelle ***WG: Preisanpassung Baustahl — Auswirkung Projekt Alpha*** (interne Weiterleitung) anklicken | Auf den Antwortkopf **„⚡ Beantwortet in ~1,9 s"** halten (Wert zählt hoch) und beobachten, wie die **Kernzahlen hochzählen** (18,4 %, 31,6 %); dann auf Nachvollziehbarkeit & Quellen schwenken. Klick auf die 1. E-Mail → Viewer öffnet als **echte E-Mail** (Postfach-Kopf **Von/An/Cc**, Avatar, **📎 Anhang-Chip**, **Zitat-Verlauf**) — „**+15 % Preisgleitklausel §6**" gelb hervorgehoben. Dann die **Weiterleitung** öffnen (Einkauf → CFO): Highlight „**~0,9 Mio. € Mehrbedarf**" + Empfehlung Vorstandsvorlage, Zitat = die Donau-E-Mail. **Wow-Beleg: „Das System rekonstruiert die ganze Kette — vom Lieferantenbrief über die interne Weiterleitung bis zum Mehrbudget."** |
 | 2b | 0:45 | *„Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?"* (**stärkster CFO-Moment**) | Direkt unter der Antwort erscheint der **Ketten-Block „⛓ Herkunft des Mehrbudgets"** — eine **vertikale Timeline** mit 3 Schritten: **12.02. Stahlwerk Donau → Einkauf** (Preisanpassung), **13.02. Einkauf → CFO** (Bewertung 0,9 Mio. €), **März Vorstand** (Beschluss, hervorgehoben). Langsam über die Kette schwenken; **den ersten Schritt anklicken** → der Originalbeleg öffnet im Viewer, oben mit dem neuen **Ketten-Navigator „⛓ Entscheidungskette · Schritt 1 von 3"**. Jetzt **„Nächster Beleg →" zweimal klicken** — der Viewer wandert Lieferanten-E-Mail → Weiterleitung → Vorstandsprotokoll, der Stepper füllt sich Schritt für Schritt. **Wow: „Das System zeigt die ganze Entscheidungskette — und man blättert die drei Belege durch, ohne den Kontext zu verlieren."** |
@@ -30,7 +33,7 @@
 ## Alternative B-Roll (optional)
 - **Globale Suche (Command-Palette):** läuft seit Zyklus 18 **automatisch als Opener** der Geführten
   Demo (Szene 0a). Manuell außerhalb der Demo jederzeit per **Strg + K** (oder Sidebar
-  **„🔍 Alles durchsuchen"**) reproduzierbar: Modal zeigt **„27 Dokumente im Wissensspeicher"**, „stahl"
+  **„🔍 Alles durchsuchen"**) reproduzierbar: Modal zeigt **„29 Dokumente im Wissensspeicher"**, „stahl"
   filtert live auf **10 Treffer quer über Finanzen · Audit · Verträge** (Suchbegriff gelb, Modul-Tag je Zeile),
   Klick öffnet den Beleg. **Punkt: „Ein Stichwort — und man sieht sofort, wo überall im Haus es vorkommt."**
 - Modul **Verträge** öffnen → Dokumentenbibliothek als Raster zeigen (Breite des Wissens).
@@ -84,7 +87,7 @@
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
   Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
 - **Globale Suche (Zyklus 17):** **Strg/⌘ + K** öffnet/schließt die Command-Palette von überall (Esc
-  schließt). Leeres Feld = komplettes Inventar (Zähler „28 Dokumente"); Tippen filtert live über alle
+  schließt). Leeres Feld = komplettes Inventar (Zähler „29 Dokumente"); Tippen filtert live über alle
   Dokumente, ↑/↓ + Enter öffnen den markierten Treffer. Der Auslöser ist während der Geführten Demo
   bewusst inaktiv — für den Such-Beat die Demo also **nicht** laufen lassen (separat aufnehmen).
 - **Projekt-Portfolio (Zyklus 21/22):** Die Geführte Demo zeigt jetzt **zwei** Projekte direkt

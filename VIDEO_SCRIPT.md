@@ -7,6 +7,13 @@
 Demo läuft aus [`prototype/index.html`](prototype/index.html). Firma: fiktive
 **Meridian Industrie GmbH**. Alle Daten erfunden.
 
+> ℹ️ **Zwei Aufnahme-Wege — nicht verwechseln.** Die Szenen unten sind die **manuelle
+> Langfassung** (~3:20, alle Ressorts einzeln durchgeklickt). Der **empfohlene, freihändige
+> Weg** ist die **„▶ Geführte Demo"** — sie spielt eine **kuratierte 6er-Kern-Auswahl**
+> automatisch ab (Fortschritt „n / 6", endet auf dem Money-Shot, < 4 Min). Verbindliche
+> Aufnahme-Anleitung ist [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md); die Szenen unten
+> liefern Sprechertext + Kameraführung für beide Wege.
+
 ---
 
 ## Szene 0 — Aufhänger (0:00–0:20)
@@ -33,7 +40,7 @@ Mini-Balken, Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Que
 
 ## Szene 0b — „Was steckt eigentlich alles drin?" (Opener der Geführten Demo, 0:20–0:35)
 **Aktion:** **Automatisch** — direkt nach dem Start der „▶ Geführten Demo" und **vor** der ersten Frage
-öffnet sich die Command-Palette von selbst: sie zeigt **„28 Dokumente im Wissensspeicher"**, tippt
+öffnet sich die Command-Palette von selbst: sie zeigt **„29 Dokumente im Wissensspeicher"**, tippt
 sichtbar **„stahl"** → die Liste filtert live auf **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet
 kurz einen Beleg im Viewer und schließt wieder — *dann* läuft die Frage-Sequenz weiter.
 **Sprecher:** „Und wie viel liegt eigentlich schon im Haus? Ein Tastendruck durchsucht alles auf
@@ -166,11 +173,15 @@ Starker Schlussframe.
 ---
 
 ## Aufnahme-Hinweise
-- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 16
-  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 16").
-  Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
-  nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
-  die Tipp-/Streaming-Geschwindigkeit im Browser).
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt eine
+  **kuratierte 6er-Kern-Auswahl** hands-free ab (Frage tippt sich selbst, Antwort streamt,
+  Fortschritt **„n / 6"**), eröffnet mit dem Such-Beat und **endet garantiert auf dem
+  Money-Shot** (< 4 Min). Das liefert eine perfekt gleichmäßige Aufnahme ohne Maus-
+  bewegungen/Tippfehler — Sprecher nur drüberlegen. **Tab beim Aufnehmen im Vordergrund
+  halten** (Hintergrund-Tabs drosseln die Tipp-/Streaming-Geschwindigkeit im Browser).
+- **Alle 17 Szenarien bleiben** per Kachel/Frage/Suche erreichbar — wer die **manuelle
+  Langfassung** (Szenen oben) aufnehmen will, klickt/tippt die Fragen selbst; die Geführte
+  Demo deckt davon die 6 stärksten Momente automatisch ab.
 - Für einzelne Szenen (oben) alternativ manuell klicken/tippen.
 - Vollbild-Browser, 1920×1080, 100 % Zoom.
 - Vor jeder Szene evtl. Seite neu laden für einen frischen Chat (Hero-Ansicht).

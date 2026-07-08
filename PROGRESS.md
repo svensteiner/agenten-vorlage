@@ -39,6 +39,21 @@
 
 ## Verlauf
 
+- **Phase B · Skript/Shotlist-Faktenkorrektur (2026-07-09) ≈ 92 %** — die Video-Handover-Dateien nannten
+  Zahlen, die nicht mehr zum Prototyp passen (ein nicht-technischer Aufnehmer hätte sie für einen Fehler
+  gehalten). Gegen die Live-Daten geprüft und korrigiert: **Dokumentenzahl 27/28 → 29** (Such-Beat/
+  Command-Palette-Zähler in [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) Szene 0b und [VIDEO_SCENES.md](VIDEO_SCENES.md)
+  Szene 0a/B-Roll/Globale-Suche; „10 von 27" → „10 von 29"; der „stahl"→**10 Treffer** war bereits korrekt)
+  und die **Geführte Demo „alle 16 Szenarien / n / 16" → „kuratierte 6er-Kern-Auswahl / n / 6"** (endet auf
+  dem Money-Shot, < 4 Min — die seit Phase-A-Abschluss reale `DEMO_ORDER`). Zusätzlich in beiden Dateien ein
+  **Klarstellungs-Hinweis**: die Szene-für-Szene-Abfolge ist die **manuelle Langfassung**, die Geführte Demo
+  deckt davon 6 Kern-Momente automatisch ab; verbindlich bleibt [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md).
+  **Nur `.md` — `prototype/` unverändert (Feature-Freeze gewahrt).** Verifikation: Ground-Truth deterministisch
+  (Node-VM gegen `data.js`) — 29 Dokumente, 17 Szenarien, „stahl" = 10 Treffer, `DEMO_ORDER` = 6 IDs mit dem
+  Money-Shot als Finale; anschließend `grep`: **keine** 16/27/28-Reste mehr in Skript oder Shotlist. Damit
+  sind alle Phase-B-Aufnahme-Dateien faktentreu — **Gate B→C wartet weiter nur auf Svens Aufnahme + Freigabe.**
+  (Video-Reife bleibt 100 %; Gesamtfortschritt konservativ 92 %.)
+
 - **Phase B · VIDEO_SUBTITLES.de.srt (2026-07-08) ≈ 92 %** — die in der Phase-B-Checkliste als „optional,
   aber wertvoll" genannte **Untertiteldatei** ist erstellt. `VIDEO_SUBTITLES.de.srt`: **47 Cues**, deutsch,
   direkt aus den `Sprecher`-Zeilen von [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) abgeleitet (je 1–2 Zeilen, alle

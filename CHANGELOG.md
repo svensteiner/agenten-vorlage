@@ -2,6 +2,28 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Skript & Shotlist auf die reale Demo angeglichen (Faktenkorrektur)
+
+**Die Video-Handover-Dateien nannten Zahlen, die nicht mehr zum Prototyp passen** — ein nicht-technischer
+Aufnehmer hätte sie für einen Fehler gehalten. Gegen die Live-Daten geprüft und korrigiert (nur `.md`,
+`prototype/` unverändert, Feature-Freeze gewahrt).
+
+### Korrigiert
+- **Dokumentenzahl 27/28 → 29** (Such-Beat/Command-Palette-Zähler) in [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md)
+  (Szene 0b) und [VIDEO_SCENES.md](VIDEO_SCENES.md) (Szene 0a + B-Roll + „Globale Suche"); „10 von 27" →
+  „10 von 29". (Der „stahl"→**10 Treffer** war bereits korrekt.)
+- **Geführte Demo: „alle 16 Szenarien / n / 16" → „kuratierte 6er-Kern-Auswahl / n / 6"** (endet auf dem
+  Money-Shot, < 4 Min) — die seit Phase-A-Abschluss reale `DEMO_ORDER`. In den Aufnahme-Hinweisen beider
+  Dateien richtiggestellt.
+- **Klarstellungs-Hinweis** ergänzt (beide Dateien): die Szene-für-Szene-Abfolge ist die **manuelle
+  Langfassung**; die Geführte Demo deckt davon 6 Kern-Momente automatisch ab. Verbindliche Aufnahme-
+  Anleitung bleibt [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md).
+
+### Verifikation
+- Ground-Truth deterministisch (Node-VM gegen `data.js`): **29 Dokumente**, **17 Szenarien**, „stahl"-
+  Suche = **10 Treffer**; `DEMO_ORDER` = **6** IDs mit dem Money-Shot als Finale. Anschließend `grep`:
+  **keine** veralteten Zähl-Referenzen (16/27/28) mehr in Skript oder Shotlist.
+
 ## Phase B — 2026-07-08 — `VIDEO_SUBTITLES.de.srt` (optionale, aber wertvolle Deliverable)
 
 **Die in der Phase-B-Checkliste als „optional, aber wertvoll" genannte Untertiteldatei ist erstellt** —

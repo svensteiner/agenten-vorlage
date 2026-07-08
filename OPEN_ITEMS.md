@@ -13,9 +13,18 @@
 > **Alle drei Kern-Deliverables (Skript · Shotlist · Checkliste) fertig.** Gate B→C wartet nur noch auf
 > **Svens Aufnahme + Freigabe** — bis dahin nur ändern, was Sven anmerkt.
 
-1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. Wartepunkt. (**Skript/Shotlist** ggf. auf die 6er-Kern-Demo angleichen — nur falls Sven es wünscht; die Checkliste ist bereits die Aufnahme-Wahrheit.)
+1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
 ## Erledigt
+
+- **[Phase B] Skript & Shotlist auf die reale Demo angeglichen (Faktenkorrektur)** — die Video-Handover-
+  Dateien nannten veraltete Zahlen: **Dokumentenzahl 27/28 → 29** (Such-Beat/Palette-Zähler in
+  `VIDEO_SCRIPT.md` Szene 0b + `VIDEO_SCENES.md` Szene 0a/B-Roll; „10 von 27" → „10 von 29") und die
+  Geführte Demo als **„alle 16 Szenarien / n / 16" → „kuratierte 6er-Kern-Auswahl / n / 6"** (endet auf
+  dem Money-Shot). Klarstellungs-Hinweis ergänzt (Szenen = manuelle Langfassung; Geführte Demo = 6
+  Kern-Momente; verbindlich bleibt `RECORDING_CHECKLIST.md`). Nur `.md`, `prototype/` unverändert.
+  Verifiziert (Node-VM: 29 Docs, 17 Szenarien, „stahl"=10, DEMO_ORDER=6/Money-Shot-letzt; `grep`: keine
+  16/27/28-Reste mehr).
 
 - **[Phase B — optional] SRT-Untertitel** — `VIDEO_SUBTITLES.de.srt` erstellt: 47 Cues, deutsch, aus den
   `Sprecher`-Zeilen von `VIDEO_SCRIPT.md` abgeleitet (1–2 Zeilen je Cue, ≤ 55 Zeichen), Zeitleiste

@@ -22,12 +22,30 @@
 (narrensichere Aufnahme-Anleitung) und neu [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt) (deutsche
 Untertitel, 47 Cues). **Sven kann jetzt aufnehmen.**
 
-**Nächstes Item = Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" **nur** ändern, was
-er anmerkt — nichts anderes. Einziger noch optionaler Rest (falls Sven es wünscht): Skript/Shotlist auf die
-reale 6er-Kern-Demo angleichen (die Checkliste ist bereits die Aufnahme-Wahrheit).
+**Nächstes Item = reiner Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" **nur** ändern,
+was er anmerkt — nichts anderes. Der zuvor als optional notierte Rest (Skript/Shotlist auf die reale
+6er-Kern-Demo angleichen) ist mit diesem Zyklus **erledigt** — alle Aufnahme-Dateien sind jetzt faktentreu.
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
-## Was in diesem Zyklus gebaut wurde (VIDEO_SUBTITLES.de.srt)
+## Was in diesem Zyklus gebaut wurde (Skript/Shotlist-Faktenkorrektur)
+
+**Die Video-Handover-Dateien auf den realen Prototyp angeglichen.** Skript und Shotlist nannten Zahlen, die
+seit dem Phase-A-Abschluss nicht mehr stimmen — ein nicht-technischer Aufnehmer hätte die Abweichung zwischen
+Datei und Bildschirm für einen eigenen Fehler gehalten. Gegen die Live-Daten (`data.js`/`app.js`) geprüft und
+korrigiert:
+- **Dokumentenzahl 27/28 → 29** — Such-Beat/Command-Palette-Zähler in [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md)
+  (Szene 0b) und [VIDEO_SCENES.md](VIDEO_SCENES.md) (Szene 0a + B-Roll + „Globale Suche"); „10 von 27" →
+  „10 von 29". Der „stahl"→**10 Treffer** war bereits korrekt.
+- **Geführte Demo „alle 16 Szenarien / n / 16" → „kuratierte 6er-Kern-Auswahl / n / 6"** (endet auf dem
+  Money-Shot, < 4 Min) — die seit Phase-A-Abschluss reale `DEMO_ORDER`. In den Aufnahme-Hinweisen beider
+  Dateien richtiggestellt.
+- **Klarstellungs-Hinweis** ergänzt (beide Dateien): die Szene-für-Szene-Abfolge ist die **manuelle
+  Langfassung**; die Geführte Demo deckt davon 6 Kern-Momente automatisch ab. Verbindlich bleibt
+  [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md).
+- **Nur `.md` — `prototype/` unverändert (Feature-Freeze gewahrt).** Verifikation: Node-VM gegen `data.js`
+  (29 Docs, 17 Szenarien, „stahl" = 10, `DEMO_ORDER` = 6/Money-Shot-letzt); `grep`: keine 16/27/28-Reste mehr.
+
+## Was im Zyklus davor gebaut wurde (VIDEO_SUBTITLES.de.srt)
 
 **Die optionale, aber wertvolle Phase-B-Deliverable: eine fertige deutsche Untertiteldatei.** Skript,
 Shotlist und Checkliste standen; die Phase-B-Checkliste nennt zusätzlich „optional, aber wertvoll: SRT-
@@ -42,7 +60,7 @@ Untertitel aus dem Skript". Neu:
   (Node-Parser): 47 Cues, Indizes lückenlos 1–47, alle Timecodes wohlgeformt, **keine Überlappung**, Ende >
   Start je Cue, kein Cue > 2 Zeilen, keine Zeile > 55 Zeichen. Letztes Cue endet 00:04:21,500.
 
-## Was im Zyklus davor gebaut wurde (RECORDING_CHECKLIST.md)
+## Was zwei Zyklen davor gebaut wurde (RECORDING_CHECKLIST.md)
 
 **Die letzte Phase-B-Kern-Deliverable — eine Aufnahme-Checkliste, an der eine nicht-technische Person nicht
 scheitern kann.** Skript und Shotlist existierten bereits; es fehlte die Anleitung, die einen Laien sicher
@@ -80,9 +98,9 @@ durch einen sauberen Take führt. Neu:
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
-- **Zuletzt aktualisiert:** 2026-07-08.
+- **Zuletzt aktualisiert:** 2026-07-09.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Prototyp-Baufortschritt:** **≈ 91 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Prototyp-Baufortschritt:** **≈ 92 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
