@@ -429,6 +429,36 @@ const DOCS = {
       grossLabel: "Angebotssumme brutto",
     },
   },
+  "auftrag-nordwind-beta": {
+    id: "auftrag-nordwind-beta",
+    title: "Auftragsbestätigung Nordwind — Nachtrag NA-2026-0037 beauftragt",
+    type: "Auftragsbestätigung",
+    module: "berichte",
+    path: "SAP › SD › Aufträge › 2026 › AB_Nordwind_NA-2026-0037.pdf",
+    author: "Einkauf / Projektleitung (Nordwind Logistik AG)",
+    date: "2026-04-03",
+    snippet: "Nordwind Logistik AG beauftragt Nachtrag NA-2026-0037 schriftlich · +400.000 € netto · Bestellnummer NW-BEST-2026-0091.",
+    body: [
+      { t: "Auftragsbestätigung / Beauftragung — Nordwind Logistik AG an Meridian Industrie GmbH.", highlight: false },
+      { t: "Bezug: Ihr Nachtragsangebot NA-2026-0037 vom 27.03.2026 zum Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie).", highlight: false },
+      { t: "Hiermit beauftragen wir den Nachtrag verbindlich: die zusätzliche Prüfstation (Kamera-Inspektion) wird zum angebotenen Preis von 400.000 € netto (476.000 € brutto) freigegeben.", highlight: true },
+      { t: "Unsere Bestellnummer: NW-BEST-2026-0091. Mit dieser Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts gemäß Ihrem Angebot.", highlight: true },
+      { t: "Termin: Die daraus folgende Verschiebung des Liefertermins um rund 3 Wochen auf Q4 2026 wird ausdrücklich akzeptiert; die Pönale-Klausel des Hauptvertrags bleibt für den genehmigten Scope-Change ausgesetzt.", highlight: true },
+      { t: "Freigabe: Projektleitung und Einkauf Nordwind Logistik AG, 03.04.2026. Die Rechnungsstellung erfolgt nach erfolgreicher erweiterter Werksabnahme (FAT).", highlight: false },
+    ],
+    lineItems: {
+      doc: "Beauftragung NW-BEST-2026-0091",
+      ref: "Bezug Nachtragsangebot NA-2026-0037 · Rahmenauftrag NW-2025-0442",
+      rows: [
+        { pos: "1", desc: "Nachtrag NA-2026-0037 — zusätzliche Prüfstation (Kamera-Inspektion) inkl. Engineering, SPS-Integration und erweiterter FAT", qty: "1 Pauschale", unit: "400.000,00 €", sum: "400.000,00 €" },
+      ],
+      net: "400.000,00 €",
+      vatRate: "19 %",
+      vat: "76.000,00 €",
+      gross: "476.000,00 €",
+      grossLabel: "Beauftragter Nachtragswert brutto",
+    },
+  },
   "vorstandsprotokoll-2026-03": {
     id: "vorstandsprotokoll-2026-03",
     title: "Vorstandsprotokoll März 2026",
@@ -799,22 +829,24 @@ const SCENARIOS = [
     question: "Wie steht Projekt Beta?",
     keywords: ["projekt beta", "beta", "sondermaschine", "verpackungslinie", "palettierlinie", "nordwind", "kundenanlage"],
     answer: {
-      text: "<b>Projekt Beta</b> ist eine kundenspezifische, automatisierte Verpackungs- und Palettierlinie für die <b>Nordwind Logistik AG</b> (Engineering München, Endmontage Werk 2).<table><tr><th>Kennzahl</th><th>Wert</th><th>Status</th></tr><tr><td>Fortschritt</td><td>48 %</td><td><b>⚠ verzögert</b></td></tr><tr><td>Budget</td><td>8,6 Mio. € (4,7 verausgabt)</td><td>im Rahmen</td></tr><tr><td>Liefertermin</td><td>Q4 2026 (verschoben von Q3)</td><td><b>⚠ 3 Wo. Verzug</b></td></tr></table><ul><li><b>Ursache:</b> Lieferverzug der Steuerungselektronik (Zulieferer 6 Wochen zu spät) plus ein Kunden-Änderungswunsch (zusätzliche Prüfstation, +0,4 Mio. €).</li><li><b>Risiko:</b> Vertragsstrafe von 0,5 % je Verzugswoche, gedeckelt bei 5 % (max. 0,43 Mio. €).</li><li><b>Gegenmaßnahmen:</b> Zweitquelle für die Elektronik qualifiziert, Change Request kaufmännisch beim Kunden geltend gemacht, wöchentliche Eskalation an den Vorstand.</li></ul>Anders als <b>Projekt Alpha</b> (im Zeitplan) steht Beta unter Terminrisiko — AI Studio kennzeichnet das offen, statt es zu beschönigen.",
+      text: "<b>Projekt Beta</b> ist eine kundenspezifische, automatisierte Verpackungs- und Palettierlinie für die <b>Nordwind Logistik AG</b> (Engineering München, Endmontage Werk 2).<table><tr><th>Kennzahl</th><th>Wert</th><th>Status</th></tr><tr><td>Fortschritt</td><td>48 %</td><td><b>⚠ verzögert</b></td></tr><tr><td>Budget</td><td>8,6 Mio. € (4,7 verausgabt)</td><td>im Rahmen</td></tr><tr><td>Liefertermin</td><td>Q4 2026 (verschoben von Q3)</td><td><b>⚠ 3 Wo. Verzug</b></td></tr></table><ul><li><b>Ursache:</b> Lieferverzug der Steuerungselektronik (Zulieferer 6 Wochen zu spät) plus ein Kunden-Änderungswunsch (zusätzliche Prüfstation, +0,4 Mio. €).</li><li><b>Risiko:</b> Vertragsstrafe von 0,5 % je Verzugswoche, gedeckelt bei 5 % (max. 0,43 Mio. €).</li><li><b>Gegenmaßnahmen:</b> Zweitquelle für die Elektronik qualifiziert, Change Request kaufmännisch beim Kunden geltend gemacht und von <b>Nordwind schriftlich beauftragt</b> (+0,4 Mio. € beidseitig belegt), wöchentliche Eskalation an den Vorstand.</li></ul>Anders als <b>Projekt Alpha</b> (im Zeitplan) steht Beta unter Terminrisiko — AI Studio kennzeichnet das offen, statt es zu beschönigen.",
       reasoning: [
         "Projektname „Beta\" erkannt; Statusbericht als primäre Quelle geladen.",
         "Kennzahlen (Fortschritt, Budget, Termin) extrahiert und als Ampel bewertet.",
         "Terminrisiko mit der Eskalations-E-Mail an die CFO verknüpft (Lieferverzug Elektronik).",
         "Kunden-Änderungswunsch (+0,4 Mio. €) über das Nachtragsangebot an Nordwind kaufmännisch belegt.",
+        "Beauftragung durch Nordwind (Bestellung NW-BEST-2026-0091) bestätigt den Nachtrag beidseitig — Angebot und Auftrag liegen vor.",
         "Pönale-Klausel und Gegenmaßnahmen aus Statusbericht und Eskalation zusammengeführt.",
       ],
       sources: [
         { docId: "projekt-beta-status", relevance: 97, quote: "Status per 31.03.2026: 48 % abgeschlossen, rund 3 Wochen in Verzug." },
         { docId: "eskalation-beta-elektronik", relevance: 85, quote: "Lieferverzug der Steuerungselektronik: Der Zulieferer ElektroSys hat den Liefertermin um sechs Wochen verschoben." },
         { docId: "nachtrag-nordwind-beta", relevance: 82, quote: "Nachtragswert: 400.000 € netto (476.000 € brutto). Der Betrag deckt Hardware/Sensorik, Engineering und SPS-Integration sowie die erweiterte Werksabnahme (FAT) ab." },
+        { docId: "auftrag-nordwind-beta", relevance: 80, quote: "Hiermit beauftragen wir den Nachtrag verbindlich: die zusätzliche Prüfstation (Kamera-Inspektion) wird zum angebotenen Preis von 400.000 € netto (476.000 € brutto) freigegeben." },
       ],
-      confidence: 90,
-      related: ["projekt-beta-status", "eskalation-beta-elektronik", "nachtrag-nordwind-beta", "projekt-alpha-status", "vorstandsprotokoll-2026-03"],
-      followups: ["Zeig mir den Nachtrag an Nordwind.", "Fasse Projekt Alpha zusammen."],
+      confidence: 91,
+      related: ["projekt-beta-status", "eskalation-beta-elektronik", "nachtrag-nordwind-beta", "auftrag-nordwind-beta", "projekt-alpha-status", "vorstandsprotokoll-2026-03"],
+      followups: ["Zeig mir den Nachtrag an Nordwind.", "Hat Nordwind den Nachtrag beauftragt?", "Fasse Projekt Alpha zusammen."],
     },
   },
   {
@@ -1026,15 +1058,41 @@ const SCENARIOS = [
       followups: ["Welche Gegenmaßnahmen sind geplant?", "Warum sind die Materialkosten gestiegen?"],
     },
   },
+  // ---- Money-Shot: „Agenten dazubuchen" (Finale der Geführten Demo) ----
+  // Der Abschluss-Moment, der das Abo verkauft: Die Wissensbasis steht — jetzt
+  // mietet der Kunde spezialisierte KI-Agenten obendrauf, wie neue Mitarbeiter,
+  // monatlich kündbar. Bewusst OHNE Quellen/Konfidenz (kein Wissens-Lookup,
+  // sondern eine Buchungs-/Angebots-Ansicht); rendert über den neuen `agents`-
+  // Block. In der Geführten Demo bucht sich der empfohlene Agent hands-free selbst.
+  {
+    id: "agent-dazubuchen",
+    module: "berichte",
+    question: "Kann ich einen weiteren Agenten dazubuchen?",
+    keywords: ["agent", "agenten", "dazubuchen", "dazu buchen", "buchen", "mieten", "digitale mitarbeiter", "digitaler mitarbeiter", "reporting-agent", "rechnungs-agent", "vertrags-agent", "abo", "abonnement", "weiteren agenten", "neuer agent", "team erweitern"],
+    answer: {
+      text: "Ihre Wissensbasis steht: Verträge, Rechnungen, Berichte und E-Mails aus dem ganzen Haus sind erschlossen und liegen <b>auf Ihrer eigenen Infrastruktur</b> — nichts verlässt das Unternehmen. Darauf mieten Sie jetzt <b>digitale Mitarbeiter</b>: spezialisierte KI-Agenten, monatlich kündbar, <b>ab 400 €/Monat</b> — wie eine Neueinstellung, nur ohne Recruiting und ohne Einarbeitung. Jeder neue Agent arbeitet sofort mit demselben Firmenwissen.",
+      agents: [
+        { icon: "✦", name: "Auskunfts-Agent", role: "Ihre Wissensbasis", price: "inklusive", active: true,
+          desc: "Beantwortet Fragen aus Ihrem gesamten Firmenwissen — mit Belegen und Quellenangabe. Der Agent, der Ihnen gerade geantwortet hat." },
+        { icon: "📊", name: "Reporting-Agent", role: "Berichte & Vorstandsvorlagen", price: "400 €", recommended: true,
+          desc: "Erstellt Monatsabschluss-Kommentare, Soll-Ist-Vergleiche und fertige Vorstandsvorlagen automatisch aus Ihren freigegebenen Zahlen." },
+        { icon: "🧾", name: "Rechnungs-Agent", role: "Eingangsrechnungen prüfen", price: "600 €",
+          desc: "Prüft jede Eingangsrechnung im Drei-Wege-Abgleich gegen Bestellung und Wareneingang und meldet Abweichungen, bevor gezahlt wird." },
+        { icon: "📑", name: "Vertrags-Agent", role: "Fristen & Kündigungen", price: "500 €",
+          desc: "Überwacht Laufzeiten und Kündigungsfristen aller Verträge und warnt rechtzeitig vor jeder automatischen Verlängerung." },
+      ],
+      priceNote: "Einstieg: Daten-Audit 149 € → Wissensbasis ab 5.000 € → jeder Agent ab 400 €/Monat, monatlich kündbar.",
+    },
+  },
 ];
 
 // Startvorschläge pro Modul (Frage-IDs). „wissen" zeigt die Highlights.
 const MODULE_SUGGESTIONS = {
-  wissen: ["reiserichtlinie", "materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "projekt-portfolio", "projekt-beta", "vertraege-verlaengerung", "lieferanten-risiko", "datenschutz-audit", "onboarding-tag1", "esg-co2", "strategie-ausblick"],
+  wissen: ["reiserichtlinie", "materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "projekt-portfolio", "projekt-beta", "vertraege-verlaengerung", "lieferanten-risiko", "datenschutz-audit", "onboarding-tag1", "esg-co2", "strategie-ausblick", "agent-dazubuchen"],
   finanzen: ["materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "lieferanten-risiko"],
   audit: ["beleg-rechnung", "reklamation-stahl", "brandschutz", "datenschutz-audit"],
   hr: ["reiserichtlinie", "onboarding-tag1"],
   vertraege: ["vertraege-verlaengerung"],
-  berichte: ["projekt-portfolio", "projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick"],
+  berichte: ["projekt-portfolio", "projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick", "agent-dazubuchen"],
   einstellungen: [],
 };
