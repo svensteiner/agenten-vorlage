@@ -43,6 +43,11 @@
 - **Tempo-Signal & Zahlen-Count-up** laufen bei jeder Antwort automatisch (Antwortzeit zählt
   hoch, fett gesetzte Kernzahlen zählen hoch). Bei „Bewegung reduzieren" im System zeigt die
   App sofort die Endwerte — für das Video also **kein** reduced-motion aktivieren.
+- **Bewegungs-Politur (Zyklus 11):** die Belege unter jeder Antwort (Nachvollziehbarkeit →
+  Quellen → Verwandte → Folgefragen → Aktionen) blenden **gestaffelt** ein (die Antwort „wächst"
+  von oben nach unten), Modulwechsel blenden weich über. Läuft automatisch — ebenfalls **nur ohne**
+  „Bewegung reduzieren". Wirkung: die Demo sieht „fertig" aus; nach dem Ende des Streamings 1–2 Sek.
+  ruhig halten, damit der gestaffelte Aufbau sichtbar ausklingt, bevor der Schnitt kommt.
 - **Handlungs-Abschluss:** Unter jeder belegten Antwort steht der Block **„↗ Ergebnis
   weiterreichen"** mit **„✉ An Vorstand senden"** / **„⤓ Als Briefing exportieren"**. Der Klick
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.

@@ -3,27 +3,36 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 70 % (Ende Zyklus 10)
+## Gesamtfortschritt: ≈ 71 % (Ende Zyklus 11)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
-| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 90 % | 18.0 |
+| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 91 % | 18.2 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 88 % | 13.2 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 89 % | 13.35 |
 | Demo-Firma & realistische Dokumente | 15 % | 70 % | 10.5 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 82 % | 8.2 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 96 % | 4.8 |
-| **Summe** | **100 %** | — | **≈ 86 %** gewichtet der begonnenen Bereiche |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
+| **Summe** | **100 %** | — | **≈ 87 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 70 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (Übergänge, weitere Ressorts). Zyklus 10 schließt den **Handlungs-
-> Abschluss** und hebt **Chat-Experience** (86 % → 90 %) und **Video-Reife** (94 % → 96 %).
-> Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 71 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (weitere Beleg-Skins, weitere Ressorts). Zyklus 11 schließt die
+> **Bewegungs-Politur** (gestaffelter Block-Reveal + Modulwechsel-Fade) und hebt **Video-Reife**
+> (96 % → 99 %) sowie **Chat-Experience** (90 % → 91 %). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 11 (2026-07-08) ≈ 71 %** — Bewegungs-Politur: die strukturierten Antwortblöcke
+  (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) blenden jetzt **gestaffelt**
+  ein (`block-rise`, je Block +55 ms via `--rev-delay`) statt hart zu springen; Modulwechsel
+  bekommen einen dezenten **Fade-/Slide-in** des Panel-Inhalts (`view-in` auf `.wrap`). Rein
+  additiv in `styles.css` + kleiner `revealBlocks()`-Helfer in `app.js`; Datenpfad unverändert.
+  `prefers-reduced-motion` deaktiviert beide Effekte sauber (Blöcke bleiben voll sichtbar, opacity
+  1). Deterministisch verifiziert: `block-rise` mit korrektem Delay (0,11 s bei --rev-delay:110ms)
+  im Normalbrowser, `none`+opacity 1 unter reduzierter Bewegung. (Video-Reife 96 % → 99 %,
+  Chat 90 % → 91 %.)
 - **Zyklus 10 (2026-07-08) ≈ 70 %** — Handlungs-Abschluss: Aktions-Block „↗ Ergebnis weiterreichen"
   unter jeder belegten Antwort mit „✉ An Vorstand senden" / „⤓ Als Briefing exportieren". Klick →
   Vorbereitungs-Phase (Spinner) → grüne Erfolgs-Bestätigung mit ✓-Badge, deterministischer
@@ -81,6 +90,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Sanfte Übergänge (Fade/Slide) zwischen Modulwechseln/Antwortblöcken → Video-Reife.
-2. Weitere Beleg-Skins (E-Mail/Memo im Viewer) → Viewer/Demo-Firma.
-3. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
+1. Weitere Beleg-Skins (E-Mail/Memo im Viewer) → Viewer/Demo-Firma.
+2. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
+3. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.

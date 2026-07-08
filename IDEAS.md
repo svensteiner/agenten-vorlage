@@ -27,10 +27,13 @@
 - ✅ **Handlungs-Abschluss „An Vorstand senden" / „Als Briefing exportieren"** — *erledigt in
   Zyklus 10*: Aktions-Block „↗ Ergebnis weiterreichen" unter jeder belegten Antwort; Klick →
   Spinner → grüne Erfolgs-Bestätigung mit ✓-Badge + deterministischer Briefing-Nummer. Reine UI.
+- ✅ **Sanfte, gestaffelte Übergänge** beim Einblenden der Antwortblöcke + Modulwechsel —
+  *erledigt in Zyklus 11*: gestaffelter Block-Reveal (`block-rise`, +55 ms je Block via
+  `--rev-delay`) + Modulwechsel-Fade (`view-in` auf `.wrap`), `prefers-reduced-motion` deaktiviert
+  beide sauber (opacity 1). Rein additiv.
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
-  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional.)*
-- **Sanfte, gestaffelte Übergänge** beim Einblenden der Antwortblöcke + Modulwechsel (Fade/Slide,
-  ~40–60 ms versetzt, `prefers-reduced-motion`) → nächstes oberstes Item.
+  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
+  nächste Feinpolitur.)*
 
 ## Mehr Substanz
 - ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +

@@ -311,7 +311,21 @@
     appendRelated(card, answer.related);
     appendFollowups(card, answer.followups);
     appendActions(card, answer);
+    revealBlocks(card);
     scrollBottom();
+  }
+
+  // Lässt die strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte →
+  // Folgefragen → Aktionen) gestaffelt einblenden statt hart zu springen — die
+  // Antwort baut sich souverän auf. Rein visuell: jeder Block bekommt eine kleine,
+  // additive Verzögerung. `prefers-reduced-motion` deaktiviert die Animation (CSS).
+  function revealBlocks(card) {
+    if (reducedMotion()) return; // Blöcke stehen bereits sichtbar im DOM
+    const blocks = card.querySelectorAll(".block");
+    blocks.forEach((b, i) => {
+      b.style.setProperty("--rev-delay", i * 55 + "ms");
+      b.classList.add("reveal");
+    });
   }
 
   // Plausible, deterministische Antwortzeit (keine Zufallszahl → im Video reproduzierbar).

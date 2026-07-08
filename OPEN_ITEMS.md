@@ -5,13 +5,21 @@
 
 ## Offen (nach Priorität)
 
-1. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
-   Rest-Politur. → oberstes Item für den nächsten Zyklus.
+1. **[P5] Beleg-Skin „E-Mail/Memo"** im Viewer (Von/An/Betreff/Datum-Kopf, Zitat-Verlauf, Anhang-
+   Chip) + 1–2 E-Mail-Dokumente in `data.js`. Belegt die Kern-Erzählung „Wissen steckt in E-Mails".
+   → oberstes Item für den nächsten Zyklus.
 2. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
-3. **[P5] Weitere Beleg-Skins** (z. B. E-Mail-/Memo-Darstellung im Viewer) für zusätzliche
-   Dokumenttypen.
+3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+   hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 11] Bewegungs-Politur — gestaffelter Block-Reveal + Modulwechsel-Fade** — die
+  strukturierten Antwortblöcke blenden nacheinander ein (`block-rise`, +55 ms je Block via
+  `--rev-delay`); Modulwechsel bekommen einen dezenten Fade-/Slide-in des Panel-Inhalts
+  (`view-in` auf `.wrap`). `prefers-reduced-motion` deaktiviert beide Effekte sauber (opacity 1,
+  keine unsichtbaren Blöcke). Rein additiv in `styles.css` + `revealBlocks()` in `app.js`.
+  Deterministisch verifiziert.
 
 - **[Zyklus 10] Handlungs-Abschluss — „An Vorstand senden" / „Als Briefing exportieren"** —
   Aktions-Block „↗ Ergebnis weiterreichen" unter jeder belegten Antwort; Klick → kurze

@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 10 — **Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing
-  exportieren"** (siehe unten).
+- **Letzter Zyklus:** Zyklus 11 — **Bewegungs-Politur: gestaffelter Block-Reveal +
+  Modulwechsel-Fade** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 70 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 71 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,30 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 11 gebaut wurde
+
+**Bewegungs-Politur — die Antwort baut sich souverän auf, statt zu springen.** Inhaltlich war die
+Demo komplett; die härteste verbleibende Kante war das etwas sprunghafte Ein-/Umblenden. Jetzt:
+- **Gestaffelter Block-Reveal:** die strukturierten Blöcke unter jeder Antwort
+  (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) blenden **nacheinander**
+  ein (neue Keyframe `block-rise`, Fade + 9 px Slide-up, ~0,42 s). `revealBlocks()` in `app.js`
+  vergibt je Block eine additive Verzögerung **+55 ms** über die CSS-Variable `--rev-delay` — die
+  Antwort „wächst" von oben nach unten statt komplett auf einmal zu erscheinen.
+- **Sanfter Modulwechsel:** der neu gerenderte Panel-Inhalt (`.wrap`) blendet dezent ein
+  (Keyframe `view-in`, Fade + 7 px Slide-up, ~0,32 s) — beim Wechsel Wissen ↔ Finanzen/Audit/HR/
+  Verträge/Berichte/Einstellungen ein weiches Überblenden statt hartem Umschalten. Feuert nur beim
+  View-Render; die Chat-Antworten behalten ihre eigene `.msg`-`rise`-Animation.
+- **Ehrlich/fail-safe:** `prefers-reduced-motion: reduce` deaktiviert **beide** Effekte sauber —
+  `revealBlocks()` steigt früh aus (kein `.reveal`-Klassen-Anhang) und die CSS-Regeln setzen
+  `animation: none`. Da die Startopazität nur **im Keyframe** liegt, bleiben alle Blöcke ohne
+  Animation voll sichtbar (opacity 1) — **kein Risiko unsichtbarer Inhalte**.
+- **Rein additiv:** `styles.css` (zwei Keyframes + `.answer .block.reveal` / `.wrap`-Regel, je mit
+  reduced-motion-Guard) und ein kleiner `revealBlocks()`-Helfer in `app.js`; `data.js` und der
+  Antwortpfad unverändert. Deterministisch im Browser verifiziert: im Normalbrowser `block-rise`
+  mit exaktem Delay (`--rev-delay:110ms` → `animation-delay: 0,11 s`); unter reduzierter Bewegung
+  `animationName: none` bei opacity 1. (Streaming-Vollpfad im Headless-Preview durch Timer-
+  Throttling zu langsam für Live-Beobachtung → mechanisch/deterministisch geprüft.)
 
 ## Was in Zyklus 10 gebaut wurde
 
@@ -216,33 +240,35 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Sanfte Übergänge (Fade/Slide) für Modulwechsel und einblendende Antwortblöcke.** Inhalt, Tiefe,
-Vertrauen, Tempo, Ressort-Breite **und** der Handlungs-Abschluss stehen jetzt. Der stärkste
-verbleibende Video-Hebel ist reine **Bewegungs-Politur**: Modulwechsel und das Erscheinen der
-strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) wirken
-aktuell etwas „hart". Ein dezenter, gestaffelter **Fade-/Slide-in** (je Block ~40–60 ms versetzt,
-`prefers-reduced-motion` respektiert) lässt die Antwort **souverän aufbauen** statt springen — im
-Video der Unterschied zwischen „Prototyp" und „fertiges Produkt". Rein additiv in `styles.css`
-(ggf. minimale Klassen-Vergabe in `app.js`); `data.js` und der Antwortpfad unverändert.
+**Beleg-Skin „E-Mail/Memo" im Dokumentenviewer.** Inhalt, Tiefe, Vertrauen, Tempo, Ressort-Breite,
+Handlungs-Abschluss **und** die Bewegungs-Politur stehen jetzt. Der stärkste verbleibende Hebel ist
+wieder **inhaltlich/visuell**: Die Mission-Story nennt ausdrücklich, dass Unternehmenswissen in
+**E-Mails** gefangen ist — im Viewer gibt es dafür aber noch kein eigenes Skin (E-Mails/Memos
+öffnen im generischen Bericht-Layout). Ein **E-Mail-Skin** (Von/An/Betreff/Datum-Kopf, Zitat-
+Verlauf, evtl. Anhang-Chip) macht die „aus Ihren Postfächern"-Behauptung sichtbar greifbar und
+rundet die Quellen-Vielfalt ab. Rein datengetrieben über `doc.type` (neuer Eintrag in `DOC_SKINS`)
++ ein bis zwei neue E-Mail-Dokumente in `data.js`; bestehende Skins/Dokumente unverändert.
 
-*Warum diese?* Die Erzählung ist inhaltlich **komplett** (Frage → belegte Antwort → weiterreichbares
-Ergebnis). Was bleibt, ist Feinschliff der Wahrnehmung: flüssige Bewegung erhöht das gefühlte
-Qualitätsniveau ohne inhaltliches Risiko — genau der letzte 5 %-Politur-Schritt für die Kamera.
+*Warum diese?* Die Wahrnehmungs-Politur ist mit Zyklus 11 abgeschlossen — die Demo läuft nun
+flüssig und „fertig". Der nächste sichtbare Sprung kommt aus **Quellen-Breite**: ein authentisches
+E-Mail-Dokument im echten Mail-Look belegt die Kern-Erzählung („Wissen steckt in E-Mails") direkt im
+Bild, ohne inhaltliches Risiko.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(weitere Beleg-Skins z. B. E-Mail/Memo, ein weiteres Ressort z. B. IT/Datenschutz).
+(ein weiteres Ressort z. B. IT/Datenschutz, mehr authentische Dokumente in der Demo-Firma).
 
 ---
 
-## CEO-Review (Ende Zyklus 10)
+## CEO-Review (Ende Zyklus 11)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Story ist jetzt **rund**: Frage →
-  belegte Antwort → sichtbares **Arbeitsergebnis** („An Vorstand senden"). Kein „und dann?" bleibt
-  offen.
-- *Erzeugt es Aufregung?* — Ja: der grüne „✓ Briefing an den Vorstand gesendet"-Moment ist ein
-  starker, konkreter **Schlussframe** fürs Video — aus Auskunft wird Handlung in einem Klick.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja, sofort: „Ich frage, bekomme eine belegte Antwort und
-  reiche sie mit einem Klick an den Vorstand weiter." Kein Wort über Technik.
-- *Schwächste Stelle → nächster Zyklus:* **Bewegungs-Politur.** Inhaltlich ist die Demo komplett;
-  die härteste verbleibende Kante ist das etwas sprunghafte Ein-/Umblenden — sanfte Übergänge
-  heben die gefühlte Produktreife auf „fertig".
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo läuft jetzt **flüssig**: die
+  Antwort baut sich gestaffelt auf, Modulwechsel blenden weich über — es wirkt wie ein fertiges
+  Produkt, nicht wie ein Prototyp.
+- *Erzeugt es Aufregung?* — Ja: das souveräne, gestaffelte Erscheinen der Belege (Quellen →
+  Verwandte → Aktionen) fühlt sich „durchdacht" an und hält den Blick — genau die Ruhe, die
+  Vertrauen erzeugt, wenn ein CFO zusieht.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja, unverändert sofort: Frage → belegte Antwort →
+  weiterreichbares Ergebnis. Die Politur stört die Klarheit nicht, sie unterstützt sie.
+- *Schwächste Stelle → nächster Zyklus:* **Quellen-Vielfalt** — es fehlt noch ein echtes
+  **E-Mail-Dokument** im Mail-Look, obwohl „Wissen steckt in E-Mails" die Kern-Erzählung ist. Ein
+  E-Mail-Skin im Viewer schließt diese Lücke.

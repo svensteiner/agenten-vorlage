@@ -2,6 +2,38 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 11 — 2026-07-08 — Bewegungs-Politur: gestaffelter Block-Reveal + Modulwechsel-Fade ✨
+
+**Die Demo läuft jetzt flüssig — die Antwort baut sich souverän auf, statt zu springen.** Inhaltlich
+war die Story komplett; die härteste verbleibende Kante war das etwas sprunghafte Ein-/Umblenden.
+Diese reine Wahrnehmungs-Politur hebt die gefühlte Produktreife auf „fertig" — ohne inhaltliches
+Risiko.
+
+### Neu (rein additiv in `styles.css` + kleiner Helfer in `app.js`)
+- **Gestaffelter Block-Reveal:** die strukturierten Blöcke unter jeder Antwort
+  (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) blenden **nacheinander** ein
+  (neue Keyframe `block-rise`, Fade + 9 px Slide-up, ~0,42 s). `revealBlocks()` vergibt je Block
+  eine additive Verzögerung **+55 ms** über die CSS-Variable `--rev-delay` — die Antwort „wächst"
+  von oben nach unten.
+- **Sanfter Modulwechsel:** der neu gerenderte Panel-Inhalt (`.wrap`) blendet dezent ein (neue
+  Keyframe `view-in`, Fade + 7 px Slide-up, ~0,32 s) beim Wechsel Wissen ↔ Finanzen/Audit/HR/
+  Verträge/Berichte/Einstellungen. Feuert nur beim View-Render; die Chat-Antworten behalten ihre
+  eigene `.msg`-`rise`-Animation.
+- **Fail-safe:** `prefers-reduced-motion: reduce` deaktiviert **beide** Effekte sauber
+  (`revealBlocks()` steigt früh aus, CSS setzt `animation: none`). Startopazität liegt nur im
+  Keyframe → ohne Animation bleiben alle Blöcke voll sichtbar (opacity 1), **kein Risiko
+  unsichtbarer Inhalte**.
+- `data.js` und der bestehende Antwortpfad **unverändert**.
+
+### Verifikation (deterministisch im Browser)
+- Normalbrowser (no-preference): `.block.reveal` → `animationName: block-rise`, `--rev-delay:110ms`
+  → aufgelöst als `animation-delay: 0,11 s` (Stagger greift).
+- Reduzierte Bewegung (Preview-Umgebung): `animationName: none` bei `opacity: 1` — sichere
+  Fallback-Darstellung ohne unsichtbare Blöcke.
+- Alle drei neuen CSS-Regeln (`view-in`, `block-rise`, `.block.reveal`) im geladenen Stylesheet
+  bestätigt. (Streaming-Vollpfad im Headless-Preview durch Timer-Throttling zu langsam für Live-
+  Beobachtung → mechanisch/deterministisch geprüft.)
+
 ## Zyklus 10 — 2026-07-08 — Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing exportieren" ✉
 
 **Die Demo schließt jetzt die Nutzer-Story „Frage → belegte Antwort → weiterreichbares Ergebnis".**
