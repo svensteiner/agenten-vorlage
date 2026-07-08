@@ -310,6 +310,7 @@
     appendWithheld(card, answer.withheld);
     appendRelated(card, answer.related);
     appendFollowups(card, answer.followups);
+    appendActions(card, answer);
     scrollBottom();
   }
 
@@ -426,6 +427,66 @@
     });
     b.appendChild(box);
     card.appendChild(b);
+  }
+
+  // ---------- Handlungs-Abschluss ("und dann?") ----------
+  // Macht aus der belegten Auskunft ein weiterreichbares Arbeitsergebnis:
+  // ein Klick auf „An Vorstand senden" / „Als Briefing exportieren" zeigt eine
+  // überzeugende Bestätigung. Rein UI — keine echten Mails/Exporte. Erscheint
+  // nur bei belegten Antworten (mind. eine Quelle), nicht bei Leer-Fallbacks.
+  function appendActions(card, answer) {
+    if (!answer.sources || !answer.sources.length) return;
+    const b = el("div", "block actions");
+    b.appendChild(el("div", "block-title", "↗ Ergebnis weiterreichen"));
+    const row = el("div", "act-row");
+    const send = el("button", "act primary", `<span class="ai-ic">✉</span>An Vorstand senden`);
+    const exp = el("button", "act", `<span class="ai-ic">⤓</span>Als Briefing exportieren`);
+    row.appendChild(send);
+    row.appendChild(exp);
+    b.appendChild(row);
+    card.appendChild(b);
+
+    const num = briefingNumber(answer);
+    send.onclick = () => runAction(row, "send", num);
+    exp.onclick = () => runAction(row, "export", num);
+  }
+
+  // Deterministische Briefing-Nummer aus dem Antwortinhalt (im Video reproduzierbar,
+  // keine Zufallszahl — konsistent mit dem Tempo-Signal aus Zyklus 8).
+  function briefingNumber(answer) {
+    const base = (answer.text || "") + "|" + (answer.confidence || 0);
+    let h = 0;
+    for (let i = 0; i < base.length; i++) h = (h * 31 + base.charCodeAt(i)) >>> 0;
+    return 1000 + (h % 9000);
+  }
+
+  function todayGerman() {
+    try {
+      return new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+    } catch (e) { return "8. Juli 2026"; }
+  }
+
+  // Spielt die kurze Vorbereitungs-Animation ab und ersetzt die Buttons durch
+  // eine Erfolgs-Bestätigung — der Schlussmoment der Demo-Story.
+  async function runAction(row, kind, num) {
+    const pending = kind === "send" ? "Briefing wird zusammengestellt…" : "PDF wird erzeugt…";
+    row.innerHTML = `<span class="act-pending"><span class="spinner"></span>${pending}</span>`;
+    await sleep(reducedMotion() ? 0 : 820);
+
+    const done = el("div", "act-done");
+    if (kind === "send") {
+      done.innerHTML =
+        `<span class="ok-badge">✓</span>` +
+        `<span class="ad-txt"><b>Briefing an den Vorstand gesendet</b>` +
+        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(COMPANY.name)} · soeben · Ref. BRF-2026-${num}</span></span>`;
+    } else {
+      done.innerHTML =
+        `<span class="ok-badge">✓</span>` +
+        `<span class="ad-txt"><b>Briefing als PDF exportiert</b>` +
+        `<span class="ad-sub">meridian-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
+    }
+    row.replaceWith(done);
+    scrollBottom();
   }
 
   // ---------- Matching ----------

@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 10 — 2026-07-08 — Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing exportieren" ✉
+
+**Die Demo schließt jetzt die Nutzer-Story „Frage → belegte Antwort → weiterreichbares Ergebnis".**
+Bisher endete jede Antwort informativ, aber ohne den Moment, den ein Entscheider als Nächstes
+denkt: „und dann?". Neu erscheint unter jeder belegten Antwort ein Aktions-Block **„↗ Ergebnis
+weiterreichen"** mit zwei Buttons — der letzte fehlende Baustein und ein starker Video-Schluss.
+
+### Neu (rein additiv in `app.js` / `styles.css`)
+- **Primär-Button „✉ An Vorstand senden"** und Sekundär-Button **„⤓ Als Briefing exportieren"**
+  im Antwortkopf-Fuß (nach den Folgefragen). Klick zeigt eine kurze Vorbereitungs-Phase
+  („Briefing wird zusammengestellt…" / „PDF wird erzeugt…", Spinner ~0,8 s) und morpht dann in
+  eine **grüne Erfolgs-Bestätigung** mit ✓-Badge:
+  - Senden: „**Briefing an den Vorstand gesendet** · Empfänger: Vorstand · Meridian Industrie
+    GmbH · soeben · Ref. BRF-2026-XXXX".
+  - Export: „**Briefing als PDF exportiert** · meridian-briefing-2026-XXXX.pdf · <Datum>".
+- **Deterministische Briefing-Nummer** (`briefingNumber()`, Hash aus Antwortinhalt + Konfidenz) —
+  im Video reproduzierbar, konsistent mit dem Tempo-Signal aus Zyklus 8 (keine Zufallszahl).
+- **Fail-safe/ehrlich:** Der Aktions-Block erscheint **nur bei belegten Antworten** (mind. eine
+  Quelle) — ein leerer „kein Treffer"-Fallback bietet kein Briefing an. Rein UI: **keine echten
+  Mails/Exporte**, nur eine überzeugende Bestätigung.
+- **Politur:** Pop-Animation der Bestätigung, `prefers-reduced-motion` respektiert (Animation aus,
+  Vorbereitungs-Delay 0). `data.js` und der bestehende Antwortpfad unverändert.
+
+### Verifikation (live im Browser, text-basiert)
+- Aktions-Block rendert an korrekter Position (nach „➜ Folgefragen"), beide Buttons vorhanden,
+  Primär-Button in Marken-Indigo (#4f46e5) mit weißer Schrift.
+- Klick „An Vorstand senden" → Spinner-Phase → grüne Bestätigung (Ref. BRF-2026-5602, Empfänger-
+  Zeile korrekt). Export-Zweig symmetrisch. Keine Konsolenfehler.
+- (Screenshot-Capture im Harness weiterhin instabil → DOM/CSS-basiert verifiziert.)
+
 ## Zyklus 9 — 2026-07-08 — Ressort-Breite: HR-Onboarding & Lieferanten-/Klumpenrisiko 🧭
 
 **Zwei neue, glaubwürdige Szenarien holen zwei zusätzliche Entscheider-Ressorts ins Publikum.**

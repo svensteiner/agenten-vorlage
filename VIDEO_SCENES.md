@@ -19,7 +19,7 @@
 | 6 | 0:30 | *„Wie abhängig sind wir von unserem größten Lieferanten?"* (**CFO-/Einkaufs-Moment**) | Auf die **Konzentrations-Tabelle** halten — *Stahlwerk Donau AG **23,9 %*** zählt hoch — dann auf die **Single-Source-Warnung** für Baustahl S355 und die Gegenmaßnahme *Ferro Nord*; Quelle *Lieferanten-Risikoanalyse 2026* kurz öffnen |
 | 7 | 0:20 | *„Was muss ein neuer Mitarbeiter am ersten Tag erledigen?"* (**HR-Moment**) | Antwort als **Checkliste** zeigen; kurz auf die **Pflicht-Sicherheitsunterweisung** halten; Quelle *Onboarding-Checkliste* öffnen (Skin „Checkliste") |
 | 8 | 0:30 | *„Was hat der Vorstand für die Wachstumsstrategie beschlossen?"* (**Vertrauens-Moment**) | Nach der Antwort auf den roten Block **„2 weitere Treffer für Sie nicht freigegeben"** halten; einen gesperrten Treffer anklicken → **„Zugriff verweigert"**-Ansicht (Klassifizierung „Streng vertraulich", nur „Vorstand") — das System **erfindet nichts** und **respektiert Rechte** |
-| 9 | 0:20 | *„Erstelle eine Zusammenfassung für den Vorstand."* | Ganze Antwort im Bild; langsam nach unten scrollen (Finanzen + ESG in einem Briefing) |
+| 9 | 0:25 | *„Erstelle eine Zusammenfassung für den Vorstand."* → nach der Antwort **„✉ An Vorstand senden"** klicken (**Schluss-Moment**) | Ganze Antwort im Bild; langsam nach unten scrollen (Finanzen + ESG in einem Briefing) bis zum Aktions-Block **„↗ Ergebnis weiterreichen"**; Klick → kurze Vorbereitung → auf die **grüne Bestätigung „✓ Briefing an den Vorstand gesendet"** (Empfänger + Ref.-Nr.) halten |
 | 10 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |
 
 ## Alternative B-Roll (optional)
@@ -43,4 +43,8 @@
 - **Tempo-Signal & Zahlen-Count-up** laufen bei jeder Antwort automatisch (Antwortzeit zählt
   hoch, fett gesetzte Kernzahlen zählen hoch). Bei „Bewegung reduzieren" im System zeigt die
   App sofort die Endwerte — für das Video also **kein** reduced-motion aktivieren.
+- **Handlungs-Abschluss:** Unter jeder belegten Antwort steht der Block **„↗ Ergebnis
+  weiterreichen"** mit **„✉ An Vorstand senden"** / **„⤓ Als Briefing exportieren"**. Der Klick
+  zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
+  Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

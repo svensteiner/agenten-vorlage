@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 9 — **Ressort-Breite: HR-Onboarding & Lieferanten-/Klumpenrisiko**
-  (siehe unten).
+- **Letzter Zyklus:** Zyklus 10 — **Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing
+  exportieren"** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 67 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 70 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,30 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 10 gebaut wurde
+
+**Handlungs-Abschluss pro Antwort — die Story bekommt ihren Schlussmoment.** Bisher endete jede
+Antwort informativ, aber ohne den „und dann?"-Moment, den ein Entscheider als Nächstes denkt.
+Neu unter jeder **belegten** Antwort (nach den Folgefragen) ein Aktions-Block
+**„↗ Ergebnis weiterreichen"**:
+- **Primär „✉ An Vorstand senden"** + Sekundär **„⤓ Als Briefing exportieren"**. Klick zeigt eine
+  kurze **Vorbereitungs-Phase** (Spinner, „Briefing wird zusammengestellt…" / „PDF wird
+  erzeugt…", ~0,8 s) und morpht dann in eine **grüne Erfolgs-Bestätigung** mit ✓-Badge:
+  Senden → „Briefing an den Vorstand gesendet · Empfänger: Vorstand · Meridian Industrie GmbH ·
+  soeben · Ref. BRF-2026-XXXX"; Export → „Briefing als PDF exportiert · meridian-briefing-2026-
+  XXXX.pdf · <Datum>".
+- **Deterministische Briefing-Nummer** (`briefingNumber()` = Hash aus Antwortinhalt + Konfidenz) →
+  im Video reproduzierbar, konsistent mit dem Tempo-Signal aus Zyklus 8 (keine Zufallszahl).
+- **Ehrlich/fail-safe:** Der Block erscheint **nur bei Quellen-belegten Antworten** — ein leerer
+  „kein Treffer"-Fallback bietet kein Briefing an. Reine UI: **keine echten Mails/Exporte**, nur
+  eine überzeugende Bestätigung. `prefers-reduced-motion` respektiert (Pop-Animation aus,
+  Vorbereitungs-Delay 0).
+- **Rein additiv** in `app.js` (`appendActions()`/`runAction()`/`briefingNumber()`/`todayGerman()`)
+  und `styles.css` (`.block.actions`/`.act`/`.act-done`); `data.js` und der Antwortpfad unverändert.
+  Live verifiziert: Block an korrekter Position, beide Buttons, Primär in Marken-Indigo (#4f46e5),
+  Klick „An Vorstand senden" → Spinner → grüne Bestätigung (Ref. BRF-2026-5602), keine
+  Konsolenfehler. (Screenshot-Capture im Harness instabil → DOM/CSS-basiert verifiziert.)
 
 ## Was in Zyklus 9 gebaut wurde
 
@@ -192,33 +216,33 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Export-/„An Vorstand senden"-Aktion pro Antwort (sichtbarer Nutzungs-Abschluss).** Inhalt,
-Tiefe, Vertrauen, Tempo **und** Ressort-Breite stehen jetzt (11 Szenarien, 6 Ressorts). Der
-stärkste verbleibende Video-Hebel ist der **Abschluss einer Antwort mit einer Handlung**: ein
-dezenter **„⤓ Als Briefing exportieren"/„An Vorstand senden"**-Button im Antwortkopf oder unter
-den Folgefragen, der eine kurze Bestätigungs-Animation („Briefing an den Vorstand vorbereitet")
-zeigt. Das schließt die Demo-Erzählung „Frage → belegte Antwort → **Ergebnis, das ich weiterreiche**"
-und gibt dem Video einen starken Schlussmoment. Rein additiv in `app.js`/`styles.css`; keine echten
-Mails, nur eine überzeugende UI-Bestätigung (Toast/Modal). `data.js` unverändert.
+**Sanfte Übergänge (Fade/Slide) für Modulwechsel und einblendende Antwortblöcke.** Inhalt, Tiefe,
+Vertrauen, Tempo, Ressort-Breite **und** der Handlungs-Abschluss stehen jetzt. Der stärkste
+verbleibende Video-Hebel ist reine **Bewegungs-Politur**: Modulwechsel und das Erscheinen der
+strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) wirken
+aktuell etwas „hart". Ein dezenter, gestaffelter **Fade-/Slide-in** (je Block ~40–60 ms versetzt,
+`prefers-reduced-motion` respektiert) lässt die Antwort **souverän aufbauen** statt springen — im
+Video der Unterschied zwischen „Prototyp" und „fertiges Produkt". Rein additiv in `styles.css`
+(ggf. minimale Klassen-Vergabe in `app.js`); `data.js` und der Antwortpfad unverändert.
 
-*Warum diese?* Die Demo beantwortet Fragen exzellent — aber ein Entscheider fragt „und dann?".
-Ein sichtbarer Handlungs-Abschluss macht aus der Auskunft ein **Arbeitsergebnis** und ist der
-letzte fehlende Baustein der Nutzer-Story. Risikoarm (reine UI), hoher Video-Effekt.
+*Warum diese?* Die Erzählung ist inhaltlich **komplett** (Frage → belegte Antwort → weiterreichbares
+Ergebnis). Was bleibt, ist Feinschliff der Wahrnehmung: flüssige Bewegung erhöht das gefühlte
+Qualitätsniveau ohne inhaltliches Risiko — genau der letzte 5 %-Politur-Schritt für die Kamera.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(sanfte Übergänge, weitere Beleg-Skins, ein weiteres Ressort z. B. IT/Datenschutz).
+(weitere Beleg-Skins z. B. E-Mail/Memo, ein weiteres Ressort z. B. IT/Datenschutz).
 
 ---
 
-## CEO-Review (Ende Zyklus 9)
+## CEO-Review (Ende Zyklus 10)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo trifft jetzt **sechs Ressorts**
-  (HR, Finanzen, Audit, Verträge, Berichte/ESG, Governance) — in fast jedem Publikum sitzt jemand,
-  der seine eigene Frage wiedererkennt.
-- *Erzeugt es Aufregung?* — Ja: „Wie abhängig sind wir von unserem größten Lieferanten?" mit
-  sofortiger Konzentrations-Tabelle und Single-Source-Warnung ist ein starker CFO-/Einkaufs-Moment;
-  Onboarding spricht HR und jeden neuen Mitarbeiter an.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: konkrete Zahlen (23,9 % Klumpenrisiko), belegte Quellen,
-  klare Gegenmaßnahme — ohne ein Wort über Technik.
-- *Schwächste Stelle → nächster Zyklus:* **Handlungs-Abschluss.** Antworten sind exzellent, aber
-  es fehlt der sichtbare „und dann?"-Moment (Export/„An Vorstand senden") als Schluss der Story.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Story ist jetzt **rund**: Frage →
+  belegte Antwort → sichtbares **Arbeitsergebnis** („An Vorstand senden"). Kein „und dann?" bleibt
+  offen.
+- *Erzeugt es Aufregung?* — Ja: der grüne „✓ Briefing an den Vorstand gesendet"-Moment ist ein
+  starker, konkreter **Schlussframe** fürs Video — aus Auskunft wird Handlung in einem Klick.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja, sofort: „Ich frage, bekomme eine belegte Antwort und
+  reiche sie mit einem Klick an den Vorstand weiter." Kein Wort über Technik.
+- *Schwächste Stelle → nächster Zyklus:* **Bewegungs-Politur.** Inhaltlich ist die Demo komplett;
+  die härteste verbleibende Kante ist das etwas sprunghafte Ein-/Umblenden — sanfte Übergänge
+  heben die gefühlte Produktreife auf „fertig".

@@ -90,9 +90,15 @@ vertraulich", nur „Vorstand").
 „ChatGPT auf unseren Dateien".
 
 ## Szene 7 — Das Board-Briefing (2:55–3:15)
-**Aktion:** Fragen: *„Erstelle eine Zusammenfassung für den Vorstand."*
-**Sprecher:** „In Sekunden ein Vorstands-Briefing — über alle Abteilungen hinweg."
-**Bild:** Bereichsübergreifende Zusammenfassung (Finanzen, Projekt, Verträge, ESG).
+**Aktion:** Fragen: *„Erstelle eine Zusammenfassung für den Vorstand."* Nach der Antwort auf den
+Aktions-Block **„↗ Ergebnis weiterreichen"** gehen und **„✉ An Vorstand senden"** klicken.
+**Sprecher:** „In Sekunden ein Vorstands-Briefing — über alle Abteilungen hinweg. Und mit einem
+Klick liegt es beim Vorstand."
+**Bild:** Bereichsübergreifende Zusammenfassung (Finanzen, Projekt, Verträge, ESG); dann der
+Klick → kurze Vorbereitung → **grüne Bestätigung „✓ Briefing an den Vorstand gesendet"** (Empfänger,
+Referenznummer). Aus der Auskunft wird ein **Arbeitsergebnis**.
+**Punkt (für CEO/CFO):** nicht nur eine Antwort — ein **weiterreichbares Ergebnis** in einem Klick.
+Starker Schlussframe.
 
 ## Szene 8 — Abschluss (3:15–3:20)
 **Sprecher:** „AI Studio. Ihr Wissen. Sofort nutzbar."

@@ -3,26 +3,34 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 67 % (Ende Zyklus 9)
+## Gesamtfortschritt: ≈ 70 % (Ende Zyklus 10)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
-| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 86 % | 17.2 |
+| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 90 % | 18.0 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 88 % | 13.2 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 89 % | 13.35 |
 | Demo-Firma & realistische Dokumente | 15 % | 70 % | 10.5 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 82 % | 8.2 |
-| Video-Reife (Skript, Politur, Übergänge) | 5 % | 94 % | 4.7 |
+| Video-Reife (Skript, Politur, Übergänge) | 5 % | 96 % | 4.8 |
 | **Summe** | **100 %** | — | **≈ 86 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 67 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und dem
-> Handlungs-Abschluss (Export). Zyklus 9 hebt vor allem **Demo-Szenarien** (74 % → 82 %, zwei
-> neue Ressorts) und **Demo-Firma** (62 % → 70 %, zwei neue Dokumente). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 70 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (Übergänge, weitere Ressorts). Zyklus 10 schließt den **Handlungs-
+> Abschluss** und hebt **Chat-Experience** (86 % → 90 %) und **Video-Reife** (94 % → 96 %).
+> Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 10 (2026-07-08) ≈ 70 %** — Handlungs-Abschluss: Aktions-Block „↗ Ergebnis weiterreichen"
+  unter jeder belegten Antwort mit „✉ An Vorstand senden" / „⤓ Als Briefing exportieren". Klick →
+  Vorbereitungs-Phase (Spinner) → grüne Erfolgs-Bestätigung mit ✓-Badge, deterministischer
+  Briefing-Nummer (BRF-2026-XXXX) und Empfänger-/Datei-Zeile. Nur bei Quellen-belegten Antworten;
+  reine UI. Rein additiv in `app.js`/`styles.css`. Live verifiziert (Render, Position, Primär-
+  Styling, Klick→Bestätigung, keine Konsolenfehler). Schließt die Story „Frage → belegte Antwort →
+  weiterreichbares Ergebnis". (Chat 86 % → 90 %, Video-Reife 94 % → 96 %.)
 - **Zyklus 9 (2026-07-08) ≈ 67 %** — Ressort-Breite: zwei neue Szenarien + Dokumente. „Onboarding,
   erster Tag" (HR, Checkliste-Antwort, Konfidenz 96 %) mit neuem Doc `onboarding-checkliste-2026`;
   „Lieferanten-/Klumpenrisiko" (Finanzen, Konzentrations-Tabelle Donau 23,9 % + Single-Source-
@@ -73,7 +81,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Export-/„An Vorstand senden"-Aktion pro Antwort (Handlungs-Abschluss der Story) → Chat-Experience
-   & Video-Reife.
-2. Sanfte Übergänge + weitere Beleg-Skins → Viewer/Video-Reife.
+1. Sanfte Übergänge (Fade/Slide) zwischen Modulwechseln/Antwortblöcken → Video-Reife.
+2. Weitere Beleg-Skins (E-Mail/Memo im Viewer) → Viewer/Demo-Firma.
 3. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.

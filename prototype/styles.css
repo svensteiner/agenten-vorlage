@@ -231,6 +231,36 @@ body {
 }
 .pill:hover { border-color: var(--brand); color: var(--brand-ink); }
 
+/* Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing exportieren" */
+.block.actions { border-top: 1px solid var(--line); margin-top: 4px; }
+.act-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.act {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; padding: 9px 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+  transition: border-color .15s, background .15s, color .15s, box-shadow .15s, transform .1s;
+}
+.act .ai-ic { font-size: 14px; line-height: 1; }
+.act:hover { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-soft); }
+.act:active { transform: translateY(1px); }
+.act.primary { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 2px 8px rgba(79, 70, 229, .28); }
+.act.primary:hover { background: var(--brand-ink); border-color: var(--brand-ink); color: #fff; }
+
+.act-pending { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-soft); font-style: italic; }
+
+.act-done { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--radius-sm);
+  border: 1px solid #bbe6cb; background: #f1faf4; animation: act-pop .34s cubic-bezier(.2, .9, .3, 1.2); }
+.act-done .ok-badge {
+  width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; font-size: 15px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, .35);
+}
+.act-done .ad-txt { display: flex; flex-direction: column; line-height: 1.4; }
+.act-done .ad-txt b { font-size: 13.5px; color: #14532d; }
+.act-done .ad-sub { font-size: 11.5px; color: #3f6b4f; font-variant-numeric: tabular-nums; }
+@keyframes act-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .act-done { animation: none; } }
+
 /* Typing / thinking */
 .thinking { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 13.5px; padding: 4px 0; }
 .thinking .steps { font-style: italic; }

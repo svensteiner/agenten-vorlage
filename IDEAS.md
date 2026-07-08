@@ -24,8 +24,13 @@
 - ✅ **„Antwort in X s"-Signal + Zahlen-Count-up** — *erledigt in Zyklus 8*: „⚡ Beantwortet in
   1,9 s" im Antwortkopf (zählt hoch) + fett gesetzte Kernzahlen zählen hoch (`animateCounts()`,
   sicher gegen Jahre/Datum/PO-Nummern). Tempo/Souveränität fürs Video.
+- ✅ **Handlungs-Abschluss „An Vorstand senden" / „Als Briefing exportieren"** — *erledigt in
+  Zyklus 10*: Aktions-Block „↗ Ergebnis weiterreichen" unter jeder belegten Antwort; Klick →
+  Spinner → grüne Erfolgs-Bestätigung mit ✓-Badge + deterministischer Briefing-Nummer. Reine UI.
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
-  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum neuen Zahlen-Count-up. *(Optional.)*
+  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional.)*
+- **Sanfte, gestaffelte Übergänge** beim Einblenden der Antwortblöcke + Modulwechsel (Fade/Slide,
+  ~40–60 ms versetzt, `prefers-reduced-motion`) → nächstes oberstes Item.
 
 ## Mehr Substanz
 - ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +
@@ -33,8 +38,8 @@
   verzahnt mit der Stahl-/Ferro-Nord-Story. „Geführte Demo" 9 → 11.
 - Weiteres Szenario: Investitions-/Cashflow-Frage; optional ein IT-/Datenschutz-Ressort.
 - Pro Dokument ein Miniatur-Thumbnail in der Bibliothek (SVG-Icon je Typ).
-- ⏳ **„Diese Antwort exportieren / An Vorstand senden"** — jetzt oberstes offenes Item (Handlungs-
-  Abschluss der Story). Reine UI-Bestätigung, keine echte Mail.
+- ✅ **„Diese Antwort exportieren / An Vorstand senden"** — *erledigt in Zyklus 10* (Handlungs-
+  Abschluss der Story, reine UI-Bestätigung).
 - ✅ Zeitstempel/„Antwort in X s" — *erledigt in Zyklus 8* (Tempo-Signal im Antwortkopf).
 
 ## Vertrauen sichtbar machen

@@ -5,13 +5,19 @@
 
 ## Offen (nach Priorität)
 
-1. **[P4] Export-/„An Vorstand senden"-Aktion** pro Antwort inkl. Quellen (Handlungs-Abschluss der
-   Story; reine UI-Bestätigung/Toast, keine echte Mail). → oberstes Item für den nächsten Zyklus.
-2. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
-   Rest-Politur.
-3. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
+1. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
+   Rest-Politur. → oberstes Item für den nächsten Zyklus.
+2. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
+3. **[P5] Weitere Beleg-Skins** (z. B. E-Mail-/Memo-Darstellung im Viewer) für zusätzliche
+   Dokumenttypen.
 
 ## Erledigt
+
+- **[Zyklus 10] Handlungs-Abschluss — „An Vorstand senden" / „Als Briefing exportieren"** —
+  Aktions-Block „↗ Ergebnis weiterreichen" unter jeder belegten Antwort; Klick → kurze
+  Vorbereitungs-Phase → grüne Erfolgs-Bestätigung mit ✓-Badge, deterministischer Briefing-Nummer
+  (BRF-2026-XXXX) und Datei-/Empfänger-Zeile. Erscheint nur bei Quellen-belegten Antworten; reine
+  UI (keine echten Mails). Rein additiv in `app.js`/`styles.css`. Live verifiziert.
 
 - **[Zyklus 9] Ressort-Breite — HR-Onboarding & Lieferanten-/Klumpenrisiko** — zwei neue Szenarien
   + Dokumente (`onboarding-checkliste-2026`, `lieferanten-risikoanalyse-2026`). Onboarding-
