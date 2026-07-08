@@ -2,6 +2,40 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 21 — 2026-07-08 — Projekt Beta: die Demo-Firma trägt mehrere parallele Vorhaben 🏗️
+
+**Ein zweites Projekt neben „Alpha" — bewusst unter Terminrisiko, ehrlich gekennzeichnet.** Der
+schwächste verbleibende Fortschrittsbereich war **Demo-Firma & realistische Dokumente**. Die Demo zeigte
+mit Alpha nur *eine* Vorzeige-Story (im Zeitplan). Neu ist **Projekt Beta** — eine kundenspezifische
+Anlage für die *Nordwind Logistik AG*, die **verzögert** ist. Damit beweist die Demo, dass die Firma
+mehrere parallele Projekte trägt, und dass AI Studio Risiken **offen kennzeichnet** statt zu beschönigen.
+
+### Neu
+- **Szenario `projekt-beta`** (Modul Berichte, Konfidenz 90 %): „Wie steht Projekt Beta?" — Antwort mit
+  **Ampel-Statustabelle** (Fortschritt 48 % ⚠ verzögert · Budget 8,6 Mio. € im Rahmen · Liefertermin
+  Q4 2026 ⚠ 3 Wo. Verzug), Ursachen (Lieferverzug Steuerungselektronik + Kunden-Change-Request),
+  Pönale-Risiko (0,5 %/Woche, gedeckelt 5 % = max. 0,43 Mio. €) und Gegenmaßnahmen. Schließt mit dem
+  **Kontrast zu Alpha** („im Zeitplan") — Risiko wird offen benannt.
+- **Doc `projekt-beta-status`** (Projektbericht → `paper-bericht`, 6 Highlights): Statusbericht per
+  31.03.2026, parallele Momentaufnahme zu Alpha (gleiches Berichtsdatum).
+- **Doc `eskalation-beta-elektronik`** (E-Mail → `paper-email`, 3. E-Mail der Demo): Eskalation der
+  Projektleitung Beta an die CFO (Cc CEO) zum Lieferverzug, mit zitiertem Verlauf der Zulieferer-
+  Meldung (ElektroSys). Reuse des bestehenden E-Mail-Skins — kein Code-Umbau.
+- **Wiring:** Hero (Modul Wissen) 11 → **12 Kacheln**, Modul Berichte 5 → 6, Geführte Demo 14 → **15
+  Szenarien** (Beta läuft direkt nach Alpha → „im Zeitplan" gefolgt von „unter Terminrisiko").
+
+### Verifikation
+- **Deterministisch** (Node-VM gegen `data.js`): **27 Dokumente** (war 25), **15 Szenarien** (war 14),
+  **3 E-Mails** (war 2), **2 gesperrt** (unverändert), **0 kaputte Referenzen** über alle
+  `sources`/`related`/`withheld`/`chain`/`MODULE_SUGGESTIONS`; beide Quell-Zitate liegen wortgleich im
+  Dokument-Body; alle Relevanzwerte 0–100.
+- **Live im Browser** (DOM gegen reale Daten): Beta-Hero-Kachel vorhanden; Klick löst das Szenario auf →
+  Konfidenz-Meter **90 %** + Herleitungs-Tooltip; Ampel-Tabelle korrekt (Kopf + 3 Zeilen), Alpha-Kontrast
+  im Text; Suche „beta" findet beide Docs (▤ Status, ✉ E-Mail); Eskalations-Mail öffnet als
+  **`paper-email`** mit 5 Kopfzeilen (Von/An/Cc/Betreff/Gesendet) + zitiertem Verlauf; Statusbericht
+  öffnet als **`paper-bericht`** mit 6 Highlights; **keine Konsolenfehler**. (Voll-Streaming-Pfad im
+  Headless-Preview timer-gedrosselt — bekannte Harness-Grenze; daher DOM/Daten-basiert verifiziert.)
+
 ## Zyklus 20 — 2026-07-08 — Konfidenz-Herleitung: das Meter erklärt sich selbst 🔍
 
 **Die Konfidenzzahl im Antwortkopf ist jetzt erklärbar.** Der letzte Skeptiker-Einwand eines CFOs zielt

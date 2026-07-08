@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 85 % (Ende Zyklus 20)
+## Gesamtfortschritt: ≈ 86 % (Ende Zyklus 21)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,18 +11,32 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 96 % | 14.4 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
-| Demo-Firma & realistische Dokumente | 15 % | 86 % | 12.9 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 92 % | 9.2 |
+| Demo-Firma & realistische Dokumente | 15 % | 90 % | 13.5 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 93 % | 9.3 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
-| **Summe** | **100 %** | — | **≈ 93 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 94 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 85 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur. Zyklus 20 macht die **Konfidenzzahl erklärbar** (Hover-Tooltip am
-> Meter, hergeleitet aus den Quellen) und hebt **Belege pro Antwort** (94 % → 96 %).
+> **Gesamtfortschritt ≈ 86 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur. Zyklus 21 fügt ein **zweites, ehrlich verzögertes Projekt (Beta)**
+> hinzu und hebt **Demo-Firma** (86 % → 90 %) und **Szenarien** (92 % → 93 %).
 > Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 21 (2026-07-08) ≈ 86 %** — Projekt Beta als Breiten-Schritt: neues Szenario `projekt-beta`
+  (Modul Berichte, Konfidenz 90 %) „Wie steht Projekt Beta?" — eine kundenspezifische Anlage für die
+  Nordwind Logistik AG, bewusst **verzögert**. Antwort mit **Ampel-Statustabelle** (Fortschritt 48 %
+  ⚠ · Budget 8,6 Mio. € im Rahmen · Liefertermin Q4 2026 ⚠ 3 Wo. Verzug), Ursachen (Lieferverzug
+  Steuerungselektronik + Kunden-Change-Request), Pönale-Risiko (max. 0,43 Mio. €), Gegenmaßnahmen und
+  **offenem Kontrast zu Alpha** („im Zeitplan"). Zwei neue Belege: `projekt-beta-status`
+  (Projektbericht, `paper-bericht`, 6 Highlights) und `eskalation-beta-elektronik` (E-Mail, `paper-email`,
+  3. Demo-E-Mail, zitierter Zulieferer-Verlauf) — beide über den **bestehenden** Skin-Pfad, kein
+  Code-Umbau. Rein additiv in `data.js`. Hero 11 → 12, Berichte 5 → 6, Geführte Demo 14 → 15 Szenarien.
+  Deterministisch verifiziert: 27 Docs (war 25), 15 Szenarien, 3 E-Mails, 0 kaputte Referenzen, Zitate
+  im Body, Relevanzen gültig; live geprüft (Beta-Kachel + Klick → 90 % + Tooltip, Ampel-Tabelle korrekt,
+  Suche findet beide Docs, E-Mail öffnet `paper-email` mit 5 Kopfzeilen + Zitat, Status öffnet
+  `paper-bericht` mit 6 Highlights, keine Konsolenfehler). (Demo-Firma 86 % → 90 %, Szenarien 92 % → 93 %.)
 
 - **Zyklus 20 (2026-07-08) ≈ 85 %** — Konfidenz-Herleitung als Hover/Focus-Tooltip am Konfidenz-Meter:
   hovert der Cursor die Prozentzahl im Antwortkopf, öffnet sich ein kleines Popover, das zeigt, *woraus*

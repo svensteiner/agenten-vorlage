@@ -79,7 +79,13 @@
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
   Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
 - **Globale Suche (Zyklus 17):** **Strg/⌘ + K** öffnet/schließt die Command-Palette von überall (Esc
-  schließt). Leeres Feld = komplettes Inventar (Zähler „25 Dokumente"); Tippen filtert live über alle
+  schließt). Leeres Feld = komplettes Inventar (Zähler „27 Dokumente"); Tippen filtert live über alle
   Dokumente, ↑/↓ + Enter öffnen den markierten Treffer. Der Auslöser ist während der Geführten Demo
   bewusst inaktiv — für den Such-Beat die Demo also **nicht** laufen lassen (separat aufnehmen).
+- **Projekt-Portfolio (Zyklus 21):** Die Geführte Demo zeigt jetzt **zwei** Projekte direkt
+  hintereinander — *„Fasse Projekt Alpha zusammen"* (im Zeitplan, grün) gefolgt von *„Wie steht
+  Projekt Beta?"* (⚠ **verzögert**, Ampel-Tabelle mit Pönale-Risiko). Der Kontrast „alles im Griff"
+  → „hier gibt es ein Risiko, offen benannt" ist ein starker Vertrauensmoment. Nach dem Beta-Streaming
+  1–2 Sek. auf der Ampel-Tabelle halten; danach kann die Eskalations-E-Mail (Quelle 2, ✉) geöffnet
+  werden — sie zeigt den Lieferverzug samt zitierter Zulieferer-Meldung.
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

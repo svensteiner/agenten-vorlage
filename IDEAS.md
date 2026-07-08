@@ -78,8 +78,15 @@
   Übereinstimmung einzeln/teilweise/hoch, je Mini-Balken; Fußzeile „Keine Behauptung — eine Ableitung aus
   konkreten Quellen."). Datengetrieben aus `answer.sources`, tastatur-erreichbar. Rein additiv in
   `app.js` (`buildConfPop()`) + `styles.css`.
-- **Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
-  Frage „Wie steht Projekt Beta?". Rein additiv in `data.js`. *(Nächster Zyklus — Breiten-Option.)*
+- ✅ **Zweites Projekt „Beta"** — *erledigt in Zyklus 21*: Szenario `projekt-beta` (Berichte, 90 %) „Wie
+  steht Projekt Beta?" — kundenspezifische Anlage für die Nordwind Logistik AG, bewusst **verzögert**
+  (Ampel-Statustabelle, Pönale-Risiko, Gegenmaßnahmen, offener Kontrast zu Alpha „im Zeitplan"). Zwei
+  neue Belege: `projekt-beta-status` (Projektbericht) + `eskalation-beta-elektronik` (E-Mail, zitierter
+  Zulieferer-Verlauf) — beide über bestehende Skins, kein Code-Umbau. Rein additiv in `data.js`. Beweist,
+  dass die Demo-Firma mehrere parallele Vorhaben trägt — und Risiken ehrlich kennzeichnet.
+- **Projekt-Portfolio-Überblick** — neues Szenario „Welche Projekte laufen aktuell?", das Alpha + Beta in
+  einer Ampel-Übersichtstabelle gegenüberstellt (Quellen = beide Statusberichte). Der „ganzes Portfolio
+  auf einen Blick"-Moment. Rein additiv in `data.js`. *(Nächster Zyklus — Breiten-Option.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

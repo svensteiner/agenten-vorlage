@@ -5,18 +5,31 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Zweites Projekt neben „Alpha"** (z. B. „Projekt Beta") mit eigenem Statusbericht → belegt eine
-   Frage „Wie steht Projekt Beta?". Rein additiv in `data.js` (Reuse Bericht-Skins). Hebt Demo-Firma
-   und Szenarien weiter. → **oberstes Item für den nächsten Zyklus** (schwächster Bereich: Demo-Firma 86 %).
-2. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+1. **[P5] Projekt-Portfolio-Überblick** — neues Szenario „Welche Projekte laufen aktuell?" (Modul
+   Berichte), das Alpha **und** Beta in **einer** Ampel-Übersichtstabelle gegenüberstellt (Projekt ·
+   Fortschritt · Budget · Termin · Status), Quellen = beide Statusberichte. Der „ganzes Portfolio auf
+   einen Blick"-Moment; verzahnt die zwei Projekte zu einer Geschichte. Rein additiv in `data.js`. →
+   **oberstes Item für den nächsten Zyklus**.
+2. **[P5] Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit
+   dem Kunden-Änderungswunsch (+0,4 Mio. €); Reuse Beleg-/Angebots-Skin. Tiefe statt Breite.
+3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
-3. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+4. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
 
 ## Erledigt
 
+- **[Zyklus 21] Zweites Projekt „Beta"** — neues Szenario `projekt-beta` (Berichte, 90 %) „Wie steht
+  Projekt Beta?" mit Ampel-Statustabelle (Fortschritt 48 % ⚠ verzögert · Budget 8,6 Mio. € · Liefertermin
+  Q4 2026 ⚠), Ursachen (Lieferverzug Elektronik + Kunden-Change-Request), Pönale-Risiko und
+  Gegenmaßnahmen, offener Kontrast zu Alpha. Zwei neue Belege: `projekt-beta-status` (Projektbericht,
+  6 Highlights) + `eskalation-beta-elektronik` (E-Mail, 3. Demo-Mail, zitierter Zulieferer-Verlauf) —
+  beide über bestehende Skins, kein Code-Umbau. Rein additiv in `data.js`; Hero 11 → 12, Berichte 5 → 6,
+  Geführte Demo 14 → 15. Deterministisch (27 Docs, 15 Szenarien, 3 Mails, 0 kaputte Refs) + live
+  verifiziert (Beta-Kachel/Klick → 90 % + Tooltip, Ampel korrekt, Suche findet beide, `paper-email` +
+  `paper-bericht` korrekt, keine Konsolenfehler).
 - **[Zyklus 20] Konfidenz-Tooltip am Meter** — Hover/Focus am Konfidenz-Meter öffnet ein Popover, das die
   Prozentzahl aus den Quellen herleitet: **Quellen herangezogen · höchste Relevanz · Übereinstimmung der
   Belege** (einzeln/teilweise/hoch, „X von N ≥ 80 %"), je mit Mini-Balken; Fußzeile „Keine Behauptung —
