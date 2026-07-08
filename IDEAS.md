@@ -84,9 +84,15 @@
   neue Belege: `projekt-beta-status` (Projektbericht) + `eskalation-beta-elektronik` (E-Mail, zitierter
   Zulieferer-Verlauf) — beide über bestehende Skins, kein Code-Umbau. Rein additiv in `data.js`. Beweist,
   dass die Demo-Firma mehrere parallele Vorhaben trägt — und Risiken ehrlich kennzeichnet.
-- **Projekt-Portfolio-Überblick** — neues Szenario „Welche Projekte laufen aktuell?", das Alpha + Beta in
-  einer Ampel-Übersichtstabelle gegenüberstellt (Quellen = beide Statusberichte). Der „ganzes Portfolio
-  auf einen Blick"-Moment. Rein additiv in `data.js`. *(Nächster Zyklus — Breiten-Option.)*
+- ✅ **Projekt-Portfolio-Überblick** — *erledigt in Zyklus 22*: Szenario `projekt-portfolio` (Berichte,
+  94 %) „Welche Projekte laufen aktuell?" stellt Alpha + Beta in **einer** Ampel-Übersichtstabelle
+  gegenüber (Projekt · Fortschritt · Budget · Termin · Status), Portfolio-Volumen 32,6 Mio. €, ehrlicher
+  Schluss „1 von 2 termingefährdet". Quellen = **beide bestehenden Statusberichte** (je 96 %) +
+  Vorstandsprotokoll. Reuse `<table>`-Struktur, kein neues Dokument, kein Code-Umbau. Der „ganzes
+  Portfolio auf einen Blick"-Moment; in der Geführten Demo direkt nach Alpha + Beta.
+- **Drittes Beta-Dokument (Change-Request an Nordwind)** — Angebotsnachtrag über den Kunden-
+  Änderungswunsch (+0,4 Mio. €, zusätzliche Prüfstation) mit `lineItems`; Reuse Beleg-Skin, in
+  `projekt-beta` als Quelle einweben. Schließt Betas letzte unbelegte Zahl. *(Nächster Zyklus — Tiefe.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

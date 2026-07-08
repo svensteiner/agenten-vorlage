@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 86 % (Ende Zyklus 21)
+## Gesamtfortschritt: ≈ 87 % (Ende Zyklus 22)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -12,17 +12,30 @@
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 96 % | 14.4 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
 | Demo-Firma & realistische Dokumente | 15 % | 90 % | 13.5 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 93 % | 9.3 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 94 % | 9.4 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
 | **Summe** | **100 %** | — | **≈ 94 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 86 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur. Zyklus 21 fügt ein **zweites, ehrlich verzögertes Projekt (Beta)**
-> hinzu und hebt **Demo-Firma** (86 % → 90 %) und **Szenarien** (92 % → 93 %).
+> **Gesamtfortschritt ≈ 87 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur. Zyklus 22 fügt den **Portfolio-Überblick** hinzu, der Alpha + Beta in
+> einer Ampel-Übersicht bündelt, und hebt **Szenarien** (93 % → 94 %).
 > Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 22 (2026-07-08) ≈ 87 %** — Projekt-Portfolio-Überblick: neues Szenario `projekt-portfolio`
+  (Modul Berichte, Konfidenz 94 %) „Welche Projekte laufen aktuell?" — stellt **Alpha und Beta in einer
+  Ampel-Übersichtstabelle** gegenüber (Projekt · Fortschritt · Budget · Termin · Status): Alpha 62 % ·
+  24,0 Mio. € · Q4 2026 · ✓ im Zeitplan; Beta 48 % · 8,6 Mio. € · Q4 2026 · ⚠ 3 Wo. Verzug. Portfolio-
+  Volumen 32,6 Mio. € (18,8 verausgabt), ehrlicher Schluss „1 von 2 Projekten termingefährdet". Quellen =
+  **beide bestehenden Statusberichte** (je 96 %) + Vorstandsprotokoll (74 %) → Tooltip „3 Quellen · höchste
+  Relevanz 96 % · Übereinstimmung hoch". Der „ganzes Portfolio auf einen Blick"-Moment; in der Geführten
+  Demo direkt nach Alpha + Beta. Rein additiv in `data.js` (Reuse `<table>`-Struktur + vorhandene Belege),
+  kein Code-Umbau. Hero 12 → 13, Berichte 6 → 7 (Portfolio zuerst), Geführte Demo 15 → 16 Szenarien.
+  Deterministisch verifiziert: 27 Docs, 16 Szenarien, 0 kaputte Referenzen, Zitate wortgleich, Matcher
+  kollisionsfrei; live geprüft (Hero-/Berichte-Tile, Klick → 94 % + Tooltip, alle Tabellenzellen +
+  32,6 Mio. € im DOM, keine Konsolenfehler). (Szenarien 93 % → 94 %.)
 
 - **Zyklus 21 (2026-07-08) ≈ 86 %** — Projekt Beta als Breiten-Schritt: neues Szenario `projekt-beta`
   (Modul Berichte, Konfidenz 90 %) „Wie steht Projekt Beta?" — eine kundenspezifische Anlage für die
@@ -226,12 +239,11 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Konfidenz visuell erklären** — ein Tooltip/Hover am Konfidenz-Meter, der zeigt, *woraus* sich die
-   Zahl speist (Quellenanzahl, höchste Relevanz, Übereinstimmung); macht die „belastbaren Belege"-Story
-   noch greifbarer für skeptische CFOs. Klein, rein additiv (`app.js`/`styles.css`). **Jetzt stärkster
-   Hebel**, da Demo-Firma mit Zyklus 19 auf 86 % gehoben ist.
-2. **Mehr Tiefe in der Demo-Firma** (weitere authentische Dokumente) → z. B. ein zweites Projekt
-   (neben Alpha), das eine Frage wie „Wie steht Projekt Beta?" belegt — hebt Demo-Firma **und**
-   Szenarien-Breite.
+1. **Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit dem
+   Kunden-Änderungswunsch (+0,4 Mio. €) über einen Angebots-Nachtrag/Beleg; Reuse Beleg-/Angebots-Skin.
+   Tiefe statt Breite, hebt **Demo-Firma**. **Jetzt stärkster Hebel** (Portfolio-Überblick ist mit
+   Zyklus 22 gebaut).
+2. **Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 hochlaufen lassen,
+   passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur (`app.js`/`styles.css`).
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).

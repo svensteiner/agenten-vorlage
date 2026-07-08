@@ -5,22 +5,29 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Projekt-Portfolio-Überblick** — neues Szenario „Welche Projekte laufen aktuell?" (Modul
-   Berichte), das Alpha **und** Beta in **einer** Ampel-Übersichtstabelle gegenüberstellt (Projekt ·
-   Fortschritt · Budget · Termin · Status), Quellen = beide Statusberichte. Der „ganzes Portfolio auf
-   einen Blick"-Moment; verzahnt die zwei Projekte zu einer Geschichte. Rein additiv in `data.js`. →
-   **oberstes Item für den nächsten Zyklus**.
-2. **[P5] Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit
-   dem Kunden-Änderungswunsch (+0,4 Mio. €); Reuse Beleg-/Angebots-Skin. Tiefe statt Breite.
-3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
+1. **[P5] Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit
+   dem Kunden-Änderungswunsch (+0,4 Mio. €): neues Dokument `nachtrag-nordwind-beta` (Typ
+   „Angebotsnachtrag", Modul Berichte/Verträge) mit `lineItems` (Position „zusätzliche Prüfstation",
+   Netto/USt/Brutto) — **Reuse des Beleg-Skins**, kein Code-Umbau. In `projekt-beta` als Quelle einweben.
+   Schließt Betas letzte **unbelegte** Zahl. → **oberstes Item für den nächsten Zyklus**.
+2. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
-4. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+3. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
 
 ## Erledigt
 
+- **[Zyklus 22] Projekt-Portfolio-Überblick** — neues Szenario `projekt-portfolio` (Berichte, 94 %)
+  „Welche Projekte laufen aktuell?" stellt Alpha **und** Beta in **einer** Ampel-Übersichtstabelle
+  gegenüber (Projekt · Fortschritt · Budget · Termin · Status): Alpha 62 %/24,0 Mio./✓ im Zeitplan, Beta
+  48 %/8,6 Mio./⚠ 3 Wo. Verzug; Portfolio-Volumen 32,6 Mio. €, ehrlicher Schluss „1 von 2 termingefährdet".
+  Quellen = **beide bestehenden Statusberichte** (je 96 %) + Vorstandsprotokoll (74 %). Rein additiv in
+  `data.js` (Reuse `<table>`-Struktur + vorhandene Belege), kein neues Dokument, kein Code-Umbau. Hero
+  12 → 13, Berichte 6 → 7 (Portfolio zuerst), Demo 15 → 16. Deterministisch (27 Docs, 16 Szenarien, 0
+  kaputte Refs, Zitate wortgleich, Matcher kollisionsfrei) + live verifiziert (Hero-/Berichte-Tile, Klick
+  → 94 % + Tooltip, alle Tabellenzellen + 32,6 Mio. € im DOM, keine Konsolenfehler).
 - **[Zyklus 21] Zweites Projekt „Beta"** — neues Szenario `projekt-beta` (Berichte, 90 %) „Wie steht
   Projekt Beta?" mit Ampel-Statustabelle (Fortschritt 48 % ⚠ verzögert · Budget 8,6 Mio. € · Liefertermin
   Q4 2026 ⚠), Ursachen (Lieferverzug Elektronik + Kunden-Change-Request), Pönale-Risiko und

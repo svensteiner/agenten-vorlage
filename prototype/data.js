@@ -784,6 +784,29 @@ const SCENARIOS = [
     },
   },
   {
+    id: "projekt-portfolio",
+    module: "berichte",
+    question: "Welche Projekte laufen aktuell?",
+    keywords: ["welche projekte", "projekte", "portfolio", "projektportfolio", "projektübersicht", "übersicht projekte", "laufende projekte", "alle projekte", "projektlandschaft"],
+    answer: {
+      text: "Aktuell laufen <b>2 große Projekte</b> mit einem Gesamtvolumen von <b>32,6 Mio. €</b> (davon <b>18,8 Mio. €</b> verausgabt):<table><tr><th>Projekt</th><th>Fortschritt</th><th>Budget</th><th>Termin</th><th>Status</th></tr><tr><td><b>Alpha</b> — Fertigungslinie Werk 2</td><td>62 %</td><td>24,0 Mio. €</td><td>Q4 2026</td><td><b>✓ im Zeitplan</b></td></tr><tr><td><b>Beta</b> — Kundenanlage Nordwind</td><td>48 %</td><td>8,6 Mio. €</td><td>Q4 2026</td><td><b>⚠ 3 Wo. Verzug</b></td></tr></table><ul><li><b>Projekt Alpha</b> (automatisierte Fertigungslinie, Werk 2 Ingolstadt) liegt <b>im Zeitplan</b>; einziges Thema ist das um 0,9 Mio. € belastete Materialbudget (vom Vorstand bereits genehmigt).</li><li><b>Projekt Beta</b> (kundenspezifische Verpackungs-/Palettierlinie für die Nordwind Logistik AG) steht <b>unter Terminrisiko</b>: Lieferverzug der Steuerungselektronik plus ein Kunden-Änderungswunsch; Pönale-Risiko max. 0,43 Mio. €, Gegenmaßnahmen laufen.</li></ul><b>1 von 2 Projekten</b> ist termingefährdet — offen gekennzeichnet, nicht beschönigt. Beide Endtermine liegen in Q4 2026.",
+      reasoning: [
+        "Anfrage als projektübergreifende Portfolio-Übersicht im Modul Berichte erkannt.",
+        "Beide aktiven Statusberichte (Alpha, Beta) mit demselben Stichtag 31.03.2026 geladen.",
+        "Kennzahlen (Fortschritt, Budget, Termin) je Projekt extrahiert und als Ampel bewertet.",
+        "Portfolio-Volumen aggregiert (24,0 + 8,6 = 32,6 Mio. €) und Terminrisiken zusammengeführt.",
+      ],
+      sources: [
+        { docId: "projekt-alpha-status", relevance: 96, quote: "Status per 31.03.2026: 62 % abgeschlossen, im Zeitplan. Bislang 14,1 Mio. € verausgabt." },
+        { docId: "projekt-beta-status", relevance: 96, quote: "Status per 31.03.2026: 48 % abgeschlossen, rund 3 Wochen in Verzug. Bislang 4,7 Mio. € verausgabt." },
+        { docId: "vorstandsprotokoll-2026-03", relevance: 74, quote: "Projekt Alpha bleibt im Zeitplan; Vorstand genehmigt Mehrbudget von 0,9 Mio. € für Materialpreissteigerung." },
+      ],
+      confidence: 94,
+      related: ["projekt-alpha-status", "projekt-beta-status", "vorstandsprotokoll-2026-03", "eskalation-beta-elektronik"],
+      followups: ["Wie steht Projekt Beta?", "Fasse Projekt Alpha zusammen."],
+    },
+  },
+  {
     id: "vertraege-verlaengerung",
     module: "vertraege",
     question: "Finde alle Verträge mit automatischer Verlängerung.",
@@ -973,11 +996,11 @@ const SCENARIOS = [
 
 // Startvorschläge pro Modul (Frage-IDs). „wissen" zeigt die Highlights.
 const MODULE_SUGGESTIONS = {
-  wissen: ["reiserichtlinie", "materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "projekt-beta", "vertraege-verlaengerung", "lieferanten-risiko", "datenschutz-audit", "onboarding-tag1", "esg-co2", "strategie-ausblick"],
+  wissen: ["reiserichtlinie", "materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "projekt-portfolio", "projekt-beta", "vertraege-verlaengerung", "lieferanten-risiko", "datenschutz-audit", "onboarding-tag1", "esg-co2", "strategie-ausblick"],
   finanzen: ["materialkosten", "budget-herkunft", "beleg-rechnung", "reklamation-stahl", "lieferanten-risiko"],
   audit: ["beleg-rechnung", "reklamation-stahl", "brandschutz", "datenschutz-audit"],
   hr: ["reiserichtlinie", "onboarding-tag1"],
   vertraege: ["vertraege-verlaengerung"],
-  berichte: ["projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick"],
+  berichte: ["projekt-portfolio", "projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick"],
   einstellungen: [],
 };

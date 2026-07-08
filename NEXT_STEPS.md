@@ -6,13 +6,14 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 21 — **Projekt Beta**: ein zweites, bewusst *verzögertes* Projekt neben
-  Alpha (kundenspezifische Anlage für die Nordwind Logistik AG). Beweist, dass die Demo-Firma mehrere
-  parallele Vorhaben trägt — und dass AI Studio Risiken **offen** kennzeichnet (Ampel-Status) statt zu
-  beschönigen. Neues Szenario + 2 Belege (Statusbericht + Eskalations-E-Mail), rein additiv in `data.js`.
+- **Letzter Zyklus:** Zyklus 22 — **Projekt-Portfolio-Überblick**: neues Szenario „Welche Projekte laufen
+  aktuell?" (Modul Berichte, Konfidenz 94 %), das **Alpha und Beta in einer Ampel-Übersichtstabelle**
+  gegenüberstellt (Projekt · Fortschritt · Budget · Termin · Status), Portfolio-Volumen 32,6 Mio. €,
+  Quellen = beide bestehenden Statusberichte + Vorstandsprotokoll. Der „ganzes Portfolio auf einen Blick"-
+  Moment; rein additiv in `data.js` (Reuse `<table>`-Struktur + vorhandene Belege), kein Code-Umbau.
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 86 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 87 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -31,6 +32,36 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 22 gebaut wurde
+
+**Projekt-Portfolio-Überblick — die Parallelität der Projekte auf einen Blick.** Nach Zyklus 21 trug die
+Demo zwei gleichwertig belegte Projekte (Alpha im Zeitplan, Beta verzögert), aber die Parallelität war nur
+über zwei *getrennte* Fragen erlebbar. Ein CEO/CFO will die **Vogelperspektive**: „Was läuft gerade — und
+wo brennt es?" Neu:
+- **Szenario `projekt-portfolio`** (Modul Berichte, Konfidenz 94 %): „Welche Projekte laufen aktuell?" —
+  Antwort mit **Ampel-Übersichtstabelle** (Projekt · Fortschritt · Budget · Termin · Status): **Alpha**
+  62 % · 24,0 Mio. € · Q4 2026 · **✓ im Zeitplan**; **Beta** 48 % · 8,6 Mio. € · Q4 2026 · **⚠ 3 Wo.
+  Verzug**. Darunter zwei Erläuterungspunkte (Alpha: Materialbudget genehmigt; Beta: Terminrisiko +
+  Gegenmaßnahmen) und ein **aggregiertes Portfolio-Volumen 32,6 Mio. €** (18,8 verausgabt). Ehrlicher
+  Schluss: **„1 von 2 Projekten termingefährdet — offen gekennzeichnet, nicht beschönigt."**
+- **Quellen = die beiden bestehenden Statusberichte** (`projekt-alpha-status` 96 %, `projekt-beta-status`
+  96 %) plus Vorstandsprotokoll (74 %) → der Konfidenz-Tooltip aus Zyklus 20 zeigt automatisch „3 Quellen ·
+  höchste Relevanz 96 % · Übereinstimmung hoch". `related` verlinkt beide Statusberichte + Eskalation +
+  Protokoll. **Kein neues Dokument** — bewusst Reuse: der Überblick aggregiert, was schon belegt ist.
+- **Rein additiv in `data.js`** — kein Code-Umbau (Reuse der bestehenden `<table>`-Antwortstruktur). Als
+  **erstes** Berichte-Modul-Tile einsortiert und neu im Hero (12 → **13** Tiles). In der Geführten Demo
+  läuft Portfolio **direkt nach** Alpha + Beta (15 → **16** Szenarien) → „im Zeitplan" und „unter
+  Terminrisiko" werden erst einzeln, dann in **einer Übersicht** gezeigt — eine starke Klammer im Video.
+- **Verifikation:** deterministisch (Node-VM gegen `data.js`) **27 Docs**, **16 Szenarien** (war 15),
+  **0 kaputte Referenzen**, alle 3 Quell-Zitate **wortgleich** im jeweiligen Body, Relevanzen 0–100;
+  Matcher routet „Welche Projekte laufen aktuell?" → `projekt-portfolio` **ohne Kollision** (Alpha/Beta
+  lösen weiter korrekt auf; „Zeig mir das Projektportfolio" → portfolio). Live im Browser (DOM gegen reale
+  Daten): Hero-Tile + **erstes** Berichte-Tile vorhanden; Klick löst das Szenario auf → Konfidenz-Kopf
+  **94 %** + Herleitungs-Tooltip (3 Quellen · höchste Relevanz 96 % · Übereinstimmung hoch); alle
+  Tabellenzellen (Alpha 62 %/24,0 Mio./Q4 2026/✓; Beta 48 %/8,6 Mio./Q4 2026/⚠) + Portfolio-Volumen
+  **32,6 Mio. €** im DOM; **keine Konsolenfehler**. (Voll-Streaming-HTML-Swap im Headless-Preview
+  timer-gedrosselt — bekannte Harness-Grenze; daher DOM/Daten-basiert verifiziert.)
 
 ## Was in Zyklus 21 gebaut wurde
 
@@ -549,30 +580,42 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Ein „Portfolio"-Überblick als Landing-/Antwort-Moment: „Welche Projekte laufen aktuell?"** Nach Zyklus
-21 trägt die Demo zwei gleichwertig belegte Projekte (Alpha im Zeitplan, Beta verzögert). Der stärkste
-nächste additive Schritt macht diese **Parallelität sofort sichtbar**: ein neues Szenario **„Welche
-Projekte laufen aktuell?"** (Modul Berichte), das beide Projekte in **einer Ampel-Übersichtstabelle**
-gegenüberstellt (Projekt · Fortschritt · Budget · Termin · Status), mit Quellen auf **beide**
-Statusberichte. Das ist der „mein ganzes Portfolio auf einen Blick"-Moment für einen CEO/CFO — und die
-natürliche Klammer über Alpha + Beta. Rein additiv in `data.js` (Reuse der `<table>`-Antwortstruktur +
-bestehender Statusberichte als Quellen); Wiring in Hero + Modul Berichte. Hebt **Szenarien-Breite** und
-verzahnt die zwei Projekte zu einer Geschichte.
+**Ein drittes Beta-Dokument: der Change-Request / Angebots-Nachtrag an die Nordwind Logistik AG (+0,4
+Mio. €).** Nach Zyklus 22 ist die **Breite** rund (16 Szenarien, 27 Dokumente über 6 Ressorts, Portfolio-
+Überblick als Klammer). Der stärkste nächste additive Schritt ist jetzt **Tiefe** an der schwächsten
+Stelle (Demo-Firma 90 %): Beta nennt in Statusbericht und Portfolio den **Kunden-Änderungswunsch
+(zusätzliche Prüfstation, +0,4 Mio. €)** — aber der **kaufmännische Beleg** dazu fehlt. Ein neues Dokument
+**`nachtrag-nordwind-beta`** (Typ „Angebotsnachtrag" oder „Nachtragsangebot", Modul Berichte/Verträge)
+macht sichtbar, *wie* Meridian den Scope-Change beim Kunden geltend macht: Nachtrag Nr., Bezug zum
+Rahmenauftrag, Position „zusätzliche Prüfstation", Netto/USt/Brutto — **Reuse des bestehenden Beleg-Skins
+mit `lineItems`** (wie Rechnung/Gutschrift), kein Code-Umbau. In das `projekt-beta`-Szenario als zusätzliche
+Quelle einweben. Hebt **Demo-Firma** und macht Betas „+0,4 Mio. €" belegbar statt nur behauptet.
 
-*Warum?* Die Demo hat jetzt Breite (15 Szenarien, 27 Dokumente über 6 Ressorts), Tiefe (saubere **und**
-Ausnahme-Belegpfade), erklärte Belegbarkeit (Konfidenz-Tooltip) **und** mehrere parallele Projekte. Was
-noch fehlt, ist der **eine Blick, der die Parallelität zeigt** — statt sie nur über zwei getrennte Fragen
-erlebbar zu machen. Eine Portfolio-Übersicht liefert genau diese Vogelperspektive.
+*Warum?* Die Demo zeigt bei Beta ehrlich ein Risiko und Gegenmaßnahmen — aber der Change-Request ist die
+einzige Beta-Zahl, die noch **unbelegt** ist. Ein Nachtragsbeleg schließt genau diese Lücke und beweist
+denselben lückenlosen Beleg-Anspruch, den Alpha (Entscheidungskette) und der Reklamations-Vorgang bereits
+erfüllen.
 
-**Alternative (Tiefe):** ein drittes Ressort-Dokument für Beta (z. B. der **Change-Request/Angebots-
-Nachtrag** an Nordwind über +0,4 Mio. €) — macht den kaufmännischen Umgang mit dem Kunden-Änderungswunsch
-belegbar. Nur falls Portfolio-Übersicht zu ähnlich zum bestehenden `vorstand-summary` wirkt.
+**Alternative (Politur):** das **Konfidenz-/Relevanz-Meter mit-animieren** (Prozent-Balken von 0
+hochlaufen lassen, passend zum Zahlen-Count-up aus Zyklus 8) — kleine, rein additive Feinpolitur in
+`app.js`/`styles.css`. Nur falls ein weiteres Dokument die Demo-Firma überlädt.
 
-**Nicht dupliziert (bewusst):** Beta **nicht** zusätzlich ins Vorstandsprotokoll oder in die
-`DECISION_CHAIN` einweben — das würde die in Zyklus 15 sorgfältig entdoppelte Alpha-Kette verwässern.
-Beta steht als eigenständiger, sauber belegter Vorgang neben Alpha.
+**Nicht dupliziert (bewusst):** Beta **nicht** in die `DECISION_CHAIN` einweben — das würde die in
+Zyklus 15 sorgfältig entdoppelte Alpha-Kette verwässern. Beta bleibt ein eigenständiger, sauber belegter
+Vorgang neben Alpha.
 
 ---
+
+## CEO-Review (Ende Zyklus 22)
+
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo zeigt jetzt nicht nur zwei Projekte
+  einzeln, sondern **beide auf einen Blick** in einer Ampel-Übersicht: Alpha ✓ im Zeitplan, Beta ⚠ unter
+  Terminrisiko, Portfolio-Volumen 32,6 Mio. € — die Vogelperspektive, die ein CEO/CFO zuerst sehen will.
+- *Versteht ein CFO den Nutzen?* — Ja, sofort: *„eine Frage, und ich sehe mein ganzes Projektportfolio —
+  inklusive dem, das gerade schwierig läuft."* Der ehrliche Schluss („1 von 2 termingefährdet, offen
+  gekennzeichnet") macht die Übersicht glaubwürdig statt beschönigt.
+- *Schwächste Stelle → nächster Zyklus:* Betas Change-Request (+0,4 Mio. €) ist die letzte **unbelegte**
+  Beta-Zahl — ein Nachtragsbeleg an Nordwind schließt die Lücke. Siehe oben.
 
 ## CEO-Review (Ende Zyklus 21)
 

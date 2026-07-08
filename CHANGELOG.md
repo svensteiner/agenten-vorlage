@@ -2,6 +2,40 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 22 — 2026-07-08 — Projekt-Portfolio: die Parallelität auf einen Blick 📊
+
+**„Welche Projekte laufen aktuell?" — beide Projekte in einer Ampel-Übersicht.** Nach Zyklus 21 trug die
+Demo zwei gleichwertig belegte Projekte (Alpha im Zeitplan, Beta verzögert), aber die Parallelität war
+nur über zwei getrennte Fragen erlebbar. Neu ist die **Vogelperspektive**: ein Portfolio-Szenario, das
+Alpha **und** Beta in **einer** Tabelle gegenüberstellt — der „mein ganzes Portfolio auf einen Blick"-
+Moment für einen CEO/CFO.
+
+### Neu
+- **Szenario `projekt-portfolio`** (Modul Berichte, Konfidenz 94 %): „Welche Projekte laufen aktuell?" —
+  Antwort mit **Ampel-Übersichtstabelle** (Projekt · Fortschritt · Budget · Termin · Status): **Alpha**
+  62 % · 24,0 Mio. € · Q4 2026 · **✓ im Zeitplan**; **Beta** 48 % · 8,6 Mio. € · Q4 2026 · **⚠ 3 Wo.
+  Verzug**. Portfolio-Volumen aggregiert **32,6 Mio. €** (18,8 verausgabt); ehrlicher Schluss **„1 von 2
+  Projekten termingefährdet — offen gekennzeichnet, nicht beschönigt."**
+- **Quellen = beide Statusberichte** (`projekt-alpha-status` 96 %, `projekt-beta-status` 96 %) plus
+  Vorstandsprotokoll (74 %) → der Konfidenz-Tooltip zeigt „3 Quellen · höchste Relevanz 96 % ·
+  Übereinstimmung hoch". `related` verlinkt beide Statusberichte + Eskalation + Protokoll.
+
+### Verzahnung / Reuse
+- **Rein additiv in `data.js`** — kein Code-Umbau: Reuse der bestehenden `<table>`-Antwortstruktur und der
+  **bereits vorhandenen** Statusberichte als Quellen. Als **erstes** Berichte-Modul-Tile und neu im Hero
+  (13 Tiles). In der Geführten Demo läuft Portfolio **direkt nach** Alpha + Beta → „im Zeitplan" und
+  „unter Terminrisiko" werden erst einzeln, dann in **einer Übersicht** gezeigt (16 Szenarien).
+
+### Verifikation
+- Deterministisch (Node-VM gegen `data.js`): **27 Docs**, **16 Szenarien** (war 15), **0 kaputte
+  Referenzen**, alle 3 Quell-Zitate **wortgleich** im jeweiligen Body, Relevanzen gültig; Matcher routet
+  „Welche Projekte laufen aktuell?" → `projekt-portfolio` **ohne Kollision** (Alpha/Beta lösen weiter
+  korrekt auf). Live im Browser: Hero-Tile + erstes Berichte-Tile vorhanden, Klick löst das Szenario auf,
+  Konfidenz-Kopf **94 %** + Herleitungs-Tooltip (3 Quellen, höchste Relevanz 96 %, Übereinstimmung hoch),
+  alle Tabellenzellen (Alpha ✓ / Beta ⚠) + Portfolio-Volumen **32,6 Mio. €** im DOM, **keine
+  Konsolenfehler**. (Voll-Streaming-HTML-Swap im Headless-Preview timer-gedrosselt — bekannte
+  Harness-Grenze; daher DOM/Daten-basiert verifiziert.)
+
 ## Zyklus 21 — 2026-07-08 — Projekt Beta: die Demo-Firma trägt mehrere parallele Vorhaben 🏗️
 
 **Ein zweites Projekt neben „Alpha" — bewusst unter Terminrisiko, ehrlich gekennzeichnet.** Der
