@@ -3,12 +3,12 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 88 % (Ende Zyklus 23)
+## Gesamtfortschritt: ≈ 89 % (Ende Zyklus 24)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 95 % | 19.0 |
-| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
+| Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 95 % | 19.0 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 96 % | 14.4 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
 | Demo-Firma & realistische Dokumente | 15 % | 93 % | 13.95 |
@@ -17,11 +17,23 @@
 | **Summe** | **100 %** | — | **≈ 95 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 88 %** berücksichtigt weiter Reserven bei optionaler Rest-Politur (Balken-
-> Animation). Zyklus 23 macht **jede Beta-Zahl belegbar** (Nachtragsangebot an Nordwind) und hebt
-> **Demo-Firma** (90 % → 93 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 89 %** berücksichtigt weiter Reserven bei optionaler Rest-Tiefe (Kunden-
+> Beauftragungsbeleg). Zyklus 24 schließt die **Bewegungs-Politur** (Konfidenz-/Relevanz-Balken laufen
+> mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 24 (2026-07-08) ≈ 89 %** — Konfidenz-/Relevanz-Balken laufen mit hoch (letzte Bewegungs-Politur):
+  Beim Einblenden einer Antwort läuft der Balken des Konfidenz-Meters jetzt — passend zum Zahlen-Count-up —
+  in ~760 ms (easeOutCubic) von 0 auf den Zielwert, statt hart zu springen; die Konfidenz-Zahl im Kopf
+  zählt zusätzlich mit hoch. Die drei Relevanz-Balken der Konfidenz-Herleitung (Popover) laufen beim ersten
+  Öffnen einmalig hoch (640 ms). Neuer Helfer `animateBar()` + `wireConfPopBars()` in `app.js` (analog
+  `animateCounts()`), drei Zeilen Wiring in `streamAnswer()`, ein `will-change: width`-Hinweis in
+  `styles.css`. `prefers-reduced-motion` oder Zielwert ≤ 0 → sofort auf den Endwert. Rein additiv;
+  `data.js`/`index.html` unverändert. Verifiziert: `node --check` ok, Wiring-Checks bestanden; live (DOM)
+  Konfidenz-Kopf 94 % (Zahl + Balken finit), Popover-mouseenter → 3 cp-Balken finit (75/96/92 %), keine
+  Konsolenfehler; reduced-motion setzt korrekt sofort den Endwert, Motion-Ramp startet nachweislich bei 0
+  (0,04 % am Frame-Start). (Chat-Experience 93 % → 95 %.)
 
 - **Zyklus 23 (2026-07-08) ≈ 88 %** — Nachtragsangebot an Nordwind: der Kunden-Änderungswunsch von
   Projekt Beta (**+0,4 Mio. €**, zusätzliche Prüfstation) ist jetzt ein Original-Beleg. Neues Dokument

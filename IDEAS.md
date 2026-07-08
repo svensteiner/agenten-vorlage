@@ -96,14 +96,16 @@
   76.000 € USt / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian — Reuse des Beleg-Skins. In
   `projekt-beta` als 3. Quelle (82 %) eingewoben. Belegt Betas letzte unbelegte Zahl („+0,4 Mio. €").
   Fast reiner `data.js`-Additiv + zwei winzige `app.js`-Ergänzungen (Skin-Eintrag + optionales `grossLabel`).
-- **Konfidenz-/Relevanz-Balken mit-animieren** — die Meter-Balken beim Einblenden von 0 auf den Zielwert
-  hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Rein additive Politur. *(Nächster Zyklus.)*
+- ✅ **Konfidenz-/Relevanz-Balken mit-animieren** — *erledigt in Zyklus 24*: der Meter-Balken läuft beim
+  Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert, die Konfidenz-Zahl zählt synchron mit, die
+  drei Popover-Relevanz-Balken laufen beim ersten Öffnen einmalig hoch. Helfer `animateBar()` +
+  `wireConfPopBars()` in `app.js` (analog `animateCounts()`), `will-change` in `styles.css`; rein additiv,
+  `prefers-reduced-motion` → sofort. Schließt die letzte sichtbare „springende" Kante im Antwortkopf.
+- **Kunden-Beauftragungsbeleg zu NA-2026-0037** — Nordwind bestätigt den Nachtrag schriftlich (Angebot →
+  Auftrag), 4. Quelle in `projekt-beta`. Reuse `paper-email`/`paper-beleg`. *(Nächster Zyklus, Tiefe.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*
-- **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
-  Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
-  nächste Feinpolitur.)*
 
 ## Mehr Substanz
 - ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +

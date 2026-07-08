@@ -5,18 +5,25 @@
 
 ## Offen (nach Priorität)
 
-1. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 auf den
-   Zielwert hochlaufen lassen (~760 ms, easeOutCubic), passend zum Zahlen-Count-up (Zyklus 8). Rein
-   additive Feinpolitur (`app.js`/`styles.css`), `prefers-reduced-motion` → sofort. → **oberstes Item
-   für den nächsten Zyklus** (letzte sichtbare „springende" Kante).
-2. **[P4] Kunden-Beauftragungsbeleg zu NA-2026-0037** — Nordwind bestätigt den Nachtrag schriftlich →
-   Zwei-Schritt-Vorgang. Dupliziert das in Zyklus 23 gebaute Motiv; erst nach der Balken-Politur erwägen.
-3. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
+1. **[P4] Kunden-Beauftragungsbeleg zu NA-2026-0037** — Nordwind bestätigt den Nachtrag schriftlich →
+   Angebot → Auftrag-Paar, beidseitig belegte +0,4 Mio. €. Reuse `paper-email`/`paper-beleg` (Typ
+   „Auftragsbestätigung"), Aussteller Nordwind (extIssuer), 4. Quelle in `projekt-beta`. → **oberstes Item
+   für den nächsten Zyklus** (schließt den einen offenen kaufmännischen Loop).
+2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
    Beats trennen oder einen aus der „Geführten Demo" nehmen. (Bewusst noch nicht getan, s. NEXT_STEPS.)
 
 ## Erledigt
+
+- **[Zyklus 24] Konfidenz-/Relevanz-Balken laufen mit hoch** — der Meter-Balken läuft beim Einblenden in
+  ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu springen; die Konfidenz-Zahl im Kopf zählt
+  synchron mit; die drei Popover-Relevanz-Balken laufen beim ersten Öffnen einmalig hoch (640 ms). Neuer
+  Helfer `animateBar()` + `wireConfPopBars()` in `app.js` (analog `animateCounts()`), ein `will-change`-
+  Hinweis in `styles.css`. `prefers-reduced-motion`/Zielwert ≤ 0 → sofort. Rein additiv; `data.js`/
+  `index.html` unverändert. Verifiziert: `node --check` ok, live (DOM) Konfidenz-Kopf 94 % (Zahl + Balken
+  finit), Popover 3 Balken finit (75/96/92 %), keine Konsolenfehler; reduced-motion setzt sofort, Motion-
+  Ramp startet nachweislich bei 0.
 
 - **[Zyklus 23] Nachtragsangebot an Nordwind (Betas letzte unbelegte Zahl)** — neues Dokument
   `nachtrag-nordwind-beta` (Typ „Nachtragsangebot", Berichte): NA-2026-0037 von Meridian an die Nordwind

@@ -408,6 +408,13 @@
     // Tempo-Signal sofort hochzählen — lässt das System „live" und schnell wirken.
     countUp($(".sp-val", card), secs, 1, " s");
 
+    // Konfidenz-Meter „lebendig": die Zahl zählt hoch UND der Balken läuft von 0
+    // auf den Zielwert mit (statt hart zu springen) — die letzte Bewegungs-Politur
+    // im Antwortkopf. prefers-reduced-motion → beide sofort auf den Endwert.
+    countUp($(".conf-meter > b", card), answer.confidence, 0, "%");
+    animateBar($(".conf-bar i", card), 760);
+    if (pop) wireConfPopBars(card);
+
     // Text zeichenweise „tippen" (HTML-sicher: wir tippen den fertigen HTML-String schrittweise)
     await typeHtml(textEl, answer.text);
     textEl.classList.remove("cursor");
@@ -1245,6 +1252,41 @@
         else { b.textContent = final; b.classList.remove("counting"); }
       })(performance.now());
     });
+  }
+
+  // Lässt einen Meter-Balken (ein <i> mit inline gesetzter Breite) von 0 auf
+  // seinen im DOM stehenden Zielwert hochlaufen — passend zum Zahlen-Count-up
+  // (countUp/animateCounts). Rein visuell; liest die Zielbreite aus `style.width`,
+  // setzt sie auf 0 und animiert per requestAnimationFrame (easeOutCubic, ~760 ms).
+  // prefers-reduced-motion → sofort auf den Endwert (kein Sprung-Artefakt).
+  function animateBar(fill, dur) {
+    if (!fill) return;
+    const final = fill.style.width || "0%";
+    const target = parseFloat(final) || 0;
+    if (reducedMotion() || target <= 0) { fill.style.width = final; return; }
+    const d = dur || 760, t0 = performance.now();
+    fill.style.width = "0%";
+    (function step(now) {
+      const pr = Math.min(1, (now - t0) / d);
+      const eased = 1 - Math.pow(1 - pr, 3);
+      fill.style.width = (target * eased).toFixed(2) + "%";
+      if (pr < 1) requestAnimationFrame(step);
+      else fill.style.width = final;
+    })(performance.now());
+  }
+
+  // Relevanz-Balken in der Konfidenz-Herleitung (Popover) laufen beim ERSTEN
+  // Öffnen des Popovers einmalig hoch — analog zum Konfidenz-Balken im Kopf.
+  function wireConfPopBars(card) {
+    const conf = $(".conf.has-pop", card);
+    if (!conf) return;
+    let done = false;
+    const run = () => {
+      if (done) return; done = true;
+      conf.querySelectorAll(".cp-bar i").forEach((f) => animateBar(f, 640));
+    };
+    conf.addEventListener("mouseenter", run);
+    conf.addEventListener("focus", run, true);
   }
 
   // ---------- Helfer ----------

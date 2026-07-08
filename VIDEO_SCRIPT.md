@@ -178,5 +178,7 @@ Starker Schlussframe.
   Flag `aistudio.onboarded.v1`). Zum Wieder-Anzeigen im Browser den Storage leeren oder ein
   privates/Inkognito-Fenster nutzen. Der Primär-Button startet direkt die Geführte Demo.
 - Streaming-Tempo ist bewusst gesetzt (wirkt „lebendig", nicht träge).
+- Beim Einblenden läuft jetzt auch das **Konfidenz-Meter** (Zahl **und** Balken) von 0 hoch — in einem
+  echten Browser ohne „Bewegung reduzieren" aufnehmen, sonst zeigt es sofort den Endwert (Zyklus 24).
 - Cursor ruhig führen; nach dem Klick auf eine Quelle 2 Sek. auf dem Highlight verweilen.
 - Details der Kameraführung: [VIDEO_SCENES.md](VIDEO_SCENES.md).

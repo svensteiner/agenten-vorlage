@@ -6,15 +6,16 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 23 — **Nachtragsangebot an Nordwind (`nachtrag-nordwind-beta`)**: der
-  Kunden-Änderungswunsch von Projekt Beta (**+0,4 Mio. €** für eine zusätzliche Prüfstation) ist jetzt ein
-  Original-Beleg (Typ „Nachtragsangebot", Modul Berichte) mit Positionstabelle (250k + 110k + 40k =
-  **400.000 € netto** / USt 76.000 € / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian.
-  In das `projekt-beta`-Szenario als 3. Quelle (82 %) eingewoben. Fast reiner `data.js`-Additiv-Schritt +
-  zwei winzige, rückwärtskompatible `app.js`-Ergänzungen (Skin-Eintrag + optionales `grossLabel`).
+- **Letzter Zyklus:** Zyklus 24 — **Konfidenz-/Relevanz-Balken laufen mit hoch** (letzte Bewegungs-Politur):
+  Beim Einblenden einer Antwort läuft der **Balken** des Konfidenz-Meters jetzt — passend zum Zahlen-
+  Count-up — **von 0 auf den Zielwert** (~760 ms, easeOutCubic) statt hart zu springen; die Zahl im Kopf
+  zählt zusätzlich mit hoch. Die **Relevanz-Balken** in der Konfidenz-Herleitung (Popover) laufen beim
+  ersten Öffnen einmalig hoch. Rein additiv: ein Helfer `animateBar()` + `wireConfPopBars()` in `app.js`,
+  ein `will-change`-Hinweis in `styles.css`. `prefers-reduced-motion` → sofort auf den Endwert.
+  `data.js`/`index.html` unverändert.
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 88 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 89 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -33,6 +34,36 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 24 gebaut wurde
+
+**Konfidenz-/Relevanz-Balken laufen mit hoch — die letzte fehlende Bewegungs-Politur.** Nach Zyklus 23
+waren Breite *und* Belegtiefe rund; der von NEXT_STEPS selbst als „die EINE wichtigste Verbesserung"
+markierte Rest war reine **Video-Feinpolitur**: Beim Einblenden einer Antwort zählte die Konfidenz-Zahl
+zwar hoch, aber der **Balken** des Konfidenz-Meters (und die Relevanz-Balken der Quellen) sprangen sofort
+auf ihren Endwert — im Video sichtbar als „Springen" statt „Wachsen". Neu:
+- **Helfer `animateBar(fill, dur)`** (nur `app.js`, analog `animateCounts()`/`countUp()`): liest die
+  Zielbreite aus dem inline gesetzten `style.width`, setzt sie auf `0%` und läuft per
+  `requestAnimationFrame` **easeOutCubic** in ~**760 ms** auf den Zielwert hoch. `prefers-reduced-motion`
+  **oder** Zielwert ≤ 0 → sofort auf den Endwert (kein Sprung-Artefakt, keine leere Animation).
+- **Im Antwortkopf verdrahtet:** in `streamAnswer()` läuft der Konfidenz-Balken (`\.conf-bar i`) beim
+  Einblenden mit hoch; zusätzlich zählt die **Konfidenz-Zahl** im Kopf (`.conf-meter > b`) über den
+  bestehenden `countUp()` mit — Zahl und Balken bewegen sich synchron („passend zum Zahlen-Count-up").
+- **Relevanz-Balken im Popover:** neuer `wireConfPopBars(card)` lässt die drei `cp-bar`-Balken der
+  Konfidenz-Herleitung beim **ersten** Öffnen des Popovers (Hover/Focus) einmalig hochlaufen (640 ms);
+  danach bleiben sie stehen. Nur bei Antworten mit Quellen (Popover vorhanden) verdrahtet.
+- **Rein additiv:** `app.js` (`animateBar()` + `wireConfPopBars()` + drei Zeilen in `streamAnswer()`) und
+  `styles.css` (ein `will-change: width`-Hinweis auf `.conf-bar i, .cp-bar i` für flüssige Compositor-
+  Animation). **Kein neues Dokument, kein Datenpfad-Umbau**; `data.js`/`index.html` unverändert. Bestehende
+  Zähl-Animationen (Tempo, Kernzahlen) unberührt.
+- **Verifikation:** `node --check app.js` ok; Wiring-Checks bestanden. Live im Browser gegen reale Daten
+  (DOM): Klick „Welche Projekte laufen aktuell?" → Konfidenz-Kopf **94 %** (Zahl + Balken 94 %), Balken-
+  Endwert **finit** (kein NaN); Popover per `mouseenter` geöffnet → **3 cp-Balken** mit finiten Breiten
+  (75/96/92 %); **keine Konsolenfehler**. Reduced-motion-Pfad (headless meldet `reduce`) setzt korrekt
+  **sofort** den Endwert — verifiziert (94 % ohne Ramp). Der Motion-Pfad wurde durch `matchMedia`-Override
+  angestoßen und zeigte einen echten Zwischenwert **0,04 %** am Frame-Start (Ramp beginnt bei 0) — die
+  Vollanimation ist im Headless-Preview timer-/rAF-gedrosselt (bekannte Harness-Grenze; Screenshot-Capture
+  ebenfalls instabil), daher DOM/Daten-basiert verifiziert.
 
 ## Was in Zyklus 23 gebaut wurde
 
@@ -612,28 +643,40 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Das Konfidenz-/Relevanz-Meter mit-animieren — die letzte fehlende Bewegungs-Politur.** Nach Zyklus 23
-sind Breite **und** Belegtiefe rund (16 Szenarien, **28 Dokumente** über 6 Ressorts; jede Beta-Zahl jetzt
-belegt). Der stärkste verbleibende additive Schritt ist reine **Video-Feinpolitur**: Beim Einblenden einer
-Antwort zählt heute die Konfidenz-Zahl bereits hoch (Zyklus 8), aber der **Balken** des Konfidenz-Meters
-(und die Relevanz-Balken der Quellen) springen sofort auf ihren Endwert. Sie sollten — passend zum
-Zahlen-Count-up — **von 0 auf den Zielwert hochlaufen** (~760 ms, easeOutCubic, `prefers-reduced-motion` →
-sofort). Rein additiv in `app.js` (ein kleiner Helfer analog `animateCounts()`) + `styles.css` (eine
-`transition`/Keyframe auf die Balkenbreite). Kein neues Dokument, kein Datenpfad-Umbau — hebt **Chat-
-Experience / Video-Reife** um die letzte sichtbare Kante.
+**Kunden-Beauftragungsbeleg — den Nachtrag an Nordwind zu einem echten Zwei-Schritt-Vorgang schließen.**
+Nach Zyklus 24 ist die **Bewegungs-Politur vollständig** (Zahlen *und* Balken laufen hoch; Blöcke blenden
+gestaffelt ein). Der stärkste verbleibende Tiefen-Schritt: Beta hat mit `nachtrag-nordwind-beta` das
+**Angebot** über 476.000 € brutto (Meridian → Nordwind), aber die **Kunden-Seite** fehlt noch — ein kurzer
+**Beauftragungs-/Bestätigungsbeleg** (Nordwind bestätigt NA-2026-0037 schriftlich, z. B. „Bestellung/
+Freigabe zum Nachtrag") würde den Vorgang zu einem sauberen **Angebot → Auftrag**-Paar schließen und die
++0,4 Mio. € beidseitig belegen. Reuse des bestehenden `paper-email`- **oder** `paper-beleg`-Skins (Typ
+„Auftragsbestätigung"), Aussteller = **Nordwind** (extIssuer), als **4. Quelle** ins `projekt-beta`-
+Szenario. Rein additiv in `data.js`; höchstens ein `DOC_SKINS`-Eintrag in `app.js`.
 
-*Warum?* Die inhaltliche Substanz steht (Alpha-Kette, Reklamation, DSGVO, Portfolio, Beta jetzt lückenlos
-belegt). Ein weiteres Dokument brächte kaum noch Grenznutzen und riskiert, die Demo-Firma zu überladen.
-Die Balken-Animation ist die **eine** Stelle, an der die Antwort im Video noch sichtbar „springt" statt zu
-„wachsen" — ein kleiner, risikoarmer Politur-Gewinn direkt im Bild.
+*Warum?* Die Bewegung ist jetzt rund, die Breite steht (16 Szenarien, 28 Dokumente über 6 Ressorts). Der
+größte Rest-Grenznutzen liegt darin, den **einen offenen kaufmännischen Loop** (Angebot ohne sichtbare
+Annahme) zu schließen — genau die Nachweis-Vollständigkeit, die ein CFO im Video honoriert („nicht nur
+angeboten, sondern beauftragt").
 
-**Alternative (Tiefe):** ein **Kunden-Beauftragungsbeleg** (Nordwind bestätigt NA-2026-0037 schriftlich)
-würde den Nachtrag zu einem echten Zwei-Schritt-Vorgang machen — aber das dupliziert das gerade gebaute
-Motiv und bringt weniger als die Balken-Politur. Erst nach der Politur erwägen.
+**Alternative (Politur):** die **Balken-Ramp im Video real sichtbar machen** — im Headless-Preview ist die
+Vollanimation rAF-gedrosselt; in einem echten Browser läuft sie. Kein Code-Bedarf, nur ein Hinweis fürs
+Aufnahme-Setup (echten Chrome ohne reduced-motion nutzen). In VIDEO_SCENES.md notiert.
 
 **Nicht dupliziert (bewusst):** Beta bleibt **außerhalb** der `DECISION_CHAIN` (Alphas entdoppelte Kette).
 
 ---
+
+## CEO-Review (Ende Zyklus 24)
+
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Antwort „wächst" jetzt souverän auf: das
+  Tempo-Signal, die Kernzahlen, die Konfidenz-Zahl **und** ihr Balken laufen synchron hoch, die Blöcke
+  blenden gestaffelt ein. Im Video wirkt das System nicht mehr wie ein Sprung ins fertige Ergebnis, sondern
+  wie ein Assistent, der die Antwort in Echtzeit belegt.
+- *Versteht ein CFO den Nutzen?* — Der Nutzen war schon da; dieser Zyklus poliert die **Wahrnehmung**: ein
+  live hochlaufendes Konfidenz-Meter liest sich als „das System *rechnet* seine Sicherheit aus", nicht als
+  vorgefertigte Zahl. Kleiner Hebel, aber genau die Kante, die ein Verkaufsvideo professionell macht.
+- *Schwächste Stelle → nächster Zyklus:* inhaltlich der eine offene kaufmännische Loop — Betas Nachtrag ist
+  **angeboten**, aber die **Kunden-Beauftragung** fehlt noch als Beleg. Siehe oben.
 
 ## CEO-Review (Ende Zyklus 23)
 

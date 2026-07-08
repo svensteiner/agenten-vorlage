@@ -2,6 +2,35 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 24 — 2026-07-08 — Konfidenz-/Relevanz-Balken laufen mit hoch 📈
+
+**Die Antwort „springt" nicht mehr — sie wächst.** Beim Einblenden zählten Tempo-Signal und Kernzahlen
+schon hoch, aber der **Balken** des Konfidenz-Meters sprang sofort auf seinen Endwert. Jetzt läuft er —
+passend zum Zahlen-Count-up — sichtbar hoch; die Konfidenz-Zahl im Kopf zählt zusätzlich mit. Die letzte
+sichtbare Bewegungs-Kante im Antwortkopf, geschlossen.
+
+### Neu
+- **Konfidenz-Balken hochlaufend:** beim Einblenden einer Antwort läuft der Meter-Balken in ~**760 ms**
+  (easeOutCubic) von **0 auf den Zielwert** statt hart zu springen. Die **Konfidenz-Zahl** im Kopf zählt
+  über den bestehenden `countUp()` synchron mit hoch.
+- **Relevanz-Balken im Popover:** die drei Balken der Konfidenz-Herleitung laufen beim **ersten** Öffnen
+  des Popovers (Hover/Focus) einmalig hoch (640 ms); danach bleiben sie stehen.
+
+### Verzahnung / Reuse
+- **Rein additiv:** neuer Helfer `animateBar(fill, dur)` (analog `animateCounts()`/`countUp()`) +
+  `wireConfPopBars(card)` in `app.js`, drei Zeilen Wiring in `streamAnswer()`, ein `will-change: width`-
+  Hinweis auf `.conf-bar i, .cp-bar i` in `styles.css`. Kein neues Dokument, kein Datenpfad-Umbau;
+  `data.js`/`index.html` unverändert. Bestehende Zähl-Animationen unberührt.
+- **Barrierefrei:** `prefers-reduced-motion` **oder** Zielwert ≤ 0 → sofort auf den Endwert (kein
+  Sprung-Artefakt, keine Leer-Animation).
+
+### Verifikation
+- `node --check app.js` ok, Wiring-Checks bestanden. Live (DOM gegen reale Daten): Konfidenz-Kopf **94 %**
+  (Zahl + Balken finit, kein NaN), Popover-`mouseenter` → **3 cp-Balken** finit (75/96/92 %), **keine
+  Konsolenfehler**. Reduced-motion-Pfad (headless meldet `reduce`) setzt korrekt **sofort** den Endwert;
+  Motion-Ramp startet nachweislich bei 0 (Zwischenwert 0,04 % am Frame-Start). Vollanimation im Headless-
+  Preview rAF-gedrosselt, Screenshot-Capture instabil — bekannte Harness-Grenzen, daher DOM/Daten-basiert.
+
 ## Zyklus 23 — 2026-07-08 — Nachtragsangebot an Nordwind: Betas letzte Zahl wird belegt 🧾
 
 **Der Kunden-Änderungswunsch (+0,4 Mio. €) ist jetzt ein Original-Beleg, keine Behauptung mehr.** Nach

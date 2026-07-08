@@ -58,6 +58,11 @@
 - **Tempo-Signal & Zahlen-Count-up** laufen bei jeder Antwort automatisch (Antwortzeit zählt
   hoch, fett gesetzte Kernzahlen zählen hoch). Bei „Bewegung reduzieren" im System zeigt die
   App sofort die Endwerte — für das Video also **kein** reduced-motion aktivieren.
+- **Konfidenz-/Relevanz-Balken (Zyklus 24):** im Antwortkopf läuft jetzt auch der **Balken** des
+  Konfidenz-Meters (und die Konfidenz-Zahl) beim Einblenden von 0 auf den Zielwert hoch (~760 ms);
+  hovert man die Prozentzahl, laufen im Herleitungs-Popover die drei Relevanz-Balken einmalig hoch.
+  Läuft automatisch, **nur ohne** „Bewegung reduzieren" — daher unbedingt in einem **echten Browser
+  (Chrome, reduced-motion aus)** aufnehmen; Headless-/Vorschau-Umgebungen drosseln die Ramp.
 - **Bewegungs-Politur (Zyklus 11):** die Belege unter jeder Antwort (Nachvollziehbarkeit →
   Quellen → Verwandte → Folgefragen → Aktionen) blenden **gestaffelt** ein (die Antwort „wächst"
   von oben nach unten), Modulwechsel blenden weich über. Läuft automatisch — ebenfalls **nur ohne**
