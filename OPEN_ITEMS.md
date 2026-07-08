@@ -5,14 +5,19 @@
 
 ## Offen (nach Priorität)
 
-1. **[P3] Weitere Szenarien** (HR-Onboarding, Lieferanten-Risiko) + passende Dokumente in
-   `data.js`. (Die „Geführte Demo" nimmt neue Szenarien automatisch auf.) → hebt Demo-Firma
-   & Szenarien-Breite, der derzeit schwächste Fortschrittsbereich.
-2. **[P4] Export-/„An Vorstand senden"-Button** für eine Antwort inkl. Quellen.
-3. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
+1. **[P4] Export-/„An Vorstand senden"-Aktion** pro Antwort inkl. Quellen (Handlungs-Abschluss der
+   Story; reine UI-Bestätigung/Toast, keine echte Mail). → oberstes Item für den nächsten Zyklus.
+2. **[P4] Sanfte Übergänge** zwischen Modulwechseln/Antwortblöcken (Fade/Slide) — optionale
    Rest-Politur.
+3. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
 
 ## Erledigt
+
+- **[Zyklus 9] Ressort-Breite — HR-Onboarding & Lieferanten-/Klumpenrisiko** — zwei neue Szenarien
+  + Dokumente (`onboarding-checkliste-2026`, `lieferanten-risikoanalyse-2026`). Onboarding-
+  Checkliste-Antwort (Konfidenz 96 %) und Lieferanten-Konzentrations-Tabelle (Donau 23,9 % +
+  Single-Source-Warnung, Konfidenz 94 %), verzahnt mit der Stahl-/Ferro-Nord-Story. Rein additiv in
+  `data.js`; Hero 6 → 8, „Geführte Demo" 9 → 11. Live verifiziert (0 kaputte Referenzen).
 
 - **[Zyklus 8] Video-Politur — Tempo/Souveränität** — „⚡ Beantwortet in X,X s"-Signal im
   Antwortkopf (zählt hoch, deterministisch 1,2–2,6 s) + dezentes Hochzählen der fett gesetzten

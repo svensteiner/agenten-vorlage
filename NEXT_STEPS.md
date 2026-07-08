@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 8 — **Video-Politur: „Beantwortet in X,X s"-Signal +
-  Zahlen-Hochzählen** (siehe unten).
+- **Letzter Zyklus:** Zyklus 9 — **Ressort-Breite: HR-Onboarding & Lieferanten-/Klumpenrisiko**
+  (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 64 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 67 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,29 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 9 gebaut wurde
+
+**Ressort-Breite: zwei neue Szenarien + Dokumente (HR-Onboarding & Lieferanten-/Klumpenrisiko).**
+Der schwächste Fortschrittsbereich war inhaltliche Breite — jetzt sprechen zwei zusätzliche
+Entscheider-Ressorts direkt an:
+- **Szenario „Onboarding, erster Tag"** (Modul HR, Konfidenz 96 %): Antwort als Schritt-für-
+  Schritt-Checkliste (Empfang, Werksausweis, IT-Zugänge, **Pflicht-Sicherheitsunterweisung**,
+  Pflichtdokumente, Pate). Neues Doc **`onboarding-checkliste-2026`** (Typ „Checkliste", 8 Absätze,
+  4 Highlights) als Primärquelle (98 %), Querverweis **Reiserichtlinie 2026** (68 %).
+- **Szenario „Lieferanten-/Klumpenrisiko"** (Modul Finanzen, Konfidenz 94 %): Antwort mit
+  **Konzentrations-Tabelle** (Stahlwerk Donau AG **23,9 %** · Siemens 11,6 % · Robotik Bayern
+  8,2 %) und **Single-Source-Warnung** für Baustahl S355; Gegenmaßnahme Ferro Nord. Neues Doc
+  **`lieferanten-risikoanalyse-2026`** (Typ „Risikobericht") mit `lineItems`-Tabelle „Top-
+  Lieferanten 2025" (5 Positionen, 268 Mio. € Gesamtvolumen). Quellen: Risikoanalyse (97 %) +
+  Vorstandsprotokoll (80 %) + Rahmenvertrag (72 %).
+- **Bewusst mit der bestehenden Story verzahnt:** größter Lieferant = Stahlwerk Donau (Materialkosten/
+  Rechnung), Zweitquelle Ferro Nord = derselbe Vorstandsbeschluss wie im Strategie-/Governance-
+  Szenario. Einkaufsvolumen plausibel zum Umsatz 612 Mio. €.
+- **Rein additiv in `data.js`** — kein Code-Umbau. Hero-Vorschläge 6 → 8, „Geführte Demo" nimmt
+  beide automatisch auf (jetzt **11 Szenarien**). Live verifiziert: 0 kaputte Referenzen, beide
+  Hero-Kacheln, Tabelle mit korrektem Kopf + 3 Datenzeilen, alle Quell-Links lösen auf echte
+  Dokumente auf, keine Konsolenfehler.
 
 ## Was in Zyklus 8 gebaut wurde
 
@@ -169,34 +192,33 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Zwei neue Szenarien + passende Dokumente (HR-Onboarding & Lieferanten-Risiko).** Die Demo ist
-jetzt breit, tief, geführt **und** poliert (Tempo-Signal, Count-up). Der schwächste
-Fortschrittsbereich ist jetzt **Demo-Firma & Szenarien-Breite** (62 % / 74 %). Der stärkste
-Hebel: **1–2 neue, glaubwürdige Szenarien**, die zusätzliche Entscheider-Ressorts abdecken —
-z. B. **HR-Onboarding** („Was muss ein neuer Mitarbeiter am ersten Tag erledigen?") und
-**Lieferanten-/Klumpen-Risiko** („Wie abhängig sind wir von unserem größten Lieferanten?").
-Beide brauchen je 1–2 neue Dokumente in `data.js` (z. B. Onboarding-Checkliste, Lieferanten-
-Übersicht) plus einen Szenario-Eintrag mit Antwort/Quellen/Konfidenz — die „Geführte Demo"
-nimmt sie **automatisch** auf. Rein additiv in `data.js`, kein Code-Umbau.
+**Export-/„An Vorstand senden"-Aktion pro Antwort (sichtbarer Nutzungs-Abschluss).** Inhalt,
+Tiefe, Vertrauen, Tempo **und** Ressort-Breite stehen jetzt (11 Szenarien, 6 Ressorts). Der
+stärkste verbleibende Video-Hebel ist der **Abschluss einer Antwort mit einer Handlung**: ein
+dezenter **„⤓ Als Briefing exportieren"/„An Vorstand senden"**-Button im Antwortkopf oder unter
+den Folgefragen, der eine kurze Bestätigungs-Animation („Briefing an den Vorstand vorbereitet")
+zeigt. Das schließt die Demo-Erzählung „Frage → belegte Antwort → **Ergebnis, das ich weiterreiche**"
+und gibt dem Video einen starken Schlussmoment. Rein additiv in `app.js`/`styles.css`; keine echten
+Mails, nur eine überzeugende UI-Bestätigung (Toast/Modal). `data.js` unverändert.
 
-*Warum diese?* Alle Wow-Mechaniken (Nutzen, Quellen, Tiefe, Vertrauen, Tempo) stehen. Was den
-Gesamtfortschritt jetzt am meisten hebt, ist **inhaltliche Breite** — mehr Ressorts = mehr
-Entscheider im Publikum, die „das ist genau mein Problem" denken. Risikoarm, weil datengetrieben.
+*Warum diese?* Die Demo beantwortet Fragen exzellent — aber ein Entscheider fragt „und dann?".
+Ein sichtbarer Handlungs-Abschluss macht aus der Auskunft ein **Arbeitsergebnis** und ist der
+letzte fehlende Baustein der Nutzer-Story. Risikoarm (reine UI), hoher Video-Effekt.
 
 **Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(Export-/„An Vorstand senden"-Button, sanfte Übergänge).
+(sanfte Übergänge, weitere Beleg-Skins, ein weiteres Ressort z. B. IT/Datenschutz).
 
 ---
 
-## CEO-Review (Ende Zyklus 8)
+## CEO-Review (Ende Zyklus 9)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo wirkt jetzt auch **schnell**:
-  „⚡ Beantwortet in 1,9 s" und hochzählende Kernzahlen geben ihr das „live & souverän"-Gefühl,
-  das ein Verkaufsvideo trägt.
-- *Erzeugt es Aufregung?* — Ja: Zahlen, die beim Erscheinen hochzählen, lesen sich wie ein
-  Live-System, nicht wie eine statische Folie — subtil, aber wirkungsvoll im Bewegtbild.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja, unverändert stark: Antwort + Quellen + Konfidenz +
-  jetzt sichtbares Tempo, alles ohne ein Wort über Technik.
-- *Schwächste Stelle → nächster Zyklus:* **Inhaltliche Breite.** Mechanik und Politur sind rund;
-  am meisten fehlt noch Ressort-Breite (HR-Onboarding, Lieferanten-Risiko) für noch mehr
-  Entscheider-Resonanz.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo trifft jetzt **sechs Ressorts**
+  (HR, Finanzen, Audit, Verträge, Berichte/ESG, Governance) — in fast jedem Publikum sitzt jemand,
+  der seine eigene Frage wiedererkennt.
+- *Erzeugt es Aufregung?* — Ja: „Wie abhängig sind wir von unserem größten Lieferanten?" mit
+  sofortiger Konzentrations-Tabelle und Single-Source-Warnung ist ein starker CFO-/Einkaufs-Moment;
+  Onboarding spricht HR und jeden neuen Mitarbeiter an.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: konkrete Zahlen (23,9 % Klumpenrisiko), belegte Quellen,
+  klare Gegenmaßnahme — ohne ein Wort über Technik.
+- *Schwächste Stelle → nächster Zyklus:* **Handlungs-Abschluss.** Antworten sind exzellent, aber
+  es fehlt der sichtbare „und dann?"-Moment (Export/„An Vorstand senden") als Schluss der Story.

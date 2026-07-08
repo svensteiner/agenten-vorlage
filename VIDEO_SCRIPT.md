@@ -63,6 +63,18 @@ erneuerbarer Stromanteil, Fazit „erreichbar, erfordert Beschleunigung". Quelle
 *Energie- & Emissionskennzahlen 2025* kurz öffnen.
 **Punkt (für CEO/Aufsichtsrat):** Vorstandsthemen in Sekunden belegt — nicht nur Finanzen.
 
+## Szene 5b — Breite über alle Ressorts (optional, +0:35)
+**Aktion:** Zwei kurze Fragen hintereinander: *„Wie abhängig sind wir von unserem größten
+Lieferanten?"* und *„Was muss ein neuer Mitarbeiter am ersten Tag erledigen?"*
+**Sprecher:** „Und es endet nicht bei der Finanzabteilung. Der Einkauf sieht in Sekunden sein
+Klumpenrisiko — ein Lieferant, fast ein Viertel des Volumens, ein Werkstoff aus einer einzigen
+Quelle. Und die Personalabteilung? Dieselbe Frage, dieselbe belegte Antwort."
+**Bild:** Erst die **Konzentrations-Tabelle** (*Stahlwerk Donau AG **23,9 %*** zählt hoch) mit
+**Single-Source-Warnung** und Gegenmaßnahme *Ferro Nord*; dann die **Onboarding-Checkliste** mit
+der hervorgehobenen **Pflicht-Sicherheitsunterweisung**.
+**Punkt (für die ganze Geschäftsleitung):** ein System — **jedes Ressort** findet sein eigenes
+Problem wieder.
+
 ## Szene 6 — „Sieht dann jeder alles?" (2:30–2:55)
 **Aktion:** Fragen: *„Was hat der Vorstand für die Wachstumsstrategie beschlossen?"* → nach der
 Antwort auf den roten Block **„2 weitere Treffer für Sie nicht freigegeben"** halten; einen
@@ -89,8 +101,8 @@ vertraulich", nur „Vorstand").
 ---
 
 ## Aufnahme-Hinweise
-- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 9
-  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 9").
+- **Empfohlen: „Geführte Demo" nutzen.** Der **▶-Button oben rechts** spielt alle 11
+  Szenarien hands-free ab (Frage tippt sich selbst, Antwort streamt, Fortschritt „n / 11").
   Das liefert eine perfekt gleichmäßige Aufnahme ohne Mausbewegungen/Tippfehler — Sprecher
   nur drüberlegen. **Tab beim Aufnehmen im Vordergrund halten** (Hintergrund-Tabs drosseln
   die Tipp-/Streaming-Geschwindigkeit im Browser).

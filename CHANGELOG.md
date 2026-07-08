@@ -2,6 +2,45 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 9 — 2026-07-08 — Ressort-Breite: HR-Onboarding & Lieferanten-/Klumpenrisiko 🧭
+
+**Zwei neue, glaubwürdige Szenarien holen zwei zusätzliche Entscheider-Ressorts ins Publikum.**
+Die Demo deckte bisher Finanzen, Audit, Verträge, Berichte/ESG und Governance ab. Jetzt kommen
+**HR-Onboarding** („Was muss ein neuer Mitarbeiter am ersten Tag erledigen?") und
+**Beschaffungs-/Risikoanalyse** („Wie abhängig sind wir von unserem größten Lieferanten?") dazu —
+zwei Fragen, bei denen HR-Leitung und CFO/Einkauf sofort „das ist genau mein Problem" denken.
+Die „Geführte Demo" nimmt beide **automatisch** auf (jetzt 11 Szenarien).
+
+### Neu (rein additiv in `data.js` — kein Code-Umbau)
+- **Szenario „Onboarding, erster Tag"** (Modul HR): Antwort als Schritt-für-Schritt-Checkliste
+  (Empfang, Werksausweis, IT-Zugänge, **Pflicht-Sicherheitsunterweisung**, Pflichtdokumente,
+  Pate). Quellen: neue **Onboarding-Checkliste** (98 %) + Querverweis **Reiserichtlinie 2026**
+  (68 %). Konfidenz 96 %.
+- **Szenario „Lieferanten-/Klumpenrisiko"** (Modul Finanzen): Antwort mit **Konzentrations-
+  Tabelle** (Stahlwerk Donau AG 23,9 % · Siemens 11,6 % · Robotik Bayern 8,2 %) und der
+  kritischen **Single-Source-Warnung** für Baustahl S355; Gegenmaßnahme Ferro Nord (Vorstands-
+  beschluss). Quellen: neue **Lieferanten-Risikoanalyse 2026** (97 %) + Vorstandsprotokoll (80 %)
+  + Rahmenvertrag (72 %). Konfidenz 94 %.
+- **Neues Doc `onboarding-checkliste-2026`** (Typ „Checkliste", HR) — 8 Absätze, 4 Highlights.
+- **Neues Doc `lieferanten-risikoanalyse-2026`** (Typ „Risikobericht", Finanzen) — mit
+  `lineItems`-Tabelle „Top-Lieferanten nach Einkaufsvolumen 2025" (5 Positionen, Anteile).
+- **Wiring:** Hero-Vorschläge 6 → 8, Modul HR (2) und Finanzen (3) ergänzt.
+
+### Konsistenz (bewusst mit bestehender Story verzahnt)
+- Größter Lieferant = **Stahlwerk Donau AG** (bereits Materialkosten-/Rechnungs-Story); Zweit-
+  quelle **Ferro Nord** = derselbe Vorstandsbeschluss wie im Governance-/Strategie-Szenario.
+- Einkaufsvolumen 268 Mio. € plausibel zum Umsatz 612 Mio. €; Donau 64 Mio. € = 23,9 %.
+
+### Funktioniert (live im Browser verifiziert, throttle-immun text-basiert)
+- Datenintegrität: 11 Szenarien, 8 Hero-Kacheln, **0 kaputte Quell-/Related-Referenzen**.
+- Beide Hero-Kacheln erscheinen; Antwortkopf mit Tempo-Signal „2,3 s" + Konfidenz 94 % rendert.
+- Finale Antwort-HTML deterministisch geparst: Lieferanten-Tabelle mit Kopf
+  `[Lieferant · Volumen 2025 · Anteil]` + 3 Datenzeilen; Onboarding als Liste. Alle Quell-/
+  Related-IDs lösen auf echte Dokumenttitel auf (Viewer-Links funktionieren). Keine Konsolenfehler.
+- Hinweis: Live-Streaming-Endzustand im Hintergrund-Tab durch Timer-Throttling (`setTimeout`)
+  nicht abfilmbar — Verifikation daher über finalen Render-Pfad, identisch zu den 8 bewährten
+  Szenarien.
+
 ## Zyklus 8 — 2026-07-08 — Video-Politur: „Beantwortet in X,X s"-Signal + Zahlen-Hochzählen ⚡
 
 **Die Demo fühlt sich jetzt schnell und „live" an — die letzte Politur fürs Verkaufsvideo.**

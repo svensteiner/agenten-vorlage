@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 64 % (Ende Zyklus 8)
+## Gesamtfortschritt: ≈ 67 % (Ende Zyklus 9)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,18 +11,25 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 86 % | 17.2 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 88 % | 13.2 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 89 % | 13.35 |
-| Demo-Firma & realistische Dokumente | 15 % | 62 % | 9.3 |
-| Demo-Szenarien (Breite & Tiefe) | 10 % | 74 % | 7.4 |
+| Demo-Firma & realistische Dokumente | 15 % | 70 % | 10.5 |
+| Demo-Szenarien (Breite & Tiefe) | 10 % | 82 % | 8.2 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 94 % | 4.7 |
-| **Summe** | **100 %** | — | **≈ 84 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 86 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 64 %** berücksichtigt, dass inhaltliche Breite (mehr Ressorts/Dokumente)
-> noch fehlt. Zyklus 8 hebt vor allem **Video-Reife** (86 % → 94 %, Tempo-Signal + Count-up) und
-> **Chat-Experience** (84 % → 86 %, animierte Antwort). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 67 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und dem
+> Handlungs-Abschluss (Export). Zyklus 9 hebt vor allem **Demo-Szenarien** (74 % → 82 %, zwei
+> neue Ressorts) und **Demo-Firma** (62 % → 70 %, zwei neue Dokumente). Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 9 (2026-07-08) ≈ 67 %** — Ressort-Breite: zwei neue Szenarien + Dokumente. „Onboarding,
+  erster Tag" (HR, Checkliste-Antwort, Konfidenz 96 %) mit neuem Doc `onboarding-checkliste-2026`;
+  „Lieferanten-/Klumpenrisiko" (Finanzen, Konzentrations-Tabelle Donau 23,9 % + Single-Source-
+  Warnung, Konfidenz 94 %) mit neuem Doc `lieferanten-risikoanalyse-2026` (`lineItems`, 5 Positionen).
+  Bewusst mit der Stahl-Story verzahnt (Donau/Ferro Nord). Rein additiv in `data.js`; Hero 6 → 8,
+  „Geführte Demo" 9 → 11. Live verifiziert (0 kaputte Referenzen, Tabelle korrekt, Quell-Links lösen
+  auf). (Szenarien 74 % → 82 %, Demo-Firma 62 % → 70 %.)
 - **Zyklus 8 (2026-07-08) ≈ 64 %** — Video-Politur: „⚡ Beantwortet in X,X s"-Signal im
   Antwortkopf (zählt hoch, deterministisch 1,2–2,6 s) + dezentes Hochzählen der fett gesetzten
   Kernzahlen (`animateCounts()`/`parseGermanNumber()`, easeOutCubic ~760 ms). Sicher gegen
@@ -66,6 +73,7 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Weitere Szenarien (HR-Onboarding, Lieferanten-Risiko) + Dokumente → Demo-Firma & Szenarien
-   (derzeit schwächster Bereich).
-2. Export-/„An Vorstand senden"-Button + sanfte Übergänge → Video-Reife.
+1. Export-/„An Vorstand senden"-Aktion pro Antwort (Handlungs-Abschluss der Story) → Chat-Experience
+   & Video-Reife.
+2. Sanfte Übergänge + weitere Beleg-Skins → Viewer/Video-Reife.
+3. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.

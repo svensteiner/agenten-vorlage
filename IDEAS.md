@@ -28,10 +28,14 @@
   Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum neuen Zahlen-Count-up. *(Optional.)*
 
 ## Mehr Substanz
-- 2–3 weitere Szenarien: HR-Onboarding-Frage, Lieferanten-Risiko, Investitions-/Cashflow-Frage.
+- ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +
+  Dokumente (Onboarding-Checkliste, Lieferanten-Risikoanalyse mit Konzentrations-Tabelle),
+  verzahnt mit der Stahl-/Ferro-Nord-Story. „Geführte Demo" 9 → 11.
+- Weiteres Szenario: Investitions-/Cashflow-Frage; optional ein IT-/Datenschutz-Ressort.
 - Pro Dokument ein Miniatur-Thumbnail in der Bibliothek (SVG-Icon je Typ).
-- Eine „Diese Antwort exportieren"-Schaltfläche (kopiert Antwort + Quellen).
-- Zeitstempel/„Antwort in 1,2 s" als kleines Performance-Signal.
+- ⏳ **„Diese Antwort exportieren / An Vorstand senden"** — jetzt oberstes offenes Item (Handlungs-
+  Abschluss der Story). Reine UI-Bestätigung, keine echte Mail.
+- ✅ Zeitstempel/„Antwort in X s" — *erledigt in Zyklus 8* (Tempo-Signal im Antwortkopf).
 
 ## Vertrauen sichtbar machen
 - ✅ Ein bewusst „gesperrtes" Dokument + „für Sie nicht freigegeben"-Signal — *erledigt in
