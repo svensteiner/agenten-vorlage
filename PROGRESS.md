@@ -39,6 +39,15 @@
 
 ## Verlauf
 
+- **Phase B · Aufnahme-Bereitschaft re-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-Zyklus:
+  Phase B ist auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C), der Feature-Freeze verbietet neue
+  Arbeit. Statt zu churnen die einzig freeze-konforme Handlung: **bestätigen, dass die Demo unverändert
+  aufnahmebereit ist.** `node --check` (app.js + data.js) ok; Ground-Truth deterministisch (Node-VM):
+  **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs
+  ohne Lücke mit **Money-Shot als Finale**, „stahl" = **10 Treffer**; `grep`: keine veralteten Zähl-Reste
+  (16/27/28) in den Video-Dateien. **Keine Regression, `prototype/` unverändert.** Fortschritt bleibt
+  ≈ 92 % (ein Verifikations-Pass hebt kein blockiertes Gate). **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase B · Skript/Shotlist-Faktenkorrektur (2026-07-09) ≈ 92 %** — die Video-Handover-Dateien nannten
   Zahlen, die nicht mehr zum Prototyp passen (ein nicht-technischer Aufnehmer hätte sie für einen Fehler
   gehalten). Gegen die Live-Daten geprüft und korrigiert: **Dokumentenzahl 27/28 → 29** (Such-Beat/

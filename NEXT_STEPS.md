@@ -27,6 +27,13 @@ was er anmerkt — nichts anderes. Der zuvor als optional notierte Rest (Skript/
 6er-Kern-Demo angleichen) ist mit diesem Zyklus **erledigt** — alle Aufnahme-Dateien sind jetzt faktentreu.
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
+> **Aufnahme-Bereitschaft am 2026-07-09 re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
+> Änderung im `prototype/`):** `node --check` ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien ·
+> 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs mit Money-Shot als Finale, „stahl"
+> = 10 Treffer; `grep`: keine veralteten Zähl-Reste in den Video-Dateien. **Keine Regression — die Demo
+> ist unverändert aufnahmebereit.** Der nächste automatische Zyklus bleibt ohne Svens Rückmeldung ein
+> Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen, sonst → Phase C (Pilot-Kit).
+
 ## Was in diesem Zyklus gebaut wurde (Skript/Shotlist-Faktenkorrektur)
 
 **Die Video-Handover-Dateien auf den realen Prototyp angeglichen.** Skript und Shotlist nannten Zahlen, die

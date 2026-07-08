@@ -2,6 +2,22 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Aufnahme-Bereitschaft re-verifiziert (Wartepunkt, keine Änderung)
+
+**Reiner Verifikations-Zyklus.** Phase B ist blockiert auf **Svens Aufnahme + Freigabe** (Gate B→C); der
+Feature-Freeze verbietet neue Arbeit. Die einzige freeze-konforme Handlung ist, die Voraussetzung des
+Blockers zu sichern: **dass die Demo unverändert aufnahmebereit ist.** Bestätigt — keine Regression.
+
+### Verifikation (keine Dateiänderung im `prototype/`)
+- `node --check` für `app.js` **und** `data.js`: syntaktisch fehlerfrei.
+- Ground-Truth deterministisch (Node-VM gegen `data.js` + `DEMO_ORDER` aus `app.js`): **29 Dokumente**,
+  **17 Szenarien**, **3 E-Mails**, **2 gesperrt**, **0 kaputte Referenzen** (sources/related/withheld/
+  chain/DECISION_CHAIN); `DEMO_ORDER` = **6** IDs, **keine fehlt**, **Money-Shot als Finale**; „stahl"-
+  Suche = **10 Treffer**.
+- `grep` über die Video-Handover-Dateien: **keine** veralteten Zähl-Referenzen (16/27/28) mehr.
+- **Ergebnis:** Alle Werte stimmen mit Skript, Shotlist und Checkliste überein → Sven kann ohne
+  Abweichung zwischen Datei und Bildschirm aufnehmen.
+
 ## Phase B — 2026-07-09 — Skript & Shotlist auf die reale Demo angeglichen (Faktenkorrektur)
 
 **Die Video-Handover-Dateien nannten Zahlen, die nicht mehr zum Prototyp passen** — ein nicht-technischer
