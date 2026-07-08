@@ -27,6 +27,16 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 **Bild:** Antwort streamt ein, Konfidenz 98 %, klare Regeln, eine Quelle.
 **Punkt:** Sofort, präzise, mit Beleg.
 
+## Szene 1b — „Was steckt eigentlich alles drin?" (optional, +0:15)
+**Aktion:** **Strg + K** drücken (oder Sidebar **„🔍 Alles durchsuchen"**) → das Modal zeigt
+**„23 Dokumente im Wissensspeicher"**; langsam **„stahl"** tippen → die Liste filtert live auf
+**8 Treffer quer über Finanzen und Audit**; einen Treffer anklicken → der Beleg öffnet im Viewer.
+**Sprecher:** „Und wie viel liegt eigentlich schon im Haus? Ein Tastendruck durchsucht alles auf
+einmal — ein Stichwort, und Sie sehen sofort, wo überall es vorkommt."
+**Bild:** Command-Palette wie in modernen Enterprise-Tools; Suchbegriff gelb hervorgehoben, Modul-Tag
+je Zeile. **Punkt:** die schiere **Menge** des erschlossenen Wissens — greifbar in einem Bild.
+**Hinweis Aufnahme:** läuft **nicht** in der Geführten Demo → separat aufnehmen (Demo dazu stoppen).
+
 ## Szene 2 — Der Geschäftswert (0:45–1:20)
 **Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"* → danach **zwei** E-Mail-Quellen
 nacheinander öffnen: *Preisanpassung Baustahl S355* (Lieferant → Einkauf) und *WG: Preisanpassung —

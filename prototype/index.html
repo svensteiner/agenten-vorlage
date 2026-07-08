@@ -17,6 +17,11 @@
           <div class="sub">Wissensplattform</div>
         </div>
       </div>
+      <button class="search-trigger" id="searchTrigger" title="Alle Dokumente durchsuchen (Strg + K)">
+        <span class="si">🔍</span>
+        <span class="st">Alles durchsuchen</span>
+        <kbd class="sk">Strg K</kbd>
+      </button>
       <nav id="nav"></nav>
       <div class="company-card" id="companyCard"></div>
     </aside>
@@ -62,6 +67,25 @@
         <div class="vnote">🔒 Hervorgehobene Absätze = für die Antwort verwendete Belegstellen</div>
       </div>
     </main>
+
+    <!-- Globale Suche über den gesamten Wissensspeicher (Command-Palette) -->
+    <div class="search-ov" id="searchOverlay" hidden>
+      <div class="search-panel" role="dialog" aria-label="Alle Dokumente durchsuchen">
+        <div class="sp-head">
+          <span class="sp-ic">🔍</span>
+          <input id="searchInput" type="text" autocomplete="off" spellcheck="false"
+                 aria-label="Suchbegriff"
+                 placeholder="Alle Dokumente durchsuchen — Titel, Typ, Inhalt, Autor …" />
+          <button class="sp-close" id="searchClose" title="Schließen (Esc)">Esc</button>
+        </div>
+        <div class="sp-meta" id="searchCount"></div>
+        <div class="sp-results" id="searchResults"></div>
+        <div class="sp-foot">
+          <span>Durchsucht den gesamten Wissensspeicher der <b id="searchCompany"></b></span>
+          <span class="sp-hint">↵ öffnet den ersten Treffer</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Onboarding-Coachmark (nur beim ersten Start) -->
     <div class="onboard" id="onboard" hidden>

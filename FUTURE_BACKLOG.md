@@ -6,6 +6,9 @@
 ## Enterprise-Datenplattform (Phase 2)
 - Echte Konnektoren zu SharePoint, SAP, Fileserver, Exchange (Ingestion-Pipeline).
 - Echtes RAG: Embeddings, Vektor-Index, hybride Retrieval-Pipeline.
+- **Semantische globale Suche:** Die Command-Palette (Zyklus 17) filtert clientseitig über Titel/Typ/
+  Snippet/Autor. Phase 2 könnte sie an echte Volltext-/Vektor-Suche über die angebundenen Systeme
+  anbinden (der `matchDocs()`/`renderSearchResults()`-Pfad ist der vorgesehene UI-Andockpunkt).
 - **Echte Provenance-/Lineage-Graphen:** Die Demo inszeniert die Entscheidungskette (Zyklus 14,
   `answer.chain`) noch handkuratiert. Phase 2 könnte die Kette **automatisch** aus Dokument-Metadaten
   (E-Mail-Threads, Referenzen, Zeitstempel) rekonstruieren — das `answer.chain`-Feld ist der

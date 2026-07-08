@@ -48,6 +48,7 @@
     wireComposer();
     wireViewer();
     wireDemo();
+    wireSearch();
     wireOnboarding();
   }
 
@@ -914,6 +915,142 @@
     $("#vClose").onclick = closeViewer;
     $("#overlay").onclick = closeViewer;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeViewer(); });
+  }
+
+  // ---------- Globale Suche (Command-Palette) ----------
+  // Ein sichtbarer „Was steckt alles drin?"-Moment: durchsucht den GESAMTEN
+  // Wissensspeicher (alle Module) live nach Titel/Typ/Snippet/Autor. Leeres Feld
+  // zeigt das komplette Inventar — macht die schiere Menge greifbar.
+  const search = { open: false, results: [], sel: 0 };
+
+  function moduleLabel(key) {
+    const m = MODULES.find((x) => x.key === key);
+    return m ? m.label : key;
+  }
+
+  function wireSearch() {
+    const co = $("#searchCompany");
+    if (co) co.textContent = COMPANY.name;
+
+    $("#searchTrigger").onclick = openSearch;
+    $("#searchClose").onclick = closeSearch;
+    $("#searchOverlay").addEventListener("click", (e) => { if (e.target.id === "searchOverlay") closeSearch(); });
+
+    const input = $("#searchInput");
+    input.addEventListener("input", () => renderSearchResults(input.value));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); moveSel(1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); moveSel(-1); }
+      else if (e.key === "Enter") { e.preventDefault(); openSelected(); }
+    });
+
+    // Strg/⌘ + K öffnet/schließt die Suche von überall.
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        search.open ? closeSearch() : openSearch();
+      } else if (e.key === "Escape" && search.open) {
+        closeSearch();
+      }
+    });
+  }
+
+  function openSearch() {
+    if (demo.running) return; // während der Geführten Demo nicht stören
+    search.open = true;
+    $("#searchOverlay").hidden = false;
+    const input = $("#searchInput");
+    input.value = "";
+    renderSearchResults("");
+    input.focus();
+  }
+
+  function closeSearch() {
+    if (!search.open) return;
+    search.open = false;
+    $("#searchOverlay").hidden = true;
+  }
+
+  // Filtert alle Dokumente über einen Haystack aus Titel/Typ/Snippet/Autor/Modul.
+  function matchDocs(q) {
+    const all = Object.values(DOCS);
+    const query = q.trim().toLowerCase();
+    if (!query) return all;
+    return all.filter((d) => {
+      const hay = [d.title, d.type, d.snippet, d.author, moduleLabel(d.module)]
+        .filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(query);
+    });
+  }
+
+  function renderSearchResults(q) {
+    const box = $("#searchResults");
+    const results = matchDocs(q);
+    search.results = results;
+    search.sel = 0;
+    const total = Object.keys(DOCS).length;
+
+    const meta = $("#searchCount");
+    const query = q.trim();
+    meta.innerHTML = query
+      ? `<b>${results.length}</b> von ${total} Dokumenten für „${escapeHtml(query)}"`
+      : `<b>${total}</b> Dokumente im Wissensspeicher — tippen zum Filtern`;
+
+    box.innerHTML = "";
+    if (!results.length) {
+      box.appendChild(el("div", "sp-empty", `Kein Dokument passt zu „${escapeHtml(query)}".`));
+      return;
+    }
+    results.forEach((d, i) => {
+      const row = el("div", d.locked ? "sp-row locked" : "sp-row");
+      if (i === 0) row.classList.add("sel");
+      const icon = d.locked ? "🔒" : (d.type === "E-Mail" ? "✉" : "▤");
+      const side = d.locked
+        ? `<span class="sp-lock">🔒 Kein Zugriff</span><span class="sp-type">${escapeHtml(d.type)}</span>`
+        : `<span class="sp-tag">${escapeHtml(moduleLabel(d.module))}</span><span class="sp-type">${escapeHtml(d.type)}</span>`;
+      row.innerHTML =
+        `<span class="ficon">${icon}</span>` +
+        `<div class="sp-main"><div class="sp-t">${hlMatch(d.title, query)}</div>` +
+        `<div class="sp-s">${hlMatch(d.snippet || "", query)}</div></div>` +
+        `<div class="sp-side">${side}</div>`;
+      row.onclick = () => { closeSearch(); openViewer(d.id); };
+      row.addEventListener("mouseenter", () => setSel(i));
+      box.appendChild(row);
+    });
+  }
+
+  function setSel(i) {
+    const rows = $("#searchResults").children;
+    if (!rows.length) return;
+    search.sel = Math.max(0, Math.min(i, rows.length - 1));
+    for (let k = 0; k < rows.length; k++) rows[k].classList.toggle("sel", k === search.sel);
+  }
+
+  function moveSel(delta) {
+    const rows = $("#searchResults").children;
+    if (!rows.length || rows[0].classList.contains("sp-empty")) return;
+    setSel(search.sel + delta);
+    rows[search.sel].scrollIntoView({ block: "nearest" });
+  }
+
+  function openSelected() {
+    const d = search.results[search.sel];
+    if (!d) return;
+    closeSearch();
+    openViewer(d.id);
+  }
+
+  // Escaped den Text und hebt Treffer des Suchbegriffs mit <mark> hervor (sicher).
+  function hlMatch(text, q) {
+    if (!q) return escapeHtml(text);
+    const lower = text.toLowerCase(), ql = q.toLowerCase();
+    let out = "", i = 0, idx;
+    while ((idx = lower.indexOf(ql, i)) !== -1) {
+      out += escapeHtml(text.slice(i, idx));
+      out += "<mark>" + escapeHtml(text.slice(idx, idx + ql.length)) + "</mark>";
+      i = idx + ql.length;
+    }
+    return out + escapeHtml(text.slice(i));
   }
 
   // ---------- Composer ----------

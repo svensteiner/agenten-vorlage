@@ -55,10 +55,15 @@
   Meldeprozess, je ✓ / ⚠ 1 offen) + ehrlicher Auflagen-Offenlegung; zwei neue Dokumente
   (Datenschutz-Audit 2025 mit BESTANDEN-Stempel, Verzeichnis von Verarbeitungstätigkeiten Art. 30).
   Rein additiv in `data.js`. Öffnet ein Vorstands-relevantes Compliance-Ressort.
-- **Globale Live-Suche über die Bibliothek** — Suchfeld im Bibliotheks-Header, das beim Tippen live
-  über Titel/Typ/Snippet aller Dokumente filtert (Modul-Tag + Sofort-Öffnen). Macht die Menge des
-  erschlossenen Wissens sichtbar → starker Video-Beat. Reuse Doc-Karten + `openViewer()`. *(Nächster
-  Zyklus — Breite-Moment.)*
+- ✅ **Globale Live-Suche (Command-Palette)** — *erledigt in Zyklus 17*: Sidebar-Auslöser
+  „🔍 Alles durchsuchen" (+ Strg/⌘ + K) öffnet ein zentriertes Modal, das beim Tippen live über alle
+  23 Dokumente filtert (Titel/Typ/Snippet/Autor/Modul); leeres Feld = komplettes Inventar, Live-Zähler
+  „X von 23", Suchbegriff gelb markiert, ↑/↓+Enter-Navigation, Klick öffnet den Beleg im Viewer.
+  Gesperrte Docs erscheinen ohne Inhalts-Leak. Rein additiv. Macht die schiere Menge des Wissens
+  sichtbar.
+- **Such-Beat in die Geführte Demo einweben** — die Command-Palette als automatischer Opener der
+  Vorführung (Palette öffnen, „stahl" tippen, Treffer quer über Ressorts zeigen, Beleg öffnen, schließen).
+  Reuse `openSearch()`/`renderSearchResults()`; kleine Choreografie in `startDemo()`. *(Nächster Zyklus.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

@@ -6,12 +6,12 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 16 — **DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort)**: neues
-  Szenario „Sind wir DSGVO-konform?" (Modul Audit) mit Status-Tabelle + zwei neuen Dokumenten
-  (Datenschutz-Audit 2025, Verzeichnis von Verarbeitungstätigkeiten) (siehe unten).
+- **Letzter Zyklus:** Zyklus 17 — **Globale Live-Suche (Command-Palette)**: „🔍 Alles durchsuchen" in
+  der Sidebar (+ Strg/⌘ + K) öffnet ein Modal, das live über alle 23 Dokumente filtert (Titel/Typ/
+  Snippet/Autor/Modul) — der „Was steckt alles drin?"-Moment (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 79 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 81 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -30,6 +30,37 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 17 gebaut wurde
+
+**Globale Live-Suche über den gesamten Wissensspeicher (Command-Palette) — der lang offene
+„Was steckt alles drin?"-Moment.** Die Demo hatte Breite (13 Szenarien, 23 Dokumente über 6 Ressorts),
+aber der Betrachter *fühlte* die schiere **Menge** des erschlossenen Wissens noch nicht. Neu:
+- **Sidebar-Auslöser „🔍 Alles durchsuchen"** (mit sichtbarem `Strg K`-Kürzel) direkt unter dem Logo;
+  **Strg/⌘ + K** öffnet/schließt die Suche von überall, **Esc** schließt, Klick auf den Backdrop schließt.
+- **Zentriertes Command-Palette-Modal** (Notion/Linear/Stripe-Anmutung): großes Suchfeld mit Autofocus,
+  Live-Zähler und scrollbare Trefferliste. **Leeres Feld = komplettes Inventar** („23 Dokumente im
+  Wissensspeicher — tippen zum Filtern"); beim Tippen filtert es **live** über
+  **Titel/Typ/Snippet/Autor/Modul aller Dokumente** (Zähler „X von 23 für ‚…'").
+- **Treffer-Zeilen** mit Datei-Icon (✉ für E-Mail), **Modul-Tag + Typ** rechts, Snippet einzeilig,
+  und **gelb hervorgehobenem Suchbegriff** (`<mark>`, über eine sichere escape-dann-markieren-Helferin
+  `hlMatch()`). **Tastatur:** ↑/↓ bewegt die Auswahl, **Enter** öffnet den markierten Treffer; Maus-Hover
+  markiert ebenfalls. Klick/Enter schließt die Suche und öffnet den Beleg im **bestehenden Viewer**.
+- **Governance bleibt konsistent:** gesperrte Dokumente erscheinen als Treffer (mit „🔒 Kein Zugriff"),
+  öffnen aber die **„Zugriff verweigert"-Ansicht** (`paper-locked`, kein Inhalts-Leak). Während der
+  Geführten Demo ist der Auslöser bewusst inaktiv (`if (demo.running) return`), damit nichts kollidiert.
+- **Cross-Modul belegt:** eine „stahl"-Suche liefert Treffer aus **Finanzen und Audit** — sichtbar wird,
+  dass ein Begriff quer durchs ganze Haus greift.
+- **Rein additiv:** `index.html` (Auslöser + Overlay-Markup), `styles.css` (`.search-trigger`,
+  `.search-ov`/`.search-panel`/`.sp-*`, reduced-motion-Guard) und `app.js` (`wireSearch()`/`openSearch()`/
+  `closeSearch()`/`matchDocs()`/`renderSearchResults()`/`hlMatch()` u. a.); `data.js` und der Antwortpfad
+  unverändert. Deterministisch verifiziert (Node-VM gegen `data.js`): **23 Dokumente**, Filter exakt
+  (""→23, „stahl"→8, „vertrag"→4, „dsgvo"→2, „donau"→6, kein-Treffer→0), **0 Feld-Fehler**, 2 gesperrte
+  Docs. Live im Browser gegen die realen Daten geprüft: Auslöser **und** Strg+K öffnen/schließen, 23
+  Zeilen bei leerem Feld + korrekter Zähler, `<mark>`-Highlight vorhanden, ↓+Enter öffnet den Viewer
+  (Titel „Bestellung PO-2026-0512" korrekt), gesperrter Treffer öffnet `paper-locked` ohne Leak, **keine
+  Konsolenfehler**. (Screenshot-Capture im Harness instabil — bekannte Grenze; daher DOM/CSS-basiert
+  verifiziert.)
 
 ## Was in Zyklus 16 gebaut wurde
 
@@ -389,19 +420,20 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Globale Suche über die ganze Bibliothek — ein „Alles durchsuchen"-Feld, das Firmenwissen sichtbar
-macht.** Die Demo hat jetzt **13 Szenarien über 6 Ressorts** und **23 Dokumente**; die Breite ist stark.
-Der größte verbleibende Wow-Hebel für die Story „mein Unternehmen besitzt die Information bereits — dieses
-System macht sie endlich nutzbar" ist ein **sichtbarer Suchmoment**: ein Suchfeld in der Bibliothek
-(oder ein „Was steckt alles drin?"-Overlay), das beim Tippen **live über Titel/Typ/Snippet aller
-Dokumente filtert** und Treffer mit Modul-Tag + Sofort-Öffnen zeigt. Reuse: bestehende Doc-Karten-
-Renderer und `openViewer()`; rein additiv (kleiner Filter-Helfer in `app.js` + ein Input im Bibliotheks-
-Header). Das zeigt physisch, wie viel Material „im Haus" liegt — starker Video-Beat vor der ersten Frage.
+**Den Suchmoment in die Geführte Demo einweben — die Command-Palette als eigener Video-Beat.** Die
+globale Suche steht (Zyklus 17), läuft aber nur, wenn der Betrachter sie selbst auslöst — in der
+hands-free „Geführten Demo" taucht sie noch nicht auf. Der stärkste nächste Schritt ist ein **kurzer
+Such-Beat als Opener der Vorführung**: bevor die erste Frage getippt wird, öffnet die Demo automatisch
+die Palette, tippt sichtbar z. B. **„stahl"**, zeigt **8 Treffer quer über Finanzen + Audit**, öffnet
+kurz einen Beleg und schließt wieder — *dann* startet die Frage-Sequenz. Das macht die schiere **Menge**
+des erschlossenen Wissens zum ersten Bild des Videos („mein Unternehmen besitzt das alles bereits").
+Reuse: `openSearch()`/`renderSearchResults()`/`openViewer()` sind vorhanden; nötig ist nur eine kleine
+Choreografie in `startDemo()` (Palette öffnen, Query tippen, Pause, schließen) hinter dem bestehenden
+`token`-Mechanismus. Rein additiv, `data.js` unverändert.
 
-*Warum?* Nach Zyklus 16 ist die **Breite** gut abgedeckt (Finanzen, Audit/Compliance, HR, Verträge,
-Berichte, ESG, Datenschutz). Was der Betrachter noch nicht *fühlt*, ist die schiere **Menge** des
-erschlossenen Wissens. Eine Live-Suche über 23 Dokumente macht den „endlich nutzbar"-Kern greifbar,
-ohne ein neues Ressort zu brauchen.
+*Warum?* Zyklus 17 hat den Such-**Mechanismus** gebaut; sein Wert entfaltet sich im Video aber erst,
+wenn er **ohne Zutun des Betrachters** vorgeführt wird. Ein 6–8-Sekunden-Beat verwandelt ein Feature in
+einen Wow-Moment.
 
 **Alternative, falls Tiefe vor Breite:** die Entscheidungskette auch an die **`materialkosten`-Antwort**
 hängen (dasselbe `answer.chain` = `DECISION_CHAIN`). Achtung Video-Reihenfolge: dann erschiene die
@@ -411,17 +443,17 @@ die natürliche „warum? → woher genau?"-Abfolge ist, wurde bewusst **nicht**
 
 ---
 
-## CEO-Review (Ende Zyklus 16)
+## CEO-Review (Ende Zyklus 17)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo deckt jetzt sichtbar das ganze Haus ab:
-  Finanzen, Audit, HR, Verträge, Berichte, ESG — **und neu Datenschutz/DSGVO**. Ein CFO sieht sofort,
-  dass „AI Studio" nicht nur eine Finanz-Story ist.
-- *Erzeugt es Aufregung?* — Ja: Die DSGVO-Antwort liefert eine **Status-Tabelle auf einen Blick** —
-  „konform, zwei Auflagen bis 31.03.2026, 0 Datenpannen". Genau die Zeile, die ein Geschäftsführer vor
-  einer Aufsichtsrats- oder Auditsitzung braucht — in Sekunden statt Tagen.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja: Die Antwort **beschönigt nicht** (zwei offene Auflagen offen
-  ausgewiesen), das schafft Vertrauen. Der grüne **BESTANDEN**-Stempel auf dem echten Audit-Dokument
-  macht die Aussage physisch greifbar.
-- *Schwächste Stelle → nächster Zyklus:* Die **Breite** ist jetzt stark; was fehlt, ist ein sichtbarer
-  Moment für die schiere **Menge** des erschlossenen Wissens. Eine **Live-Suche über alle 23 Dokumente**
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Mit Strg+K öffnet sich jetzt eine
+  Command-Palette wie in Linear/Notion, die den **gesamten** Wissensspeicher durchsucht. Das signalisiert
+  einem Entscheider sofort: „AI Studio kennt *alles* im Haus, nicht nur ein paar kuratierte Fragen."
+- *Erzeugt es Aufregung?* — Ja: Das leere Suchfeld zeigt **„23 Dokumente im Wissensspeicher"**, und ein
+  einziges Wort („stahl") sammelt in Millisekunden Treffer **quer durch Finanzen und Audit** mit
+  hervorgehobenem Suchbegriff. Genau das „endlich nutzbar"-Gefühl, um das sich die ganze Story dreht.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: Man tippt ein Stichwort, sieht sofort *wo überall* es
+  vorkommt, klickt und liest den Originalbeleg. Gesperrte Dokumente tauchen zwar auf, bleiben aber
+  **verschlossen** — die Vertrauens-Story bleibt intakt.
+- *Schwächste Stelle → nächster Zyklus:* Das Feature ist stark, wird aber in der **hands-free
+  Vorführung** noch nicht gezeigt. Es als **automatischen Such-Beat in die Geführte Demo** aufzunehmen
   ist der größte verbleibende Wow-Hebel — siehe oben.

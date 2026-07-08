@@ -2,6 +2,33 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 17 — 2026-07-08 — Globale Live-Suche (Command-Palette) 🔍
+
+**Der „Was steckt alles drin?"-Moment.** Ein Sidebar-Auslöser „🔍 Alles durchsuchen" (+ Strg/⌘ + K)
+öffnet ein zentriertes Modal, das beim Tippen live über **alle 23 Dokumente** filtert. Rein additiv in
+`index.html`/`styles.css`/`app.js`; `data.js` und der Antwortpfad unverändert.
+
+### Neu
+- **Sidebar-Auslöser „🔍 Alles durchsuchen"** unter dem Logo (mit `Strg K`-Kürzel-Badge); **Strg/⌘ + K**
+  öffnet/schließt von überall, **Esc** und Backdrop-Klick schließen.
+- **Command-Palette-Modal** (Notion/Linear-Anmutung): Autofocus-Suchfeld, Live-Zähler, scrollbare
+  Trefferliste. **Leeres Feld = komplettes Inventar** („23 Dokumente im Wissensspeicher"); Tippen filtert
+  **live** über Titel/Typ/Snippet/Autor/Modul (Zähler „X von 23 für ‚…'").
+- **Treffer-Zeilen** mit Icon (✉ bei E-Mail), **Modul-Tag + Typ**, einzeiligem Snippet und **gelb
+  markiertem Suchbegriff** (`<mark>` via sicherer `hlMatch()`). ↑/↓ + **Enter** öffnen den markierten
+  Treffer, Klick öffnet den Beleg im bestehenden Viewer.
+- **Governance konsistent:** gesperrte Dokumente erscheinen (mit „🔒 Kein Zugriff"), öffnen aber die
+  „Zugriff verweigert"-Ansicht ohne Inhalts-Leak. Während der Geführten Demo ist der Auslöser inaktiv.
+
+### Verifikation (deterministisch via Node-VM + Browser-DOM/CSS)
+- **23 Dokumente**; Filter exakt: ""→23, „stahl"→8, „vertrag"→4, „dsgvo"→2, „donau"→6, kein-Treffer→0;
+  **0 Feld-Fehler**, 2 gesperrte Docs.
+- Live: Auslöser + Strg+K öffnen/schließen, 23 Zeilen bei leerem Feld + korrekter Zähler, `<mark>`-
+  Highlight, ↓+Enter öffnet Viewer (Titel korrekt), gesperrter Treffer → `paper-locked` ohne Leak,
+  eine „stahl"-Suche zeigt Treffer aus Finanzen **und** Audit; **keine Konsolenfehler**.
+  `prefers-reduced-motion` respektiert. (Screenshot-Capture im Harness instabil — DOM/CSS-basiert
+  verifiziert.)
+
 ## Zyklus 16 — 2026-07-08 — DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort) 🛡
 
 **Die Demo öffnet ein neues Entscheider-Ressort: Datenschutz/Compliance.** Bisher finanzlastig, deckt

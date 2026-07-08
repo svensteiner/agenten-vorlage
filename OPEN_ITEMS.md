@@ -5,10 +5,11 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Globale Live-Suche über die Bibliothek** — Suchfeld im Bibliotheks-Header, das beim Tippen
-   live über Titel/Typ/Snippet aller 23 Dokumente filtert (Modul-Tag + Sofort-Öffnen via `openViewer()`).
-   Rein additiv (kleiner Filter-Helfer in `app.js` + ein Input). Macht die Menge des erschlossenen
-   Wissens sichtbar → starker Video-Beat. → oberstes Item für den nächsten Zyklus.
+1. **[P5] Such-Beat in die Geführte Demo einweben** — die Command-Palette (Zyklus 17) läuft nur bei
+   manuellem Auslösen; sie fehlt in der hands-free Vorführung. Als **Opener**: Palette automatisch öffnen,
+   sichtbar „stahl" tippen, 8 Treffer quer über Finanzen+Audit zeigen, kurz einen Beleg öffnen, schließen
+   — *dann* die Frage-Sequenz. Reuse `openSearch()`/`renderSearchResults()`/`openViewer()`; kleine
+   Choreografie in `startDemo()` hinter dem `token`-Mechanismus. → oberstes Item für den nächsten Zyklus.
 2. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
@@ -17,6 +18,15 @@
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 17] Globale Live-Suche (Command-Palette)** — Sidebar-Auslöser „🔍 Alles durchsuchen"
+  (+ Strg/⌘ + K) öffnet ein zentriertes Modal, das live über **alle 23 Dokumente** filtert
+  (Titel/Typ/Snippet/Autor/Modul); leeres Feld zeigt das komplette Inventar, Live-Zähler „X von 23".
+  Treffer mit Modul-Tag + Typ, gelb markiertem Suchbegriff (`<mark>`), ↑/↓+Enter-Navigation, Klick öffnet
+  den Beleg im bestehenden Viewer. Gesperrte Docs erscheinen, öffnen aber „Zugriff verweigert" ohne Leak.
+  Rein additiv in `index.html`/`styles.css`/`app.js`. Deterministisch + live verifiziert (23 Docs,
+  Filter exakt, `<mark>`-Highlight, ↓+Enter öffnet Viewer, gesperrter Treffer ohne Leak, keine
+  Konsolenfehler).
 
 - **[Zyklus 16] DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort)** — neues Szenario
   `datenschutz-audit` (Modul Audit, 93 %) „Sind wir DSGVO-konform?" mit Status-Tabelle (5 Prüffelder,

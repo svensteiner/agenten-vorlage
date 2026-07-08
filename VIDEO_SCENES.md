@@ -25,6 +25,12 @@
 | 10 | 0:05 | (Standbild) Seitenleiste + Logo | Fade-out |
 
 ## Alternative B-Roll (optional)
+- **Globale Suche (Command-Palette) — starker Opener:** **Strg + K** drücken (oder in der Sidebar
+  **„🔍 Alles durchsuchen"** klicken) → das Modal zeigt zuerst **„23 Dokumente im Wissensspeicher"**.
+  Langsam **„stahl"** tippen → die Liste filtert live auf **8 Treffer quer über Finanzen und Audit**
+  (Suchbegriff gelb hervorgehoben, Modul-Tag je Zeile). Einen Treffer anklicken → der Originalbeleg
+  öffnet im Viewer. **Punkt: „Ein Stichwort — und man sieht sofort, wo überall im Haus es vorkommt."**
+  (Läuft aktuell nicht in der Geführten Demo → separat aufnehmen.)
 - Modul **Verträge** öffnen → Dokumentenbibliothek als Raster zeigen (Breite des Wissens).
 - Modul **Einstellungen** → „Datenquellen" (SharePoint, SAP, Fileserver … ● verbunden)
   — untermauert „Ihr Unternehmen besitzt die Daten bereits".
@@ -70,4 +76,8 @@
   weiterreichen"** mit **„✉ An Vorstand senden"** / **„⤓ Als Briefing exportieren"**. Der Klick
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
   Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
+- **Globale Suche (Zyklus 17):** **Strg/⌘ + K** öffnet/schließt die Command-Palette von überall (Esc
+  schließt). Leeres Feld = komplettes Inventar (Zähler „23 Dokumente"); Tippen filtert live über alle
+  Dokumente, ↑/↓ + Enter öffnen den markierten Treffer. Der Auslöser ist während der Geführten Demo
+  bewusst inaktiv — für den Such-Beat die Demo also **nicht** laufen lassen (separat aufnehmen).
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

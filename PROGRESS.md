@@ -3,11 +3,11 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 79 % (Ende Zyklus 16)
+## Gesamtfortschritt: ≈ 81 % (Ende Zyklus 17)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
-| App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
+| App-Grundgerüst (Layout, Navigation, Design) | 20 % | 95 % | 19.0 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 94 % | 14.1 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
@@ -17,12 +17,30 @@
 | **Summe** | **100 %** | — | **≈ 91 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 79 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (globale Suche, mehr authentische Dokumente). Zyklus 16 öffnet ein
-> **neues Entscheider-Ressort (DSGVO/Datenschutz)** mit Szenario + 2 Dokumenten und hebt
-> **Demo-Firma** (77 % → 81 %) und **Szenarien** (87 % → 90 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 81 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (mehr authentische Dokumente, Ketten-Tiefe). Zyklus 17 liefert die
+> **globale Live-Suche (Command-Palette)** über alle 23 Dokumente — der lang offene „Was steckt
+> alles drin?"-Moment — und hebt **App-Grundgerüst** (92 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 17 (2026-07-08) ≈ 81 %** — Globale Live-Suche (Command-Palette): sichtbarer
+  „Was steckt alles drin?"-Moment über den **gesamten** Wissensspeicher. Neuer Sidebar-Auslöser
+  **„🔍 Alles durchsuchen"** (+ **Strg/⌘ + K** von überall) öffnet ein zentriertes Modal, das beim
+  Tippen **live** über Titel/Typ/Snippet/Autor/Modul **aller 23 Dokumente** filtert; leeres Feld zeigt
+  das **komplette Inventar** („23 Dokumente im Wissensspeicher"), Live-Zähler „X von 23". Treffer je
+  mit **Modul-Tag + Typ**, Suchbegriff **gelb hervorgehoben** (`<mark>`, sicher escaped),
+  Tastatur-Navigation (↑/↓ + Enter öffnet den ersten/markierten Treffer), Klick öffnet den Beleg im
+  bestehenden Viewer. **Gesperrte Dokumente** erscheinen als Treffer, öffnen aber die „Zugriff
+  verweigert"-Ansicht (kein Inhalts-Leak) → Governance-Story bleibt konsistent. Cross-Modul belegt
+  (eine „stahl"-Suche zeigt Treffer aus Finanzen **und** Audit). Reuse: `openViewer()` + Marken-Tokens;
+  rein additiv in `index.html`/`styles.css`/`app.js`, `data.js` unverändert. `prefers-reduced-motion`
+  respektiert. Deterministisch verifiziert (Node-VM gegen `data.js`): 23 Docs, Filter exakt (""→23,
+  „stahl"→8, „vertrag"→4, „dsgvo"→2, „donau"→6, kein-Treffer→0), 0 Feld-Fehler. Live im Browser
+  geprüft: Auslöser + Strg+K öffnen/schließen, 23 Zeilen bei leerem Feld, korrekter Zähler, `<mark>`-
+  Highlight, ↓+Enter öffnet Viewer (Titel korrekt), gesperrter Treffer → `paper-locked` ohne Leak,
+  keine Konsolenfehler. (Screenshot-Capture im Harness instabil — bekannte Grenze; daher DOM/CSS-
+  basiert verifiziert.) (App-Grundgerüst 92 % → 95 %.)
 
 - **Zyklus 16 (2026-07-08) ≈ 79 %** — DSGVO-/Datenschutz-Szenario (neues Entscheider-Ressort): neues
   Szenario `datenschutz-audit` (Modul Audit, Konfidenz 93 %) „Sind wir DSGVO-konform — wann war das
@@ -148,9 +166,9 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Globale Live-Suche über die Bibliothek** (Filter über Titel/Typ/Snippet aller 23 Dokumente, mit
-   Modul-Tag + Sofort-Öffnen) → macht die Menge des erschlossenen Wissens sichtbar; starker Video-Beat.
-   Reuse Doc-Karten-Renderer + `openViewer()`, rein additiv (kleiner Filter-Helfer in `app.js`).
+1. **Suchmoment in die Geführte Demo / ins Video aufnehmen** — die Command-Palette als eigener Beat
+   (Strg+K → „stahl" → 8 Treffer quer über Ressorts → Klick öffnet Beleg) vor der ersten Frage; macht
+   die schiere Menge des Wissens zum Opener. Reuse vorhanden; nur Sequenz/Skript.
 2. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).
