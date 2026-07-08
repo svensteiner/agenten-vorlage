@@ -9,16 +9,20 @@
 
 > ✅ **Phase A abgeschlossen (Gate A→B bestanden).** Feature-Freeze bleibt in Kraft — keine neuen
 > Prototyp-Features; nur noch das Verkaufsvideo produktionsreif machen. Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
+>
+> **Alle drei Kern-Deliverables (Skript · Shotlist · Checkliste) fertig.** Gate B→C wartet nur noch auf
+> **Svens Aufnahme + Freigabe** — bis dahin nur ändern, was Sven anmerkt.
 
-1. **[B-Script] `VIDEO_SCRIPT.md`** — 90–120 s, Deutsch, CFO-Sprache (kein RAG/LLM-Jargon). Bogen:
-   Schmerz („Wissen steckt in Ordnern & Postfächern") → Demo-Momente → Money-Shot → CTA (Audit 149 €).
-   → **oberstes Item.**
-2. **[B-Scenes] `VIDEO_SCENES.md`** — Shotlist Szene-für-Szene, gemappt auf die kuratierte 6er-Reihenfolge
-   (Timestamps, On-Screen-Momente, Voiceover je Szene).
-3. **[B-Checklist] `RECORDING_CHECKLIST.md`** — 1920×1080, Zoom, „Zurücksetzen" vor jedem Take,
-   Szenario-Reihenfolge, Retake-Anleitung. Optional: SRT-Untertitel aus dem Skript.
+1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. Wartepunkt.
+2. **[B-Optional] SRT-Untertitel** aus dem Sprechertext (`VIDEO_SCRIPT.md`); **Skript/Shotlist** ggf. auf die 6er-Kern-Demo angleichen (nur falls Sven es wünscht — die Checkliste ist bereits die Aufnahme-Wahrheit).
 
 ## Erledigt
+
+- **[Phase B] Video-Deliverables** — `VIDEO_SCRIPT.md` (Sprechertext), `VIDEO_SCENES.md` (Shotlist) und
+  neu **`RECORDING_CHECKLIST.md`**: narrensichere Aufnahme-Anleitung für Nicht-Techniker (Browser-Setup,
+  Reset-Ritual, Geführte Demo = 6 Kern-Szenen „n / 6" bis Money-Shot < 4 Min, Fehler→Behebung-Tabelle,
+  Kurz-Spickzettel). Reine Handover-Dateien, `prototype/` unverändert; gegen die reale Demo verifiziert
+  (29 Docs, 17 Szenarien, DEMO_ORDER = 6 IDs, Money-Shot letzt).
 
 - **[Phase A — Abschluss] Geführte Demo kuratiert (≤ 4 min) + Ein-Klick „Zurücksetzen"** — die letzten
   beiden Phase-A-Kästchen: `DEMO_ORDER` + `demoScenarios()` spielen hands-free eine straffe **6er-Kern-

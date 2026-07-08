@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-08 — `RECORDING_CHECKLIST.md` (letzte Kern-Deliverable der Videoproduktion)
+
+**Die dritte und letzte Phase-B-Kern-Deliverable ist erstellt** — eine narrensichere Aufnahme-Checkliste,
+mit der eine **nicht-technische Person** das Verkaufsvideo ohne Vorwissen aufnehmen kann. Damit sind alle
+drei Phase-B-Deliverables (Skript · Shotlist · Checkliste) vorhanden; das Gate B→C wartet nur noch auf
+**Svens Aufnahme + Freigabe**.
+
+### Neu
+- **`RECORDING_CHECKLIST.md`** — Schritt-für-Schritt, ausdrücklich für Nicht-Techniker:
+  Browser-Setup (Chrome, Vollbild, 100 % Zoom, **„Bewegung reduzieren" AUS**), das **Reset-Ritual vor
+  jedem Take** (Inkognito für das Onboarding-Intro, „⟲ Zurücksetzen"), der **schnellste Weg über die
+  Geführte Demo** (6 Kern-Szenen, „n / 6", endet auf dem Money-Shot, < 4 Min), Nachvertonung des
+  Sprechertexts, eine **Fehler→Behebung-Tabelle** mit Retake-Regel, die optionale manuelle Langfassung
+  (alle 17 Szenarien) und ein **Kurz-Spickzettel** zum an-den-Monitor-Kleben.
+- Bewusst gegen die **reale** Geführte Demo geschrieben (6 kuratierte Szenen, 29 Dokumente, Such-Beat
+  tippt „stahl") — nicht gegen die ältere 16-Szenen-Beschreibung in Skript/Shotlist (die die
+  ausführliche **manuelle** Fassung abbilden).
+
+### Verzahnung / Reuse
+- **Reine Handover-Datei** — kein Prototyp-Code berührt (`prototype/` unverändert, Feature-Freeze gewahrt).
+  Verweist auf [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (Sprechertext) und [VIDEO_SCENES.md](VIDEO_SCENES.md)
+  (Detail-Shotlist für die manuelle Langfassung).
+
+### Verifikation
+- Ground-Truth deterministisch gegen `prototype/` geprüft (Node-VM): **29 Dokumente**, **17 Szenarien**,
+  2 gesperrt, 3 E-Mails; `DEMO_ORDER` = 6 IDs (materialkosten → beleg-rechnung → budget-herkunft →
+  projekt-portfolio → strategie-ausblick → **agent-dazubuchen** als Finale); Reset-Button `#resetBtn`
+  („⟲ Zurücksetzen") in `index.html`; Onboarding-Flag `aistudio.onboarded.v1`; Such-Beat-Begriff „stahl".
+  Alle Zahlen/Bezeichnungen der Checkliste entsprechen dem laufenden Prototyp.
+
 ## Phase A — 2026-07-08 — Geführte Demo kuratiert (≤ 4 min) + Ein-Klick „Zurücksetzen" ✅ PHASE A ABGESCHLOSSEN
 
 **Die letzten beiden Phase-A-Kästchen — Timing-Gate und wiederholbarer Startzustand — sind erledigt.**

@@ -3,7 +3,12 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Mission: AI STUDIO — PILOT SPRINT (v2) · **PHASE_A_COMPLETE → jetzt Phase B (Video)**
+## Mission: AI STUDIO — PILOT SPRINT (v2) · **Phase B (Video) — Kern-Deliverables fertig, wartet auf Sven**
+
+> **Phase B — Videoproduktion:** Alle drei Kern-Deliverables sind vorhanden —
+> [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md), [VIDEO_SCENES.md](VIDEO_SCENES.md) und neu
+> [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md) (narrensichere Aufnahme-Anleitung). **Gate B→C wartet
+> allein auf Svens Aufnahme + Freigabe.** Bis dahin nur ändern, was Sven anmerkt.
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
 > Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Phase A ist abgeschlossen
@@ -13,7 +18,7 @@
 > ✅ Ein-Klick Demo-Reset. **Nächste Phase: Videoproduktion** — VIDEO_SCRIPT / VIDEO_SCENES /
 > RECORDING_CHECKLIST (siehe [NEXT_STEPS.md](NEXT_STEPS.md)).
 
-## Prototyp-Baufortschritt: ≈ 91 % (Phase A abgeschlossen)
+## Prototyp-Baufortschritt: ≈ 92 % (Phase B — Video-Deliverables fertig, wartet auf Aufnahme)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -32,6 +37,17 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase B · RECORDING_CHECKLIST.md (2026-07-08) ≈ 92 %** — die **letzte Phase-B-Kern-Deliverable**: eine
+  narrensichere Aufnahme-Anleitung, mit der eine **nicht-technische Person** das Verkaufsvideo ohne
+  Vorwissen aufnimmt. Browser-Setup (Chrome/Vollbild/100 % Zoom/**„Bewegung reduzieren" AUS**), Reset-
+  Ritual vor jedem Take (Inkognito fürs Intro + „⟲ Zurücksetzen"), schnellster Weg über die **Geführte
+  Demo** (6 Kern-Szenen, „n / 6", endet auf dem **Money-Shot**, < 4 Min) mit „was-der-CFO-sieht"-Tabelle,
+  Nachvertonung, **Fehler→Behebung-Tabelle** + Retake-Regel, optionale manuelle Langfassung (17 Szenarien)
+  und ein **Kurz-Spickzettel** zum Ankleben. Reine Handover-Datei — `prototype/` unverändert (Feature-
+  Freeze gewahrt); gegen die reale Demo verifiziert (Node-VM: 29 Docs, 17 Szenarien, `DEMO_ORDER` = 6 IDs
+  mit Money-Shot als Finale). **Damit sind alle drei Phase-B-Kern-Deliverables fertig — Gate B→C wartet
+  nur noch auf Svens Aufnahme + Freigabe.** (Video-Reife bleibt 100 %; Gesamtfortschritt konservativ 92 %.)
 
 - **Phase A · Freeze abgeschlossen (2026-07-08) ≈ 91 % — PHASE_A_COMPLETE** — die letzten beiden
   Phase-A-Kästchen erledigt: **(1) Geführte Demo auf ≤ 4 min kuratiert** — neue `DEMO_ORDER` +

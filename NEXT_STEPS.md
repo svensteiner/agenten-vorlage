@@ -11,17 +11,39 @@
 > [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md). Wir sind in **Phase A**. (Die alte „PROTOTYPE
 > DEVELOPMENT MODE"-Zeile oben ist historisch; die Zyklus-Historie unten bleibt gültig.)
 
-## ► Nächster Zyklus (Phase B — Videoproduktion)
+## ► Nächster Zyklus (Phase B — Videoproduktion: **Kern-Deliverables fertig, wartet auf Sven**)
 
 > ✅ **PHASE A ABGESCHLOSSEN (Gate A→B bestanden, 2026-07-08).** Alle 6 Checklisten-Kästchen erfüllt.
-> **Feature-Freeze bleibt in Kraft** — ab jetzt keine neuen Prototyp-Features, nur noch das Verkaufsvideo
+> **Feature-Freeze bleibt in Kraft** — keine neuen Prototyp-Features, nur noch das Verkaufsvideo
 > produktionsreif machen. Neue Ideen → [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md).
 
-**Oberstes Item: `VIDEO_SCRIPT.md` schreiben.** 90–120 s, Deutsch, CFO-Sprache (kein RAG/Embeddings/LLM-
-Jargon). Story-Bogen: **Schmerz** („Ihr Wissen steckt in Ordnern und Postfächern") → **Demo-Momente**
-(belegte Antworten · Entscheidungskette · Portfolio-Ampel) → **Money-Shot** („Agenten dazubuchen wie
-Mitarbeiter") → **CTA** („Daten-Audit, 149 €"). Danach `VIDEO_SCENES.md` (Shotlist gemappt auf die
-kuratierte 6er-Reihenfolge) und `RECORDING_CHECKLIST.md`. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+**Phase-B-Kern-Deliverables sind vollständig:** [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) (Sprechertext),
+[VIDEO_SCENES.md](VIDEO_SCENES.md) (Shotlist) und neu [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md)
+(narrensichere Aufnahme-Anleitung für Nicht-Techniker). **Sven kann jetzt aufnehmen.**
+
+**Nächstes Item = Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" **nur** ändern, was
+er anmerkt — nichts anderes. Optionaler Rest (falls gewünscht): SRT-Untertitel aus dem Skript; Skript/
+Shotlist auf die reale 6er-Kern-Demo angleichen (die Checkliste ist bereits die Aufnahme-Wahrheit).
+Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+
+## Was in diesem Zyklus gebaut wurde (RECORDING_CHECKLIST.md)
+
+**Die letzte Phase-B-Kern-Deliverable — eine Aufnahme-Checkliste, an der eine nicht-technische Person nicht
+scheitern kann.** Skript und Shotlist existierten bereits; es fehlte die Anleitung, die einen Laien sicher
+durch einen sauberen Take führt. Neu:
+- **Browser-Setup narrensicher:** Chrome/Vollbild/100 % Zoom, **„Bewegung reduzieren" AUS** (die wichtigste
+  Einstellung — sonst springen Zahlen/Balken statt hochzulaufen), Aufnahme-Tab im Vordergrund.
+- **Reset-Ritual vor jedem Take:** Inkognito-Fenster fürs Onboarding-Intro (`aistudio.onboarded.v1`),
+  „⟲ Zurücksetzen" für saubere Wiederholungen — Merksatz „Recorder an → Zurücksetzen → Demo starten".
+- **Schnellster Weg = Geführte Demo:** 6 Kern-Szenen (Fortschritt „n / 6"), endet garantiert auf dem
+  **Money-Shot**, < 4 Min, hands-free — als Tabelle mit „was der CFO je Szene sieht".
+- **Fehler→Behebung-Tabelle** mit Retake-Regel + **Kurz-Spickzettel** zum Ankleben; optionale manuelle
+  Langfassung (alle 17 Szenarien via [VIDEO_SCENES.md](VIDEO_SCENES.md)).
+- **Gegen die reale Demo geschrieben** (6 kuratierte Szenen, 29 Dokumente, Such-Beat „stahl") — nicht
+  gegen die ältere 16-Szenen-Beschreibung in Skript/Shotlist (die die manuelle Langfassung abbilden).
+- **Reine Handover-Datei**, `prototype/` unverändert (Feature-Freeze gewahrt). Verifikation: Ground-Truth
+  deterministisch (Node-VM) — 29 Docs, 17 Szenarien, `DEMO_ORDER` = 6 IDs mit `agent-dazubuchen` als
+  Finale, Reset-Button `#resetBtn`, Onboarding-Flag `aistudio.onboarded.v1`.
 
 - **Ziel Phase B:** Sven kann das Video in **< 30 min** selbst aufnehmen — mit der Geführten Demo, dem
   Skript und der Aufnahme-Checkliste. Gate B→C: Sven nimmt auf und **gibt das Video frei**.
