@@ -31,6 +31,11 @@
   *erledigt in Zyklus 11*: gestaffelter Block-Reveal (`block-rise`, +55 ms je Block via
   `--rev-delay`) + Modulwechsel-Fade (`view-in` auf `.wrap`), `prefers-reduced-motion` deaktiviert
   beide sauber (opacity 1). Rein additiv.
+- ✅ **E-Mail-Skin im Viewer** — *erledigt in Zyklus 12*: neues Dokument
+  `email-preisanpassung-donau` (Original-Ankündigung der Donau-Preisanpassung) im echten Postfach-
+  Look — Von/An/Cc/Betreff/Gesendet-Kopf mit Avatar, Anhang-Chip, Zitat-Verlauf (`DOC_SKINS["E-Mail"]`,
+  `buildMailHead()`/`buildQuoted()`). Als 2. Quelle in die Materialkosten-Story eingewoben. Belegt
+  die Kern-Erzählung „Wissen steckt in E-Mails".
 - **Konfidenz-/Relevanz-Meter mit-animieren** — die Prozent-Balken (Konfidenz, Relevanz je
   Quelle) beim Einblenden von 0 hochlaufen lassen, passend zum Zahlen-Count-up. *(Optional,
   nächste Feinpolitur.)*
@@ -39,6 +44,8 @@
 - ✅ **HR-Onboarding & Lieferanten-/Klumpenrisiko** — *erledigt in Zyklus 9*: zwei neue Szenarien +
   Dokumente (Onboarding-Checkliste, Lieferanten-Risikoanalyse mit Konzentrations-Tabelle),
   verzahnt mit der Stahl-/Ferro-Nord-Story. „Geführte Demo" 9 → 11.
+- **Zweite E-Mail (interne Weiterleitung an die CFO)** — Thread über zwei Nachrichten, verbindet
+  E-Mail → Vorstandsbeschluss (Entscheidungskette quer durch Postfächer). *(Nächstes Item.)*
 - Weiteres Szenario: Investitions-/Cashflow-Frage; optional ein IT-/Datenschutz-Ressort.
 - Pro Dokument ein Miniatur-Thumbnail in der Bibliothek (SVG-Icon je Typ).
 - ✅ **„Diese Antwort exportieren / An Vorstand senden"** — *erledigt in Zyklus 10* (Handlungs-

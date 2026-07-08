@@ -6,11 +6,11 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 11 — **Bewegungs-Politur: gestaffelter Block-Reveal +
-  Modulwechsel-Fade** (siehe unten).
+- **Letzter Zyklus:** Zyklus 12 — **E-Mail-Skin im Viewer + Lieferanten-E-Mail als
+  Beleg der Materialkosten-Story** (siehe unten).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 71 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 73 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -29,6 +29,36 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 12 gebaut wurde
+
+**E-Mail-Skin im Dokumentenviewer — „Wissen steckt in E-Mails" ist jetzt im Bild sichtbar.**
+Die Mission-Story nennt E-Mails ausdrücklich als Ort, an dem Firmenwissen gefangen ist; im Viewer
+gab es dafür bisher kein eigenes Skin. Neu:
+- **Neues Dokument `email-preisanpassung-donau`** (Typ **„E-Mail"**, Modul Finanzen): die
+  **Original-Ankündigung von Stahlwerk Donau** über die 15-%-Preisanpassung auf Baustahl S355 zum
+  01.03.2026 — der **auslösende Beleg** hinter dem Materialkostenanstieg. Bewusst mit der bestehenden
+  Story verzahnt: 800 € → 920 € (**+15 %** = die vertragliche Preisgleitklausel §6 aus dem
+  Rahmenvertrag RV-2023-014; die +17,9 % im Q1-Bericht sind der Jahresvergleich). CC an die CFO,
+  **Anhang-Chip** „Preisliste_2026_Stahlwerk-Donau.pdf · 148 KB", **Zitat-Verlauf** der vorherigen
+  Anfrage des Einkaufs (Thomas Krüger).
+- **E-Mail-Skin** (`DOC_SKINS["E-Mail"] = { cat: "email" }`): Postfach-Kopf mit **Avatar-Initialen**
+  (Verlauf Cyan→Indigo), **Von/An/Cc/Betreff/Gesendet**-Zeilen (Betreff fett via `.mr.sub`),
+  Anhang-Chip und zitiertem Verlauf (`.mail-quote`, linker Balken). Neue Helfer in `app.js`:
+  `buildMailHead()`, `buildQuoted()`, `mailRow()`; `buildPaper()` verzweigt für `cat === "email"`
+  (Postfach-Kopf statt Briefkopf, Betreff ersetzt die generische Überschrift). In der Bibliothek
+  trägt die E-Mail-Karte ein **✉-Icon** statt ▤.
+- **In die Materialkosten-Story eingewoben:** die E-Mail ist jetzt **2. Quelle** (88 %) der Antwort
+  „Warum sind die Materialkosten gestiegen?" (nach dem Q1-Bericht), steht in „Verwandte Dokumente"
+  und ist als zusätzlicher Reasoning-Schritt genannt („Auslösende Lieferanten-E-Mail … im
+  Einkaufs-Postfach identifiziert"). Dadurch **klickbar in der Geführten Demo** → das E-Mail-Skin
+  erscheint automatisch im Video.
+- **Rein additiv** in `data.js` / `app.js` / `styles.css`; bestehende Skins, Dokumente und der
+  Antwortpfad unverändert. Verifiziert: E-Mail-Karte mit ✉ + Typ „E-Mail" in Finanzen, Viewer öffnet
+  `paper-email` mit korrektem Kopf (Initialen „AH", 5 Zeilen, Betreff fett), Anhang-Chip
+  (148 KB), 2 Highlights, Zitat mit 3 Zeilen; **0 kaputte Referenzen** (20 Dokumente), keine
+  Konsolenfehler. (Layout-Maße im Headless-Preview nicht messbar — 0×0-Viewport, bekannte
+  Harness-Grenze; CSS parst/greift, spiegelt das bewährte `.lh`-Briefkopf-Flexmuster.)
 
 ## Was in Zyklus 11 gebaut wurde
 
@@ -240,35 +270,35 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Beleg-Skin „E-Mail/Memo" im Dokumentenviewer.** Inhalt, Tiefe, Vertrauen, Tempo, Ressort-Breite,
-Handlungs-Abschluss **und** die Bewegungs-Politur stehen jetzt. Der stärkste verbleibende Hebel ist
-wieder **inhaltlich/visuell**: Die Mission-Story nennt ausdrücklich, dass Unternehmenswissen in
-**E-Mails** gefangen ist — im Viewer gibt es dafür aber noch kein eigenes Skin (E-Mails/Memos
-öffnen im generischen Bericht-Layout). Ein **E-Mail-Skin** (Von/An/Betreff/Datum-Kopf, Zitat-
-Verlauf, evtl. Anhang-Chip) macht die „aus Ihren Postfächern"-Behauptung sichtbar greifbar und
-rundet die Quellen-Vielfalt ab. Rein datengetrieben über `doc.type` (neuer Eintrag in `DOC_SKINS`)
-+ ein bis zwei neue E-Mail-Dokumente in `data.js`; bestehende Skins/Dokumente unverändert.
+**Eigener „E-Mail/Postfach"-Einstieg für die Materialkosten-Story — oder ein zweites E-Mail-Dokument
+(interne Weiterleitung).** Das E-Mail-Skin steht jetzt und ist über die Materialkosten-Antwort
+erreichbar. Der nächste sichtbare Sprung: die Quellen-Vielfalt weiter mit E-Mails vertiefen, damit
+das „aus Ihren Postfächern"-Versprechen mehrfach im Bild belegt ist. Konkret die stärkste Option:
+- **Interne Weiterleitung** der Donau-Preis-E-Mail vom Einkauf (Thomas Krüger) an die CFO
+  (Dr. Vogel) mit einer kurzen Bewertung („Auswirkung auf Projekt Alpha: +0,9 Mio. €") — zeigt den
+  **Thread über zwei Nachrichten** und verbindet E-Mail → Vorstandsbeschluss (Mehrbudget). Rein
+  additiv als zweites `type: "E-Mail"`-Dokument; kein Code-Umbau (Skin existiert bereits).
 
-*Warum diese?* Die Wahrnehmungs-Politur ist mit Zyklus 11 abgeschlossen — die Demo läuft nun
-flüssig und „fertig". Der nächste sichtbare Sprung kommt aus **Quellen-Breite**: ein authentisches
-E-Mail-Dokument im echten Mail-Look belegt die Kern-Erzählung („Wissen steckt in E-Mails") direkt im
-Bild, ohne inhaltliches Risiko.
+*Warum diese?* Mit einem einzigen E-Mail-Dokument ist die Kern-Erzählung angerissen, aber noch nicht
+satt belegt. Ein zweites, **inhaltlich verzahntes** E-Mail-Dokument (Weiterleitung mit Entscheidungs-
+Bezug) macht sichtbar, wie AI Studio eine **Entscheidungskette quer durch Postfächer** rekonstruiert
+— genau der „Wow"-Moment für einen CFO.
 
-**Danach (Priorität absteigend):** siehe [OPEN_ITEMS.md](OPEN_ITEMS.md)
-(ein weiteres Ressort z. B. IT/Datenschutz, mehr authentische Dokumente in der Demo-Firma).
+**Alternative, falls Breite wichtiger als Tiefe:** ein weiteres Ressort (IT/Datenschutz) mit
+eigenem Szenario — siehe [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 ---
 
-## CEO-Review (Ende Zyklus 11)
+## CEO-Review (Ende Zyklus 12)
 
-- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo läuft jetzt **flüssig**: die
-  Antwort baut sich gestaffelt auf, Modulwechsel blenden weich über — es wirkt wie ein fertiges
-  Produkt, nicht wie ein Prototyp.
-- *Erzeugt es Aufregung?* — Ja: das souveräne, gestaffelte Erscheinen der Belege (Quellen →
-  Verwandte → Aktionen) fühlt sich „durchdacht" an und hält den Blick — genau die Ruhe, die
-  Vertrauen erzeugt, wenn ein CFO zusieht.
-- *Versteht ein CFO/CEO den Nutzen?* — Ja, unverändert sofort: Frage → belegte Antwort →
-  weiterreichbares Ergebnis. Die Politur stört die Klarheit nicht, sie unterstützt sie.
-- *Schwächste Stelle → nächster Zyklus:* **Quellen-Vielfalt** — es fehlt noch ein echtes
-  **E-Mail-Dokument** im Mail-Look, obwohl „Wissen steckt in E-Mails" die Kern-Erzählung ist. Ein
-  E-Mail-Skin im Viewer schließt diese Lücke.
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Die Demo belegt jetzt sichtbar, dass Wissen
+  in **E-Mails** steckt: Die Antwort auf „Warum sind die Materialkosten gestiegen?" verweist direkt
+  auf die **Original-Lieferanten-E-Mail** — im echten Postfach-Look mit Anhang und Verlauf.
+- *Erzeugt es Aufregung?* — Ja: Genau das ist der intuitive „Aha"-Moment — die Software findet die
+  **eine E-Mail**, die die Preiserhöhung ausgelöst hat, und legt sie prüfbar neben Bericht, Vertrag
+  und Rechnung. Das ist die Kern-Erzählung der Mission, endlich im Bild.
+- *Versteht ein CFO/CEO den Nutzen?* — Ja: „Das System zieht sogar die richtige E-Mail aus dem
+  Posteingang" ist ohne jede KI-Erklärung sofort verständlich.
+- *Schwächste Stelle → nächster Zyklus:* **Tiefe der E-Mail-Kette** — eine einzelne E-Mail reißt die
+  Story an; eine **zweite, verzahnte E-Mail** (interne Weiterleitung an die CFO mit Entscheidungs-
+  Bezug) würde die „Entscheidungskette quer durch Postfächer" vollständig zeigen.

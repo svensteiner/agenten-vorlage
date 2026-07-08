@@ -3,27 +3,38 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 71 % (Ende Zyklus 11)
+## Gesamtfortschritt: ≈ 73 % (Ende Zyklus 12)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 92 % | 18.4 |
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 91 % | 18.2 |
-| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 88 % | 13.2 |
-| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 89 % | 13.35 |
-| Demo-Firma & realistische Dokumente | 15 % | 70 % | 10.5 |
+| Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 89 % | 13.35 |
+| Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 92 % | 13.8 |
+| Demo-Firma & realistische Dokumente | 15 % | 74 % | 11.1 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 82 % | 8.2 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 99 % | 4.95 |
-| **Summe** | **100 %** | — | **≈ 87 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 88 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 71 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur (weitere Beleg-Skins, weitere Ressorts). Zyklus 11 schließt die
-> **Bewegungs-Politur** (gestaffelter Block-Reveal + Modulwechsel-Fade) und hebt **Video-Reife**
-> (96 % → 99 %) sowie **Chat-Experience** (90 % → 91 %). Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 73 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
+> optionaler Rest-Politur (zweites E-Mail-Dokument, weitere Ressorts). Zyklus 12 fügt das
+> **E-Mail-Skin** + eine Lieferanten-E-Mail als Beleg der Materialkosten-Story hinzu und hebt
+> **Dokumentenviewer** (89 % → 92 %), **Demo-Firma** (70 % → 74 %) und **Belege** (88 % → 89 %).
+> Konservativ gemeldet.
 
 ## Verlauf
 
+- **Zyklus 12 (2026-07-08) ≈ 73 %** — E-Mail-Skin im Viewer: neues Dokument
+  `email-preisanpassung-donau` (Typ „E-Mail", Finanzen) — die Original-Ankündigung von Stahlwerk
+  Donau über die 15-%-Preisanpassung, mit Postfach-Kopf (Avatar-Initialen, Von/An/Cc/Betreff/
+  Gesendet), Anhang-Chip (148 KB) und Zitat-Verlauf. `DOC_SKINS["E-Mail"]` + `buildMailHead()`/
+  `buildQuoted()`/`mailRow()`; `buildPaper()` verzweigt für `cat==="email"`; ✉-Icon in der
+  Bibliothek. Als 2. Quelle (88 %) + Verwandte + Reasoning-Schritt in die Materialkosten-Antwort
+  eingewoben → klickbar in der Geführten Demo. Rein additiv in `data.js`/`app.js`/`styles.css`.
+  Verifiziert: ✉-Karte in Finanzen, `paper-email` mit korrektem Kopf/Anhang/Zitat, 0 kaputte
+  Referenzen (20 Docs), keine Konsolenfehler. (Viewer 89 % → 92 %, Demo-Firma 70 % → 74 %,
+  Belege 88 % → 89 %.)
 - **Zyklus 11 (2026-07-08) ≈ 71 %** — Bewegungs-Politur: die strukturierten Antwortblöcke
   (Nachvollziehbarkeit → Quellen → Verwandte → Folgefragen → Aktionen) blenden jetzt **gestaffelt**
   ein (`block-rise`, je Block +55 ms via `--rev-delay`) statt hart zu springen; Modulwechsel
@@ -90,6 +101,6 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. Weitere Beleg-Skins (E-Mail/Memo im Viewer) → Viewer/Demo-Firma.
+1. Zweites E-Mail-Dokument (interne Weiterleitung an die CFO) → E-Mail-Thread, Entscheidungskette.
 2. Optional ein weiteres Ressort (z. B. IT/Datenschutz) → Demo-Firma & Szenarien.
 3. Mehr Tiefe in der Demo-Firma (weitere authentische Dokumente) → Demo-Firma.

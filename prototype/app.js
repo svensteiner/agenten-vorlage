@@ -36,6 +36,7 @@
     "Richtlinie":           { cat: "richtlinie" },
     "Sicherheitsdokument":  { cat: "richtlinie" },
     "Prüfnachweis":         { cat: "nachweis", stamp: { text: "BESTANDEN", tone: "ok" } },
+    "E-Mail":               { cat: "email" },
   };
   const defaultSkin = { cat: "bericht" };
 
@@ -606,7 +607,7 @@
           `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${d.date}</span></div>`;
       } else {
         card.innerHTML =
-          `<div class="top"><span class="ficon">▤</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
+          `<div class="top"><span class="ficon">${d.type === "E-Mail" ? "✉" : "▤"}</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
           `<div class="snip">${d.snippet}</div>` +
           `<div class="foot"><span>${d.author}</span><span>${d.date}</span></div>`;
       }
@@ -695,10 +696,14 @@
     const skin = DOC_SKINS[doc.type] || defaultSkin;
     const paper = el("div", `paper paper-${skin.cat}`);
 
-    paper.appendChild(buildLetterhead(doc, skin));
-
-    const title = el("div", "dtitle", escapeHtml(doc.title));
-    paper.appendChild(title);
+    // E-Mail-Skin: Von/An/Betreff-Kopf statt Briefkopf; der Betreff ersetzt
+    // die generische Dokument-Überschrift.
+    if (skin.cat === "email") {
+      paper.appendChild(buildMailHead(doc));
+    } else {
+      paper.appendChild(buildLetterhead(doc, skin));
+      paper.appendChild(el("div", "dtitle", escapeHtml(doc.title)));
+    }
 
     doc.body.forEach((p, i) => {
       if (i === 0) return; // erste Zeile ist die Dokument-Überschrift → als Titel oben
@@ -706,6 +711,8 @@
       const para = el("p", hl ? "dp hl" : "dp", markupClause(escapeHtml(p.t)));
       paper.appendChild(para);
     });
+
+    if (skin.cat === "email" && doc.quoted) paper.appendChild(buildQuoted(doc.quoted));
 
     if (skin.cat === "beleg" && doc.lineItems) paper.appendChild(buildLineItems(doc.lineItems));
 
@@ -762,6 +769,39 @@
     return lh;
   }
 
+  // E-Mail-Kopf: Von/An/(CC)/Betreff/Gesendet + optionaler Anhang-Chip.
+  // Macht die Kern-Erzählung „Wissen steckt in E-Mails" im Viewer sichtbar.
+  function buildMailHead(doc) {
+    const name = doc.author.replace(/\s*\(.*\)$/, "");
+    const initials = name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "@";
+    const rows =
+      mailRow("Von", doc.from || doc.author) +
+      mailRow("An", doc.to || "") +
+      (doc.cc ? mailRow("Cc", doc.cc) : "") +
+      mailRow("Betreff", doc.subject || doc.title, "sub") +
+      mailRow("Gesendet", doc.sent || doc.date);
+    const att = doc.attachment
+      ? `<div class="mail-att"><span class="clip">📎</span>` +
+        `<span class="an">${escapeHtml(doc.attachment.name)}</span>` +
+        (doc.attachment.size ? `<span class="as">${escapeHtml(doc.attachment.size)}</span>` : "") +
+        `</div>`
+      : "";
+    const head = el("div", "mail");
+    head.innerHTML =
+      `<div class="mail-top"><span class="mmark">${initials}</span>` +
+      `<div class="mail-rows">${rows}</div></div>` + att;
+    return head;
+  }
+
+  // Zitierter Verlauf unter einer E-Mail (die vorherige Nachricht).
+  function buildQuoted(q) {
+    const box = el("div", "mail-quote");
+    box.appendChild(el("div", "mq-head",
+      `Am ${escapeHtml(q.date)} schrieb ${escapeHtml(q.from)}:`));
+    (q.lines || []).forEach((l) => box.appendChild(el("p", "mq-line", escapeHtml(l))));
+    return box;
+  }
+
   function buildStamp(stamp, doc) {
     const s = el("div", `stamp stamp-${stamp.tone}`);
     s.innerHTML = `<span class="st">${escapeHtml(stamp.text)}</span><span class="sd">${escapeHtml(doc.date)}</span>`;
@@ -786,6 +826,7 @@
       '<b class="cl">$1</b>$2');
   }
   function metaRow(k, v) { return `<div class="row"><span>${k}</span><span>${escapeHtml(v)}</span></div>`; }
+  function mailRow(k, v, cls) { return `<div class="mr${cls ? " " + cls : ""}"><span class="mk">${k}</span><span class="mv">${escapeHtml(v)}</span></div>`; }
   function closeViewer() { $("#overlay").classList.remove("open"); $("#viewer").classList.remove("open"); }
   function wireViewer() {
     $("#vClose").onclick = closeViewer;

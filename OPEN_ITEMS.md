@@ -5,14 +5,23 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Beleg-Skin „E-Mail/Memo"** im Viewer (Von/An/Betreff/Datum-Kopf, Zitat-Verlauf, Anhang-
-   Chip) + 1–2 E-Mail-Dokumente in `data.js`. Belegt die Kern-Erzählung „Wissen steckt in E-Mails".
-   → oberstes Item für den nächsten Zyklus.
+1. **[P5] Zweites E-Mail-Dokument** (interne Weiterleitung der Donau-Preis-E-Mail vom Einkauf an die
+   CFO, mit kurzer Bewertung „+0,9 Mio. € Projekt Alpha"). Zeigt den **Thread über zwei Nachrichten**
+   und verbindet E-Mail → Vorstandsbeschluss. Kein Code-Umbau (E-Mail-Skin existiert). → oberstes
+   Item für den nächsten Zyklus.
 2. **[P5] Optional ein weiteres Ressort** (z. B. IT/Datenschutz) + 1 Dokument in `data.js`.
 3. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
    hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
 
 ## Erledigt
+
+- **[Zyklus 12] E-Mail-Skin im Viewer + Lieferanten-E-Mail** — neues Dokument
+  `email-preisanpassung-donau` (Typ „E-Mail", Finanzen): Original-Ankündigung der Donau-
+  Preisanpassung (15 %, §6 Preisgleitklausel) mit Postfach-Kopf (Avatar-Initialen, Von/An/Cc/
+  Betreff/Gesendet), Anhang-Chip (148 KB) und Zitat-Verlauf. `DOC_SKINS["E-Mail"]` +
+  `buildMailHead()`/`buildQuoted()`/`mailRow()`; ✉-Icon in der Bibliothek. Als 2. Quelle (88 %) +
+  Verwandte + Reasoning in die Materialkosten-Antwort eingewoben → klickbar in der Geführten Demo.
+  Rein additiv. Verifiziert (0 kaputte Referenzen, korrekter Kopf/Anhang/Zitat).
 
 - **[Zyklus 11] Bewegungs-Politur — gestaffelter Block-Reveal + Modulwechsel-Fade** — die
   strukturierten Antwortblöcke blenden nacheinander ein (`block-rise`, +55 ms je Block via

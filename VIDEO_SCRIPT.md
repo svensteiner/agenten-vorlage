@@ -27,15 +27,20 @@ Overlay sicher erscheint — siehe Aufnahme-Hinweise.
 **Bild:** Antwort streamt ein, Konfidenz 98 %, klare Regeln, eine Quelle.
 **Punkt:** Sofort, präzise, mit Beleg.
 
-## Szene 2 — Der Geschäftswert (0:45–1:15)
-**Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"*
+## Szene 2 — Der Geschäftswert (0:45–1:20)
+**Aktion:** Fragen: *„Warum sind die Materialkosten gestiegen?"* → danach die E-Mail-Quelle
+*Preisanpassung Baustahl S355* öffnen.
 **Sprecher:** „AI Studio verbindet Quartalsbericht, Liefervertrag und Rechnung —
 und erklärt das Warum, nicht nur das Was."
 **Bild:** Antwortkopf zeigt **„⚡ Beantwortet in ~1,9 s"** (zählt hoch), die **Kernzahlen
-zählen hoch** (18,4 %, 31,6 %); dann Nachvollziehbarkeit-Schritte, drei Quellen mit Relevanz,
-Konfidenz 94 %.
-**Sprecher-Zusatz (optional):** „In unter zwei Sekunden — mit Beleg."
-**Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar.
+zählen hoch** (18,4 %, 31,6 %); dann Nachvollziehbarkeit-Schritte, Quellen mit Relevanz,
+Konfidenz 94 %. Klick auf die **E-Mail-Quelle** → Viewer öffnet als **echte E-Mail** aus dem
+Einkaufs-Postfach (Von/An/Cc, Avatar, **📎 Anhang**, Zitat-Verlauf); die Zeile „**+15 %
+Preisgleitklausel §6**" ist hervorgehoben.
+**Sprecher-Zusatz:** „Und es findet sogar die eine E-Mail, die die Preiserhöhung ausgelöst hat —
+im Original, mit Anhang."
+**Punkt (für den CFO):** die Antwort ist **schnell**, belegt und prüfbar — bis zur
+auslösenden E-Mail im Posteingang.
 
 ## Szene 3 — Vertrauen & Prüfsicherheit (1:15–1:45)
 **Aktion:** Fragen: *„Zeig mir die Belege zu Rechnung 2026-1843."* → Rechnung öffnen, dann

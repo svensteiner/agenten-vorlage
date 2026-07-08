@@ -2,6 +2,40 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 12 — 2026-07-08 — E-Mail-Skin im Viewer + Lieferanten-E-Mail als Beleg der Materialkosten-Story ✉
+
+**„Wissen steckt in E-Mails" ist jetzt im Bild.** Die Mission-Story nennt E-Mails ausdrücklich als
+Ort, an dem Firmenwissen gefangen ist — im Viewer gab es dafür kein eigenes Skin. Dieser Zyklus
+schließt die Lücke mit einem authentischen Postfach-Look **und** verankert die E-Mail als
+auslösenden Beleg der stärksten bestehenden Story (Materialkostenanstieg).
+
+### Neu (rein additiv in `data.js` / `app.js` / `styles.css`)
+- **Neues Dokument `email-preisanpassung-donau`** (Typ **„E-Mail"**, Modul Finanzen): die
+  Original-Ankündigung von **Stahlwerk Donau** über die 15-%-Preisanpassung auf Baustahl S355 zum
+  01.03.2026 — 800 € → 920 € (**+15 %** = Preisgleitklausel §6 des Rahmenvertrags RV-2023-014).
+  Cc an die CFO, **Anhang-Chip** „Preisliste_2026_Stahlwerk-Donau.pdf · 148 KB", **Zitat-Verlauf**
+  der vorherigen Einkaufs-Anfrage.
+- **E-Mail-Skin** `DOC_SKINS["E-Mail"] = { cat: "email" }`: Postfach-Kopf mit Avatar-Initialen
+  (Verlauf Cyan→Indigo), **Von/An/Cc/Betreff/Gesendet**-Zeilen (Betreff fett), Anhang-Chip und
+  zitiertem Verlauf (linker Balken). Neue Helfer `buildMailHead()` / `buildQuoted()` / `mailRow()`;
+  `buildPaper()` verzweigt für `cat === "email"`. **✉-Icon** für E-Mail-Karten in der Bibliothek.
+- **In die Materialkosten-Story eingewoben:** E-Mail als **2. Quelle** (88 %) der Antwort „Warum
+  sind die Materialkosten gestiegen?", in „Verwandte Dokumente" und als zusätzlicher Reasoning-
+  Schritt → **klickbar in der Geführten Demo**, Skin erscheint automatisch im Video.
+- Bestehende Skins, Dokumente und der Antwortpfad **unverändert**.
+
+### Verifikation (im Browser, DOM/CSS-basiert)
+- Finanzen-Bibliothek: E-Mail-Karte mit **✉-Icon** + Typ „E-Mail" (5 Karten gesamt).
+- Viewer: `paper paper-email`, Postfach-Kopf mit Initialen **„AH"**, 5 Zeilen (Betreff `font-weight
+  700`), Anhang-Chip „Preisliste_2026_Stahlwerk-Donau.pdf / 148 KB", **2 Highlights**, Zitat-Verlauf
+  mit **3 Zeilen**.
+- Datenintegrität: **0 kaputte Referenzen** über alle Szenarien, 20 Dokumente; Materialkosten-Quelle
+  + Verwandte + Reasoning enthalten die E-Mail. Keine Konsolenfehler.
+- *Layout-Maße im Headless-Preview nicht messbar (0×0-Viewport, bekannte Harness-Grenze); CSS parst
+  und greift, spiegelt das bewährte `.lh`-Briefkopf-Flexmuster.*
+
+---
+
 ## Zyklus 11 — 2026-07-08 — Bewegungs-Politur: gestaffelter Block-Reveal + Modulwechsel-Fade ✨
 
 **Die Demo läuft jetzt flüssig — die Antwort baut sich souverän auf, statt zu springen.** Inhaltlich
