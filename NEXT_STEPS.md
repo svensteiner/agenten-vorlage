@@ -6,14 +6,15 @@
 
 - **Mission:** einen herausragenden Kunden-Demo-Prototyp bauen (für ein Verkaufsvideo).
   Höchste Priorität. Visuelle Qualität, Kundennutzen, „Wow"-Effekt.
-- **Letzter Zyklus:** Zyklus 22 — **Projekt-Portfolio-Überblick**: neues Szenario „Welche Projekte laufen
-  aktuell?" (Modul Berichte, Konfidenz 94 %), das **Alpha und Beta in einer Ampel-Übersichtstabelle**
-  gegenüberstellt (Projekt · Fortschritt · Budget · Termin · Status), Portfolio-Volumen 32,6 Mio. €,
-  Quellen = beide bestehenden Statusberichte + Vorstandsprotokoll. Der „ganzes Portfolio auf einen Blick"-
-  Moment; rein additiv in `data.js` (Reuse `<table>`-Struktur + vorhandene Belege), kein Code-Umbau.
+- **Letzter Zyklus:** Zyklus 23 — **Nachtragsangebot an Nordwind (`nachtrag-nordwind-beta`)**: der
+  Kunden-Änderungswunsch von Projekt Beta (**+0,4 Mio. €** für eine zusätzliche Prüfstation) ist jetzt ein
+  Original-Beleg (Typ „Nachtragsangebot", Modul Berichte) mit Positionstabelle (250k + 110k + 40k =
+  **400.000 € netto** / USt 76.000 € / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian.
+  In das `projekt-beta`-Szenario als 3. Quelle (82 %) eingewoben. Fast reiner `data.js`-Additiv-Schritt +
+  zwei winzige, rückwärtskompatible `app.js`-Ergänzungen (Skin-Eintrag + optionales `grossLabel`).
 - **Zuletzt aktualisiert:** 2026-07-08.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
-- **Gesamtfortschritt Prototyp:** **≈ 87 %** (siehe [PROGRESS.md](PROGRESS.md)).
+- **Gesamtfortschritt Prototyp:** **≈ 88 %** (siehe [PROGRESS.md](PROGRESS.md)).
 
 ---
 
@@ -32,6 +33,37 @@ Agenten-Framework). Der eigentliche **Kunden-Demo-Prototyp existierte nicht**.
 - Jeden Zyklus **genau EINE** sichtbare Verbesserung am Prototyp.
 
 ---
+
+## Was in Zyklus 23 gebaut wurde
+
+**Nachtragsangebot an Nordwind — Betas letzte unbelegte Zahl wird ein Original-Beleg.** Nach Zyklus 22
+war die Breite rund; die schwächste Stelle blieb **Demo-Firma & Dokumente (90 %)**: Beta nannte in
+Statusbericht, Eskalation und Portfolio den **Kunden-Änderungswunsch (+0,4 Mio. €)**, aber der
+kaufmännische **Beleg** dazu fehlte — die einzige Beta-Zahl ohne Dokument. Neu:
+- **Dokument `nachtrag-nordwind-beta`** (Typ „Nachtragsangebot", Modul Berichte): Nachtragsangebot
+  **NA-2026-0037** von Meridian an die **Nordwind Logistik AG** (Bezug Rahmenauftrag NW-2025-0442,
+  Änderungswunsch vom 18.03.2026). **Positionstabelle** (Reuse des Beleg-Skins mit `lineItems`):
+  Prüfstation 250.000 € + Engineering/SPS-Integration 110.000 € + erweiterte FAT 40.000 € =
+  **400.000 € netto**, USt 19 % 76.000 €, **Angebotssumme brutto 476.000 €**. Aussteller = **Meridian**
+  (kein extIssuer — Meridian bietet dem Kunden an); **NACHTRAG**-Stempel (Ton `ink`). Datum 27.03.2026
+  liegt sauber zwischen Change-Request (18.03.) und Statusbericht (31.03.).
+- **In `projekt-beta` eingewoben:** als **3. Quelle** (82 %, Zitat wortgleich im Body), neuer
+  Reasoning-Schritt, in `related` ergänzt, neue Folgefrage **„Zeig mir den Nachtrag an Nordwind."** →
+  in der Geführten Demo klickbar. Belegt exakt die „+0,4 Mio. €", die der Statustext bereits nannte.
+- **Bewusst NICHT** in die `DECISION_CHAIN` eingewoben (die bleibt Alphas entdoppelte Kette). Beta bleibt
+  ein eigenständiger, sauber belegter Vorgang.
+- **Fast reiner `data.js`-Additiv-Schritt.** Zwei winzige rückwärtskompatible `app.js`-Ergänzungen:
+  neuer `DOC_SKINS["Nachtragsangebot"]`-Eintrag + optionales `lineItems.grossLabel` (Fallback
+  „Rechnungsbetrag brutto") → Fußzeile liest korrekt „Angebotssumme brutto". Keine bestehenden Belege,
+  Skins oder der Antwortpfad verändert.
+- **Verifikation:** deterministisch (Node-VM gegen `data.js`) **28 Docs** (war 27), **16 Szenarien**,
+  **3 E-Mails**, **0 kaputte Referenzen**; alle **3** Beta-Quell-Zitate wortgleich im Body, Relevanzen
+  0–100; Arithmetik geprüft (250 + 110 + 40 = 400 netto; +19 % = 476 brutto). Live im Browser (DOM gegen
+  reale Daten): Suche „nachtrag" → 1 Treffer (▤); Klick öffnet **`paper-beleg`**, Aussteller **Meridian
+  Industrie GmbH**, **NACHTRAG**-Stempel, 3 Positionszeilen + Netto 400.000 / USt 19 % 76.000 /
+  **Angebotssumme brutto 476.000**; Beta-Szenario führt `nachtrag-nordwind-beta` in Quellen + Verwandten;
+  **keine Konsolenfehler**. (Screenshot-Capture im Harness instabil — bekannte Grenze; daher DOM/Daten-
+  basiert verifiziert.)
 
 ## Was in Zyklus 22 gebaut wurde
 
@@ -580,31 +612,40 @@ Ein **self-contained, buildfreies Enterprise-Web-App** (Vanilla-JS, `file://`-f�
 
 ## 🎯 NÄCHSTER ZYKLUS — die EINE wichtigste Verbesserung
 
-**Ein drittes Beta-Dokument: der Change-Request / Angebots-Nachtrag an die Nordwind Logistik AG (+0,4
-Mio. €).** Nach Zyklus 22 ist die **Breite** rund (16 Szenarien, 27 Dokumente über 6 Ressorts, Portfolio-
-Überblick als Klammer). Der stärkste nächste additive Schritt ist jetzt **Tiefe** an der schwächsten
-Stelle (Demo-Firma 90 %): Beta nennt in Statusbericht und Portfolio den **Kunden-Änderungswunsch
-(zusätzliche Prüfstation, +0,4 Mio. €)** — aber der **kaufmännische Beleg** dazu fehlt. Ein neues Dokument
-**`nachtrag-nordwind-beta`** (Typ „Angebotsnachtrag" oder „Nachtragsangebot", Modul Berichte/Verträge)
-macht sichtbar, *wie* Meridian den Scope-Change beim Kunden geltend macht: Nachtrag Nr., Bezug zum
-Rahmenauftrag, Position „zusätzliche Prüfstation", Netto/USt/Brutto — **Reuse des bestehenden Beleg-Skins
-mit `lineItems`** (wie Rechnung/Gutschrift), kein Code-Umbau. In das `projekt-beta`-Szenario als zusätzliche
-Quelle einweben. Hebt **Demo-Firma** und macht Betas „+0,4 Mio. €" belegbar statt nur behauptet.
+**Das Konfidenz-/Relevanz-Meter mit-animieren — die letzte fehlende Bewegungs-Politur.** Nach Zyklus 23
+sind Breite **und** Belegtiefe rund (16 Szenarien, **28 Dokumente** über 6 Ressorts; jede Beta-Zahl jetzt
+belegt). Der stärkste verbleibende additive Schritt ist reine **Video-Feinpolitur**: Beim Einblenden einer
+Antwort zählt heute die Konfidenz-Zahl bereits hoch (Zyklus 8), aber der **Balken** des Konfidenz-Meters
+(und die Relevanz-Balken der Quellen) springen sofort auf ihren Endwert. Sie sollten — passend zum
+Zahlen-Count-up — **von 0 auf den Zielwert hochlaufen** (~760 ms, easeOutCubic, `prefers-reduced-motion` →
+sofort). Rein additiv in `app.js` (ein kleiner Helfer analog `animateCounts()`) + `styles.css` (eine
+`transition`/Keyframe auf die Balkenbreite). Kein neues Dokument, kein Datenpfad-Umbau — hebt **Chat-
+Experience / Video-Reife** um die letzte sichtbare Kante.
 
-*Warum?* Die Demo zeigt bei Beta ehrlich ein Risiko und Gegenmaßnahmen — aber der Change-Request ist die
-einzige Beta-Zahl, die noch **unbelegt** ist. Ein Nachtragsbeleg schließt genau diese Lücke und beweist
-denselben lückenlosen Beleg-Anspruch, den Alpha (Entscheidungskette) und der Reklamations-Vorgang bereits
-erfüllen.
+*Warum?* Die inhaltliche Substanz steht (Alpha-Kette, Reklamation, DSGVO, Portfolio, Beta jetzt lückenlos
+belegt). Ein weiteres Dokument brächte kaum noch Grenznutzen und riskiert, die Demo-Firma zu überladen.
+Die Balken-Animation ist die **eine** Stelle, an der die Antwort im Video noch sichtbar „springt" statt zu
+„wachsen" — ein kleiner, risikoarmer Politur-Gewinn direkt im Bild.
 
-**Alternative (Politur):** das **Konfidenz-/Relevanz-Meter mit-animieren** (Prozent-Balken von 0
-hochlaufen lassen, passend zum Zahlen-Count-up aus Zyklus 8) — kleine, rein additive Feinpolitur in
-`app.js`/`styles.css`. Nur falls ein weiteres Dokument die Demo-Firma überlädt.
+**Alternative (Tiefe):** ein **Kunden-Beauftragungsbeleg** (Nordwind bestätigt NA-2026-0037 schriftlich)
+würde den Nachtrag zu einem echten Zwei-Schritt-Vorgang machen — aber das dupliziert das gerade gebaute
+Motiv und bringt weniger als die Balken-Politur. Erst nach der Politur erwägen.
 
-**Nicht dupliziert (bewusst):** Beta **nicht** in die `DECISION_CHAIN` einweben — das würde die in
-Zyklus 15 sorgfältig entdoppelte Alpha-Kette verwässern. Beta bleibt ein eigenständiger, sauber belegter
-Vorgang neben Alpha.
+**Nicht dupliziert (bewusst):** Beta bleibt **außerhalb** der `DECISION_CHAIN` (Alphas entdoppelte Kette).
 
 ---
+
+## CEO-Review (Ende Zyklus 23)
+
+- *Würde ich das morgen einem Kunden zeigen?* — **Ja.** Beta zeigt jetzt nicht nur ehrlich ein Risiko,
+  sondern belegt **jede** genannte Zahl mit einem Original: Statusbericht, Eskalations-E-Mail und jetzt das
+  **Nachtragsangebot über 476.000 € brutto** an den Kunden. Die „+0,4 Mio. €" sind keine Behauptung mehr,
+  sondern ein anklickbarer Beleg mit Positionstabelle.
+- *Versteht ein CFO den Nutzen?* — Ja, sofort: *„selbst der Änderungswunsch im schwierigen Projekt ist
+  kaufmännisch sauber dokumentiert — ich sehe, wie wir das beim Kunden geltend machen."* Genau die
+  Prüfungs- und Nachweis-Sicherheit, die Alpha und der Reklamations-Vorgang bereits vormachen.
+- *Schwächste Stelle → nächster Zyklus:* rein visuell — das Konfidenz-/Relevanz-Meter springt beim
+  Einblenden noch, statt hochzulaufen. Balken-Animation als letzte Politur. Siehe oben.
 
 ## CEO-Review (Ende Zyklus 22)
 

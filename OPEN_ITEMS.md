@@ -5,13 +5,12 @@
 
 ## Offen (nach Priorität)
 
-1. **[P5] Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit
-   dem Kunden-Änderungswunsch (+0,4 Mio. €): neues Dokument `nachtrag-nordwind-beta` (Typ
-   „Angebotsnachtrag", Modul Berichte/Verträge) mit `lineItems` (Position „zusätzliche Prüfstation",
-   Netto/USt/Brutto) — **Reuse des Beleg-Skins**, kein Code-Umbau. In `projekt-beta` als Quelle einweben.
-   Schließt Betas letzte **unbelegte** Zahl. → **oberstes Item für den nächsten Zyklus**.
-2. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0
-   hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur.
+1. **[P6] Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 auf den
+   Zielwert hochlaufen lassen (~760 ms, easeOutCubic), passend zum Zahlen-Count-up (Zyklus 8). Rein
+   additive Feinpolitur (`app.js`/`styles.css`), `prefers-reduced-motion` → sofort. → **oberstes Item
+   für den nächsten Zyklus** (letzte sichtbare „springende" Kante).
+2. **[P4] Kunden-Beauftragungsbeleg zu NA-2026-0037** — Nordwind bestätigt den Nachtrag schriftlich →
+   Zwei-Schritt-Vorgang. Dupliziert das in Zyklus 23 gebaute Motiv; erst nach der Balken-Politur erwägen.
 3. **[P5] Kette an die Materialkosten-Antwort hängen** — `answer.chain = DECISION_CHAIN` auch an
    `materialkosten` (kein neuer Code) → wiederholt den stärksten CFO-Moment am Einstiegs-Beat. Achtung
    Video-Reihenfolge: dann erscheint die Kette zweimal (materialkosten direkt vor budget-herkunft) —
@@ -19,6 +18,15 @@
 
 ## Erledigt
 
+- **[Zyklus 23] Nachtragsangebot an Nordwind (Betas letzte unbelegte Zahl)** — neues Dokument
+  `nachtrag-nordwind-beta` (Typ „Nachtragsangebot", Berichte): NA-2026-0037 von Meridian an die Nordwind
+  Logistik AG mit `lineItems` (Prüfstation 250k + Engineering/SPS 110k + FAT 40k = 400.000 € netto /
+  76.000 € USt / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian — Reuse des Beleg-Skins.
+  In `projekt-beta` als 3. Quelle (82 %) + Reasoning + Verwandte + Folgefrage eingewoben; belegt exakt die
+  „+0,4 Mio. €". Fast reiner `data.js`-Additiv; zwei winzige `app.js`-Ergänzungen (`DOC_SKINS`-Eintrag +
+  optionales `grossLabel`). Deterministisch (28 Docs, 16 Szenarien, 0 kaputte Refs, Zitate wortgleich,
+  Arithmetik korrekt) + live verifiziert (Suche findet Beleg, `paper-beleg` mit Meridian/NACHTRAG/3
+  Positionen/Angebotssumme brutto, keine Konsolenfehler).
 - **[Zyklus 22] Projekt-Portfolio-Überblick** — neues Szenario `projekt-portfolio` (Berichte, 94 %)
   „Welche Projekte laufen aktuell?" stellt Alpha **und** Beta in **einer** Ampel-Übersichtstabelle
   gegenüber (Projekt · Fortschritt · Budget · Termin · Status): Alpha 62 %/24,0 Mio./✓ im Zeitplan, Beta

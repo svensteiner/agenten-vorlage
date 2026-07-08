@@ -38,6 +38,7 @@
     "Prüfnachweis":         { cat: "nachweis", stamp: { text: "BESTANDEN", tone: "ok" } },
     "Mängelrüge":           { cat: "beleg", stamp: { text: "MÄNGELRÜGE", tone: "warn" } },
     "Gutschrift":           { cat: "beleg", extIssuer: true, stamp: { text: "GUTSCHRIFT", tone: "ok" } },
+    "Nachtragsangebot":     { cat: "beleg", stamp: { text: "NACHTRAG", tone: "ink" } },
     "E-Mail":               { cat: "email" },
   };
   const defaultSkin = { cat: "bericht" };
@@ -927,7 +928,7 @@
     const foot = [];
     if (li.net) foot.push(footRow("Netto", li.net, false));
     if (li.vat) foot.push(footRow("USt" + (li.vatRate ? " " + escapeHtml(li.vatRate) : ""), li.vat, false));
-    if (li.gross) foot.push(footRow("Rechnungsbetrag brutto", li.gross, true));
+    if (li.gross) foot.push(footRow(li.grossLabel || "Rechnungsbetrag brutto", li.gross, true));
 
     box.innerHTML =
       (li.ref ? `<div class="li-ref">${escapeHtml(li.ref)}</div>` : "") +

@@ -79,7 +79,7 @@
   zeigt eine kurze Vorbereitung und dann eine grüne Erfolgs-Bestätigung — ideal als Schluss-Frame.
   Die Briefing-Nummer ist deterministisch (bei gleicher Antwort reproduzierbar).
 - **Globale Suche (Zyklus 17):** **Strg/⌘ + K** öffnet/schließt die Command-Palette von überall (Esc
-  schließt). Leeres Feld = komplettes Inventar (Zähler „27 Dokumente"); Tippen filtert live über alle
+  schließt). Leeres Feld = komplettes Inventar (Zähler „28 Dokumente"); Tippen filtert live über alle
   Dokumente, ↑/↓ + Enter öffnen den markierten Treffer. Der Auslöser ist während der Geführten Demo
   bewusst inaktiv — für den Such-Beat die Demo also **nicht** laufen lassen (separat aufnehmen).
 - **Projekt-Portfolio (Zyklus 21/22):** Die Geführte Demo zeigt jetzt **zwei** Projekte direkt
@@ -95,4 +95,10 @@
   Relevanz 96 % · Übereinstimmung hoch). Für Einzelheiten kann danach die Eskalations-E-Mail (bei
   „Projekt Beta", Quelle 2, ✉) geöffnet werden — sie zeigt den Lieferverzug samt zitierter
   Zulieferer-Meldung.
+- **Beta lückenlos belegt (Zyklus 23):** Bei *„Wie steht Projekt Beta?"* trägt die Antwort jetzt eine
+  **3. Quelle** — das **Nachtragsangebot NA-2026-0037 an die Nordwind Logistik AG** (▤ „Nachtragsangebot").
+  Öffnen → Original-Beleg mit **NACHTRAG**-Stempel und Positionstabelle (zusätzliche Prüfstation +
+  Engineering + FAT = **400.000 € netto / 476.000 € brutto**). **Wow: „Selbst der Änderungswunsch im
+  schwierigen Projekt ist kaufmännisch sauber dokumentiert — jede Zahl hat ihren Beleg."** Kurz auf der
+  Angebotssumme brutto halten; folgt sauber auf die Eskalations-E-Mail (Ursache → kaufmännische Antwort).
 - Ton: ruhige Sprecherstimme, dezenter Corporate-Underscore.

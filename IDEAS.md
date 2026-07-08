@@ -90,9 +90,14 @@
   Schluss „1 von 2 termingefährdet". Quellen = **beide bestehenden Statusberichte** (je 96 %) +
   Vorstandsprotokoll. Reuse `<table>`-Struktur, kein neues Dokument, kein Code-Umbau. Der „ganzes
   Portfolio auf einen Blick"-Moment; in der Geführten Demo direkt nach Alpha + Beta.
-- **Drittes Beta-Dokument (Change-Request an Nordwind)** — Angebotsnachtrag über den Kunden-
-  Änderungswunsch (+0,4 Mio. €, zusätzliche Prüfstation) mit `lineItems`; Reuse Beleg-Skin, in
-  `projekt-beta` als Quelle einweben. Schließt Betas letzte unbelegte Zahl. *(Nächster Zyklus — Tiefe.)*
+- ✅ **Drittes Beta-Dokument (Nachtragsangebot an Nordwind)** — *erledigt in Zyklus 23*: Dokument
+  `nachtrag-nordwind-beta` (Typ „Nachtragsangebot", Berichte) NA-2026-0037 von Meridian an die Nordwind
+  Logistik AG mit `lineItems` (Prüfstation 250k + Engineering/SPS 110k + FAT 40k = **400.000 € netto** /
+  76.000 € USt / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian — Reuse des Beleg-Skins. In
+  `projekt-beta` als 3. Quelle (82 %) eingewoben. Belegt Betas letzte unbelegte Zahl („+0,4 Mio. €").
+  Fast reiner `data.js`-Additiv + zwei winzige `app.js`-Ergänzungen (Skin-Eintrag + optionales `grossLabel`).
+- **Konfidenz-/Relevanz-Balken mit-animieren** — die Meter-Balken beim Einblenden von 0 auf den Zielwert
+  hochlaufen lassen, passend zum Zahlen-Count-up (Zyklus 8). Rein additive Politur. *(Nächster Zyklus.)*
 - **Kette an weitere Antworten hängen** — den `answer.chain`-Baustein (= `DECISION_CHAIN`) auch an die
   Materialkosten-Antwort (Einstiegs-Beat) anfügen, kein neuer Code. Video-Reihenfolge beachten
   (Kette erschiene zweimal). *(Tiefe-Option.)*

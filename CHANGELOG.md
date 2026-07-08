@@ -2,6 +2,41 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Zyklus 23 — 2026-07-08 — Nachtragsangebot an Nordwind: Betas letzte Zahl wird belegt 🧾
+
+**Der Kunden-Änderungswunsch (+0,4 Mio. €) ist jetzt ein Original-Beleg, keine Behauptung mehr.** Nach
+Zyklus 22 war Betas Breite rund (Portfolio-Überblick als Klammer), aber die **+0,4 Mio. €** für die
+zusätzliche Prüfstation waren die einzige Beta-Zahl **ohne** Belegdokument. Neu ist der kaufmännische
+Nachweis, *wie* Meridian den Scope-Change beim Kunden geltend macht — derselbe lückenlose Beleg-Anspruch,
+den Alpha (Entscheidungskette) und der Reklamations-Vorgang bereits erfüllen.
+
+### Neu
+- **Dokument `nachtrag-nordwind-beta`** (Typ **„Nachtragsangebot"**, Modul Berichte): Nachtragsangebot
+  **NA-2026-0037** von Meridian an die **Nordwind Logistik AG**, Bezug Rahmenauftrag NW-2025-0442.
+  Positionstabelle (Reuse des Beleg-Skins mit `lineItems`): zusätzliche **Prüfstation** 250.000 € +
+  **Engineering/SPS-Integration** 110.000 € + **erweiterte FAT** 40.000 € = **400.000 € netto**, USt 19 %
+  76.000 €, **Angebotssumme brutto 476.000 €**. Aussteller = **Meridian** (kein extIssuer); neutraler
+  **NACHTRAG**-Stempel (Ton `ink`, bestehend). Datum 27.03.2026 (nach Change-Request 18.03., vor
+  Statusbericht 31.03.) → chronologisch konsistent.
+- **In `projekt-beta` eingewoben:** als **3. Quelle** (82 %) plus neuer Reasoning-Schritt („Kunden-
+  Änderungswunsch (+0,4 Mio. €) über das Nachtragsangebot an Nordwind kaufmännisch belegt"), in `related`
+  ergänzt und neue Folgefrage **„Zeig mir den Nachtrag an Nordwind."** → in der Geführten Demo klickbar.
+
+### Verzahnung / Reuse
+- **Fast reiner `data.js`-Additiv-Schritt.** Zwei winzige, rückwärtskompatible Ergänzungen in `app.js`:
+  ein neuer `DOC_SKINS["Nachtragsangebot"]`-Eintrag und ein optionales `lineItems.grossLabel`
+  (Fallback „Rechnungsbetrag brutto") — damit die Fußzeile korrekt **„Angebotssumme brutto"** statt
+  „Rechnungsbetrag" liest. Kein Umbau, keine bestehenden Belege/Skins verändert.
+
+### Verifikation
+- Deterministisch (Node-VM gegen `data.js`): **28 Docs** (war 27), **16 Szenarien**, **3 E-Mails**,
+  **0 kaputte Referenzen**; alle **3** Beta-Quell-Zitate wortgleich im Body; Relevanzen 0–100;
+  **Arithmetik** geprüft (250 + 110 + 40 = 400 netto; +19 % 76 = **476** brutto). Live im Browser (DOM
+  gegen reale Daten): Suche „nachtrag" findet den Beleg (▤), Klick öffnet **`paper-beleg`**, Aussteller
+  **Meridian Industrie GmbH**, **NACHTRAG**-Stempel, 3 Positionszeilen + Netto/USt/**Angebotssumme
+  brutto**; Beta-Szenario trägt die neue Quelle; **keine Konsolenfehler**. (Screenshot-Capture im Harness
+  instabil — bekannte Grenze; daher DOM/Daten-basiert verifiziert.)
+
 ## Zyklus 22 — 2026-07-08 — Projekt-Portfolio: die Parallelität auf einen Blick 📊
 
 **„Welche Projekte laufen aktuell?" — beide Projekte in einer Ampel-Übersicht.** Nach Zyklus 21 trug die

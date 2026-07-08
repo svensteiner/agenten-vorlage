@@ -33,7 +33,7 @@ Mini-Balken, Fußzeile *„Keine Behauptung — eine Ableitung aus konkreten Que
 
 ## Szene 0b — „Was steckt eigentlich alles drin?" (Opener der Geführten Demo, 0:20–0:35)
 **Aktion:** **Automatisch** — direkt nach dem Start der „▶ Geführten Demo" und **vor** der ersten Frage
-öffnet sich die Command-Palette von selbst: sie zeigt **„27 Dokumente im Wissensspeicher"**, tippt
+öffnet sich die Command-Palette von selbst: sie zeigt **„28 Dokumente im Wissensspeicher"**, tippt
 sichtbar **„stahl"** → die Liste filtert live auf **10 Treffer quer über Finanzen · Audit · Verträge**, öffnet
 kurz einen Beleg im Viewer und schließt wieder — *dann* läuft die Frage-Sequenz weiter.
 **Sprecher:** „Und wie viel liegt eigentlich schon im Haus? Ein Tastendruck durchsucht alles auf

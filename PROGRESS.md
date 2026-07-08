@@ -3,7 +3,7 @@
 > Gemessen gegen das Endziel: ein Demo-Prototyp, der einen CEO/CFO in einem
 > Verkaufsvideo sofort überzeugt. **Jeden Zyklus fortschreiben.**
 
-## Gesamtfortschritt: ≈ 87 % (Ende Zyklus 22)
+## Gesamtfortschritt: ≈ 88 % (Ende Zyklus 23)
 
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
@@ -11,18 +11,31 @@
 | Chat-Experience (Streaming, Antwort-Struktur) | 20 % | 93 % | 18.6 |
 | Belege pro Antwort (Quellen, Konfidenz, Nachvollziehbarkeit) | 15 % | 96 % | 14.4 |
 | Dokumentenviewer (Preview, Highlights, Metadaten) | 15 % | 95 % | 14.25 |
-| Demo-Firma & realistische Dokumente | 15 % | 90 % | 13.5 |
+| Demo-Firma & realistische Dokumente | 15 % | 93 % | 13.95 |
 | Demo-Szenarien (Breite & Tiefe) | 10 % | 94 % | 9.4 |
 | Video-Reife (Skript, Politur, Übergänge) | 5 % | 100 % | 5.0 |
-| **Summe** | **100 %** | — | **≈ 94 %** gewichtet der begonnenen Bereiche |
+| **Summe** | **100 %** | — | **≈ 95 %** gewichtet der begonnenen Bereiche |
 
 > Hinweis: Die gewichtete Summe der *begonnenen* Bereiche liegt höher; der
-> **Gesamtfortschritt ≈ 87 %** berücksichtigt weiter Reserven bei Dokumenten-Vielfalt und
-> optionaler Rest-Politur. Zyklus 22 fügt den **Portfolio-Überblick** hinzu, der Alpha + Beta in
-> einer Ampel-Übersicht bündelt, und hebt **Szenarien** (93 % → 94 %).
-> Konservativ gemeldet.
+> **Gesamtfortschritt ≈ 88 %** berücksichtigt weiter Reserven bei optionaler Rest-Politur (Balken-
+> Animation). Zyklus 23 macht **jede Beta-Zahl belegbar** (Nachtragsangebot an Nordwind) und hebt
+> **Demo-Firma** (90 % → 93 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Zyklus 23 (2026-07-08) ≈ 88 %** — Nachtragsangebot an Nordwind: der Kunden-Änderungswunsch von
+  Projekt Beta (**+0,4 Mio. €**, zusätzliche Prüfstation) ist jetzt ein Original-Beleg. Neues Dokument
+  `nachtrag-nordwind-beta` (Typ „Nachtragsangebot", Modul Berichte): NA-2026-0037 von Meridian an die
+  Nordwind Logistik AG, Positionstabelle (Prüfstation 250k + Engineering/SPS 110k + erweiterte FAT 40k =
+  **400.000 € netto** / USt 76.000 € / **476.000 € brutto**), NACHTRAG-Stempel, Aussteller Meridian —
+  Reuse des Beleg-Skins mit `lineItems`. In `projekt-beta` als 3. Quelle (82 %) + Reasoning-Schritt +
+  Verwandte + Folgefrage eingewoben; belegt exakt die vorher nur behaupteten „+0,4 Mio. €". Fast reiner
+  `data.js`-Additiv-Schritt; zwei winzige rückwärtskompatible `app.js`-Ergänzungen (`DOC_SKINS`-Eintrag +
+  optionales `lineItems.grossLabel` → Fußzeile „Angebotssumme brutto"). Deterministisch verifiziert:
+  28 Docs (war 27), 16 Szenarien, 3 E-Mails, 0 kaputte Referenzen, alle 3 Beta-Quell-Zitate wortgleich,
+  Arithmetik korrekt (250+110+40=400; +19 %=476); live geprüft (Suche findet den Beleg, Klick öffnet
+  `paper-beleg` mit Meridian als Aussteller, NACHTRAG-Stempel, 3 Positionszeilen + Netto/USt/Angebotssumme
+  brutto, Beta-Szenario trägt die Quelle, keine Konsolenfehler). (Demo-Firma 90 % → 93 %.)
 
 - **Zyklus 22 (2026-07-08) ≈ 87 %** — Projekt-Portfolio-Überblick: neues Szenario `projekt-portfolio`
   (Modul Berichte, Konfidenz 94 %) „Welche Projekte laufen aktuell?" — stellt **Alpha und Beta in einer
@@ -239,11 +252,11 @@
 
 ## Was den Fortschritt als Nächstes hebt
 
-1. **Drittes Beta-Dokument (Change-Request an Nordwind)** — belegt den kaufmännischen Umgang mit dem
-   Kunden-Änderungswunsch (+0,4 Mio. €) über einen Angebots-Nachtrag/Beleg; Reuse Beleg-/Angebots-Skin.
-   Tiefe statt Breite, hebt **Demo-Firma**. **Jetzt stärkster Hebel** (Portfolio-Überblick ist mit
-   Zyklus 22 gebaut).
-2. **Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 hochlaufen lassen,
-   passend zum Zahlen-Count-up (Zyklus 8). Optionale Feinpolitur (`app.js`/`styles.css`).
+1. **Konfidenz-/Relevanz-Meter mit-animieren** — Prozent-Balken beim Einblenden von 0 auf den Zielwert
+   hochlaufen lassen (~760 ms, easeOutCubic), passend zum Zahlen-Count-up (Zyklus 8). Rein additive
+   Feinpolitur (`app.js`/`styles.css`), `prefers-reduced-motion` → sofort. **Jetzt stärkster Hebel** —
+   die letzte sichtbare „springende" Kante (Beta ist mit Zyklus 23 lückenlos belegt).
+2. Optional (Tiefe): **Kunden-Beauftragungsbeleg** — Nordwind bestätigt NA-2026-0037 schriftlich → macht
+   den Nachtrag zum Zwei-Schritt-Vorgang. Dupliziert aber das gerade gebaute Motiv; erst nach der Politur.
 3. Optional: die Entscheidungskette (`DECISION_CHAIN`) auch an die **Materialkosten-Antwort** hängen
    — Tiefe statt Breite; Video-Reihenfolge beachten (Kette erschiene zweimal, s. NEXT_STEPS).
