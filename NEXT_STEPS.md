@@ -62,6 +62,17 @@ Datei, `prototype/` unverändert (`git status` nur die neue `.md`, `node --check
 
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
+> **Link-Integrität der Handover-Suite am 2026-07-09 verifiziert (freeze-konform, neuer Prüf-Winkel, kein
+> Eingriff):** statt Doc-Zähl-/Konsistenz-Prüfungen erneut zu wiederholen (Churn), diesmal die **interne
+> Markdown-Link-Integrität aller Wurzel-`.md`** geprüft — ein bisher nicht abgedeckter Winkel: brechende
+> Querverweise machen ein Aufnahme-/Verkaufs-Kit für Nicht-Techniker unbrauchbar. **133 interne Links
+> geprüft, 0 kaputt** (jeder relative Datei-Link zeigt auf eine existierende Datei; Anker/`http(s)`/`mailto`
+> ausgenommen). Live-Daten unverändert: **29 Docs · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte
+> Referenzen · Chain 3**; Aufnahme-Pfad intakt: `DEMO_ORDER` = 6 IDs mit Money-Shot `agent-dazubuchen` als
+> Finale, `matchDocs("stahl")` = 10, `matchDocs("")` = 29. `node --check` grün, `git status` sauber,
+> `prototype/` unverändert. **Keine Regression — die Demo ist unverändert aufnahmebereit.** Ein
+> Verifikations-Pass hebt kein blockiertes Gate → **Gate B→C wartet weiter nur auf Sven.**
+>
 > **Aufnahme-Bereitschaft am 2026-07-09 verhaltens-verifiziert (freeze-konformer Verifikations-Zyklus, neuer
 > tieferer Winkel, keine Änderung im `prototype/`):** statt die Zähl-Prüfung identisch zu wiederholen (Churn)
 > diesmal die **reale Palette-Suche nachgestellt** — die `matchDocs()`-Feldmenge (`title · type · snippet ·

@@ -47,6 +47,19 @@
 
 ## Verlauf
 
+- **Phase B · Link-Integrität der Handover-Suite verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
+  Zyklus mit **neuer Dimension**: statt Doc-Zähl-/Konsistenz-Prüfungen zu wiederholen (Churn), diesmal die
+  **interne Markdown-Link-Integrität aller Wurzel-`.md`** geprüft — ein bisher nicht abgedeckter Winkel:
+  brechende Querverweise machen ein Aufnahme-/Verkaufs-Kit für Nicht-Techniker unbrauchbar. **133 interne
+  Links geprüft, 0 kaputt** (jeder relative Datei-Link → existierende Datei; Anker/`http(s)`/`mailto`
+  ausgenommen). Live-Daten unverändert (Node-VM gegen `data.js`): **29 Docs · 17 Szenarien · 3 E-Mails ·
+  2 gesperrt · 0 kaputte Referenzen · DECISION_CHAIN 3 Schritte**; Aufnahme-Pfad intakt: `DEMO_ORDER` =
+  **6 IDs** (alle vorhanden) mit **Money-Shot `agent-dazubuchen` als Finale**, `matchDocs("stahl")` = **10**,
+  `matchDocs("")` = **29**. `node --check` (app.js + data.js) grün, `git status` sauber, **`prototype/`
+  unverändert** (Feature-Freeze gewahrt). **Keine Regression — die Demo ist unverändert aufnahmebereit.**
+  Ein Verifikations-Pass hebt kein blockiertes Gate → Fortschritt bleibt ≈ 92 %. **Gate B→C wartet weiter
+  nur auf Sven.**
+
 - **Phase B · Aufnahme-Bereitschaft verhaltens-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
   Zyklus mit **tieferem Winkel**: statt die Zähl-Prüfung ein drittes Mal identisch zu wiederholen (Churn),
   die **reale Command-Palette-Suche nachgestellt** — die `matchDocs()`-Feldmenge

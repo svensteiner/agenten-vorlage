@@ -2,6 +2,27 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Link-Integrität der Handover-Suite verifiziert (frischer Prüf-Winkel, kein Eingriff)
+
+**Reiner Verifikations-Zyklus, neue Dimension.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert
+(Gate B→C); die vorziehbaren Phase-C-Doku-Bricks sind erschöpft (alle 5 fertig), jede weitere Phase-C-Arbeit
+berührt `prototype/` und ist gated. Statt Doc-Zähl-/Konsistenz-Prüfungen ein weiteres Mal zu wiederholen
+(Churn), diesmal die **interne Link-Integrität der gesamten Handover-Suite** geprüft — ein bisher nicht
+abgedeckter Winkel: brechende Querverweise machen ein Verkaufs-/Aufnahme-Kit für einen Nicht-Techniker
+unbrauchbar.
+
+### Verifiziert (deterministisch, Node)
+- **Interne Markdown-Links: 133 geprüft, 0 kaputt** über *alle* Wurzel-`.md` (VIDEO_*, RECORDING_CHECKLIST,
+  PILOT_*, SCENARIO_LIBRARY, SYNTHETIC_DATA_PIPELINE, NEXT_STEPS, PROGRESS, OPEN_ITEMS u. a.). Jeder relative
+  Datei-Link (Anker/`http(s)`/`mailto` ausgenommen) zeigt auf eine existierende Datei.
+- **Live-Daten unverändert:** `data.js` = **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte
+  Referenzen** (Quellen/Verwandte/Withheld/Chain); `DECISION_CHAIN` = **3 Schritte**.
+- **Aufnahme-Pfad intakt:** `DEMO_ORDER` = **6 IDs** (alle existieren) mit `agent-dazubuchen` als **Finale**;
+  `matchDocs("stahl")` = **10**, `matchDocs("")` = **29** (Palette-Zähler stimmt).
+- `node --check` (app.js + data.js) grün; **`git status` sauber, `prototype/` unverändert** (Feature-Freeze
+  gewahrt). **Keine Regression — die Demo ist unverändert aufnahmebereit.** Kein gehobenes Gate.
+  **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase B — 2026-07-09 — Aufnahme-Bereitschaft verhaltens-verifiziert (Palette-Suche real nachgestellt, kein Eingriff)
 
 **Reiner Verifikations-Zyklus, tieferer Winkel.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
