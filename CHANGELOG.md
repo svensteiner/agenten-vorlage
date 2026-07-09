@@ -2,6 +2,27 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — PILOT_CONFIG_SPEC.md (Umbranding-Mechanismus spezifiziert)
+
+**Design-Portion der Phase-C-Deliverable 1, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Statt eines weiteren identischen Re-Verifikations-Zyklus die
+**Design-Portion** der nächsten Brick vorgezogen — reine `.md`, **kein Eingriff in `prototype/`**.
+
+### Neu: `PILOT_CONFIG_SPEC.md`
+- **Kernaufschluss (grounded durch Lesen von `prototype/`):** Der Firmenname „Meridian Industrie GmbH"
+  steht **~55-mal** in `data.js`-Dokumentkörpern → naives „Name im Config ändern" schlägt nicht durch.
+- **Auflösung — zwei Schichten:** **A) Shell/Chrome** per neuer `pilot.config.js`, die das `COMPANY`-Objekt
+  überschreibt (Shell liest es heute schon fast überall: `renderCompanyCard`, Hero, Briefing-Fußzeile,
+  `#searchCompany`); **B) Dokumentenkorpus wholesale ersetzt** durch den synthetischen Zwilling
+  (`SYNTHETIC_DATA_PIPELINE.md`), nicht per Suchen-Ersetzen.
+- **Config-Schema** (`company`/`industry`/**genau 3** `scenarios`/optional `accent`+`corpus`), additiver
+  **Wiring-Plan** (Script-Tag + `Object.assign`-Guard + `applyPilotChrome()`), **Token-Konvention**
+  `{{COMPANY}}` gegen künftige Hartkodierung, **48-h-Ablaufdiagramm** und **Abnahme-Kriterien**.
+- **Regressionsschutz fürs Video:** `active:false`/fehlende Datei → **bit-identische** Meridian-Demo.
+- **Reine Design-Datei, `prototype/` unverändert** (Feature-Freeze gewahrt): `git status` nur die neue
+  `.md`, `prototype/` 0 geänderte Dateien, `node --check` (app.js + data.js) ok. Die **Implementierung**
+  berührt `prototype/` → **erst nach Gate B→C**.
+
 ## Phase C (Vorbereitung) — 2026-07-09 — SYNTHETIC_DATA_PIPELINE.md (Datenpipeline dokumentiert)
 
 **Dritte Phase-C-Deliverable, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe**

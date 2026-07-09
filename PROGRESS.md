@@ -45,6 +45,24 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · PILOT_CONFIG_SPEC.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens
+  Aufnahme + Freigabe** blockiert (Gate B→C). Statt eines weiteren identischen Re-Verifikations-Zyklus die
+  **Design-Portion der nächsten Phase-C-Brick** vorgezogen: [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) —
+  Spezifikation des Umbranding-Mechanismus. Grounded durch Lesen von `prototype/` (nichts geändert):
+  Firmenname „Meridian Industrie GmbH" steht **~55-mal** in `data.js`-Dokumentkörpern → Umbranding ist
+  **zwei Schichten**: **A) Shell/Chrome** per neuer `pilot.config.js`, die das `COMPANY`-Objekt überschreibt
+  (die Shell liest heute schon fast alles daraus — `renderCompanyCard`, Hero, Briefing, `#searchCompany`);
+  **B) Dokumentenkorpus wholesale ersetzt** durch den synthetischen Zwilling ([SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md)),
+  nicht per Suchen-Ersetzen. Enthält Config-Schema (`company`/`industry`/genau 3 `scenarios`/optional
+  `accent`+`corpus`), additiven Wiring-Plan (Script-Tag + Guard + `applyPilotChrome()`), Token-Konvention
+  `{{COMPANY}}` gegen künftige Hartkodierung, 48-h-Ablauf-Diagramm und Abnahme-Kriterien — u. a. `active:false`
+  → **bit-identische Meridian-Demo** (Regressionsschutz für das noch aufzunehmende Video). **Reine
+  Handover-/Design-Datei — kein Eingriff in `prototype/`** (Feature-Freeze gewahrt): `git status` zeigt nur
+  die neue `.md`, `node --check` (app.js + data.js) ok, `prototype/` 0 geänderte Dateien. Die
+  **Implementierung** berührt `prototype/` → **erst nach Gate B→C**. Ein Design-Brick hebt kein blockiertes
+  Gate → Fortschritt bleibt **≈ 92 %**. (Phase-C-Deliverable 1 — Design-Portion; Deliverable 4 von 5 der
+  vorziehbaren Doku-Bricks.)
+
 - **Phase C (Vorbereitung) · SYNTHETIC_DATA_PIPELINE.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens
   Aufnahme + Freigabe** blockiert (Gate B→C). Wie im Handover angekündigt die **dritte freeze-konforme
   Phase-C-Brick** gebaut: [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) — dokumentiert den

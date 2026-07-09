@@ -17,11 +17,21 @@
 
 > **Freeze-konforme Phase-C-Vorbereitung parallel begonnen** (kein Eingriff in `prototype/`): reine
 > Dokumentations-Bricks, die nicht von der Video-Freigabe abhängen. Bereits fertig: SCENARIO_LIBRARY.md,
-> PILOT_ONE_PAGER.md, SYNTHETIC_DATA_PIPELINE.md. Nächste Kandidaten (Reihenfolge): **PILOT_CONFIG**
-> (Achtung: berührt `prototype/` → erst **nach** Gate B→C bauen) → **End-to-End-Probelauf
-> „Muster Bau GmbH" + PILOT_KIT.md**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
+> PILOT_ONE_PAGER.md, SYNTHETIC_DATA_PIPELINE.md, **PILOT_CONFIG_SPEC.md (Design)**. Verbleibende Schritte
+> **berühren `prototype/`** → erst **nach** Gate B→C: **PILOT_CONFIG-Implementierung** (Wiring aus der Spec)
+> → **End-to-End-Probelauf „Muster Bau GmbH" + PILOT_KIT.md**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
+
+- **[Phase C — Vorbereitung] PILOT_CONFIG_SPEC.md (Umbranding-Design)** — Spezifikation, wie **eine**
+  `pilot.config.js` den Prototyp umbrandet. Kernaufschluss (grounded durch Lesen von `prototype/`):
+  Firmenname steht **~55-mal** in `data.js`-Dokumentkörpern → **zwei Schichten**: A) Shell/Chrome per
+  Config überschreibt das `COMPANY`-Objekt (Shell liest es heute schon fast überall), B) Dokumentenkorpus
+  **wholesale** ersetzt durch den synthetischen Zwilling (Pipeline), nicht per Suchen-Ersetzen. Enthält
+  Config-Schema (genau 3 Szenarien, Money-Shot bleibt Finale), additiven Wiring-Plan, Token-Konvention
+  `{{COMPANY}}`, 48-h-Ablauf, Abnahme-Kriterien (`active:false` → bit-identische Meridian-Demo =
+  Regressionsschutz fürs Video). **Reine Design-Datei, `prototype/` unverändert** (0 geänderte Dateien,
+  `node --check` ok); Implementierung berührt `prototype/` → **erst nach Gate B→C**.
 
 - **[Phase C — Vorbereitung] SYNTHETIC_DATA_PIPELINE.md (synthetische Datenpipeline)** — dokumentiert den
   wiederholbaren Pilot-Workflow **Kunden-Dateistruktur rein → synthetischer Zwilling raus (Formeln intakt)

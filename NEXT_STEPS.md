@@ -37,11 +37,22 @@ synthetischer Zwilling mit intakten Formeln raus → in `data.js` geladen**, Reu
 Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
 **► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** die reinen Phase-C-Doku-Bricks
-(Szenarienbibliothek · One-Pager · Datenpipeline) sind **abgeschlossen**. Die verbleibenden Bricks
-**berühren `prototype/`** und dürfen daher **erst nach Gate B→C** ausgeführt werden:
-1. **PILOT_CONFIG** — ⚠ Umbranding-Mechanismus (Name/Logo/Branche) im `prototype/` → **erst nach Gate B→C**.
-2. **End-to-End-Probelauf „Muster Bau GmbH"** + **PILOT_KIT.md** — führt
+(Szenarienbibliothek · One-Pager · Datenpipeline · **neu PILOT_CONFIG-Spec**) sind **abgeschlossen**. Die
+verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Gate B→C** ausgeführt werden:
+1. **PILOT_CONFIG (Implementierung)** — das in [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) spezifizierte
+   Wiring (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()` in `app.js`). ⚠ berührt
+   `prototype/` → **erst nach Gate B→C**. Design ist fertig → dann 30-Min-Mechanik.
+2. **End-to-End-Probelauf „Muster Bau GmbH"** + **PILOT_KIT.md** — führt PILOT_CONFIG-Spec +
    [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus; sobald 1 steht.
+
+**Diesen Zyklus gebaut (freeze-konform, reine `.md`):** [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) —
+Design des Umbranding-Mechanismus. Kernaufschluss: Der Firmenname steht **~55-mal** in `data.js`
+(Dokumentkörper), also ist Umbranding **zwei Schichten** — A) Shell/Chrome per `pilot.config.js`
+(überschreibt das `COMPANY`-Objekt, das die Shell heute schon fast überall liest) und B) Dokumentenkorpus
+**wholesale** ersetzt durch den synthetischen Zwilling (Pipeline), nicht per Suchen-Ersetzen. Enthält
+Config-Schema, Wiring-Plan (rein additiv), Token-Konvention `{{COMPANY}}` gegen künftige Hartkodierung,
+48-h-Ablauf und Abnahme-Kriterien (u. a. `active:false` → bit-identische Meridian-Demo = Regressionsschutz
+fürs Video). Hebt **kein** Gate; macht die spätere Implementierung zur 30-Min-Mechanik.
 
 Liegt bis dahin keine Sven-Rückmeldung vor, bleibt der Zyklus ein **Wartepunkt** (re-verifizieren statt
 churnen). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor jeder Phase-C-Doku. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
