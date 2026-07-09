@@ -12,7 +12,10 @@
 > allein auf Svens Aufnahme + Freigabe.** Bis dahin nur ändern, was Sven anmerkt.
 >
 > **Parallel (freeze-konforme Phase-C-Vorbereitung, kein Eingriff in `prototype/`):** bereits fertig
-> [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) + [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Angebotsdokument).
+> [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) + [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Angebotsdokument)
+> + [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) (Datenpipeline). **Die reinen Doku-Bricks sind
+> damit abgeschlossen** — die restlichen Phase-C-Schritte (PILOT_CONFIG, Probelauf) berühren `prototype/`
+> und warten auf Gate B→C.
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
 > Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Phase A ist abgeschlossen
@@ -41,6 +44,22 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase C (Vorbereitung) · SYNTHETIC_DATA_PIPELINE.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens
+  Aufnahme + Freigabe** blockiert (Gate B→C). Wie im Handover angekündigt die **dritte freeze-konforme
+  Phase-C-Brick** gebaut: [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) — dokumentiert den
+  wiederholbaren Pilot-Workflow **Kunden-Dateistruktur rein → synthetischer Zwilling raus (Formeln intakt)
+  → in `prototype/data.js` geladen**. Nutzt das **bestehende** Tool `synthetic-data-creator`
+  (`C:\Users\botrunner\projects\synthetic-data-creator`, **43/43 Tests** verifiziert) statt Neubau: Mehrblatt-
+  Excel mit Formelerhalt (auch blattübergreifend), Gelb-Konvention `FFF2CC`, CSV/JSON/XLSX/PDF, `--seed` für
+  reproduzierbare Demos. Enthält 4-Schritt-Prozess (Audit-Call → Eingabe formen → `python synth.py --from …`
+  → Eintrag in `DOCS`/`lineItems` → deterministisch verifizieren), Ablaufdiagramm, Beispieltabelle
+  „Muster Bau GmbH" und eine klar markierte **Freeze-Grenze** (Eintrag in `data.js` + PILOT_CONFIG berühren
+  `prototype/` → erst nach Gate B→C). **Reine Handover-Datei — kein Eingriff in `prototype/`** (Feature-Freeze
+  gewahrt). Verifiziert: `git status` vor dem Schreiben sauber, `node --check` (app.js + data.js) ok,
+  `prototype/` unverändert, Tool-Tests 43/43. Ein Doku-Brick hebt kein blockiertes Gate → Fortschritt bleibt
+  **≈ 92 %**; damit sind die **reinen** Phase-C-Doku-Bricks abgeschlossen — die restlichen Schritte warten
+  auf Gate B→C. (Phase-C-Deliverable 3 von 5.)
 
 - **Phase C (Vorbereitung) · PILOT_ONE_PAGER.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme
   + Freigabe** blockiert (Gate B→C). Wie im Handover angekündigt die **nächste freeze-konforme Phase-C-Brick**

@@ -29,20 +29,22 @@ Untertitel, 47 Cues). **Sven kann jetzt aufnehmen.**
 Sven wartet und ein weiterer identischer Re-Verifikations-Zyklus reines Churnen wäre, werden die niedrigst-
 riskanten Phase-C-Bricks vorgezogen — **reine Doku, kein Eingriff in `prototype/`** (Feature-Freeze gewahrt).
 Bereits fertig: **[SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)** (17 Szenarien nach Schmerz + Branche, 3er-
-Startvorlagen) und **[PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md)** (Angebotsdokument: 48-h-Versprechen · was der
-Kunde nach 48 h sieht · Preis-Pfad Audit 149 € → Wissensbasis ab 5.000 € → Agent-Abo ab 400 €/Monat ·
-Agenten-Preisvergleich · Einwand-Antworten · CTA). Das hebt **kein** Gate — Gate B→C wartet weiter nur auf
+Startvorlagen), **[PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md)** (Angebotsdokument: 48-h-Versprechen · Preis-Pfad
+Audit 149 € → Wissensbasis ab 5.000 € → Agent-Abo ab 400 €/Monat · Einwand-Antworten · CTA) und **neu
+[SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md)** (Workflow **Kunden-Dateistruktur rein →
+synthetischer Zwilling mit intakten Formeln raus → in `data.js` geladen**, Reuse `synthetic-data-creator`
+43/43 Tests, 4-Schritt-Prozess + Ablaufdiagramm). Das hebt **kein** Gate — Gate B→C wartet weiter nur auf
 Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
-**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** die nächste freeze-konforme Phase-C-Doku-
-Brick, in dieser Reihenfolge (jeweils **ohne** `prototype/` zu berühren):
-1. **Synthetische Datenpipeline dokumentieren** — Workflow mit `synthetic-data-creator`
-   (`C:\Users\botrunner\projects\synthetic-data-creator`, getestet 43/43): Kunden-Dateistruktur rein →
-   synthetischer Zwilling mit intakten Formeln raus → in den Prototyp geladen. Reine Doku, kein Code.
-2. **PILOT_CONFIG** — ⚠ berührt `prototype/` (Umbranding-Mechanismus) → **erst nach Gate B→C** bauen.
-3. **End-to-End-Probelauf „Muster Bau GmbH"** + **PILOT_KIT.md** (48-h-Prozess) — sobald 1 steht.
+**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** die reinen Phase-C-Doku-Bricks
+(Szenarienbibliothek · One-Pager · Datenpipeline) sind **abgeschlossen**. Die verbleibenden Bricks
+**berühren `prototype/`** und dürfen daher **erst nach Gate B→C** ausgeführt werden:
+1. **PILOT_CONFIG** — ⚠ Umbranding-Mechanismus (Name/Logo/Branche) im `prototype/` → **erst nach Gate B→C**.
+2. **End-to-End-Probelauf „Muster Bau GmbH"** + **PILOT_KIT.md** — führt
+   [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus; sobald 1 steht.
 
-Kommt eine Anmerkung von Sven → **die hat Vorrang** vor jeder Phase-C-Doku. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+Liegt bis dahin keine Sven-Rückmeldung vor, bleibt der Zyklus ein **Wartepunkt** (re-verifizieren statt
+churnen). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor jeder Phase-C-Doku. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 > **Aufnahme-Bereitschaft am 2026-07-09 re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
 > Änderung im `prototype/`):** `node --check` ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien ·

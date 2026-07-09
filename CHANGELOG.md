@@ -2,6 +2,25 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — SYNTHETIC_DATA_PIPELINE.md (Datenpipeline dokumentiert)
+
+**Dritte Phase-C-Deliverable, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
+blockiert (Gate B→C). Die nächste `prototype/`-freie Doku-Brick nach Plan: der **Workflow für
+synthetische Pilot-Daten** — reine Prozessdatei, **kein Eingriff in `prototype/`**.
+
+### Neu: `SYNTHETIC_DATA_PIPELINE.md`
+- Dokumentiert **einen wiederholbaren Weg**: **Kunden-Dateistruktur rein → synthetischer Zwilling
+  raus (Formeln intakt) → in `prototype/data.js` geladen** — passend zum 48-h-Pilot-Versprechen
+  („kein einziges echtes Dokument nötig").
+- **Reuse statt Neubau:** nutzt das bestehende Tool `C:\Users\botrunner\projects\synthetic-data-creator`
+  (**43/43 Tests** verifiziert), inkl. Mehrblatt-Excel mit **Formelerhalt** (auch blattübergreifend),
+  Gelb-Konvention (`FFF2CC`-Eingabezellen), CSV/JSON/XLSX/PDF, `--seed` für reproduzierbare Demos.
+- **4-Schritt-Prozess** (Audit-Call → Eingabe formen → `python synth.py --from …` → Eintrag in `DOCS`/
+  `lineItems` → deterministisch verifizieren) + Ablaufdiagramm + Beispieltabelle „Muster Bau GmbH".
+- **Freeze-Grenze klar markiert:** Schritt 3 (Eintrag in `data.js`) und PILOT_CONFIG berühren
+  `prototype/` → **erst nach Gate B→C**. **Verifikation:** `git status` sauber, `node --check`
+  (app.js + data.js) ok, `prototype/` unverändert, Tool-Tests 43/43. (Phase-C-Deliverable 3 von 5.)
+
 ## Phase C (Vorbereitung) — 2026-07-09 — PILOT_ONE_PAGER.md (Angebotsdokument)
 
 **Zweite Phase-C-Deliverable, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
