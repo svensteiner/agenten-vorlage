@@ -2,6 +2,36 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2, kein Eingriff in prototype/)
+
+**Erstmals echte Ausführung statt Doku.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert
+(Gate B→C). Statt eines 6. identischen Re-Verifikations-Zyklus (Churn) die größte unbewiesene Annahme des
+Phase-C-Plans getilgt: Die [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) beschrieb den Workflow
+„Kunden-Struktur rein → synthetischer Zwilling raus (Formeln intakt)" bislang nur **hypothetisch**. Jetzt sind
+die **Schritte 1 + 2 tatsächlich ausgeführt** (die *nicht*-gated Hälfte; Schritt 3 = Laden in `data.js` bleibt
+gated) — neuer Ordner [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md), **außerhalb
+`prototype/`**.
+
+### Gebaut & ausgeführt
+- **`build_input.py`** — baut reproduzierbar eine fiktive **Muster-Bau-Controlling-Mappe** (2 Blätter:
+  Annahmen + Monatsabschluss Mai) mit Gelb-Konvention (`FFF2CC`) auf echten Eingaben und **3 blattüber-
+  greifenden Formeln** (`=Annahmen!B…`).
+- **Synthetischer Zwilling** via `synthetic-data-creator` (`python synth.py --from … --seed 42`, Reuse,
+  43/43 Tests grün) erzeugt.
+
+### Verifiziert (deterministisch, openpyxl)
+- **12/12 Formeln bit-genau erhalten**, inkl. der 3 blattübergreifenden (`E12=E11*Annahmen!B5/100` usw.).
+- **Chirurgisch:** 12/14 gelbe Eingaben synthetisiert; **gesetzliche USt-Konstante 19 % unangetastet**
+  (bewusst nicht gelb); Labels/Einheiten/Blätter unverändert.
+- **Modell rechnet weiter:** Formelkette aus den synthetischen Werten nachgerechnet → Netto **284.266,41 €**,
+  Brutto **338.277,03 €**, Probe **Brutto = Netto × 1,19** bestätigt, plausible Größenordnung.
+- **Lernpunkt für echte Pilots:** feste/gesetzliche Konstanten *nicht* gelb markieren (sonst perturbiert die
+  ±10 %-Heuristik) — im Log demonstriert. Keine blockierende Friction.
+- **`prototype/` unverändert** (`git status`: nur `pilot-assets/` neu); `node --check` (app.js + data.js) grün.
+
+Ein Vorbereitungs-Brick hebt kein blockiertes Gate → **Gate B→C wartet weiter nur auf Sven.** Die Pipeline ist
+jetzt **ausgeführt & bewiesen**, nicht mehr nur beschrieben — der 48-h-Pilot ist damit spürbar de-risked.
+
 ## Phase B — 2026-07-09 — Link-Integrität der Handover-Suite verifiziert (frischer Prüf-Winkel, kein Eingriff)
 
 **Reiner Verifikations-Zyklus, neue Dimension.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert

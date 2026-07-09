@@ -15,15 +15,22 @@
 
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
-> **Freeze-konforme Phase-C-Vorbereitung abgeschlossen** (kein Eingriff in `prototype/`): **alle 5 reinen
-> Dokumentations-Bricks** stehen — SCENARIO_LIBRARY.md, PILOT_ONE_PAGER.md, SYNTHETIC_DATA_PIPELINE.md,
-> PILOT_CONFIG_SPEC.md (Design) und **PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)**. Verbleibende
-> Schritte **berühren `prototype/`** → erst **nach** Gate B→C: **PILOT_CONFIG-Implementierung** (Wiring aus
-> der Spec) → **End-to-End-Probelauf „Muster Bau GmbH"** (Protokoll in PILOT_KIT.md §8) → `MISSION_COMPLETE`.
-> Ohne Sven-Rückmeldung bleibt der nächste Zyklus ein **Wartepunkt** (re-verifizieren statt churnen).
-> Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
+> **Freeze-konforme Phase-C-Vorbereitung erschöpft** (kein Eingriff in `prototype/`): alle 5 Doku-Bricks
+> **plus** die real ausgeführte Pipeline-Hälfte (Schritte 1+2, `pilot-assets/muster-bau-gmbh/`). Verbleibend
+> und **gated bis Gate B→C** (berührt `prototype/`): Schritt 3 (Übertrag in `data.js`) · PILOT_CONFIG-Wiring ·
+> End-to-End-Probelauf (Protokoll → PILOT_KIT.md §8) → `MISSION_COMPLETE`. Ohne Sven-Rückmeldung bleibt der
+> nächste Zyklus ein **Wartepunkt** (re-verifizieren statt churnen). Details: [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
+
+- **[Phase C — Vorbereitung] Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2)** — die
+  bisher nur **hypothetische** §Beispiel-Tabelle der [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md)
+  ist jetzt **ausgeführt & verifiziert**. Neuer Ordner `pilot-assets/muster-bau-gmbh/` (außerhalb `prototype/`):
+  `build_input.py` baut reproduzierbar eine fiktive mehrblättrige Bau-Controlling-Mappe (Gelb-Konvention +
+  3 blattübergreifende Formeln); `synthetic-data-creator` (`--seed 42`, 43/43 Tests) erzeugt den Zwilling.
+  Verifiziert (openpyxl): 12/12 Formeln bit-genau, USt-Konstante 19 % unangetastet, 12/14 gelbe Eingaben
+  synthetisiert, Modell rechnet weiter (Netto 284.266,41 € → Brutto 338.277,03 €, Brutto = Netto × 1,19).
+  Lernpunkt: feste Konstanten nicht gelb markieren. `prototype/` unverändert; Schritt 3 bleibt gated.
 
 - **[Phase C — Vorbereitung] PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)** — die Capstone-Doku,
   die die vier vorbereitenden Bricks ([PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) · [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)

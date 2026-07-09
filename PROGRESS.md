@@ -47,6 +47,25 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · Pilot-Datenpipeline real ausgeführt (2026-07-09) ≈ 92 %** — statt eines 6.
+  identischen Re-Verifikations-Zyklus (Churn) die größte **unbewiesene** Annahme des Phase-C-Plans getilgt:
+  die [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) beschrieb den Workflow „Kunden-Struktur rein →
+  synthetischer Zwilling raus (Formeln intakt)" bislang nur **hypothetisch** (§Beispiel-Tabelle). Jetzt sind
+  die **Schritte 1 + 2 tatsächlich ausgeführt** — die *nicht*-gated Hälfte der Pipeline (Schritt 3 = Laden in
+  `data.js` bleibt gated). Neuer Ordner [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md),
+  **außerhalb `prototype/`**: `build_input.py` baut reproduzierbar eine fiktive mehrblättrige Bau-Controlling-
+  Mappe (Annahmen + Monatsabschluss Mai) mit Gelb-Konvention `FFF2CC` und **3 blattübergreifenden Formeln**;
+  der `synthetic-data-creator` (Reuse, `python synth.py --from … --seed 42`, 43/43 Tests grün) erzeugt den
+  synthetischen Zwilling. **Verifiziert (deterministisch, openpyxl):** **12/12 Formeln bit-genau erhalten**
+  (inkl. blattübergreifend `=Annahmen!B5/100` u. a.); **gesetzliche USt-Konstante 19 % unangetastet** (bewusst
+  nicht gelb); **12/14 gelbe Eingaben synthetisiert**; Labels/Einheiten/Blätter unverändert; Modell rechnet
+  weiter (Formelkette aus den synth. Werten nachgerechnet: Netto **284.266,41 €**, Brutto **338.277,03 €**,
+  Probe **Brutto = Netto × 1,19** bestätigt). **Lernpunkt:** feste/gesetzliche Konstanten *nicht* gelb
+  markieren, sonst perturbiert die ±10 %-Heuristik — keine blockierende Friction. **`prototype/` unverändert**
+  (`git status`: nur `pilot-assets/` neu), `node --check` (app.js + data.js) grün. Ein Vorbereitungs-Brick
+  hebt kein blockiertes Gate → Fortschritt bleibt ≈ 92 %; die Pipeline ist jetzt **ausgeführt & bewiesen**
+  (nicht mehr nur beschrieben), der 48-h-Pilot spürbar de-risked. **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase B · Link-Integrität der Handover-Suite verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
   Zyklus mit **neuer Dimension**: statt Doc-Zähl-/Konsistenz-Prüfungen zu wiederholen (Churn), diesmal die
   **interne Markdown-Link-Integrität aller Wurzel-`.md`** geprüft — ein bisher nicht abgedeckter Winkel:

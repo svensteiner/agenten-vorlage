@@ -51,14 +51,24 @@ verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Ga
 > re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
 > gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (freeze-konform, reine `.md`):** [PILOT_KIT.md](PILOT_KIT.md) — das **Master-Runbook**,
-das die vier vorbereitenden Bricks (One-Pager · Szenarienbibliothek · Datenpipeline · PILOT_CONFIG-Spec) zu
-**einem** durchgehenden 48-h-Prozess zusammenfügt: Ablaufdiagramm **T+0 → T+48** (Audit-Call → 3 Szenarien →
-synth. Zwilling → Schicht A `pilot.config.js` + Schicht B `data.js`-Korpus → verifizieren → Übergabe),
-Schritt-für-Schritt-Runbook, **kopierbare Master-Checkliste**, Zeit-Budget (~2–4 h Handaufwand), Definition
-of Done und ein **markiertes Platzhalter-Protokoll „Muster Bau GmbH" (§8)** für den späteren Probelauf. Hebt
-**kein** Gate; macht den 48-h-Pilot-Prozess als **ein** einheitliches Runbook verkaufbar. Reine Handover-
-Datei, `prototype/` unverändert (`git status` nur die neue `.md`, `node --check` grün, Querverweise lösen auf).
+**Diesen Zyklus gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Datenpipeline erstmals
+real ausgeführt** statt nur dokumentiert. Neuer Ordner [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md)
+(außerhalb `prototype/`): `build_input.py` baut reproduzierbar eine fiktive mehrblättrige Bau-Controlling-Mappe
+mit Gelb-Konvention + 3 blattübergreifenden Formeln; der `synthetic-data-creator` (Reuse, 43/43 Tests) erzeugt
+mit `--seed 42` den synthetischen Zwilling. **Verifiziert (openpyxl):** 12/12 Formeln bit-genau erhalten (inkl.
+blattübergreifend), gesetzliche USt-Konstante 19 % unangetastet, 12/14 gelbe Eingaben synthetisiert, Modell
+rechnet weiter (Netto 284.266,41 € → Brutto 338.277,03 €, Brutto = Netto × 1,19). Das tilgt die größte
+**unbewiesene** Annahme des Phase-C-Plans (die §Beispiel-Tabelle der Pipeline war bislang hypothetisch) — die
+Schritte 1+2 sind jetzt **ausgeführt & bewiesen**, nur Schritt 3 (Laden in `data.js`) bleibt gated. **Lernpunkt
+im Log:** feste/gesetzliche Konstanten *nicht* gelb markieren. `git status`: nur `pilot-assets/` neu;
+`node --check` (app.js + data.js) grün.
+
+> **Korrektur zur Freeze-Grenze:** Die frühere Aussage „keine freeze-konforme Arbeit mehr möglich" galt nur für
+> *Doku*-Bricks. Die **Ausführung** der nicht-gated Pipeline-Hälfte (Schritte 1+2 = synthetischen Zwilling
+> erzeugen, ohne `prototype/` zu berühren) war weiterhin möglich und ist nun erledigt. **Jetzt** ist die
+> vorziehbare Phase-C-Arbeit erschöpft: das verbleibende Schritt 3 (`data.js`) + PILOT_CONFIG + der End-to-End-
+> Probelauf am Prototyp berühren alle `prototype/` und sind bis Gate B→C gated. Der `pilot-assets/`-Input steht
+> als **verifizierter** Ausgangspunkt für den späteren Probelauf bereit (Protokoll → PILOT_KIT.md §8).
 
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 

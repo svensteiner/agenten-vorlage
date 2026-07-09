@@ -160,15 +160,26 @@ Kunde sieht binnen 48 h SEINE eigene, belegte Demo — inkl. Money-Shot „Agent
 
 ---
 
-## Beispiel (Platzhalter für den Probelauf „Muster Bau GmbH")
+## Beispiel „Muster Bau GmbH" — Schritte 1+2 real ausgeführt ✅
 
-| Kunden-Dokumenttyp | Eingabe (Schritt 1) | Tool-Aufruf (Schritt 2) | Prototyp-Eintrag (Schritt 3) |
+Die Schritte 1 + 2 (die *nicht*-gated Hälfte der Pipeline) sind **tatsächlich ausgeführt und verifiziert** —
+nicht mehr nur beschrieben. Der ausführbare Beleg liegt in
+[`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md):
+
+| Kunden-Dokumenttyp | Eingabe (Schritt 1) | Tool-Aufruf (Schritt 2) | Prototyp-Eintrag (Schritt 3, **gated**) |
 |---|---|---|---|
-| Monats-Controlling (Excel, mehrblättrig) | `controlling_vorlage.xlsx`, Eingaben gelb | `--from controlling_vorlage.xlsx --seed 42` | `DOCS["monatsabschluss-mai"]` mit `lineItems` (Kostenarten) |
+| Monats-Controlling (Excel, mehrblättrig) | `build_input.py` → `muster-bau-controlling_vorlage.xlsx`, Eingaben gelb | `--from …vorlage.xlsx --seed 42` → `…_testdaten.xlsx` | `DOCS["monatsabschluss-mai"]` mit `lineItems` (Kostenarten) |
 | Eingangsrechnungen (PDF/CSV) | `rechnungen.csv` (Pos., Menge, Preis) | `--from rechnungen.csv --rows 40 --seed 42` | `DOCS["rechnung-…"]` + Drei-Wege-Abgleich |
 | Rahmenverträge (Liste) | `vertraege.csv` (Partner, Laufzeit, Frist) | `--from vertraege.csv --rows 12 --seed 42` | `DOCS["rahmenvertrag-…"]`, Szenario „auto. Verlängerung" |
 
-Der vollständige Probelauf wird in **PILOT_KIT.md** (Phase-C-Deliverable 5) protokolliert.
+**Verifikationsergebnis der ersten Zeile (2026-07-09):** 12/12 Formeln bit-genau erhalten (inkl. 3
+blattübergreifender `=Annahmen!…`), gesetzliche USt-Konstante 19 % unangetastet, 12/14 gelbe Eingaben
+synthetisiert, Modell rechnet weiter (Netto 284.266,41 € → Brutto 338.277,03 €, Brutto = Netto × 1,19).
+**Lernpunkt:** feste/gesetzliche Konstanten (USt) *nicht* gelb markieren, sonst perturbiert sie die
+±10 %-Heuristik — Detail-Log siehe [pilot-assets/muster-bau-gmbh/README.md](pilot-assets/muster-bau-gmbh/README.md).
+
+Der vollständige Probelauf **inklusive Schritt 3** (Übertragung in `data.js`) wird in **PILOT_KIT.md** §8
+protokolliert — erst **nach Gate B→C**, weil Schritt 3 `prototype/` berührt.
 
 ---
 
