@@ -39,6 +39,20 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · SCENARIO_LIBRARY.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme
+  + Freigabe** blockiert (Gate B→C); ein dritter identischer Re-Verifikations-Zyklus wäre reines Churnen.
+  Stattdessen — wie im letzten Handover angekündigt („sonst → Phase C") — die **niedrigst-riskante Phase-C-
+  Brick** vorgezogen: [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md). Alle **17 Szenarien** aus `data.js` nach
+  **Schmerz** (KOSTEN · RECHNUNGSPRÜFUNG · VERTRÄGE · MONATSABSCHLUSS · PROJEKTE · LIQUIDITÄT/RISIKO ·
+  COMPLIANCE · WISSENSVERLUST · ESG/GOVERNANCE) und **Branche** verschlagwortet — mit Modul, Konfidenz,
+  Belegzahl; dazu **fertige 3er-Startvorlagen** je Branche (Fertigung · Bau · Handel · Logistik ·
+  Dienstleistung · Querschnitt) + Auswahl-Spickzettel, Money-Shot als markiertes Finale. So lassen sich nach
+  einem 30-Min-Audit-Call in **Minuten** die 3 passenden Szenarien wählen. **Reine Doku aus `data.js` — kein
+  Eingriff in `prototype/`** (Feature-Freeze gewahrt), kein neues Feature. Verifiziert: `node --check`
+  (app.js + data.js) ok, `git status` zeigt **nur** die neue `.md`. Ein Doku-Brick hebt kein blockiertes Gate
+  → Fortschritt bleibt **≈ 92 %**; **Gate B→C wartet weiter nur auf Sven**, aber der 48-h-Pilot-Prozess wird
+  konkret. (Phase-C-Deliverable 1 von 5 begonnen.)
+
 - **Phase B · Aufnahme-Bereitschaft re-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-Zyklus:
   Phase B ist auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C), der Feature-Freeze verbietet neue
   Arbeit. Statt zu churnen die einzig freeze-konforme Handlung: **bestätigen, dass die Demo unverändert

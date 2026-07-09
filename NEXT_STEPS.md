@@ -22,10 +22,26 @@
 (narrensichere Aufnahme-Anleitung) und neu [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt) (deutsche
 Untertitel, 47 Cues). **Sven kann jetzt aufnehmen.**
 
-**Nächstes Item = reiner Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" **nur** ändern,
-was er anmerkt — nichts anderes. Der zuvor als optional notierte Rest (Skript/Shotlist auf die reale
-6er-Kern-Demo angleichen) ist mit diesem Zyklus **erledigt** — alle Aufnahme-Dateien sind jetzt faktentreu.
-Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+**Gate-Item = reiner Wartepunkt: Svens Aufnahme + Freigabe (Gate B→C).** Bis Svens „OK" am Prototyp/Video
+**nur** ändern, was er anmerkt — nichts anderes. Alle Aufnahme-Dateien sind faktentreu und aufnahmebereit.
+
+**Parallel begonnen (freeze-konforme Phase-C-Vorbereitung):** Weil Phase B seit mehreren Zyklen allein auf
+Sven wartet und ein weiterer identischer Re-Verifikations-Zyklus reines Churnen wäre, ist die niedrigst-
+riskante Phase-C-Brick vorgezogen — **[SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)** (alle 17 Szenarien nach
+Schmerz + Branche verschlagwortet, 3er-Startvorlagen je Branche). **Reine Doku aus `data.js`, kein Eingriff
+in `prototype/`** (Feature-Freeze gewahrt). Das hebt **kein** Gate — Gate B→C wartet weiter nur auf Sven —,
+macht aber den 48-h-Pilot-Prozess konkret.
+
+**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** die nächste freeze-konforme Phase-C-Doku-
+Brick, in dieser Reihenfolge (jeweils **ohne** `prototype/` zu berühren):
+1. **PILOT_ONE_PAGER.md** — Angebotsdokument (Pilot-Umfang · was der Kunde nach 48 h sieht · Preis-Pfad
+   Audit 149 € → Wissensbasis ab 5.000 € → Agent-Abo ab 400 €/Monat). Reine Doku.
+2. **Synthetische Datenpipeline dokumentieren** — Workflow mit `synthetic-data-creator` (Kunden-Dateistruktur
+   rein → synthetischer Zwilling raus → in den Prototyp geladen). Reine Doku, kein Code.
+3. **PILOT_CONFIG** — ⚠ berührt `prototype/` (Umbranding-Mechanismus) → **erst nach Gate B→C** bauen.
+4. **End-to-End-Probelauf „Muster Bau GmbH"** — sobald 1–2 stehen.
+
+Kommt eine Anmerkung von Sven → **die hat Vorrang** vor jeder Phase-C-Doku. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 > **Aufnahme-Bereitschaft am 2026-07-09 re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
 > Änderung im `prototype/`):** `node --check` ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien ·

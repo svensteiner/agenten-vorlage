@@ -15,7 +15,21 @@
 
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
+> **Freeze-konforme Phase-C-Vorbereitung parallel begonnen** (kein Eingriff in `prototype/`): reine
+> Dokumentations-Bricks, die nicht von der Video-Freigabe abhängen. Nächste Kandidaten (Reihenfolge):
+> **PILOT_ONE_PAGER.md** (Angebotsdokument, reine Doku) → **Synthetische Datenpipeline dokumentieren**
+> (Reuse `synthetic-data-creator`) → **PILOT_CONFIG** (Achtung: berührt `prototype/` → erst **nach**
+> Gate B→C bauen) → **End-to-End-Probelauf „Muster Bau GmbH"**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
+
 ## Erledigt
+
+- **[Phase C — Vorbereitung] SCENARIO_LIBRARY.md (Pilot-Szenarienbibliothek)** — alle **17 Szenarien** aus
+  `data.js` nach **Schmerz** (KOSTEN · RECHNUNGSPRÜFUNG · VERTRÄGE · MONATSABSCHLUSS · PROJEKTE · LIQUIDITÄT/
+  RISIKO · COMPLIANCE · WISSENSVERLUST · ESG/GOVERNANCE) und **Branche** verschlagwortet — mit Modul,
+  Konfidenz, Belegzahl; dazu **fertige 3er-Startvorlagen** je Branche + Auswahl-Spickzettel und der Money-Shot
+  als markiertes Finale. Reine Handover-Datei, **`prototype/` unverändert** (Feature-Freeze gewahrt).
+  Verifiziert: `node --check` (app.js + data.js) ok, `git status` zeigt nur die neue `.md`. Erste Phase-C-
+  Brick — hebt kein Gate (Gate B→C wartet weiter auf Sven), macht aber den 48-h-Pilot-Prozess konkret.
 
 - **[Phase B] Skript & Shotlist auf die reale Demo angeglichen (Faktenkorrektur)** — die Video-Handover-
   Dateien nannten veraltete Zahlen: **Dokumentenzahl 27/28 → 29** (Such-Beat/Palette-Zähler in

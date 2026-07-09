@@ -2,6 +2,23 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — SCENARIO_LIBRARY.md (Pilot-Szenarienbibliothek)
+
+**Erste Phase-C-Deliverable, freeze-konform gestartet.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
+blockiert (Gate B→C); ein dritter identischer Re-Verifikations-Zyklus wäre reines Churnen. Stattdessen die
+niedrigst-riskante Phase-C-Aufgabe vorgezogen: die **Szenarienbibliothek** — reine Dokumentation aus
+`data.js`, **kein Eingriff in `prototype/`** (Feature-Freeze gewahrt), kein neues Feature.
+
+### Neu: `SCENARIO_LIBRARY.md`
+- Alle **17 bestehenden Szenarien** nach **Schmerz** (KOSTEN · RECHNUNGSPRÜFUNG · VERTRÄGE ·
+  MONATSABSCHLUSS · PROJEKTE · LIQUIDITÄT/RISIKO · COMPLIANCE · WISSENSVERLUST · ESG/GOVERNANCE) und
+  **Branche** verschlagwortet, mit Modul, Konfidenz und Belegzahl (deterministisch aus `data.js` gelesen).
+- **Fertige 3er-Startvorlagen** je Branche (Fertigung · Bau · Handel · Logistik · Dienstleistung ·
+  Querschnitt) + Auswahl-Spickzettel → nach einem 30-Min-Audit-Call in Minuten 3 passende Szenarien wählbar.
+- Der **Money-Shot** (`agent-dazubuchen`) ist als automatisches Finale markiert (nicht mitgezählt).
+- **Verifikation:** `node --check` (app.js + data.js) ok; `git status` zeigt **nur** die neue `.md`,
+  `prototype/` unverändert. **Gate B→C wartet weiter nur auf Svens Aufnahme + Freigabe.**
+
 ## Phase B — 2026-07-09 — Aufnahme-Bereitschaft re-verifiziert (Wartepunkt, keine Änderung)
 
 **Reiner Verifikations-Zyklus.** Phase B ist blockiert auf **Svens Aufnahme + Freigabe** (Gate B→C); der
