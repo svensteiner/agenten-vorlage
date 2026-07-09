@@ -11,11 +11,13 @@
 > **optionale** Untertiteldatei [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt). **Gate B→C wartet
 > allein auf Svens Aufnahme + Freigabe.** Bis dahin nur ändern, was Sven anmerkt.
 >
-> **Parallel (freeze-konforme Phase-C-Vorbereitung, kein Eingriff in `prototype/`):** bereits fertig
-> [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) + [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Angebotsdokument)
-> + [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) (Datenpipeline). **Die reinen Doku-Bricks sind
-> damit abgeschlossen** — die restlichen Phase-C-Schritte (PILOT_CONFIG, Probelauf) berühren `prototype/`
-> und warten auf Gate B→C.
+> **Parallel (freeze-konforme Phase-C-Vorbereitung, kein Eingriff in `prototype/`):** **alle 5 reinen
+> Doku-Bricks fertig** — [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) + [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md)
+> + [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) + [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
+> + neu [PILOT_KIT.md](PILOT_KIT.md) (48-h-Master-Runbook, das die vier Bricks zu **einem** Prozess
+> zusammenfügt). **Die reinen Doku-Bricks sind damit vollständig abgeschlossen** — die restlichen
+> Phase-C-Schritte (PILOT_CONFIG-Implementierung, End-to-End-Probelauf) berühren `prototype/` und warten
+> auf Gate B→C.
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
 > Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Phase A ist abgeschlossen
@@ -44,6 +46,24 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase C (Vorbereitung) · PILOT_KIT.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme +
+  Freigabe** blockiert (Gate B→C). Statt eines weiteren identischen Re-Verifikations-Zyklus die **letzte
+  freeze-konforme Phase-C-Brick** gebaut: [PILOT_KIT.md](PILOT_KIT.md) — das **Master-Runbook**, das die
+  vier vorbereitenden Bricks ([PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) · [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
+  · [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) · [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md))
+  zu **einem** durchgehenden 48-h-Prozess zusammenfügt. Enthält ein Ablaufdiagramm **T+0 → T+48**
+  (Audit-Call → 3 Szenarien → synth. Zwilling → Schicht A `pilot.config.js` + Schicht B `data.js`-Korpus →
+  deterministisch verifizieren → Übergabe + Preis-Pfad), ein Schritt-für-Schritt-Runbook, eine **kopierbare
+  Master-Checkliste** (ein Pilot = eine Kopie), ein **Zeit-Budget** (~2–4 h Netto-Handaufwand vs. 48-h-
+  Kundenversprechen), eine **Definition of Done** und ein **markiertes Platzhalter-Protokoll „Muster Bau
+  GmbH"** (§8) für den späteren End-to-End-Probelauf. **Reine Handover-/Playbook-Datei — kein Eingriff in
+  `prototype/`** (Feature-Freeze gewahrt): `git status` zeigt nur die neue `.md`, `node --check` (app.js +
+  data.js) grün, alle internen Querverweise lösen auf. Die `prototype/`-berührenden Schritte (Schritt 3 +
+  Config-Wiring) und der **tatsächliche Probelauf** → **erst nach Gate B→C**. Ein Doku-Brick hebt kein
+  blockiertes Gate → Fortschritt bleibt **≈ 92 %**; damit sind **alle 5 Phase-C-Doku-Bricks abgeschlossen**
+  und der 48-h-Pilot-Prozess ist als **ein** einheitliches Runbook verkaufbar. **Gate B→C wartet weiter nur
+  auf Sven.** (Phase-C-Deliverable 5 von 5 — Playbook-Portion.)
 
 - **Phase C (Vorbereitung) · PILOT_CONFIG_SPEC.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens
   Aufnahme + Freigabe** blockiert (Gate B→C). Statt eines weiteren identischen Re-Verifikations-Zyklus die

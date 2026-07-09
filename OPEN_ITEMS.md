@@ -15,13 +15,25 @@
 
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
-> **Freeze-konforme Phase-C-Vorbereitung parallel begonnen** (kein Eingriff in `prototype/`): reine
-> Dokumentations-Bricks, die nicht von der Video-Freigabe abhängen. Bereits fertig: SCENARIO_LIBRARY.md,
-> PILOT_ONE_PAGER.md, SYNTHETIC_DATA_PIPELINE.md, **PILOT_CONFIG_SPEC.md (Design)**. Verbleibende Schritte
-> **berühren `prototype/`** → erst **nach** Gate B→C: **PILOT_CONFIG-Implementierung** (Wiring aus der Spec)
-> → **End-to-End-Probelauf „Muster Bau GmbH" + PILOT_KIT.md**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
+> **Freeze-konforme Phase-C-Vorbereitung abgeschlossen** (kein Eingriff in `prototype/`): **alle 5 reinen
+> Dokumentations-Bricks** stehen — SCENARIO_LIBRARY.md, PILOT_ONE_PAGER.md, SYNTHETIC_DATA_PIPELINE.md,
+> PILOT_CONFIG_SPEC.md (Design) und **PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)**. Verbleibende
+> Schritte **berühren `prototype/`** → erst **nach** Gate B→C: **PILOT_CONFIG-Implementierung** (Wiring aus
+> der Spec) → **End-to-End-Probelauf „Muster Bau GmbH"** (Protokoll in PILOT_KIT.md §8) → `MISSION_COMPLETE`.
+> Ohne Sven-Rückmeldung bleibt der nächste Zyklus ein **Wartepunkt** (re-verifizieren statt churnen).
+> Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
+
+- **[Phase C — Vorbereitung] PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)** — die Capstone-Doku,
+  die die vier vorbereitenden Bricks ([PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) · [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
+  · [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) · [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)) zu
+  **einem** durchgehenden 48-h-Prozess zusammenfasst: Ablaufdiagramm T+0→T+48, Schritt-für-Schritt-Runbook,
+  kopierbare Master-Checkliste, Zeit-Budget (~2–4 h Handaufwand), Definition of Done und ein markierter
+  Platzhalter für das **Probelauf-Protokoll „Muster Bau GmbH"**. **Reine Handover-Datei, `prototype/`
+  unverändert** (Feature-Freeze gewahrt); verifiziert (`git status` nur die neue `.md`, `node --check` ok,
+  Querverweise lösen auf). Die `prototype/`-berührenden Schritte + der tatsächliche Probelauf → **erst nach
+  Gate B→C**. Damit sind **alle 5 Phase-C-Doku-Bricks** fertig; offen bleibt nur die gated Implementierung.
 
 - **[Phase C — Vorbereitung] PILOT_CONFIG_SPEC.md (Umbranding-Design)** — Spezifikation, wie **eine**
   `pilot.config.js` den Prototyp umbrandet. Kernaufschluss (grounded durch Lesen von `prototype/`):

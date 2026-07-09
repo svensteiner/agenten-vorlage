@@ -2,6 +2,25 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)
+
+**Capstone-Deliverable der Phase C (5 von 5), freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Die vier vorbereitenden Bricks werden jetzt zu **einem** durchgehenden
+Ablauf zusammengefügt — reine `.md`, **kein Eingriff in `prototype/`**.
+
+### Neu: `PILOT_KIT.md`
+- **Master-Runbook**, das [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Angebot), [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
+  (3 Szenarien), [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) (Datenpipeline) und
+  [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) (Umbranding) zu **einem** 48-h-Prozess orchestriert.
+- **Ablauf T+0 → T+48** als Diagramm: Audit-Call → 3 Szenarien wählen → synth. Zwilling erzeugen →
+  Schicht A (`pilot.config.js`) + Schicht B (`data.js`-Korpus) → deterministisch verifizieren → Übergabe.
+- **Kopierbare Master-Checkliste** (ein Pilot = eine Kopie), **Zeit-Budget** (~2–4 h Netto-Handaufwand),
+  **Definition of Done** und ein **Probelauf-Protokoll „Muster Bau GmbH"** als klar markierter Platzhalter.
+- **Freeze-Grenze ausdrücklich:** die `prototype/`-berührenden Schritte (Schritt 3 + Config-Wiring) und der
+  **tatsächliche Probelauf** warten auf **Gate B→C**; hier steht nur der **dokumentierte Prozess** bereit.
+- **Reine Handover-Datei, `prototype/` unverändert:** `git status` zeigt nur die neue `.md`, `node --check`
+  (app.js + data.js) grün, alle internen Querverweise lösen auf.
+
 ## Phase C (Vorbereitung) — 2026-07-09 — PILOT_CONFIG_SPEC.md (Umbranding-Mechanismus spezifiziert)
 
 **Design-Portion der Phase-C-Deliverable 1, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +

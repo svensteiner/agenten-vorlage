@@ -36,26 +36,31 @@ synthetischer Zwilling mit intakten Formeln raus → in `data.js` geladen**, Reu
 43/43 Tests, 4-Schritt-Prozess + Ablaufdiagramm). Das hebt **kein** Gate — Gate B→C wartet weiter nur auf
 Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
-**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** die reinen Phase-C-Doku-Bricks
-(Szenarienbibliothek · One-Pager · Datenpipeline · **neu PILOT_CONFIG-Spec**) sind **abgeschlossen**. Die
+**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** **alle 5 reinen Phase-C-Doku-Bricks
+sind abgeschlossen** (Szenarienbibliothek · One-Pager · Datenpipeline · PILOT_CONFIG-Spec · **neu
+PILOT_KIT.md** = 48-h-Master-Runbook). Es gibt **keine freeze-konforme Doku-Brick mehr** — die
 verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Gate B→C** ausgeführt werden:
 1. **PILOT_CONFIG (Implementierung)** — das in [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) spezifizierte
    Wiring (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()` in `app.js`). ⚠ berührt
    `prototype/` → **erst nach Gate B→C**. Design ist fertig → dann 30-Min-Mechanik.
-2. **End-to-End-Probelauf „Muster Bau GmbH"** + **PILOT_KIT.md** — führt PILOT_CONFIG-Spec +
-   [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus; sobald 1 steht.
+2. **End-to-End-Probelauf „Muster Bau GmbH"** — führt PILOT_CONFIG-Spec +
+   [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus; Protokoll in [PILOT_KIT.md](PILOT_KIT.md) §8;
+   danach `MISSION_COMPLETE`. Sobald 1 steht.
 
-**Diesen Zyklus gebaut (freeze-konform, reine `.md`):** [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) —
-Design des Umbranding-Mechanismus. Kernaufschluss: Der Firmenname steht **~55-mal** in `data.js`
-(Dokumentkörper), also ist Umbranding **zwei Schichten** — A) Shell/Chrome per `pilot.config.js`
-(überschreibt das `COMPANY`-Objekt, das die Shell heute schon fast überall liest) und B) Dokumentenkorpus
-**wholesale** ersetzt durch den synthetischen Zwilling (Pipeline), nicht per Suchen-Ersetzen. Enthält
-Config-Schema, Wiring-Plan (rein additiv), Token-Konvention `{{COMPANY}}` gegen künftige Hartkodierung,
-48-h-Ablauf und Abnahme-Kriterien (u. a. `active:false` → bit-identische Meridian-Demo = Regressionsschutz
-fürs Video). Hebt **kein** Gate; macht die spätere Implementierung zur 30-Min-Mechanik.
+> **Konsequenz:** Ohne Sven-Rückmeldung ist der nächste Zyklus ein reiner **Wartepunkt** (aufnahmebereit
+> re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
+> gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-Liegt bis dahin keine Sven-Rückmeldung vor, bleibt der Zyklus ein **Wartepunkt** (re-verifizieren statt
-churnen). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor jeder Phase-C-Doku. Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
+**Diesen Zyklus gebaut (freeze-konform, reine `.md`):** [PILOT_KIT.md](PILOT_KIT.md) — das **Master-Runbook**,
+das die vier vorbereitenden Bricks (One-Pager · Szenarienbibliothek · Datenpipeline · PILOT_CONFIG-Spec) zu
+**einem** durchgehenden 48-h-Prozess zusammenfügt: Ablaufdiagramm **T+0 → T+48** (Audit-Call → 3 Szenarien →
+synth. Zwilling → Schicht A `pilot.config.js` + Schicht B `data.js`-Korpus → verifizieren → Übergabe),
+Schritt-für-Schritt-Runbook, **kopierbare Master-Checkliste**, Zeit-Budget (~2–4 h Handaufwand), Definition
+of Done und ein **markiertes Platzhalter-Protokoll „Muster Bau GmbH" (§8)** für den späteren Probelauf. Hebt
+**kein** Gate; macht den 48-h-Pilot-Prozess als **ein** einheitliches Runbook verkaufbar. Reine Handover-
+Datei, `prototype/` unverändert (`git status` nur die neue `.md`, `node --check` grün, Querverweise lösen auf).
+
+Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
 > **Aufnahme-Bereitschaft am 2026-07-09 re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
 > Änderung im `prototype/`):** `node --check` ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien ·
