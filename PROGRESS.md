@@ -7,9 +7,12 @@
 
 > **Phase B — Videoproduktion:** Alle drei Kern-Deliverables sind vorhanden —
 > [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md), [VIDEO_SCENES.md](VIDEO_SCENES.md) und
-> [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md) (narrensichere Aufnahme-Anleitung); dazu neu die
+> [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md) (narrensichere Aufnahme-Anleitung); dazu die
 > **optionale** Untertiteldatei [VIDEO_SUBTITLES.de.srt](VIDEO_SUBTITLES.de.srt). **Gate B→C wartet
 > allein auf Svens Aufnahme + Freigabe.** Bis dahin nur ändern, was Sven anmerkt.
+>
+> **Parallel (freeze-konforme Phase-C-Vorbereitung, kein Eingriff in `prototype/`):** bereits fertig
+> [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) + [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Angebotsdokument).
 
 > Seit 2026-07-08 gilt [MISSION_PILOT_SPRINT.md](MISSION_PILOT_SPRINT.md): drei Phasen bis zur
 > Ziellinie — **A) Demo-Freeze → B) Video → C) Pilot-Kit**. **Phase A ist abgeschlossen
@@ -38,6 +41,19 @@
 > mit hoch) und hebt **Chat-Experience** (93 % → 95 %). Konservativ gemeldet.
 
 ## Verlauf
+
+- **Phase C (Vorbereitung) · PILOT_ONE_PAGER.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme
+  + Freigabe** blockiert (Gate B→C). Wie im Handover angekündigt die **nächste freeze-konforme Phase-C-Brick**
+  gebaut: [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) — das **Angebotsdokument** für den Audit-Call, in
+  CFO-Sprache. Enthält das 48-h-Versprechen („Ihre eigene Demo, kein echtes Dokument nötig"), **was der
+  Kunde nach 48 h sieht** (Name/Logo · 3 Schmerz-Szenarien · belegte Antworten · Money-Shot) und den
+  **Preis-Pfad** als Tabelle (**Audit 149 € → Wissensbasis ab 5.000 € → Agent-Abo ab 400 €/Monat**), dazu
+  Agenten-Preisvergleich, Einwand-Antworten und CTA. Preise/Agenten deckungsgleich mit dem Prototyp-
+  Money-Shot (`agent-dazubuchen`) und [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md). **Reine Vertriebsdatei —
+  kein Eingriff in `prototype/`** (Feature-Freeze gewahrt). Verifiziert: `git status` zeigt **nur** die neue
+  `.md`, `node --check` (app.js + data.js) ok. Ein Doku-Brick hebt kein blockiertes Gate → Fortschritt bleibt
+  **≈ 92 %**; damit beantwortet die CEO-Review-Frage 3 („versteht ein CFO in 90 s, wofür er 5.000 € + 400 €/
+  Monat zahlt?") jetzt **eine Seite explizit mit Ja**. (Phase-C-Deliverable 2 von 5.)
 
 - **Phase C (Vorbereitung) · SCENARIO_LIBRARY.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme
   + Freigabe** blockiert (Gate B→C); ein dritter identischer Re-Verifikations-Zyklus wäre reines Churnen.

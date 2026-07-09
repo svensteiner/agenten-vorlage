@@ -16,12 +16,19 @@
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
 > **Freeze-konforme Phase-C-Vorbereitung parallel begonnen** (kein Eingriff in `prototype/`): reine
-> Dokumentations-Bricks, die nicht von der Video-Freigabe abhängen. Nächste Kandidaten (Reihenfolge):
-> **PILOT_ONE_PAGER.md** (Angebotsdokument, reine Doku) → **Synthetische Datenpipeline dokumentieren**
-> (Reuse `synthetic-data-creator`) → **PILOT_CONFIG** (Achtung: berührt `prototype/` → erst **nach**
-> Gate B→C bauen) → **End-to-End-Probelauf „Muster Bau GmbH"**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
+> Dokumentations-Bricks, die nicht von der Video-Freigabe abhängen. Bereits fertig: SCENARIO_LIBRARY.md,
+> PILOT_ONE_PAGER.md. Nächste Kandidaten (Reihenfolge): **Synthetische Datenpipeline dokumentieren**
+> (Reuse `synthetic-data-creator`, reine Doku) → **PILOT_CONFIG** (Achtung: berührt `prototype/` → erst
+> **nach** Gate B→C bauen) → **End-to-End-Probelauf „Muster Bau GmbH"**. Details siehe [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
+
+- **[Phase C — Vorbereitung] PILOT_ONE_PAGER.md (Angebotsdokument)** — Ein-Seiten-Angebot in CFO-Sprache:
+  48-h-Versprechen (eigene Demo, kein echtes Dokument nötig), **was der Kunde nach 48 h sieht** (Name/Logo,
+  3 Schmerz-Szenarien, belegte Antworten, Money-Shot) und **Preis-Pfad** als Tabelle (Audit 149 € →
+  Wissensbasis ab 5.000 € → Agent-Abo ab 400 €/Monat) + Agenten-Preisvergleich, Einwand-Antworten, CTA.
+  Preise deckungsgleich mit `agent-dazubuchen` + [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md). Reine
+  Handover-Datei, **`prototype/` unverändert**; verifiziert (`git status` nur die neue `.md`, `node --check` ok).
 
 - **[Phase C — Vorbereitung] SCENARIO_LIBRARY.md (Pilot-Szenarienbibliothek)** — alle **17 Szenarien** aus
   `data.js` nach **Schmerz** (KOSTEN · RECHNUNGSPRÜFUNG · VERTRÄGE · MONATSABSCHLUSS · PROJEKTE · LIQUIDITÄT/

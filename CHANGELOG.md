@@ -2,6 +2,25 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — PILOT_ONE_PAGER.md (Angebotsdokument)
+
+**Zweite Phase-C-Deliverable, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
+blockiert (Gate B→C). Statt zu churnen die nächste `prototype/`-freie Doku-Brick nach Plan:
+das **Angebotsdokument** für den Audit-Call — reine Vertriebsdatei, **kein Eingriff in `prototype/`**.
+
+### Neu: `PILOT_ONE_PAGER.md`
+- Ein-Seiten-Angebot in **CFO-Sprache** (kein Technik-Jargon): das 48-h-Versprechen („Ihre eigene
+  Demo, kein echtes Dokument nötig"), **was der Kunde nach 48 h sieht** (Name/Logo, 3 Schmerz-
+  Szenarien, belegte Antworten, Money-Shot) und der **Preis-Pfad** als Tabelle: Audit **149 €** →
+  Wissensbasis **ab 5.000 €** → Agent-Abo **ab 400 €/Monat**.
+- **Agenten-Preisvergleich** (Auskunft inkl. · Reporting ab 400 € · Vertrag ab 500 € · Rechnung ab
+  600 €) + „digitale Mitarbeiter statt Recruiting"-Argument; **Einwand-Antworten** (Daten bleiben im
+  Haus · keine erfundenen Antworten · Berechtigungen bleiben · Einstieg nur 149 €); klarer CTA.
+- Preise/Agenten deckungsgleich mit dem Money-Shot des Prototyps (`agent-dazubuchen`) und der
+  [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md). **Verifikation:** `git status` zeigt **nur** die neue
+  `.md`; `node --check` (app.js + data.js) ok, `prototype/` unverändert. **Gate B→C wartet weiter
+  nur auf Svens Aufnahme + Freigabe.**
+
 ## Phase C (Vorbereitung) — 2026-07-09 — SCENARIO_LIBRARY.md (Pilot-Szenarienbibliothek)
 
 **Erste Phase-C-Deliverable, freeze-konform gestartet.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
