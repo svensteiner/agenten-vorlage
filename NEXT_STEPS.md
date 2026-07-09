@@ -62,12 +62,14 @@ Datei, `prototype/` unverändert (`git status` nur die neue `.md`, `node --check
 
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
-> **Aufnahme-Bereitschaft am 2026-07-09 re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
-> Änderung im `prototype/`):** `node --check` ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien ·
-> 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs mit Money-Shot als Finale, „stahl"
-> = 10 Treffer; `grep`: keine veralteten Zähl-Reste in den Video-Dateien. **Keine Regression — die Demo
-> ist unverändert aufnahmebereit.** Der nächste automatische Zyklus bleibt ohne Svens Rückmeldung ein
-> Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen, sonst → Phase C (Pilot-Kit).
+> **Aufnahme-Bereitschaft am 2026-07-09 erneut re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
+> Änderung im `prototype/`):** `node --check` (app.js + data.js) ok; Node-VM gegen `data.js` — **29 Docs ·
+> 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs (alle vorhanden) mit
+> Money-Shot `agent-dazubuchen` als Finale, „stahl" = 10 Treffer, `DECISION_CHAIN` = 3 Schritte; `grep`:
+> keine veralteten Zähl-Reste (16/27/28) in den Video-Dateien; `git status` sauber. **Keine Regression — die
+> Demo ist unverändert aufnahmebereit.** Der nächste automatische Zyklus bleibt ohne Svens Rückmeldung ein
+> Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen. Die vorziehbare Phase-C-Doku ist
+> erschöpft (alle 5 Bricks fertig); jede weitere Phase-C-Arbeit berührt `prototype/` und ist bis Gate B→C gated.
 
 ## Was in diesem Zyklus gebaut wurde (Skript/Shotlist-Faktenkorrektur)
 

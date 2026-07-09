@@ -47,6 +47,17 @@
 
 ## Verlauf
 
+- **Phase B · Aufnahme-Bereitschaft erneut re-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
+  Zyklus: Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C), die vorziehbaren Phase-C-
+  Doku-Bricks sind erschöpft (alle 5 fertig), die restlichen Schritte berühren `prototype/` (bis Gate B→C
+  gated). Statt zu churnen die einzig freeze-konforme Handlung: bestätigen, dass die Demo unverändert
+  aufnahmebereit ist. `node --check` (app.js + data.js) ok; Ground-Truth deterministisch (Node-VM):
+  **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs
+  (alle vorhanden) mit **Money-Shot `agent-dazubuchen` als Finale**, „stahl" = **10 Treffer**,
+  `DECISION_CHAIN` = 3 Schritte; `grep`: keine 16/27/28-Reste in den Video-Dateien; `git status` sauber.
+  **Keine Regression, `prototype/` unverändert.** Ein Verifikations-Pass hebt kein blockiertes Gate →
+  Fortschritt bleibt ≈ 92 %. **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase C (Vorbereitung) · PILOT_KIT.md (2026-07-09) ≈ 92 %** — Phase B bleibt auf **Svens Aufnahme +
   Freigabe** blockiert (Gate B→C). Statt eines weiteren identischen Re-Verifikations-Zyklus die **letzte
   freeze-konforme Phase-C-Brick** gebaut: [PILOT_KIT.md](PILOT_KIT.md) — das **Master-Runbook**, das die

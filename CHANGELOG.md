@@ -2,6 +2,23 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Aufnahme-Bereitschaft re-verifiziert (Wartepunkt, kein Eingriff)
+
+**Reiner Verifikations-Zyklus.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C);
+die vorziehbaren Phase-C-Doku-Bricks sind erschöpft (alle 5 fertig), die restlichen Schritte berühren
+`prototype/` und sind bis Gate B→C gated. Statt zu churnen die einzig freeze-konforme Handlung: bestätigen,
+dass die Demo unverändert aufnahmebereit ist.
+
+### Verifiziert (deterministisch, Node-VM gegen `data.js`)
+- **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen** (Quellen/Verwandte/
+  Withheld/Entscheidungskette) — unverändert gegenüber der letzten Messung.
+- **`DEMO_ORDER` = 6 IDs**, alle als Szenarien vorhanden, **Money-Shot `agent-dazubuchen` als Finale**;
+  „stahl"-Suche = **10 Treffer**; `DECISION_CHAIN` = 3 Schritte.
+- `node --check` (app.js + data.js) grün; `grep`: **keine** veralteten Zähl-Reste (16/27/28) in
+  VIDEO_SCRIPT / VIDEO_SCENES / RECORDING_CHECKLIST.
+- **`git status` sauber, `prototype/` unverändert** (Feature-Freeze gewahrt). Kein gehobenes Gate — reiner
+  Regressionsschutz für das noch aufzunehmende Video. **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase C (Vorbereitung) — 2026-07-09 — PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)
 
 **Capstone-Deliverable der Phase C (5 von 5), freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
