@@ -62,14 +62,19 @@ Datei, `prototype/` unverändert (`git status` nur die neue `.md`, `node --check
 
 Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 
-> **Aufnahme-Bereitschaft am 2026-07-09 erneut re-verifiziert (freeze-konformer Verifikations-Zyklus, keine
-> Änderung im `prototype/`):** `node --check` (app.js + data.js) ok; Node-VM gegen `data.js` — **29 Docs ·
-> 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**, `DEMO_ORDER` = 6 IDs (alle vorhanden) mit
-> Money-Shot `agent-dazubuchen` als Finale, „stahl" = 10 Treffer, `DECISION_CHAIN` = 3 Schritte; `grep`:
-> keine veralteten Zähl-Reste (16/27/28) in den Video-Dateien; `git status` sauber. **Keine Regression — die
-> Demo ist unverändert aufnahmebereit.** Der nächste automatische Zyklus bleibt ohne Svens Rückmeldung ein
-> Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen. Die vorziehbare Phase-C-Doku ist
-> erschöpft (alle 5 Bricks fertig); jede weitere Phase-C-Arbeit berührt `prototype/` und ist bis Gate B→C gated.
+> **Aufnahme-Bereitschaft am 2026-07-09 verhaltens-verifiziert (freeze-konformer Verifikations-Zyklus, neuer
+> tieferer Winkel, keine Änderung im `prototype/`):** statt die Zähl-Prüfung identisch zu wiederholen (Churn)
+> diesmal die **reale Palette-Suche nachgestellt** — die `matchDocs()`-Feldmenge (`title · type · snippet ·
+> author · module`) exakt repliziert: `matchDocs("stahl")` = **10** (ein naiver Ganz-Objekt-Scan liefert 12 →
+> belegt, dass die im Skript/Checkliste genannte „10" die *sichtbare* Palette-Zahl ist), `matchDocs("")` =
+> **29**. Dazu die Demo-Steuerung aus `app.js` aufgelöst: `MONEY_SHOT_ID = "agent-dazubuchen"` (existiert),
+> `DEMO_ORDER` = 6 IDs mit dem Money-Shot als **Finale**, `DECISION_CHAIN` = 3 Schritte; `node --check`
+> (app.js + data.js) ok; Node-VM gegen `data.js` — **29 Docs · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0
+> kaputte Referenzen**; `grep`: keine veralteten Zähl-Reste (16/27/28) in den Video-Dateien; `git status`
+> sauber. **Keine Regression — die Demo ist unverändert aufnahmebereit.** Der nächste automatische Zyklus
+> bleibt ohne Svens Rückmeldung ein Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen. Die
+> vorziehbare Phase-C-Doku ist erschöpft (alle 5 Bricks fertig); jede weitere Phase-C-Arbeit berührt
+> `prototype/` und ist bis Gate B→C gated.
 >
 > **Pilot-Kit-Konsistenz-Audit am 2026-07-09 (neuer Prüf-Winkel, kein Eingriff):** die fünf Phase-C-Verkaufs-/
 > Handover-Dokumente **gegen die Live-Daten** abgeglichen (Doku ↔ `data.js`, dieselbe Drift-Klasse wie 27/28 →

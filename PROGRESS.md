@@ -47,6 +47,20 @@
 
 ## Verlauf
 
+- **Phase B · Aufnahme-Bereitschaft verhaltens-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
+  Zyklus mit **tieferem Winkel**: statt die Zähl-Prüfung ein drittes Mal identisch zu wiederholen (Churn),
+  die **reale Command-Palette-Suche nachgestellt** — die `matchDocs()`-Feldmenge
+  (`title · type · snippet · author · module`) exakt repliziert: `matchDocs("stahl")` = **10 Treffer**
+  (ein naiver Ganz-Objekt-Scan liefert 12 → belegt, dass die im Skript/Checkliste genannte „10" die
+  *sichtbare* Palette-Zahl ist, nicht die Rohzahl), `matchDocs("")` = **29** (volles Inventar). Zusätzlich
+  die Demo-Steuerung aus `app.js` aufgelöst: `MONEY_SHOT_ID = "agent-dazubuchen"` (existiert in `data.js`),
+  `DEMO_ORDER` = **6 IDs** mit dem Money-Shot als **Finale**, `DECISION_CHAIN` = **3 Schritte**. Node-VM
+  gegen `data.js`: **29 Docs · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen**; `grep`: keine
+  16/27/28-Reste in den Video-Dateien; `node --check` (app.js + data.js) grün, `git status` sauber,
+  **`prototype/` unverändert** (Feature-Freeze gewahrt). **Keine Regression — die Demo ist unverändert
+  aufnahmebereit.** Ein Verifikations-Pass hebt kein blockiertes Gate → Fortschritt bleibt ≈ 92 %.
+  **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase B · Pilot-Kit-Konsistenz-Audit (2026-07-09) ≈ 92 %** — reiner Verifikations-Zyklus mit **neuem
   Prüf-Winkel**: statt die „Aufnahme-Bereitschaft" identisch zu wiederholen (Churn), die fünf Phase-C-
   Verkaufs-/Handover-Dokumente (das „Verkaufs-Werkzeug") **gegen die Live-Daten** abgeglichen — dieselbe

@@ -2,6 +2,30 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Aufnahme-Bereitschaft verhaltens-verifiziert (Palette-Suche real nachgestellt, kein Eingriff)
+
+**Reiner Verifikations-Zyklus, tieferer Winkel.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
+blockiert (Gate B→C); die vorziehbaren Phase-C-Doku-Bricks sind erschöpft (alle 5 fertig), jede weitere
+Phase-C-Arbeit berührt `prototype/` und ist gated. Statt die Zähl-Prüfung ein drittes Mal identisch zu
+wiederholen (Churn), diesmal die **tatsächliche Such-Verhaltensweise** verifiziert, die ein CFO on-camera
+auslöst: nicht ein Ganz-Objekt-Scan, sondern die reale `matchDocs()`-Feldmenge
+(`title · type · snippet · author · module`) exakt nachgestellt.
+
+### Verifiziert (deterministisch, Node-VM gegen `data.js` + `app.js`-Logik nachgestellt)
+- **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt · 0 kaputte Referenzen** (Quellen/Verwandte/
+  Withheld) — unverändert.
+- **Command-Palette real nachgestellt:** die `matchDocs()`-Feldmenge exakt repliziert →
+  `matchDocs("stahl")` = **10 Treffer**, `matchDocs("")` = **29** (volles Inventar). Ein naiver
+  Ganz-Objekt-Scan liefert 12 — der Palette-Zähler auf der Leinwand ist aber **10** (belegt, dass die
+  im Skript/Checkliste genannte „10" die *sichtbare* Zahl ist, nicht die Rohzahl).
+- **Demo-Steuerung aus `app.js` aufgelöst:** `MONEY_SHOT_ID = "agent-dazubuchen"` (existiert in `data.js`),
+  `DEMO_ORDER` = **6 IDs** mit dem Money-Shot als **Finale**; `DECISION_CHAIN` = **3 Schritte**
+  (Donau 12.02. → Einkauf→CFO 13.02. → Vorstand März).
+- **Keine veralteten Zähl-Reste** (16/27/28) in VIDEO_SCRIPT / VIDEO_SCENES / RECORDING_CHECKLIST (`grep`).
+- `node --check` (app.js + data.js) grün; **`git status` sauber, `prototype/` unverändert** (Feature-Freeze
+  gewahrt). **Keine Regression — die Demo ist unverändert aufnahmebereit.** Kein gehobenes Gate.
+  **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase B — 2026-07-09 — Pilot-Kit-Konsistenz-Audit (Doku ↔ Live-Daten, kein Eingriff)
 
 **Reiner Verifikations-Zyklus, neuer Prüf-Winkel.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
