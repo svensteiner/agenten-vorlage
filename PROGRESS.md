@@ -47,6 +47,26 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · Pilot-Config Schicht A real geschrieben (2026-07-09) ≈ 92 %** — Phase B bleibt
+  auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Nachdem die Vorzyklen die Pipeline **Schicht B**
+  (synthetischer Korpus, Schritte 1+2) real ausgeführt haben, jetzt die **Schicht A** (Umbranding-Config) für
+  denselben Probelauf-Kunden konkret geschrieben statt nur spezifiziert: neue Datei
+  [`pilot-assets/muster-bau-gmbh/pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js) — vollständige
+  `window.PILOT_CONFIG` nach [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §4 für **Muster Bau GmbH** (Name,
+  Tagline, Glyph `▲`, Akzent, 4 synth. Fakten, 6 synth. Personennamen, Branche `bau`, `corpus`-Zeiger), **3
+  Schmerz-Szenarien = die verifizierte Bau-Startvorlage** aus [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
+  (`materialkosten` · `projekt-beta` · `vorstand-summary`; Money-Shot bleibt Finale). **Alle Werte 100 %
+  synthetisch.** Damit sind **beide freeze-konformen Hälften des Probelaufs** ausgeführt — Daten (Schicht B) *und*
+  Chrome (Schicht A). Verifiziert (deterministisch, Node-VM gegen die Live-`data.js`): Schema erfüllt (genau 3
+  Szenarien, `people`-Keys deckungsgleich mit `COMPANY.people`), **alle 3 Szenario-IDs existieren** in `SCENARIOS`
+  — und eine **Faktenkorrektur** belegt: die *Beispiel*-IDs der Spec (`rechnungspruefung-donau`,
+  `liquiditaet-90-tage`) existieren **nicht**, die real gewählten IDs schon; **kein Meridian-Leak**; Live-Daten
+  unverändert (**29 Docs · 17 Szenarien**). **`prototype/` unverändert** (`git status`: nur die neue
+  `pilot.config.js`; nicht verdrahtet → Wiring gated bis Gate B→C), `node --check` (config + app.js + data.js)
+  grün. Ein Vorbereitungs-Brick hebt kein blockiertes Gate → Fortschritt bleibt **≈ 92 %**; der 48-h-Pilot ist
+  jetzt für „Muster Bau GmbH" **beidseitig** (Config + Korpus) ausgeführt & bewiesen. **Gate B→C wartet weiter
+  nur auf Sven.**
+
 - **Phase C (Vorbereitung) · Pilot-Datenpipeline real ausgeführt (2026-07-09) ≈ 92 %** — statt eines 6.
   identischen Re-Verifikations-Zyklus (Churn) die größte **unbewiesene** Annahme des Phase-C-Plans getilgt:
   die [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) beschrieb den Workflow „Kunden-Struktur rein →

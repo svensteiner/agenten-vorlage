@@ -51,7 +51,23 @@ verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Ga
 > re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
 > gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Datenpipeline erstmals
+**Diesen Zyklus gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Config Schicht A für
+„Muster Bau GmbH" real geschrieben** statt nur spezifiziert. Neue Datei
+[`pilot-assets/muster-bau-gmbh/pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js) (außerhalb
+`prototype/`, **nicht** verdrahtet): vollständige `window.PILOT_CONFIG` nach [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
+§4 — Name, Tagline, Glyph `▲`, Akzent, 4 synthetische Fakten, 6 synthetische Personennamen, Branche `bau`,
+`corpus`-Zeiger; **3 Schmerz-Szenarien = die verifizierte Bau-Startvorlage** aus [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
+(`materialkosten` · `projekt-beta` · `vorstand-summary`), Money-Shot `agent-dazubuchen` bewusst **nicht** in
+der Liste → bleibt Demo-Finale. **Alle Werte 100 % synthetisch** (kein Meridian-Leak, kein Logo-Bild). Damit
+sind **beide freeze-konformen Hälften des Probelaufs** ausgeführt — Korpus (Schicht B, Vorzyklus) *und* Config
+(Schicht A). **Verifiziert** (Node-VM gegen die Live-`data.js`): Schema erfüllt (genau 3 Szenarien, `people`-Keys
+deckungsgleich mit `COMPANY.people`), **alle 3 IDs existieren** — und eine **Faktenkorrektur**: die
+*Beispiel*-IDs der Spec (`rechnungspruefung-donau`, `liquiditaet-90-tage`) existieren **nicht** in `data.js`,
+die real gewählten schon; Live-Daten unverändert (29 Docs · 17 Szenarien). `git status`: nur die neue
+`pilot.config.js`; `node --check` (config + app.js + data.js) grün. Das Wiring (Script-Tag + `COMPANY`-Guard +
+`applyPilotChrome()`) berührt `prototype/` und bleibt **gated bis Gate B→C**.
+
+**Zyklus davor gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Datenpipeline erstmals
 real ausgeführt** statt nur dokumentiert. Neuer Ordner [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md)
 (außerhalb `prototype/`): `build_input.py` baut reproduzierbar eine fiktive mehrblättrige Bau-Controlling-Mappe
 mit Gelb-Konvention + 3 blattübergreifenden Formeln; der `synthetic-data-creator` (Reuse, 43/43 Tests) erzeugt

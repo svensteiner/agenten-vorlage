@@ -2,6 +2,33 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-09 — Pilot-Config (Schicht A) für „Muster Bau GmbH" real geschrieben (kein Eingriff in prototype/)
+
+**Nächster Schritt des End-to-End-Probelaufs, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Nachdem die Vorzyklen die Pipeline-Schritte 1+2 (synthetischer Korpus,
+Schicht B) real ausgeführt haben, ist jetzt die **Schicht-A-Konfiguration** aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §4
+für denselben Probelauf-Kunden **konkret geschrieben** statt nur spezifiziert — neue Datei
+[`pilot-assets/muster-bau-gmbh/pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js), **außerhalb
+`prototype/`** (nicht verdrahtet → Feature-Freeze gewahrt; das Wiring bleibt bis Gate B→C gated).
+
+### Gebaut
+- **`pilot.config.js`** — vollständige `window.PILOT_CONFIG` für **Muster Bau GmbH** (Hoch- & Tiefbau):
+  Firmenname, Tagline, Logo-Glyph `▲`, Akzent, 4 synthetische Fakten, 6 synthetische Personennamen, Branche
+  `bau`, `corpus`-Zeiger — **alle Werte 100 % synthetisch** (kein echter Name/kein Logo-Bild).
+- **3 Schmerz-Szenarien = die verifizierte Bau-Startvorlage** aus [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md):
+  `materialkosten` · `projekt-beta` · `vorstand-summary` (Money-Shot `agent-dazubuchen` bewusst **nicht**
+  in der Liste → bleibt automatisch Demo-Finale).
+
+### Verifiziert (deterministisch, Node-VM gegen die Live-`data.js`)
+- **Faktenkorrektur belegt:** die Beispiel-IDs der Spec (`rechnungspruefung-donau`, `liquiditaet-90-tage`)
+  **existieren nicht** in `data.js` — die real gewählten 3 IDs **existieren alle** (gegen `SCENARIOS` geprüft).
+- Schema erfüllt: `active:true`, genau **3** Szenarien, `people`-Keys **deckungsgleich** mit `COMPANY.people`
+  (audit/ceo/cfo/hr/legal/procurement), `logoGlyph` = 1 Glyph, 4 Fakten.
+- **Kein Meridian-Leak** (kein „Meridian", keine echten Meridian-Personennamen im Config), Firmenname weicht ab.
+- Live-Daten unverändert: **29 Dokumente · 17 Szenarien**; **`prototype/` unverändert** (`git status`: nur die
+  neue `pilot.config.js`); `node --check` (config + app.js + data.js) grün.
+- Ein Vorbereitungs-Brick hebt **kein** blockiertes Gate → **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase C (Vorbereitung) — 2026-07-09 — Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2, kein Eingriff in prototype/)
 
 **Erstmals echte Ausführung statt Doku.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert

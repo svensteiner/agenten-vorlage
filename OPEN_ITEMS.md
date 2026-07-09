@@ -23,14 +23,22 @@
 
 ## Erledigt
 
-- **[Phase C — Vorbereitung] Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2)** — die
-  bisher nur **hypothetische** §Beispiel-Tabelle der [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md)
-  ist jetzt **ausgeführt & verifiziert**. Neuer Ordner `pilot-assets/muster-bau-gmbh/` (außerhalb `prototype/`):
-  `build_input.py` baut reproduzierbar eine fiktive mehrblättrige Bau-Controlling-Mappe (Gelb-Konvention +
-  3 blattübergreifende Formeln); `synthetic-data-creator` (`--seed 42`, 43/43 Tests) erzeugt den Zwilling.
-  Verifiziert (openpyxl): 12/12 Formeln bit-genau, USt-Konstante 19 % unangetastet, 12/14 gelbe Eingaben
-  synthetisiert, Modell rechnet weiter (Netto 284.266,41 € → Brutto 338.277,03 €, Brutto = Netto × 1,19).
-  Lernpunkt: feste Konstanten nicht gelb markieren. `prototype/` unverändert; Schritt 3 bleibt gated.
+- **[Phase C — Vorbereitung] Pilot-Config Schicht A für „Muster Bau GmbH" geschrieben** — neue Datei
+  `pilot-assets/muster-bau-gmbh/pilot.config.js` (außerhalb `prototype/`, **nicht** verdrahtet): vollständige
+  `window.PILOT_CONFIG` nach [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §4 (Name/Tagline/Glyph `▲`/Akzent/
+  4 synth. Fakten/6 synth. Personen/Branche `bau`/`corpus`), 3 Szenarien = die verifizierte Bau-Startvorlage
+  (`materialkosten` · `projekt-beta` · `vorstand-summary`; Money-Shot bleibt Finale). **Beide freeze-konformen
+  Probelauf-Hälften nun ausgeführt** (Korpus + Config). Verifiziert (Node-VM): Schema erfüllt, `people`-Keys =
+  `COMPANY.people`, alle 3 IDs existieren; **Faktenkorrektur** — die Spec-*Beispiel*-IDs `rechnungspruefung-donau`/
+  `liquiditaet-90-tage` existieren **nicht**; kein Meridian-Leak; 29 Docs/17 Szenarien unverändert; `node --check`
+  grün, `git status` nur die neue `.js`. Wiring gated bis Gate B→C.
+
+- **[Phase C — Vorbereitung] Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2)** — die zuvor
+  nur **hypothetische** §Beispiel-Tabelle der [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) ist jetzt
+  **ausgeführt & verifiziert**. Ordner `pilot-assets/muster-bau-gmbh/`: `build_input.py` → fiktive Bau-Controlling-
+  Mappe (Gelb-Konvention + 3 blattübergreifende Formeln); `synthetic-data-creator` (`--seed 42`, 43/43 Tests)
+  erzeugt den Zwilling. Verifiziert (openpyxl): 12/12 Formeln bit-genau, USt 19 % unangetastet, 12/14 gelbe
+  Eingaben synthetisiert, Modell rechnet weiter (Netto 284.266,41 € → Brutto 338.277,03 €). Schritt 3 gated.
 
 - **[Phase C — Vorbereitung] PILOT_KIT.md (48-h-Master-Runbook, Playbook-Portion)** — die Capstone-Doku,
   die die vier vorbereitenden Bricks ([PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) · [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md)
@@ -144,24 +152,16 @@
   optionales `grossLabel`). Deterministisch (28 Docs, 16 Szenarien, 0 kaputte Refs, Zitate wortgleich,
   Arithmetik korrekt) + live verifiziert (Suche findet Beleg, `paper-beleg` mit Meridian/NACHTRAG/3
   Positionen/Angebotssumme brutto, keine Konsolenfehler).
-- **[Zyklus 22] Projekt-Portfolio-Überblick** — neues Szenario `projekt-portfolio` (Berichte, 94 %)
-  „Welche Projekte laufen aktuell?" stellt Alpha **und** Beta in **einer** Ampel-Übersichtstabelle
-  gegenüber (Projekt · Fortschritt · Budget · Termin · Status): Alpha 62 %/24,0 Mio./✓ im Zeitplan, Beta
-  48 %/8,6 Mio./⚠ 3 Wo. Verzug; Portfolio-Volumen 32,6 Mio. €, ehrlicher Schluss „1 von 2 termingefährdet".
-  Quellen = **beide bestehenden Statusberichte** (je 96 %) + Vorstandsprotokoll (74 %). Rein additiv in
-  `data.js` (Reuse `<table>`-Struktur + vorhandene Belege), kein neues Dokument, kein Code-Umbau. Hero
-  12 → 13, Berichte 6 → 7 (Portfolio zuerst), Demo 15 → 16. Deterministisch (27 Docs, 16 Szenarien, 0
-  kaputte Refs, Zitate wortgleich, Matcher kollisionsfrei) + live verifiziert (Hero-/Berichte-Tile, Klick
-  → 94 % + Tooltip, alle Tabellenzellen + 32,6 Mio. € im DOM, keine Konsolenfehler).
-- **[Zyklus 21] Zweites Projekt „Beta"** — neues Szenario `projekt-beta` (Berichte, 90 %) „Wie steht
-  Projekt Beta?" mit Ampel-Statustabelle (Fortschritt 48 % ⚠ verzögert · Budget 8,6 Mio. € · Liefertermin
-  Q4 2026 ⚠), Ursachen (Lieferverzug Elektronik + Kunden-Change-Request), Pönale-Risiko und
-  Gegenmaßnahmen, offener Kontrast zu Alpha. Zwei neue Belege: `projekt-beta-status` (Projektbericht,
-  6 Highlights) + `eskalation-beta-elektronik` (E-Mail, 3. Demo-Mail, zitierter Zulieferer-Verlauf) —
-  beide über bestehende Skins, kein Code-Umbau. Rein additiv in `data.js`; Hero 11 → 12, Berichte 5 → 6,
-  Geführte Demo 14 → 15. Deterministisch (27 Docs, 15 Szenarien, 3 Mails, 0 kaputte Refs) + live
-  verifiziert (Beta-Kachel/Klick → 90 % + Tooltip, Ampel korrekt, Suche findet beide, `paper-email` +
-  `paper-bericht` korrekt, keine Konsolenfehler).
+- **[Zyklus 22] Projekt-Portfolio-Überblick** — neues Szenario `projekt-portfolio` (Berichte, 94 %) stellt
+  Alpha **und** Beta in **einer** Ampel-Übersichtstabelle gegenüber (Alpha 62 %/24,0 Mio./✓, Beta
+  48 %/8,6 Mio./⚠ 3 Wo.), Portfolio-Volumen 32,6 Mio. €, ehrlicher Schluss „1 von 2 termingefährdet".
+  Quellen = beide Statusberichte (je 96 %) + Protokoll (74 %). Rein additiv in `data.js` (Reuse `<table>`),
+  kein neues Doc. Deterministisch (27 Docs, 16 Szenarien, kollisionsfreier Matcher) + live verifiziert.
+- **[Zyklus 21] Zweites Projekt „Beta"** — neues Szenario `projekt-beta` (Berichte, 90 %) mit Ampel-
+  Statustabelle (48 % ⚠ verzögert · 8,6 Mio. € · Q4 2026 ⚠), Ursachen (Lieferverzug + Change-Request),
+  Pönale-Risiko, offener Kontrast zu Alpha. Zwei neue Belege `projekt-beta-status` + `eskalation-beta-
+  elektronik` (3. Demo-Mail) über bestehende Skins. Rein additiv in `data.js`. Deterministisch (27 Docs,
+  15 Szenarien, 3 Mails, 0 kaputte Refs) + live verifiziert.
 - **[Zyklus 20] Konfidenz-Tooltip am Meter** — Hover/Focus am Konfidenz-Meter öffnet ein Popover, das die
   Prozentzahl aus den Quellen herleitet: **Quellen herangezogen · höchste Relevanz · Übereinstimmung der
   Belege** (einzeln/teilweise/hoch, „X von N ≥ 80 %"), je mit Mini-Balken; Fußzeile „Keine Behauptung —
