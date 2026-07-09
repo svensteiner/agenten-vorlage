@@ -70,6 +70,14 @@ Details: [OPEN_ITEMS.md](OPEN_ITEMS.md).
 > Demo ist unverändert aufnahmebereit.** Der nächste automatische Zyklus bleibt ohne Svens Rückmeldung ein
 > Wartepunkt (nicht churnen); mit seinen Anmerkungen → gezielt umsetzen. Die vorziehbare Phase-C-Doku ist
 > erschöpft (alle 5 Bricks fertig); jede weitere Phase-C-Arbeit berührt `prototype/` und ist bis Gate B→C gated.
+>
+> **Pilot-Kit-Konsistenz-Audit am 2026-07-09 (neuer Prüf-Winkel, kein Eingriff):** die fünf Phase-C-Verkaufs-/
+> Handover-Dokumente **gegen die Live-Daten** abgeglichen (Doku ↔ `data.js`, dieselbe Drift-Klasse wie 27/28 →
+> 29 früher). **Zero Drift:** 29 Docs · 17 Szenarien · 3 E-Mails · 2 gesperrt · DECISION_CHAIN 3 Schritte
+> deckungsgleich; **alle 17 Szenario-IDs** in SCENARIO_LIBRARY referenziert (0 fehlend); Agenten-Preise
+> (Reporting 400 · Vertrags 500 · Rechnungs 600 €) + Preis-Pfad (149 € → 5.000 € → 400 €/Mon.) bit-genau zu
+> `agent-dazubuchen` und One-Pager/PILOT_KIT. Das Pilot-Kit ist als Verkaufs-Werkzeug stimmig, `prototype/`
+> unverändert. Ein Verifikations-Pass hebt kein Gate → **Gate B→C wartet weiter nur auf Sven.**
 
 ## Was in diesem Zyklus gebaut wurde (Skript/Shotlist-Faktenkorrektur)
 

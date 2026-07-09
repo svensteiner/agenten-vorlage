@@ -47,6 +47,18 @@
 
 ## Verlauf
 
+- **Phase B · Pilot-Kit-Konsistenz-Audit (2026-07-09) ≈ 92 %** — reiner Verifikations-Zyklus mit **neuem
+  Prüf-Winkel**: statt die „Aufnahme-Bereitschaft" identisch zu wiederholen (Churn), die fünf Phase-C-
+  Verkaufs-/Handover-Dokumente (das „Verkaufs-Werkzeug") **gegen die Live-Daten** abgeglichen — dieselbe
+  Drift-Klasse, die zuvor 27/28 → 29 in den Video-Dateien aufdeckte. **Zero Drift:** `data.js` = **29 Docs ·
+  17 Szenarien · 3 E-Mails · 2 gesperrt · DECISION_CHAIN 3 Schritte** deckungsgleich mit SCENARIO_LIBRARY /
+  PILOT_KIT / SYNTHETIC_DATA_PIPELINE; **alle 17 Szenario-IDs** in SCENARIO_LIBRARY referenziert (0 fehlend);
+  Agenten-Preise im [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) (Reporting 400 · Vertrags 500 · Rechnungs 600 €)
+  bit-genau die `agent-dazubuchen`-Preise; Preis-Pfad **149 € → 5.000 € → 400 €/Mon.** identisch in One-Pager
+  und PILOT_KIT; Money-Shot = `DEMO_ORDER`-Finale. `node --check` grün, `git status` sauber, **`prototype/`
+  unverändert** (Feature-Freeze gewahrt). Ein Verifikations-Pass hebt kein blockiertes Gate → Fortschritt
+  bleibt ≈ 92 %. Das Pilot-Kit ist als Verkaufs-Werkzeug stimmig. **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase B · Aufnahme-Bereitschaft erneut re-verifiziert (2026-07-09) ≈ 92 %** — reiner Verifikations-
   Zyklus: Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C), die vorziehbaren Phase-C-
   Doku-Bricks sind erschöpft (alle 5 fertig), die restlichen Schritte berühren `prototype/` (bis Gate B→C

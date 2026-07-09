@@ -2,6 +2,30 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B — 2026-07-09 — Pilot-Kit-Konsistenz-Audit (Doku ↔ Live-Daten, kein Eingriff)
+
+**Reiner Verifikations-Zyklus, neuer Prüf-Winkel.** Phase B bleibt auf **Svens Aufnahme + Freigabe**
+blockiert (Gate B→C); die vorziehbaren Phase-C-Doku-Bricks sind erschöpft, jede weitere Phase-C-Arbeit
+berührt `prototype/` und ist gated. Statt die reine „Aufnahme-Bereitschaft" ein zweites Mal identisch zu
+prüfen (Churn), diesmal ein **anderer Winkel**: die Phase-C-Verkaufs-/Handover-Dokumente (das
+„Verkaufs-Werkzeug") **gegen die Live-Daten** abgeglichen — genau die Klasse Drift, die zuvor die
+27/28 → 29-Dokumentenzahl in den Video-Dateien aufdeckte.
+
+### Verifiziert (deterministisch, Node-VM gegen `data.js` + `grep` der Doku)
+- **Zahlen deckungsgleich:** `data.js` liefert **29 Dokumente · 17 Szenarien · 3 E-Mails · 2 gesperrt ·
+  DECISION_CHAIN = 3 Schritte** — exakt die in SCENARIO_LIBRARY / PILOT_KIT / SYNTHETIC_DATA_PIPELINE
+  zitierten Zahlen.
+- **Szenario-Abdeckung vollständig:** alle **17** Szenario-IDs aus `data.js` sind in
+  [SCENARIO_LIBRARY.md](SCENARIO_LIBRARY.md) referenziert — **0 fehlend**.
+- **Agenten-Preise stimmen:** [PILOT_ONE_PAGER.md](PILOT_ONE_PAGER.md) nennt **Reporting 400 € ·
+  Vertrags 500 € · Rechnungs 600 €** — bit-genau die `answer.agents`-Preise des Money-Shots
+  `agent-dazubuchen`; Auskunfts-Agent „inklusive/aktiv", Reporting „empfohlen".
+- **Preis-Pfad konsistent:** **Audit 149 € → Foundation ab 5.000 € → Agent-Abo ab 400 €/Monat** identisch
+  in One-Pager und [PILOT_KIT.md](PILOT_KIT.md); Money-Shot `agent-dazubuchen` = `DEMO_ORDER`-Finale.
+- `node --check` (app.js + data.js) grün; **`git status` sauber vor dem Schreiben, `prototype/`
+  unverändert** (Feature-Freeze gewahrt). **Zero Drift** — das Pilot-Kit ist als Verkaufs-Werkzeug in sich
+  stimmig und deckungsgleich mit der Demo. Kein gehobenes Gate. **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase B — 2026-07-09 — Aufnahme-Bereitschaft re-verifiziert (Wartepunkt, kein Eingriff)
 
 **Reiner Verifikations-Zyklus.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C);
