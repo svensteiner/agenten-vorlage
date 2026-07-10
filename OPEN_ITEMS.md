@@ -23,15 +23,15 @@
 
 ## Erledigt
 
-- **[Phase C — Vorbereitung] Pilot-Config Schicht A für „Muster Bau GmbH" geschrieben** — neue Datei
-  `pilot-assets/muster-bau-gmbh/pilot.config.js` (außerhalb `prototype/`, **nicht** verdrahtet): vollständige
-  `window.PILOT_CONFIG` nach [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §4 (Name/Tagline/Glyph `▲`/Akzent/
-  4 synth. Fakten/6 synth. Personen/Branche `bau`/`corpus`), 3 Szenarien = die verifizierte Bau-Startvorlage
-  (`materialkosten` · `projekt-beta` · `vorstand-summary`; Money-Shot bleibt Finale). **Beide freeze-konformen
-  Probelauf-Hälften nun ausgeführt** (Korpus + Config). Verifiziert (Node-VM): Schema erfüllt, `people`-Keys =
-  `COMPANY.people`, alle 3 IDs existieren; **Faktenkorrektur** — die Spec-*Beispiel*-IDs `rechnungspruefung-donau`/
-  `liquiditaet-90-tage` existieren **nicht**; kein Meridian-Leak; 29 Docs/17 Szenarien unverändert; `node --check`
-  grün, `git status` nur die neue `.js`. Wiring gated bis Gate B→C.
+- **[Phase C — Vorbereitung] Vorab-Kohärenz-Audit Schicht A ↔ B „Muster Bau GmbH" (2026-07-10)** — die zwei
+  bereits gestageten Probelauf-Hälften erstmals **gegeneinander** geprüft (bisher je isoliert). Drei nicht-
+  blockierende Lücken vorab protokolliert (README → „Vorab-Kohärenz-Audit" + PILOT_KIT §8-Notiz): (1) die 3
+  Szenarien ziehen **12 verschiedene** Belege → der Zwilling-`.xlsx` ist **1 von 12** (Schritt-3-Checkliste);
+  (2) die 6 synth. Config-Personen erscheinen in **0** Artefakten → müssen in Schritt 3 die Meridian-Namen
+  ersetzen (Config-Kommentar ehrlich gestellt); (3) die §8-CSV-Zwillinge sind noch nicht gestaged. **Baut auf
+  Schicht A** (`pilot.config.js`, PILOT_CONFIG_SPEC §4, 3 Bau-Szenarien, `people`-Keys = `COMPANY.people`, kein
+  Meridian-Leak) **und Schicht B** (synth. Zwilling). Kein Eingriff in `prototype/`; `node --check` grün,
+  29 Docs/17 Szenarien unverändert. Die gated Schritt-3-Übertragung startet jetzt warm.
 
 - **[Phase C — Vorbereitung] Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2)** — die zuvor
   nur **hypothetische** §Beispiel-Tabelle der [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) ist jetzt

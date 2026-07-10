@@ -51,7 +51,27 @@ verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Ga
 > re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
 > gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Config Schicht A für
+**Diesen Zyklus gebaut (2026-07-10, freeze-konform, kein Eingriff in `prototype/`):** ein **Vorab-Kohärenz-
+Audit Schicht A ↔ Schicht B** für „Muster Bau GmbH". Die beiden gestageten Probelauf-Hälften (Config +
+synth. Zwilling) waren bisher **je für sich** verifiziert; erstmals gegeneinander **und** gegen das, was die
+Config verspricht, geprüft (deterministisch: Node-VM gegen `data.js` + openpyxl gegen beide `.xlsx`) — der
+Winkel, der die gated §8-Übertragung sonst kalt getroffen hätte. **Drei nicht-blockierende Kohärenz-Lücken
+vorab protokolliert** (in [`pilot-assets/muster-bau-gmbh/README.md`](pilot-assets/muster-bau-gmbh/README.md)
+→ „Vorab-Kohärenz-Audit" und als §8-Notiz in [PILOT_KIT.md](PILOT_KIT.md)): **(1) Korpus-Checkliste** — die 3
+Pilot-Szenarien ziehen zusammen **12 verschiedene** Belege heran (verifiziert aufgelistet); der erzeugte
+Zwilling-`.xlsx` deckt nur die Materialkosten-Zahlen ab und ist damit **1 von 12** → die übrigen 11 sind im
+gated Schritt 3 zu erzeugen/umzuschreiben. **(2) Personen-Regel** — die Config deklariert 6 synthetische
+Personen als „im Korpus vorhanden", sie erscheinen aber in **0** Artefakten (Zwilling 0, `data.js` 0), während
+die 12 Quelldocs heute die **Meridian**-Namen tragen → Schritt 3 muss die 6 Namen 1:1 einsetzen, sonst leakt
+die Demo Meridian; der Config-Kommentar wurde von „tauchen auf" ehrlich auf „**sollen** via Schritt 3
+auftauchen" gestellt. **(3) §8-Eingaben** — die dort genannten Rechnungs-/Vertrags-CSV-Zwillinge sind **noch
+nicht gestaged** (entstehen erst in Schritt 3). Ergebnis: eine **konkrete 12-Dokument-Checkliste + Personen-
+Ersetzungs-Regel** stehen für die gated Übertragung bereit, statt live entdeckt zu werden. `git status`: nur
+`README.md` + `pilot.config.js` + `PILOT_KIT.md`; `node --check` (app.js + data.js) grün; Live-Daten
+unverändert (**29 Docs · 17 Szenarien**). Ein Vorbereitungs-/Audit-Brick hebt kein Gate → **Gate B→C wartet
+weiter nur auf Sven.**
+
+**Zyklus davor gebaut (freeze-konform, kein Eingriff in `prototype/`):** die **Pilot-Config Schicht A für
 „Muster Bau GmbH" real geschrieben** statt nur spezifiziert. Neue Datei
 [`pilot-assets/muster-bau-gmbh/pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js) (außerhalb
 `prototype/`, **nicht** verdrahtet): vollständige `window.PILOT_CONFIG` nach [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
@@ -192,7 +212,7 @@ durch einen sauberen Take führt. Neu:
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
-- **Zuletzt aktualisiert:** 2026-07-09.
+- **Zuletzt aktualisiert:** 2026-07-10.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
 - **Prototyp-Baufortschritt:** **≈ 92 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 

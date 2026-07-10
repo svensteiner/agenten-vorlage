@@ -31,7 +31,9 @@ window.PILOT_CONFIG = {
       { label: "Umsatz 2025", value: "48 Mio. €" },
     ],
     people: {
-      // Synthetische Namen (tauchen im synthetischen Korpus / Schicht B auf)
+      // Synthetische Namen — SOLLEN via Schritt 3 in den synthetischen Korpus
+      // (Schicht B) eingesetzt werden; heute noch in keinem Artefakt (s. README
+      // "Vorab-Kohärenz-Audit"). Ersetzen dort die Meridian-Personen 1:1.
       ceo: "Andreas Moser",
       cfo: "Petra Hollmann",
       hr: "Miriam Baumgartner",

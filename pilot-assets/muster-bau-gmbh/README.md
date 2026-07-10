@@ -91,6 +91,45 @@ Deterministisch verifiziert (Node-VM gegen die Live-`data.js`):
   **nicht** — die real gewählten IDs sind gegen `SCENARIOS` geprüft.
 - **Kein Meridian-Leak**, alle Werte synthetisch; Firmenname weicht ab. `node --check` grün.
 
+## Vorab-Kohärenz-Audit Schicht A ↔ Schicht B (2026-07-10)
+
+Bisher waren beide Hälften **je für sich** verifiziert (Config gegen `data.js`; Zwilling gegen openpyxl).
+Neu: die beiden Hälften **gegeneinander** und gegen das, was die Config **verspricht**, geprüft — der Winkel,
+der die gated §8-Übertragung sonst kalt getroffen hätte. Deterministisch (Node-VM gegen `data.js` +
+openpyxl gegen beide `.xlsx`). **Drei nicht-blockierende Kohärenz-Lücken** — vorab protokolliert, damit
+Schritt 3 nach Gate B→C nicht live entdeckt, sondern abgehakt wird:
+
+1. **Korpus-Abdeckung: 1 Zwilling ⇄ 12 Quelldokumente.** Die 3 Pilot-Szenarien ziehen zusammen **12
+   verschiedene** Belege heran (verifiziert):
+   - `materialkosten` (5): `q1-bericht-2026`, `email-preisanpassung-donau`, `email-weiterleitung-materialbudget`, `rahmenvertrag-stahlwerk-donau`, `rechnung-2026-1843`
+   - `projekt-beta` (4): `projekt-beta-status`, `eskalation-beta-elektronik`, `nachtrag-nordwind-beta`, `auftrag-nordwind-beta`
+   - `vorstand-summary` (4, `q1-bericht-2026` geteilt): `projekt-alpha-status`, `vorstandsprotokoll-2026-03`, `esg-bericht-2025`
+
+   Der bereits erzeugte Zwilling (`…_testdaten.xlsx`) deckt semantisch **nur die Zahlen von
+   `materialkosten`** ab (Monatsabschluss/Materialkosten) — er ersetzt **keinen** dieser 12 Dokumentkörper.
+   **Für Schritt 3 zu erzeugen:** synthetische Zwillinge (bzw. redaktionelle Umschriften) für **alle 12**
+   (Rechnung · 2 E-Mails · Rahmenvertrag · Q1-Bericht · 2 Projektberichte · Eskalations-Mail · Nachtrag ·
+   Auftragsbestätigung · Vorstandsprotokoll · ESG-Bericht). Der Controlling-`.xlsx` ist **1 von 12** — der
+   klickbare Netto/USt/Brutto-Beleg für den Materialkosten-Beat.
+
+2. **Personen-Versprechen unerfüllt (bis Schritt 3).** `pilot.config.js` deklariert **6** synthetische
+   Personen und sagt, sie „tauchen im synthetischen Korpus (Schicht B) auf". **Sie tauchen aktuell nirgends
+   auf:** im Zwilling-`.xlsx` **0** (nur Firmenname + Kostenarten), in `data.js` **0** Treffer. Umgekehrt
+   tragen die 12 Quelldokumente heute die **Meridian**-Namen (z. B. CFO Dr. Katharina Vogel, Einkauf Thomas
+   Krüger). **Schritt 3 muss die 6 synthetischen Namen aktiv in die 12 Zwillinge einsetzen**, sonst zeigt die
+   Muster-Bau-Demo Meridian-Personen — genau der Leak, den die Pipeline verhindern soll. (Config-Kommentar
+   entsprechend von „tauchen … auf" auf „**sollen** … auftauchen (via Schritt 3)" ehrlich gestellt.)
+
+3. **§8-Eingabeliste läuft dem Staging voraus.** [PILOT_KIT.md](../../PILOT_KIT.md) §8 nennt als synthetische
+   Eingaben u. a. „Eingangsrechnungen (CSV), Rahmenverträge (CSV)" — die sind **noch nicht gestaged** (dieser
+   Ordner enthält nur den Controlling-`.xlsx`). Kein Widerspruch, nur eine **Reihenfolge-Notiz:** die CSV-
+   Zwillinge (für `rechnung-2026-1843`, `rahmenvertrag-stahlwerk-donau`) entstehen erst im gated Schritt 3.
+
+**Keine dieser Lücken ist blockierend** — alle drei liegen jenseits der Freeze-Grenze (Schritt 3 berührt
+`prototype/`). Ergebnis des Audits: eine **konkrete 12-Dokument-Checkliste** + die Personen-Ersetzungs-Regel
+stehen für die gated §8-Übertragung bereit, statt live entdeckt zu werden. `prototype/` unverändert;
+Live-Daten unverändert (**29 Docs · 17 Szenarien**).
+
 ## Was noch fehlt (gated bis Gate B→C)
 
 **Schritt 3** — die synthetischen Zahlen redaktionell in `prototype/data.js` als `DOCS`/`lineItems`
@@ -103,3 +142,4 @@ Gate offen ist.
 ---
 
 *Erstellt 2026-07-09 · Phase C (Vorbereitung) · Schritte 1+2 real ausgeführt · `prototype/` unverändert.*
+*Ergänzt 2026-07-10 · Vorab-Kohärenz-Audit Schicht A ↔ B (12-Dok-Checkliste + Personen-Regel).*

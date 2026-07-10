@@ -218,6 +218,18 @@ Geplanter Testkunde (aus [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md
 - **Synthetische Eingaben:** Monats-Controlling (mehrblättrig, Formeln), Eingangsrechnungen (CSV),
   Rahmenverträge (CSV) — je `--seed 42`.
 
+> **Vorab-Kohärenz-Audit (2026-07-10, freeze-konform) — startet §8 warm.** Bevor das Gate offen ist, wurden
+> die beiden bereits gestageten Probelauf-Hälften (`pilot-assets/muster-bau-gmbh/` — Schicht A Config +
+> Schicht B Zwilling) **gegeneinander** geprüft. Drei nicht-blockierende Lücken sind vorab protokolliert (Details:
+> [pilot-assets/muster-bau-gmbh/README.md](pilot-assets/muster-bau-gmbh/README.md) → „Vorab-Kohärenz-Audit"):
+> (1) **Korpus-Checkliste für Schritt 3:** die 3 Szenarien ziehen **12 verschiedene** Belege heran — der
+> gestagete Controlling-`.xlsx` ist **1 von 12**; die übrigen 11 (Rechnung · 2 E-Mails · Rahmenvertrag ·
+> Q1-Bericht · 2 Projektberichte · Eskalations-Mail · Nachtrag · Auftragsbestätigung · Vorstandsprotokoll ·
+> ESG-Bericht) sind im gated Schritt 3 zu erzeugen/umzuschreiben. (2) **Personen-Regel:** die 6 synthetischen
+> Namen der Config müssen dabei die heutigen **Meridian**-Personen 1:1 ersetzen (heute in 0 Artefakten). (3) Die
+> oben genannten CSV-Zwillinge sind **noch nicht gestaged** (entstehen in Schritt 3). Die Protokoll-Tabelle
+> unten bleibt bis Gate B→C **Platzhalter**.
+
 | Schritt | Ergebnis | Reibung | behoben? |
 |---------|----------|---------|----------|
 | 0 Audit-Call (simuliert) | _offen_ | | |

@@ -47,6 +47,22 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · Vorab-Kohärenz-Audit Schicht A ↔ B (2026-07-10) ≈ 92 %** — Phase B bleibt auf
+  **Svens Aufnahme + Freigabe** blockiert (Gate B→C); statt einer identischen Re-Verifikation (Churn) ein
+  **neuer Winkel**: die zwei bereits gestageten Probelauf-Hälften für „Muster Bau GmbH" (Schicht A `pilot.config.js`
+  + Schicht B synth. Zwilling), bisher **je isoliert** verifiziert, erstmals **gegeneinander** und gegen die
+  Config-Versprechen geprüft (deterministisch: Node-VM gegen `data.js` + openpyxl gegen beide `.xlsx`). **Drei
+  nicht-blockierende Kohärenz-Lücken** vorab protokolliert (README → „Vorab-Kohärenz-Audit" + [PILOT_KIT.md](PILOT_KIT.md)
+  §8-Notiz): **(1)** die 3 Szenarien ziehen **12 verschiedene** Belege heran → der Zwilling-`.xlsx` ist **1 von
+  12** (verifizierte Schritt-3-Checkliste); **(2)** die 6 synth. Config-Personen erscheinen in **0** Artefakten
+  (Zwilling 0, `data.js` 0), die 12 Quelldocs tragen heute die **Meridian**-Namen → Schritt 3 muss sie 1:1
+  ersetzen (Config-Kommentar von „tauchen auf" ehrlich auf „**sollen** via Schritt 3" gestellt); **(3)** die
+  §8-Rechnungs-/Vertrags-CSV-Zwillinge sind **noch nicht gestaged**. Alle drei Lücken liegen **jenseits der
+  Freeze-Grenze** (Schritt 3 berührt `prototype/`). **`prototype/` unverändert** (`git status`: nur `README.md`
+  + `pilot.config.js` + `PILOT_KIT.md`), `node --check` grün, Live-Daten unverändert (**29 Docs · 17 Szenarien**).
+  Ein Audit-Brick hebt kein blockiertes Gate → Fortschritt bleibt **≈ 92 %**; die gated Schritt-3-Übertragung
+  startet jetzt **warm** (12-Dok-Checkliste + Personen-Regel). **Gate B→C wartet weiter nur auf Sven.**
+
 - **Phase C (Vorbereitung) · Pilot-Config Schicht A real geschrieben (2026-07-09) ≈ 92 %** — Phase B bleibt
   auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Nachdem die Vorzyklen die Pipeline **Schicht B**
   (synthetischer Korpus, Schritte 1+2) real ausgeführt haben, jetzt die **Schicht A** (Umbranding-Config) für

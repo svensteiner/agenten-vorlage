@@ -2,6 +2,30 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-10 — Vorab-Kohärenz-Audit Schicht A ↔ B „Muster Bau GmbH" (kein Eingriff in prototype/)
+
+**Neuer Prüf-Winkel statt Churn, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert
+(Gate B→C). Die zwei bereits gestageten Probelauf-Hälften (Schicht A `pilot.config.js` + Schicht B synth.
+Zwilling) waren bisher **je isoliert** verifiziert; erstmals **gegeneinander** und gegen die Config-Versprechen
+geprüft (deterministisch: Node-VM gegen `data.js` + openpyxl gegen beide `.xlsx`). Ziel: die gated §8-Übertragung
+startet **warm** statt kalt.
+
+### Gebaut (reine Doku/Config in `pilot-assets/` + Handover — `prototype/` unverändert)
+- **README → „Vorab-Kohärenz-Audit Schicht A ↔ B"** + **§8-Notiz in [PILOT_KIT.md](PILOT_KIT.md)**: drei
+  nicht-blockierende Kohärenz-Lücken protokolliert mit **verifizierter 12-Dokument-Checkliste** für Schritt 3.
+- **Ehrlichkeits-Fix in `pilot.config.js`:** der Personen-Kommentar von „tauchen im Korpus auf" auf „**sollen**
+  via Schritt 3 auftauchen (heute in 0 Artefakten)" gestellt.
+
+### Verifiziert (deterministisch)
+- **(1) Korpus-Abdeckung:** die 3 Pilot-Szenarien ziehen zusammen **12 verschiedene** Belege heran (aufgelistet);
+  der Zwilling-`.xlsx` deckt nur die Materialkosten-Zahlen ab → **1 von 12**, die übrigen 11 sind gated (Schritt 3).
+- **(2) Personen-Regel:** die 6 synth. Config-Personen erscheinen in **0** Artefakten (Zwilling 0, `data.js` 0);
+  die 12 Quelldocs tragen heute die **Meridian**-Namen → Schritt 3 muss 1:1 ersetzen, sonst Meridian-Leak.
+- **(3) §8-Eingaben:** die genannten Rechnungs-/Vertrags-CSV-Zwillinge sind **noch nicht gestaged** (Schritt 3).
+- **`prototype/` unverändert** (`git status`: nur `README.md` + `pilot.config.js` + `PILOT_KIT.md`), `node --check`
+  (app.js + data.js) grün, Live-Daten unverändert (**29 Docs · 17 Szenarien**). Ein Audit-Brick hebt kein Gate →
+  **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase C (Vorbereitung) — 2026-07-09 — Pilot-Config (Schicht A) für „Muster Bau GmbH" real geschrieben (kein Eingriff in prototype/)
 
 **Nächster Schritt des End-to-End-Probelaufs, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
