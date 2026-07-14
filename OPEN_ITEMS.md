@@ -15,23 +15,23 @@
 
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
-> **Freeze-konforme Phase-C-Vorbereitung erschöpft** (kein Eingriff in `prototype/`): alle 5 Doku-Bricks
-> **plus** die real ausgeführte Pipeline-Hälfte (Schritte 1+2, `pilot-assets/muster-bau-gmbh/`). Verbleibend
-> und **gated bis Gate B→C** (berührt `prototype/`): Schritt 3 (Übertrag in `data.js`) · PILOT_CONFIG-Wiring ·
-> End-to-End-Probelauf (Protokoll → PILOT_KIT.md §8) → `MISSION_COMPLETE`. Ohne Sven-Rückmeldung bleibt der
-> nächste Zyklus ein **Wartepunkt** (re-verifizieren statt churnen). Details: [NEXT_STEPS.md](NEXT_STEPS.md).
+> **Freeze-konforme Phase-C-Vorbereitung** (kein Eingriff in `prototype/`): alle 5 Doku-Bricks **plus** die
+> real ausgeführte Pipeline (Schritte 1+2) — Korpus-Zwillinge jetzt **3/12** (`.xlsx` + 2 CSV, `pilot-assets/`).
+> Verbleibend und **gated bis Gate B→C** (berührt `prototype/`): die **9 Prosa-Belege** + Schritt 3 (Übertrag in
+> `data.js`) · PILOT_CONFIG-Wiring · End-to-End-Probelauf (→ PILOT_KIT.md §8) → `MISSION_COMPLETE`. Ohne
+> Sven-Rückmeldung bleibt der nächste Zyklus ein **Wartepunkt**. Details: [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
 
-- **[Phase C — Vorbereitung] Vorab-Kohärenz-Audit Schicht A ↔ B „Muster Bau GmbH" (2026-07-10)** — die zwei
-  bereits gestageten Probelauf-Hälften erstmals **gegeneinander** geprüft (bisher je isoliert). Drei nicht-
-  blockierende Lücken vorab protokolliert (README → „Vorab-Kohärenz-Audit" + PILOT_KIT §8-Notiz): (1) die 3
-  Szenarien ziehen **12 verschiedene** Belege → der Zwilling-`.xlsx` ist **1 von 12** (Schritt-3-Checkliste);
-  (2) die 6 synth. Config-Personen erscheinen in **0** Artefakten → müssen in Schritt 3 die Meridian-Namen
-  ersetzen (Config-Kommentar ehrlich gestellt); (3) die §8-CSV-Zwillinge sind noch nicht gestaged. **Baut auf
-  Schicht A** (`pilot.config.js`, PILOT_CONFIG_SPEC §4, 3 Bau-Szenarien, `people`-Keys = `COMPANY.people`, kein
-  Meridian-Leak) **und Schicht B** (synth. Zwilling). Kein Eingriff in `prototype/`; `node --check` grün,
-  29 Docs/17 Szenarien unverändert. Die gated Schritt-3-Übertragung startet jetzt warm.
+- **[Phase C — Vorbereitung] 2 Struktur-Zwillinge gestaged, Korpus 1/12 → 3/12 (2026-07-14)** — die 2
+  tabellarischen Korpus-Belege als synth. CSV-Zwillinge (`rechnung-…` mit lebender Formelkette
+  `73.600 → 13.984 → 87.584 €`; `rahmenvertrag-…` §9/§6/§12) + Generator `build_corpus_twins.py` mit Self-Check.
+  **Audit-Gap 2 (Personen-Regel) erstmals angewandt & verifiziert:** Meridian-intern → Config-Namen (Krüger →
+  Kessler, Wagner → Reinhardt, Meridian → Muster Bau), extern (Stahlwerk Donau) bleibt, **0 Leak**. Zahlen an
+  Schritt 3 gekoppelt (verbatim in Szenario-Zitaten). `prototype/` unverändert; `node --check` grün.
+- **[Phase C — Vorbereitung] Vorab-Kohärenz-Audit Schicht A ↔ B (2026-07-10)** — die 2 Probelauf-Hälften
+  erstmals **gegeneinander** geprüft; 3 nicht-blockierende Lücken protokolliert (12-Dok-Checkliste; 6 Config-
+  Personen in 0 Artefakten; §8-CSV noch nicht gestaged). Deterministisch, `prototype/` unverändert.
 
 - **[Phase C — Vorbereitung] Pilot-Datenpipeline real ausgeführt (Muster Bau GmbH, Schritte 1+2)** — die zuvor
   nur **hypothetische** §Beispiel-Tabelle der [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) ist jetzt

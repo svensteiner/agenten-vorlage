@@ -130,6 +130,35 @@ Schritt 3 nach Gate B→C nicht live entdeckt, sondern abgehakt wird:
 stehen für die gated §8-Übertragung bereit, statt live entdeckt zu werden. `prototype/` unverändert;
 Live-Daten unverändert (**29 Docs · 17 Szenarien**).
 
+## Struktur-Zwillinge gestaged: Korpus-Abdeckung 1/12 → 3/12 (2026-07-14)
+
+Der Audit oben legte die 12-Dokument-Checkliste an; **nur 1 von 12** war als Zwilling gestaged (die
+Controlling-`.xlsx`). Dieser Zyklus staged die **beiden strukturierten/tabellarischen** Belege — genau die,
+bei denen „klickbare Zahlen" für einen CFO zählen — als CSV-Zwillinge (die **nicht-gated** Pipeline-Hälfte,
+Schritte 1+2; das Laden in `data.js` bleibt Schritt 3 / gated):
+
+| Zwilling | Quelle | Was der Zwilling trägt |
+|---|---|---|
+| `rechnung-2026-1843_zwilling.csv` | `rechnung-2026-1843` | Positionstabelle **mit lebender Formelkette** netto = Menge × EP · USt = netto × 19 % · brutto = netto + USt (`73.600 → 13.984 → 87.584 €`) |
+| `rahmenvertrag-stahlwerk-donau_zwilling.csv` | `rahmenvertrag-stahlwerk-donau` | Klausel-Tabelle §9 Laufzeit · §6 Preisgleitklausel · §12 Gewährleistung, identitäts-bereinigt |
+| `build_corpus_twins.py` | — | reproduzierbarer Generator **mit Self-Check** (Formelkette exakt + kein Meridian-Leak) |
+
+**Personen-Regel (Gap 2) erstmals konkret angewandt & verifiziert:** die internen Meridian-Personen der
+Quelldocs sind 1:1 durch die synthetischen `pilot.config.js`-Namen ersetzt — **Thomas Krüger → Jürgen Kessler**
+(Einkauf), **Dr. Elena Wagner → Dr. Stefan Reinhardt** (Recht), **Meridian Industrie GmbH → Muster Bau GmbH**;
+der **externe** Lieferant *Stahlwerk Donau AG* bleibt (Gegenpartei, keine Meridian-Identität). Der Self-Check
+bestätigt deterministisch: **0 Meridian-Leak**, alle drei synthetischen Namen present. Damit ist die vom Audit
+als „unerfüllt" markierte Personen-Zusage in den strukturierten Zwillingen **erfüllt** (vorher: 0 Artefakte).
+
+**Zahlen bewusst nicht perturbiert:** die Rechnungswerte stehen verbatim in zwei Szenario-Zitaten in `data.js`
+(`materialkosten`, `rechnungspruefung`); eine Abweichung im Zwilling öffnete eine **neue** Kohärenz-Lücke. Die
+optionale ±10 %-Synthese ist daher an Schritt 3 gekoppelt (Korpus **und** Szenario-Zitate zusammen umschreiben).
+Der Zwilling trägt stattdessen die **Formelkette explizit** — klickbar & nachrechenbar.
+
+**Verbleibt für Schritt 3 (gated):** die **9 Prosa-Belege** (2 E-Mails, Q1-/2 Projekt-/ESG-Bericht,
+Eskalations-Mail, Nachtrag, Auftragsbestätigung, Vorstandsprotokoll) = redaktionelle Umschriften direkt in
+`data.js`. Struktur-Abdeckung jetzt **3/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
+
 ## Was noch fehlt (gated bis Gate B→C)
 
 **Schritt 3** — die synthetischen Zahlen redaktionell in `prototype/data.js` als `DOCS`/`lineItems`
@@ -143,3 +172,4 @@ Gate offen ist.
 
 *Erstellt 2026-07-09 · Phase C (Vorbereitung) · Schritte 1+2 real ausgeführt · `prototype/` unverändert.*
 *Ergänzt 2026-07-10 · Vorab-Kohärenz-Audit Schicht A ↔ B (12-Dok-Checkliste + Personen-Regel).*
+*Ergänzt 2026-07-14 · 2 Struktur-Zwillinge gestaged (Rechnung + Rahmenvertrag), Korpus-Abdeckung 1/12 → 3/12, Personen-Regel verifiziert.*

@@ -47,6 +47,16 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · 2 Struktur-Zwillinge gestaged (2026-07-14) ≈ 92 %** — Phase B bleibt auf
+  **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Statt Re-Verifikation (Churn) die vom Kohärenz-Audit
+  angelegte **12-Dok-Checkliste konkret abgearbeitet**: die 2 strukturierten Korpus-Belege als synthetische
+  CSV-Zwillinge gestaged (nicht-gated Schritte 1+2) — `rechnung-2026-1843_zwilling.csv` (lebende Formelkette
+  `73.600 → 13.984 → 87.584 €`) + `rahmenvertrag-stahlwerk-donau_zwilling.csv` (Klausel-Tabelle §9/§6/§12) +
+  `build_corpus_twins.py` (Generator mit Self-Check). **Korpus-Abdeckung 1/12 → 3/12.** **Audit-Gap 2
+  (Personen-Regel) erstmals angewandt & verifiziert:** Meridian-intern → `pilot.config.js`-Namen (Krüger →
+  Kessler, Wagner → Reinhardt, Meridian → Muster Bau), extern (Stahlwerk Donau) bleibt; Self-Check: 0
+  Meridian-Leak. Zahlen bewusst nicht perturbiert (verbatim in Szenario-Zitaten → ±10 % an Schritt 3 gekoppelt).
+  `prototype/` unverändert; `node --check` grün; 29 Docs · 17 Szenarien. **Gate B→C wartet weiter nur auf Sven.**
 - **Phase C (Vorbereitung) · Vorab-Kohärenz-Audit Schicht A ↔ B (2026-07-10) ≈ 92 %** — Phase B bleibt auf
   **Svens Aufnahme + Freigabe** blockiert (Gate B→C); statt einer identischen Re-Verifikation (Churn) ein
   **neuer Winkel**: die zwei bereits gestageten Probelauf-Hälften für „Muster Bau GmbH" (Schicht A `pilot.config.js`

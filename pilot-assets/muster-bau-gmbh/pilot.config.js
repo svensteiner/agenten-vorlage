@@ -31,9 +31,11 @@ window.PILOT_CONFIG = {
       { label: "Umsatz 2025", value: "48 Mio. €" },
     ],
     people: {
-      // Synthetische Namen — SOLLEN via Schritt 3 in den synthetischen Korpus
-      // (Schicht B) eingesetzt werden; heute noch in keinem Artefakt (s. README
-      // "Vorab-Kohärenz-Audit"). Ersetzen dort die Meridian-Personen 1:1.
+      // Synthetische Namen — ersetzen die Meridian-Personen 1:1 im synth. Korpus.
+      // Stand 2026-07-14: in den 2 Struktur-Zwillingen (Rechnung/Rahmenvertrag)
+      // bereits eingesetzt & verifiziert (procurement/legal/cfo → s. README
+      // "Struktur-Zwillinge"); die übrigen (ceo/hr/audit + Prosa-Belege) folgen
+      // im gated Schritt 3.
       ceo: "Andreas Moser",
       cfo: "Petra Hollmann",
       hr: "Miriam Baumgartner",

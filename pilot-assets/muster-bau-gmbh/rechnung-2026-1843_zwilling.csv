@@ -1,0 +1,14 @@
+﻿Rechnung Nr.;2026-1843
+Lieferant;Stahlwerk Donau AG
+Rechnungsempfänger;Muster Bau GmbH
+Bestellbezug;PO-2026-0512
+Bestellverantwortung Einkauf;Jürgen Kessler
+Lieferung;20.03.2026, Werkhof Kempten
+Zahlungsziel;30 Tage netto, 2 % Skonto bei Zahlung < 14 Tage
+
+Pos;Beschreibung;Menge (t);Einzelpreis (EUR/t);Summe netto (EUR)
+1;Baustahl S355, Warmband - Materialzeugnis 3.1 (EN 10204);80.000;920.00;73,600.00
+
+;;;Summe netto (EUR);73,600.00
+;;;USt 19 % (EUR);13,984.00
+;;;Rechnungsbetrag brutto (EUR);87,584.00

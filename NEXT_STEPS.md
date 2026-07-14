@@ -51,7 +51,25 @@ verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Ga
 > re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
 > gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-10, freeze-konform, kein Eingriff in `prototype/`):** ein **Vorab-Kohärenz-
+**Diesen Zyklus gebaut (2026-07-14, freeze-konform, kein Eingriff in `prototype/`):** die vom Kohärenz-Audit
+angelegte **12-Dokument-Checkliste konkret abgearbeitet** — die **2 strukturierten/tabellarischen** Korpus-
+Belege als **synthetische CSV-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in
+`data.js` bleibt Schritt 3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md):
+`build_corpus_twins.py` (reproduzierbarer Generator **mit Self-Check**) + `rechnung-2026-1843_zwilling.csv`
+(Positionstabelle mit **lebender Formelkette** netto = Menge × EP · USt = netto × 19 % · brutto,
+`73.600 → 13.984 → 87.584 €`) + `rahmenvertrag-stahlwerk-donau_zwilling.csv` (Klausel-Tabelle §9/§6/§12).
+Damit steigt die **Korpus-Abdeckung 1/12 → 3/12** (die drei tabellarischen Belege). **Personen-Regel (Audit-
+Gap 2) erstmals konkret angewandt & deterministisch verifiziert:** Meridian-intern 1:1 durch die
+`pilot.config.js`-Namen ersetzt — *Thomas Krüger → Jürgen Kessler* (Einkauf), *Dr. Elena Wagner → Dr. Stefan
+Reinhardt* (Recht), *Meridian Industrie GmbH → Muster Bau GmbH*; externer Lieferant *Stahlwerk Donau AG* bleibt.
+Self-Check bestätigt: **0 Meridian-Leak**, alle 3 synth. Namen present, Formelkette exakt (brutto = netto × 1,19).
+**Zahlen bewusst nicht perturbiert** (stehen verbatim in 2 Szenario-Zitaten → ±10 %-Synthese an Schritt 3
+gekoppelt, sonst neue Kohärenz-Lücke). `git status`: nur 3 neue Dateien in `pilot-assets/`; `node --check`
+(app.js + data.js) grün; Live-Daten unverändert (**29 Docs · 17 Szenarien**). Ein Vorbereitungs-Brick hebt kein
+Gate → **Gate B→C wartet weiter nur auf Sven.** Verbleibt gated: die **9 Prosa-Belege** (redaktionelle
+Umschriften) + Config-Wiring + Schritt-3-Übertragung in `data.js`.
+
+**Zyklus davor gebaut (2026-07-10, freeze-konform, kein Eingriff in `prototype/`):** ein **Vorab-Kohärenz-
 Audit Schicht A ↔ Schicht B** für „Muster Bau GmbH". Die beiden gestageten Probelauf-Hälften (Config +
 synth. Zwilling) waren bisher **je für sich** verifiziert; erstmals gegeneinander **und** gegen das, was die
 Config verspricht, geprüft (deterministisch: Node-VM gegen `data.js` + openpyxl gegen beide `.xlsx`) — der

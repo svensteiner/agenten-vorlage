@@ -2,6 +2,35 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-14 — 2 Struktur-Zwillinge gestaged, Korpus-Abdeckung 1/12 → 3/12 (kein Eingriff in prototype/)
+
+**Checkliste abarbeiten statt re-verifizieren, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Der Kohärenz-Audit (2026-07-10) legte die 12-Dokument-Checkliste an; nur
+**1 von 12** war als Zwilling gestaged. Dieser Zyklus staged die **2 strukturierten/tabellarischen** Belege
+(die nicht-gated Pipeline-Hälfte, Schritte 1+2 — Laden in `data.js` bleibt Schritt 3/gated).
+
+### Gebaut (nur `pilot-assets/muster-bau-gmbh/` — `prototype/` unverändert)
+- **`build_corpus_twins.py`** — reproduzierbarer Generator **mit Self-Check** (Formelkette exakt + kein
+  Meridian-Leak); wendet die Personen-Ersetzungs-Regel deterministisch an.
+- **`rechnung-2026-1843_zwilling.csv`** — Positionstabelle mit **lebender Formelkette** netto = Menge × EP ·
+  USt = netto × 19 % · brutto = netto + USt (`73.600 → 13.984 → 87.584 €`).
+- **`rahmenvertrag-stahlwerk-donau_zwilling.csv`** — Klausel-Tabelle §9 Laufzeit · §6 Preisgleitklausel ·
+  §12 Gewährleistung, identitäts-bereinigt.
+- **README + `pilot.config.js`-Kommentar** fortgeschrieben: Personen-Zusage in den Struktur-Zwillingen erfüllt.
+
+### Verifiziert (deterministisch, Self-Check)
+- **Korpus-Abdeckung 1/12 → 3/12** (die drei tabellarischen Belege).
+- **Personen-Regel (Audit-Gap 2) erstmals angewandt:** Krüger → Kessler (Einkauf), Wagner → Reinhardt (Recht),
+  Meridian Industrie GmbH → Muster Bau GmbH; externer Lieferant *Stahlwerk Donau AG* bleibt. **0 Meridian-Leak**,
+  alle 3 synth. Namen present.
+- **Formelkette exakt:** brutto = netto × 1,19 bestätigt. Zahlen bewusst **nicht** perturbiert (verbatim in 2
+  Szenario-Zitaten → ±10 %-Synthese an Schritt 3 gekoppelt, sonst neue Kohärenz-Lücke).
+- `git status`: nur 3 neue Dateien in `pilot-assets/`; `node --check` (app.js + data.js) grün; **29 Docs ·
+  17 Szenarien** unverändert.
+
+**Kein Gate gehoben** (Vorbereitungs-Brick). Verbleibt gated: **9 Prosa-Belege** (redaktionelle Umschriften) +
+Config-Wiring + Schritt-3-Übertragung in `data.js`. **Gate B→C wartet weiter nur auf Sven.**
+
 ## Phase C (Vorbereitung) — 2026-07-10 — Vorab-Kohärenz-Audit Schicht A ↔ B „Muster Bau GmbH" (kein Eingriff in prototype/)
 
 **Neuer Prüf-Winkel statt Churn, freeze-konform.** Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert
