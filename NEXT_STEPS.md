@@ -37,37 +37,53 @@ synthetischer Zwilling mit intakten Formeln raus → in `data.js` geladen**, Reu
 Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
 **► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** **alle 5 reinen Phase-C-Doku-Bricks
-sind abgeschlossen** (Szenarienbibliothek · One-Pager · Datenpipeline · PILOT_CONFIG-Spec · **neu
-PILOT_KIT.md** = 48-h-Master-Runbook). Es gibt **keine freeze-konforme Doku-Brick mehr** — die
-verbleibenden Bricks **berühren `prototype/`** und dürfen daher **erst nach Gate B→C** ausgeführt werden:
-1. **PILOT_CONFIG (Implementierung)** — das in [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) spezifizierte
-   Wiring (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()` in `app.js`). ⚠ berührt
-   `prototype/` → **erst nach Gate B→C**. Design ist fertig → dann 30-Min-Mechanik.
+sind abgeschlossen** (Szenarienbibliothek · One-Pager · Datenpipeline · PILOT_CONFIG-Spec · PILOT_KIT.md).
+**Weiterhin freeze-konform (nicht gated):** die **6 restlichen Prosa-Korpus-Zwillinge** in `pilot-assets/`
+stagen (Schritte 1+2 berühren `prototype/` **nicht** — s. die 3 diesen Zyklus + 2 CSV/1 xlsx davor, Abdeckung
+**6/12**). Empfohlene Reihenfolge: die Belege der nächsten Pilot-Szenarien (`projekt-beta`: 2 Projektberichte,
+Eskalations-Mail, Nachtrag, Auftragsbestätigung; `vorstand-summary`: Vorstandsprotokoll, ESG-Bericht), damit
+alle **3** Pilot-Szenarien vollständig als Zwilling vorliegen, bevor das Gate öffnet. **Gated bis Gate B→C**
+(berührt `prototype/`):
+1. **PILOT_CONFIG (Implementierung)** — Wiring aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
+   (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()`), **inkl. neuer `projectLead`-Rolle**
+   (s. Friction diesen Zyklus). Design fertig → dann 30-Min-Mechanik.
 2. **End-to-End-Probelauf „Muster Bau GmbH"** — führt PILOT_CONFIG-Spec +
-   [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus; Protokoll in [PILOT_KIT.md](PILOT_KIT.md) §8;
-   danach `MISSION_COMPLETE`. Sobald 1 steht.
+   [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus (Schritt 3 = Korpus in `data.js`); Protokoll
+   in [PILOT_KIT.md](PILOT_KIT.md) §8; danach `MISSION_COMPLETE`. Sobald 1 steht.
 
-> **Konsequenz:** Ohne Sven-Rückmeldung ist der nächste Zyklus ein reiner **Wartepunkt** (aufnahmebereit
-> re-verifizieren statt churnen) — die vorziehbare Doku ist erschöpft, jede weitere Phase-C-Arbeit ist
-> gated. Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
+> **Konsequenz:** Ohne Sven-Rückmeldung ist der nächste Zyklus ein freeze-konformer **Vorbereitungs-Schritt**
+> (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
+> (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-14, freeze-konform, kein Eingriff in `prototype/`):** die vom Kohärenz-Audit
+**Diesen Zyklus gebaut (2026-07-15, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
+weiter abgearbeitet — die **3 Prosa-Belege des primären Pilot-Szenarios `materialkosten`** als identitäts-
+bereinigte **Text-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in `data.js` bleibt
+Schritt 3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md): additiver
+Generator `build_prose_twins.py` (**mit Self-Check**) + `q1-bericht-2026_zwilling.txt` (Quartalsbericht: +18,4 %
+Materialkosten, Stahl 780 → 920 €/t, §6, Ferro Nord) + `email-preisanpassung-donau_zwilling.txt` (Lieferanten-
+E-Mail 15 %/920 €) + `email-weiterleitung-materialbudget_zwilling.txt` (interne Weiterleitung, 0,9 Mio. €
+Mehrbedarf). Damit ist **`materialkosten` als erstes der 3 Pilot-Szenarien komplett** abgedeckt (5/5: Q1-Bericht
++ 2 E-Mails + Rechnung + Rahmenvertrag) und die **Korpus-Abdeckung steigt 3/12 → 6/12**. **Personen-Regel +
+E-Mail-Domain-Regel angewandt & verifiziert:** *Thomas Krüger → Jürgen Kessler* (Einkauf), *Dr. Katharina Vogel
+→ Petra Hollmann* (CFO), interne Domain *meridian-industrie.example → muster-bau.example*; externe Gegenparteien
+(*Andreas Huber* / *Stahlwerk Donau AG* / Zweitlieferant *Ferro Nord*) bleiben. Self-Check **und** unabhängiger
+`grep`: **0 Meridian-Leak** (Firma · Personen · Domain), alle synth. Namen present, Anker-Zahlen je Datei erhalten.
+**Neue Friction protokolliert:** der Weiterleitungs-Beleg trägt eine **7. interne Persona** *Sabine Reinhardt
+(Projektleitung Alpha)*, für die `pilot.config.js` **keine Rolle** hat → im Zwilling ad hoc auf *Sandra Bergmann*
+gemappt (Nachname ≠ Reinhardt wegen Kollision mit legal); **Schritt-3-Empfehlung:** `projectLead`-Rolle in der
+Config ergänzen. **Zahlen bewusst nicht perturbiert** (verbatim in Szenario-Zitaten → an Schritt 3 gekoppelt).
+`git status`: nur 4 neue Dateien in `pilot-assets/`; `node --check` (app.js + data.js) grün; Live-Daten unverändert
+(**29 Docs · 17 Szenarien**). Ein Vorbereitungs-Brick hebt kein Gate → **Gate B→C wartet weiter nur auf Sven.**
+Verbleibt gated: die **6 restlichen Prosa-Belege** + Config-Wiring (inkl. `projectLead`) + Schritt-3-Übertragung.
+
+**Zyklus davor gebaut (2026-07-14, freeze-konform, kein Eingriff in `prototype/`):** die vom Kohärenz-Audit
 angelegte **12-Dokument-Checkliste konkret abgearbeitet** — die **2 strukturierten/tabellarischen** Korpus-
-Belege als **synthetische CSV-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in
-`data.js` bleibt Schritt 3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md):
-`build_corpus_twins.py` (reproduzierbarer Generator **mit Self-Check**) + `rechnung-2026-1843_zwilling.csv`
-(Positionstabelle mit **lebender Formelkette** netto = Menge × EP · USt = netto × 19 % · brutto,
-`73.600 → 13.984 → 87.584 €`) + `rahmenvertrag-stahlwerk-donau_zwilling.csv` (Klausel-Tabelle §9/§6/§12).
-Damit steigt die **Korpus-Abdeckung 1/12 → 3/12** (die drei tabellarischen Belege). **Personen-Regel (Audit-
-Gap 2) erstmals konkret angewandt & deterministisch verifiziert:** Meridian-intern 1:1 durch die
-`pilot.config.js`-Namen ersetzt — *Thomas Krüger → Jürgen Kessler* (Einkauf), *Dr. Elena Wagner → Dr. Stefan
-Reinhardt* (Recht), *Meridian Industrie GmbH → Muster Bau GmbH*; externer Lieferant *Stahlwerk Donau AG* bleibt.
-Self-Check bestätigt: **0 Meridian-Leak**, alle 3 synth. Namen present, Formelkette exakt (brutto = netto × 1,19).
-**Zahlen bewusst nicht perturbiert** (stehen verbatim in 2 Szenario-Zitaten → ±10 %-Synthese an Schritt 3
-gekoppelt, sonst neue Kohärenz-Lücke). `git status`: nur 3 neue Dateien in `pilot-assets/`; `node --check`
-(app.js + data.js) grün; Live-Daten unverändert (**29 Docs · 17 Szenarien**). Ein Vorbereitungs-Brick hebt kein
-Gate → **Gate B→C wartet weiter nur auf Sven.** Verbleibt gated: die **9 Prosa-Belege** (redaktionelle
-Umschriften) + Config-Wiring + Schritt-3-Übertragung in `data.js`.
+Belege als **synthetische CSV-Zwillinge gestaged** (Schritte 1+2). Neu: `build_corpus_twins.py` (Generator **mit
+Self-Check**) + `rechnung-2026-1843_zwilling.csv` (**lebende Formelkette** `73.600 → 13.984 → 87.584 €`) +
+`rahmenvertrag-stahlwerk-donau_zwilling.csv` (Klausel-Tabelle §9/§6/§12). **Korpus-Abdeckung 1/12 → 3/12.**
+**Personen-Regel erstmals angewandt & verifiziert:** Meridian-intern → `pilot.config.js`-Namen (Krüger → Kessler,
+Wagner → Reinhardt, Meridian → Muster Bau), externer Lieferant *Stahlwerk Donau AG* bleibt; **0 Meridian-Leak**,
+Formelkette exakt. Zahlen bewusst nicht perturbiert. `node --check` grün; **29 Docs · 17 Szenarien** unverändert.
 
 **Zyklus davor gebaut (2026-07-10, freeze-konform, kein Eingriff in `prototype/`):** ein **Vorab-Kohärenz-
 Audit Schicht A ↔ Schicht B** für „Muster Bau GmbH". Die beiden gestageten Probelauf-Hälften (Config +
@@ -230,7 +246,7 @@ durch einen sauberen Take führt. Neu:
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
-- **Zuletzt aktualisiert:** 2026-07-10.
+- **Zuletzt aktualisiert:** 2026-07-15.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
 - **Prototyp-Baufortschritt:** **≈ 92 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 

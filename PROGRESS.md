@@ -47,6 +47,20 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · 3 Prosa-Zwillinge gestaged, `materialkosten` vollständig (2026-07-15) ≈ 92 %** —
+  Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Statt Re-Verifikation (Churn) die vom
+  Kohärenz-Audit angelegte **12-Dok-Checkliste weiter abgearbeitet**: nach den 2 Struktur-Zwillingen jetzt die
+  **3 Prosa-Belege des primären Pilot-Szenarios `materialkosten`** (Q1-Bericht + 2 E-Mails) als identitäts-
+  bereinigte `.txt`-Zwillinge gestaged (nicht-gated Schritte 1+2). Damit ist `materialkosten` als **erstes** der
+  3 Pilot-Szenarien **komplett** abgedeckt (5/5 Belege); **Korpus-Abdeckung 3/12 → 6/12**. Neuer Generator
+  `build_prose_twins.py` (additiv, mit Self-Check). **Personen-Regel + E-Mail-Domain angewandt & verifiziert:**
+  Krüger → Kessler, Vogel → Hollmann, `meridian-industrie.example → muster-bau.example`; extern (*Andreas Huber* /
+  *Stahlwerk Donau AG* / *Ferro Nord*) bleibt; Self-Check + unabhängiger grep: **0 Meridian-Leak** (Firma ·
+  Personen · Domain). **Neue Friction dokumentiert:** 7. Persona *Projektleitung Alpha* ohne Config-Rolle → ad hoc
+  auf *Sandra Bergmann* gemappt, Schritt-3-Empfehlung `projectLead` in `pilot.config.js`. Zahlen bewusst nicht
+  perturbiert (verbatim in Szenario-Zitaten → an Schritt 3 gekoppelt). `prototype/` unverändert; `node --check`
+  grün; **29 Docs · 17 Szenarien** unverändert. Ein Vorbereitungs-Brick hebt kein Gate → **Gate B→C wartet weiter
+  nur auf Sven.**
 - **Phase C (Vorbereitung) · 2 Struktur-Zwillinge gestaged (2026-07-14) ≈ 92 %** — Phase B bleibt auf
   **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Statt Re-Verifikation (Churn) die vom Kohärenz-Audit
   angelegte **12-Dok-Checkliste konkret abgearbeitet**: die 2 strukturierten Korpus-Belege als synthetische

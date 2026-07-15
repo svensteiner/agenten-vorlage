@@ -2,6 +2,34 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-15 — 3 Prosa-Zwillinge gestaged, `materialkosten` vollständig, Korpus-Abdeckung 3/12 → 6/12 (kein Eingriff in prototype/)
+
+**Erstes Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Nach den 2 Struktur-Zwillingen (2026-07-14) staged dieser Zyklus die **3
+Prosa-Belege des primären Pilot-Szenarios `materialkosten`** (1 Finanzbericht + 2 E-Mails) als identitäts-
+bereinigte Text-Zwillinge (nicht-gated Pipeline-Hälfte, Schritte 1+2 — Laden in `data.js` bleibt Schritt 3/gated).
+Damit ist `materialkosten` als **erstes** der 3 Pilot-Szenarien **komplett** abgedeckt (5/5 Belege: Q1-Bericht
++ 2 E-Mails [neu] + Rechnung + Rahmenvertrag [CSV, Vorzyklus]).
+
+### Gebaut (nur `pilot-assets/muster-bau-gmbh/` — `prototype/` unverändert)
+- **`build_prose_twins.py`** — reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein
+  Meridian-Leak · synth. Namen present · externe Gegenpartei behalten). Additiv neben `build_corpus_twins.py`.
+- **`q1-bericht-2026_zwilling.txt`** — Quartalsbericht (Materialkosten +18,4 %, Stahl 780 → 920 €/t, §6, Ferro Nord).
+- **`email-preisanpassung-donau_zwilling.txt`** — Lieferanten-E-Mail (15-%-Preisanpassung, 920 €, zitierter Verlauf).
+- **`email-weiterleitung-materialbudget_zwilling.txt`** — interne Weiterleitung Einkauf → CFO (0,9 Mio. € Mehrbedarf).
+- **README + `pilot.config.js`-Kommentar** fortgeschrieben (Prosa-Zwillinge, E-Mail-Domain-Regel, projectLead-Friction).
+
+### Verifiziert (deterministisch, Self-Check + unabhängiger grep)
+- **Korpus-Abdeckung 3/12 → 6/12**; Szenario `materialkosten` **5/5** Belege gestaged.
+- **Personen-Regel:** Krüger → Kessler (Einkauf), Vogel → Hollmann (CFO), interne Domain
+  `meridian-industrie.example → muster-bau.example`; extern (*Andreas Huber* / *Stahlwerk Donau AG* / *Ferro Nord*)
+  bleibt. **0 Meridian-Leak** (Firma · Personen · Domain), unabhängiger grep bestätigt.
+- **Neue Friction dokumentiert:** 7. Persona *Projektleitung Alpha* ohne Config-Rolle → ad hoc auf
+  *Sandra Bergmann* gemappt; Schritt-3-Empfehlung: `projectLead` in `pilot.config.js` ergänzen.
+- Anker-Zahlen je Datei erhalten (Zahlen bewusst **nicht** perturbiert — verbatim in Szenario-Zitaten).
+- `git status`: nur 4 neue Dateien in `pilot-assets/`; `node --check` (app.js + data.js) grün; **29 Docs ·
+  17 Szenarien** unverändert.
+
 ## Phase C (Vorbereitung) — 2026-07-14 — 2 Struktur-Zwillinge gestaged, Korpus-Abdeckung 1/12 → 3/12 (kein Eingriff in prototype/)
 
 **Checkliste abarbeiten statt re-verifizieren, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +

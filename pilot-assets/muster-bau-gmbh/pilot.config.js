@@ -32,10 +32,14 @@ window.PILOT_CONFIG = {
     ],
     people: {
       // Synthetische Namen — ersetzen die Meridian-Personen 1:1 im synth. Korpus.
-      // Stand 2026-07-14: in den 2 Struktur-Zwillingen (Rechnung/Rahmenvertrag)
-      // bereits eingesetzt & verifiziert (procurement/legal/cfo → s. README
-      // "Struktur-Zwillinge"); die übrigen (ceo/hr/audit + Prosa-Belege) folgen
-      // im gated Schritt 3.
+      // Stand 2026-07-15: in den Struktur-Zwillingen (Rechnung/Rahmenvertrag) UND
+      // den 3 Prosa-Zwillingen des Materialkosten-Szenarios (Q1-Bericht + 2 E-Mails)
+      // bereits eingesetzt & verifiziert (procurement/cfo/legal → s. README
+      // "Prosa-Zwillinge"); die übrigen (ceo/hr/audit + 6 restliche Prosa-Belege)
+      // folgen im gated Schritt 3.
+      // ⚠ FRICTION (s. README): der Weiterleitungs-Beleg trägt eine 7. Persona
+      //   "Projektleitung Alpha", für die es hier KEINE Rolle gibt — im Zwilling
+      //   ad hoc auf "Sandra Bergmann" gemappt. Schritt 3: `projectLead` ergänzen.
       ceo: "Andreas Moser",
       cfo: "Petra Hollmann",
       hr: "Miriam Baumgartner",

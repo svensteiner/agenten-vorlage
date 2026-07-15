@@ -16,19 +16,21 @@
 1. **[B-Wartet] Svens Aufnahme + Freigabe** (Gate B→C) — aufnehmen mit [RECORDING_CHECKLIST.md](RECORDING_CHECKLIST.md), freigeben. **Reiner Wartepunkt** — alle Aufnahme-Dateien sind faktentreu und aufnahmebereit. Bis Svens „OK" nur ändern, was er anmerkt.
 
 > **Freeze-konforme Phase-C-Vorbereitung** (kein Eingriff in `prototype/`): alle 5 Doku-Bricks **plus** die
-> real ausgeführte Pipeline (Schritte 1+2) — Korpus-Zwillinge jetzt **3/12** (`.xlsx` + 2 CSV, `pilot-assets/`).
-> Verbleibend und **gated bis Gate B→C** (berührt `prototype/`): die **9 Prosa-Belege** + Schritt 3 (Übertrag in
-> `data.js`) · PILOT_CONFIG-Wiring · End-to-End-Probelauf (→ PILOT_KIT.md §8) → `MISSION_COMPLETE`. Ohne
-> Sven-Rückmeldung bleibt der nächste Zyklus ein **Wartepunkt**. Details: [NEXT_STEPS.md](NEXT_STEPS.md).
+> real ausgeführte Pipeline (Schritte 1+2) — Korpus-Zwillinge jetzt **6/12** (`.xlsx` + 2 CSV + 3 `.txt`,
+> `pilot-assets/`); Szenario `materialkosten` **5/5** vollständig. Verbleibend und **gated bis Gate B→C**
+> (berührt `prototype/`): die **6 restlichen Prosa-Belege** + Schritt 3 (Übertrag in `data.js`) ·
+> PILOT_CONFIG-Wiring (inkl. neuer `projectLead`-Rolle) · End-to-End-Probelauf (→ PILOT_KIT.md §8) →
+> `MISSION_COMPLETE`. Ohne Sven-Rückmeldung bleibt der nächste Zyklus ein **Wartepunkt**. Details:
+> [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Erledigt
 
-- **[Phase C — Vorbereitung] 2 Struktur-Zwillinge gestaged, Korpus 1/12 → 3/12 (2026-07-14)** — die 2
-  tabellarischen Korpus-Belege als synth. CSV-Zwillinge (`rechnung-…` mit lebender Formelkette
-  `73.600 → 13.984 → 87.584 €`; `rahmenvertrag-…` §9/§6/§12) + Generator `build_corpus_twins.py` mit Self-Check.
-  **Audit-Gap 2 (Personen-Regel) erstmals angewandt & verifiziert:** Meridian-intern → Config-Namen (Krüger →
-  Kessler, Wagner → Reinhardt, Meridian → Muster Bau), extern (Stahlwerk Donau) bleibt, **0 Leak**. Zahlen an
-  Schritt 3 gekoppelt (verbatim in Szenario-Zitaten). `prototype/` unverändert; `node --check` grün.
+- **[Phase C — Vorbereitung] Korpus-Zwillinge 1/12 → 6/12; `materialkosten` vollständig (2026-07-14/15)** —
+  2 tabellarische Belege als CSV (`rechnung-…` Formelkette `73.600 → 13.984 → 87.584 €`; `rahmenvertrag-…`
+  §9/§6/§12) + 3 Prosa-Belege als `.txt` (Q1-Bericht + 2 E-Mails) → Szenario **5/5**. Generatoren
+  `build_corpus_twins.py` + `build_prose_twins.py` mit Self-Check. **Personen-Regel:** intern → Config-Namen
+  + E-Mail-Domain → `muster-bau.example`, extern bleibt, **0 Leak**; Friction: Persona *Projektleitung Alpha*
+  ohne Rolle → `projectLead` in Schritt 3. Zahlen gekoppelt. `prototype/` unverändert; `node --check` grün.
 - **[Phase C — Vorbereitung] Vorab-Kohärenz-Audit Schicht A ↔ B (2026-07-10)** — die 2 Probelauf-Hälften
   erstmals **gegeneinander** geprüft; 3 nicht-blockierende Lücken protokolliert (12-Dok-Checkliste; 6 Config-
   Personen in 0 Artefakten; §8-CSV noch nicht gestaged). Deterministisch, `prototype/` unverändert.

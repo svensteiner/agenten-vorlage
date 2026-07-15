@@ -159,6 +159,40 @@ Der Zwilling trägt stattdessen die **Formelkette explizit** — klickbar & nach
 Eskalations-Mail, Nachtrag, Auftragsbestätigung, Vorstandsprotokoll) = redaktionelle Umschriften direkt in
 `data.js`. Struktur-Abdeckung jetzt **3/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
 
+## Prosa-Zwillinge des Materialkosten-Szenarios gestaged: Abdeckung 3/12 → 6/12 (2026-07-15)
+
+Die Struktur-Zwillinge deckten die tabellarischen Belege. Dieser Zyklus staged die **drei Prosa-Belege des
+primären Pilot-Szenarios `materialkosten`** (1 Finanzbericht + 2 E-Mails) als identitäts-bereinigte
+Text-Zwillinge — die **nicht-gated** Pipeline-Hälfte (Schritte 1+2; das Laden in `data.js` bleibt Schritt 3 /
+gated). Damit ist `materialkosten` als **erstes** der 3 Pilot-Szenarien **vollständig** als Zwilling abgedeckt:
+
+| Zwilling | Quelle | Was der Zwilling trägt |
+|---|---|---|
+| `q1-bericht-2026_zwilling.txt` | `q1-bericht-2026` | Quartalsbericht: Materialkostenanstieg **18,4 %**, Stahlpreis 780 → **920 €/t**, Donau-Preisanpassung 15 % (§6), Ferro-Nord-Gegenmaßnahme, Marge 34,1 → 31,6 % |
+| `email-preisanpassung-donau_zwilling.txt` | `email-preisanpassung-donau` | Lieferanten-E-Mail: 15-%-Preisanpassung über §6, neuer Tonnenpreis **920 €**, inkl. zitiertem Verlauf |
+| `email-weiterleitung-materialbudget_zwilling.txt` | `email-weiterleitung-materialbudget` | Interne Weiterleitung Einkauf → CFO: **0,9 Mio. €** Mehrbedarf, Vorstandsvorlage, Zweitlieferant |
+| `build_prose_twins.py` | — | reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein Meridian-Leak · synth. Namen present · externe Gegenpartei behalten) |
+
+**Personen-Regel angewandt & verifiziert:** interne Meridian-Personen 1:1 durch synthetische Namen ersetzt —
+**Thomas Krüger → Jürgen Kessler** (Einkauf), **Dr. Katharina Vogel → Petra Hollmann** (CFO), plus die
+interne **E-Mail-Domain** `meridian-industrie.example → muster-bau.example`; externe Gegenparteien
+(*Andreas Huber* / *Stahlwerk Donau AG*, Zweitlieferant *Ferro Nord*) bleiben. Self-Check deterministisch:
+**0 Meridian-Leak** (Firma, Personen, Domain), alle synth. Namen present, Anker-Zahlen je Datei erhalten.
+
+**Neue Friction (für Schritt 3 / Config):** Der Weiterleitungs-Beleg trägt eine **7. interne Persona** —
+*Sabine Reinhardt (Projektleitung Alpha)* —, für die `pilot.config.js` (6 Rollen: ceo/cfo/hr/procurement/
+legal/audit) **keine Rolle** hat. Im Zwilling auf einen synthetischen Projektleitungs-Namen gemappt
+(*Sandra Bergmann*; Nachname bewusst **≠** Reinhardt, um Kollision mit legal *Dr. Stefan Reinhardt* zu
+vermeiden). **Empfehlung Schritt 3:** `pilot.config.js` um eine `projectLead`-Rolle erweitern, damit die
+Persona aus der einen Config-Quelle stammt statt ad hoc erzeugt zu werden.
+
+**Zahlen bewusst nicht perturbiert** (gleiche Kopplung wie bei den Struktur-Zwillingen: die Werte stehen
+verbatim in Szenario-Antwort-Zitaten in `data.js` → ±10 %-Synthese an Schritt 3 gekoppelt).
+
+**Verbleibt für Schritt 3 (gated):** die **6 restlichen Prosa-Belege** (2 Projektberichte · Eskalations-Mail ·
+Nachtrag · Auftragsbestätigung · Vorstandsprotokoll · ESG-Bericht) = redaktionelle Umschriften direkt in
+`data.js`. Abdeckung jetzt **6/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
+
 ## Was noch fehlt (gated bis Gate B→C)
 
 **Schritt 3** — die synthetischen Zahlen redaktionell in `prototype/data.js` als `DOCS`/`lineItems`
@@ -173,3 +207,4 @@ Gate offen ist.
 *Erstellt 2026-07-09 · Phase C (Vorbereitung) · Schritte 1+2 real ausgeführt · `prototype/` unverändert.*
 *Ergänzt 2026-07-10 · Vorab-Kohärenz-Audit Schicht A ↔ B (12-Dok-Checkliste + Personen-Regel).*
 *Ergänzt 2026-07-14 · 2 Struktur-Zwillinge gestaged (Rechnung + Rahmenvertrag), Korpus-Abdeckung 1/12 → 3/12, Personen-Regel verifiziert.*
+*Ergänzt 2026-07-15 · 3 Prosa-Zwillinge gestaged (Q1-Bericht + 2 E-Mails → `materialkosten` vollständig), Abdeckung 3/12 → 6/12, E-Mail-Domain-Regel + projectLead-Friction dokumentiert.*
