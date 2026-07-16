@@ -193,6 +193,42 @@ verbatim in Szenario-Antwort-Zitaten in `data.js` → ±10 %-Synthese an Schritt
 Nachtrag · Auftragsbestätigung · Vorstandsprotokoll · ESG-Bericht) = redaktionelle Umschriften direkt in
 `data.js`. Abdeckung jetzt **6/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
 
+## Prosa-Zwillinge des Projekt-Beta-Szenarios gestaged: Abdeckung 6/12 → 10/12 (2026-07-16)
+
+Nach `materialkosten` (vollständig) staged dieser Zyklus die **vier Belege des zweiten Pilot-Szenarios
+`projekt-beta`** als identitäts-bereinigte Zwillinge — die **nicht-gated** Pipeline-Hälfte (Schritte 1+2;
+das Laden in `data.js` bleibt Schritt 3 / gated). Damit ist `projekt-beta` als **zweites** der 3 Pilot-
+Szenarien **vollständig** als Zwilling abgedeckt:
+
+| Zwilling | Quelle | Was der Zwilling trägt |
+|---|---|---|
+| `projekt-beta-status_zwilling.txt` | `projekt-beta-status` | Projektbericht: Budget **8,6 Mio. €**, **48 %** / 3 Wo. Verzug, Elektronik-Lieferverzug, Change-Request +0,4 Mio. €, Pönale max. **0,43 Mio. €**, Liefertermin **Q4 2026** |
+| `eskalation-beta-elektronik_zwilling.txt` | `eskalation-beta-elektronik` | Eskalations-E-Mail Projektleitung → CFO (Cc CEO): 6-Wochen-Verzug ElektroSys, Pönale-Risiko, Antrag Zweitquelle, inkl. zitiertem Zulieferer-Verlauf |
+| `nachtrag-nordwind-beta_zwilling.txt` | `nachtrag-nordwind-beta` | Nachtragsangebot NA-2026-0037 + Positionstabelle (250k + 110k + 40k = **400.000 € netto** / USt 76.000 € / **476.000 € brutto**) |
+| `auftrag-nordwind-beta_zwilling.txt` | `auftrag-nordwind-beta` | Auftragsbestätigung NW-BEST-2026-0091 (Nordwind beauftragt Nachtrag verbindlich, **400.000 € netto / 476.000 € brutto**) |
+| `build_beta_twins.py` | — | reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein Meridian-Leak · synth. Namen present · externe Gegenparteien behalten) |
+
+**Personen-Regel angewandt & verifiziert:** interne Meridian-Personen 1:1 durch synthetische Namen ersetzt —
+**Dr. Katharina Vogel → Petra Hollmann** (CFO, `config.people.cfo`), **Markus Brandt → Andreas Moser**
+(CEO, `config.people.ceo`), **Markus Feldmann → Tobias Lindner** (Projektleitung Beta, s. Friction), plus die
+interne **E-Mail-Domain** `meridian-industrie.example → muster-bau.example`; **externe** Gegenparteien
+(*Nordwind Logistik AG* als Kunde, *ElektroSys GmbH* als Zulieferer) bleiben. Self-Check **und** unabhängiger
+`grep`: **0 Meridian-Leak** (Firma · Personen · Domain), alle synth. Namen present, Anker-Zahlen je Datei erhalten.
+
+**Friction verschärft (für Schritt 3 / Config):** Der `materialkosten`-Batch fand eine 7. Persona
+*Projektleitung Alpha* (Sabine Reinhardt → Sandra Bergmann) ohne Config-Rolle. Dieser Batch fügt eine **achte**
+hinzu: *Projektleitung Beta* (Markus Feldmann → Tobias Lindner). Es gibt also **mehrere** Projektleitungen
+(Alpha, Beta) → eine **einzelne** `projectLead`-Rolle in `pilot.config.js` reicht nicht. **Empfehlung Schritt 3:**
+entweder eine Liste `projectLeads` oder projekt-scoped Einträge (`projectLeadAlpha` / `projectLeadBeta`).
+Nachnamen bewusst kollisionsfrei zu den Config-Nachnamen (Moser/Hollmann/Baumgartner/Kessler/Reinhardt/Weiß/Bergmann).
+
+**Zahlen bewusst nicht perturbiert** (gleiche Kopplung wie zuvor: die Werte stehen verbatim in den
+`projekt-beta`-Szenario-Antwort-Zitaten in `data.js` → ±10 %-Synthese an Schritt 3 gekoppelt).
+
+**Verbleibt für Schritt 3 (gated):** die **2 restlichen Prosa-Belege des `vorstand-summary`-Szenarios**
+(Vorstandsprotokoll · ESG-Bericht; `projekt-alpha-status` wird dort ebenfalls herangezogen). Abdeckung jetzt
+**10/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
+
 ## Was noch fehlt (gated bis Gate B→C)
 
 **Schritt 3** — die synthetischen Zahlen redaktionell in `prototype/data.js` als `DOCS`/`lineItems`
@@ -208,3 +244,4 @@ Gate offen ist.
 *Ergänzt 2026-07-10 · Vorab-Kohärenz-Audit Schicht A ↔ B (12-Dok-Checkliste + Personen-Regel).*
 *Ergänzt 2026-07-14 · 2 Struktur-Zwillinge gestaged (Rechnung + Rahmenvertrag), Korpus-Abdeckung 1/12 → 3/12, Personen-Regel verifiziert.*
 *Ergänzt 2026-07-15 · 3 Prosa-Zwillinge gestaged (Q1-Bericht + 2 E-Mails → `materialkosten` vollständig), Abdeckung 3/12 → 6/12, E-Mail-Domain-Regel + projectLead-Friction dokumentiert.*
+*Ergänzt 2026-07-16 · 4 Prosa-Zwillinge gestaged (`projekt-beta` vollständig: Status + Eskalation + Nachtrag + Auftrag), Abdeckung 6/12 → 10/12, CEO/CFO-Ersetzung + 2. projectLead (Beta) → Config-Empfehlung `projectLeads`-Liste.*

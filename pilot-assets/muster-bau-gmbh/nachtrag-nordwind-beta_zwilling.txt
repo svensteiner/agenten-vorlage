@@ -1,0 +1,34 @@
+NACHTRAGSANGEBOT NA-2026-0037 — Zusätzliche Prüfstation
+Aussteller: Vertrieb Sondermaschinen (Muster Bau GmbH) · Datum: 2026-03-27
+Ablage: SAP > SD > Angebote > 2026 > NA_2026-0037_Nordwind.pdf
+
+Nachtragsangebot NA-2026-0037 — Muster Bau GmbH an Nordwind Logistik AG.
+
+Bezug: Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und
+Palettierlinie) sowie Ihr Änderungswunsch vom 18.03.2026.
+
+Gegenstand: Integration einer zusätzlichen Prüfstation (Kamera-Inspektion zur
+Qualitätskontrolle) in die vereinbarte Linie — ein Scope-Change gegenüber dem
+ursprünglichen Auftragsumfang.
+
+Nachtragswert: 400.000 € netto (476.000 € brutto). Der Betrag deckt Hardware/
+Sensorik, Engineering und SPS-Integration sowie die erweiterte Werksabnahme (FAT) ab.
+
+Termin: Der Änderungswunsch verschiebt den Liefertermin um rund 3 Wochen auf
+Q4 2026; die zusätzliche Prüfstation wird in die laufende Endmontage eingeplant.
+Die Pönale-Klausel des Hauptvertrags bleibt vom genehmigten Scope-Change unberührt.
+
+Gültigkeit: Dieses Nachtragsangebot ist bis 15.04.2026 verbindlich. Mit
+schriftlicher Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts.
+
+--- Positionen (Nachtragsangebot NA-2026-0037) ---
+Bezug: Rahmenauftrag NW-2025-0442 · Änderungswunsch Nordwind Logistik AG vom 18.03.2026
+Pos. 1  Zusätzliche Prüfstation — Kamera-Inspektion inkl. Sensorik und Hardware
+        Menge: 1 Stk. · Einzelpreis: 250.000,00 € · Summe: 250.000,00 €
+Pos. 2  Engineering, SPS-Integration und Anpassung der Anlagensteuerung
+        Menge: pauschal · Einzelpreis: 110.000,00 € · Summe: 110.000,00 €
+Pos. 3  Erweiterte Werksabnahme (FAT) und Dokumentation
+        Menge: pauschal · Einzelpreis: 40.000,00 € · Summe: 40.000,00 €
+        Nettosumme:              400.000,00 €
+        USt 19 %:                 76.000,00 €
+        Angebotssumme brutto:    476.000,00 €

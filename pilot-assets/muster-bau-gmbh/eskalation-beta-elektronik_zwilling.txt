@@ -1,0 +1,36 @@
+E-MAIL — Eskalation Projekt Beta — Lieferverzug Elektronik, Pönale-Risiko & Antrag Zweitquelle
+Von:      Tobias Lindner · Projektleitung Beta, Muster Bau GmbH <t.lindner@muster-bau.example>
+An:       Petra Hollmann · CFO, Muster Bau GmbH <p.hollmann@muster-bau.example>
+Cc:       Andreas Moser · CEO, Muster Bau GmbH
+Gesendet: 24.03.2026, 17:22
+
+Sehr geehrte Frau Hollmann,
+
+Eskalation Projekt Beta — Terminrisiko Kundenanlage Nordwind Logistik.
+
+Lieferverzug der Steuerungselektronik: Der Zulieferer ElektroSys hat den
+Liefertermin um sechs Wochen verschoben. Dadurch droht eine Vertragsstrafe
+(Pönale) gegenüber der Nordwind Logistik AG.
+
+Auswirkung: Der Liefertermin verschiebt sich von Q3 auf Q4 2026 (Werksabnahme
+November). Die Pönale beträgt 0,5 % des Auftragswerts je Verzugswoche, gedeckelt
+bei 5 % — bei 8,6 Mio. € Auftragswert also bis zu 0,43 Mio. €.
+
+Antrag: Freigabe einer bereits qualifizierten Zweitquelle für die
+Steuerungselektronik, um den Verzug zu begrenzen. Der parallele Kunden-
+Änderungswunsch (zusätzliche Prüfstation, +0,4 Mio. €) wird als Change Request
+kaufmännisch geltend gemacht.
+
+Ich schlage ein wöchentliches Eskalations-Jour-fixe bis zur Werksabnahme vor und
+berichte den Fortschritt direkt an den Vorstand.
+
+Mit freundlichen Grüßen
+Tobias Lindner — Projektleitung Beta, Muster Bau GmbH
+
+--- Zitierter Verlauf ---
+Von: Vertrieb, ElektroSys GmbH, 20.03.2026, 11:05
+  Sehr geehrter Herr Lindner,
+  leider müssen wir Ihnen mitteilen, dass sich die Auslieferung der
+  Steuerungselektronik (Charge B-4471) aufgrund eines Engpasses bei Halbleiter-
+  Bauteilen um rund sechs Wochen verzögert.
+  Mit freundlichen Grüßen, Vertrieb ElektroSys GmbH

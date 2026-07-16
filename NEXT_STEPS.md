@@ -38,15 +38,15 @@ Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
 **► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** **alle 5 reinen Phase-C-Doku-Bricks
 sind abgeschlossen** (Szenarienbibliothek · One-Pager · Datenpipeline · PILOT_CONFIG-Spec · PILOT_KIT.md).
-**Weiterhin freeze-konform (nicht gated):** die **6 restlichen Prosa-Korpus-Zwillinge** in `pilot-assets/`
-stagen (Schritte 1+2 berühren `prototype/` **nicht** — s. die 3 diesen Zyklus + 2 CSV/1 xlsx davor, Abdeckung
-**6/12**). Empfohlene Reihenfolge: die Belege der nächsten Pilot-Szenarien (`projekt-beta`: 2 Projektberichte,
-Eskalations-Mail, Nachtrag, Auftragsbestätigung; `vorstand-summary`: Vorstandsprotokoll, ESG-Bericht), damit
+**Weiterhin freeze-konform (nicht gated):** die **2 restlichen Prosa-Korpus-Zwillinge** in `pilot-assets/`
+stagen (Schritte 1+2 berühren `prototype/` **nicht** — s. die 4 Beta-Zwillinge diesen Zyklus + 3 Prosa/2 CSV/
+1 xlsx davor, Abdeckung **10/12**). Verbleibend = die **`vorstand-summary`-eigenen** Prosa-Belege
+(**Vorstandsprotokoll** + **ESG-Bericht**; `projekt-alpha-status` wird dort ebenfalls herangezogen), damit
 alle **3** Pilot-Szenarien vollständig als Zwilling vorliegen, bevor das Gate öffnet. **Gated bis Gate B→C**
 (berührt `prototype/`):
 1. **PILOT_CONFIG (Implementierung)** — Wiring aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
-   (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()`), **inkl. neuer `projectLead`-Rolle**
-   (s. Friction diesen Zyklus). Design fertig → dann 30-Min-Mechanik.
+   (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()`), **inkl. `projectLeads`-Liste** (mehrere
+   Projektleitungen Alpha+Beta, s. verschärfte Friction diesen Zyklus). Design fertig → dann 30-Min-Mechanik.
 2. **End-to-End-Probelauf „Muster Bau GmbH"** — führt PILOT_CONFIG-Spec +
    [SYNTHETIC_DATA_PIPELINE.md](SYNTHETIC_DATA_PIPELINE.md) real aus (Schritt 3 = Korpus in `data.js`); Protokoll
    in [PILOT_KIT.md](PILOT_KIT.md) §8; danach `MISSION_COMPLETE`. Sobald 1 steht.
@@ -55,7 +55,29 @@ alle **3** Pilot-Szenarien vollständig als Zwilling vorliegen, bevor das Gate �
 > (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
 > (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-15, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
+**Diesen Zyklus gebaut (2026-07-16, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
+weiter abgearbeitet — die **4 Belege des zweiten Pilot-Szenarios `projekt-beta`** als identitäts-bereinigte
+**Text-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in `data.js` bleibt Schritt
+3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md): additiver Generator
+`build_beta_twins.py` (**mit Self-Check**) + `projekt-beta-status_zwilling.txt` (Budget 8,6 Mio. €, 48 %/3 Wo.
+Verzug, Pönale max. 0,43 Mio. €) + `eskalation-beta-elektronik_zwilling.txt` (Eskalation Projektleitung → CFO,
+Cc CEO, 6-Wochen-Verzug ElektroSys) + `nachtrag-nordwind-beta_zwilling.txt` (Nachtrag NA-2026-0037, 400.000 €
+netto / 476.000 € brutto) + `auftrag-nordwind-beta_zwilling.txt` (Beauftragung NW-BEST-2026-0091). Damit ist
+**`projekt-beta` als zweites der 3 Pilot-Szenarien komplett** (4/4) und die **Korpus-Abdeckung steigt 6/12 →
+10/12**. **Personen-Regel + E-Mail-Domain-Regel angewandt & verifiziert:** *Dr. Katharina Vogel → Petra Hollmann*
+(CFO), *Markus Brandt → Andreas Moser* (CEO), *Markus Feldmann → Tobias Lindner* (Projektleitung Beta), interne
+Domain *meridian-industrie.example → muster-bau.example*; **externe** Gegenparteien (*Nordwind Logistik AG* als
+Kunde, *ElektroSys GmbH* als Zulieferer) bleiben. Self-Check **und** unabhängiger `grep`: **0 Meridian-Leak**
+(Firma · Personen · Domain), alle synth. Namen present, Anker-Zahlen je Datei erhalten. **Friction verschärft:**
+der Korpus trägt nun **eine zweite Projektleitung** (Beta) ohne Config-Rolle → es gibt **mehrere**
+Projektleitungen (Alpha + Beta), eine **einzelne** `projectLead`-Rolle reicht nicht → Schritt-3-Empfehlung auf
+**Liste `projectLeads`** (oder projekt-scoped Einträge) angehoben. **Zahlen bewusst nicht perturbiert** (verbatim
+in Szenario-Zitaten → an Schritt 3 gekoppelt). `git status`: nur 5 neue/geänderte Dateien in `pilot-assets/`;
+`node --check` (app.js + data.js) grün; Live-Daten unverändert (**29 Docs · 17 Szenarien**). Ein Vorbereitungs-
+Brick hebt kein Gate → **Gate B→C wartet weiter nur auf Sven.** Verbleibt gated: die **2 restlichen Prosa-Belege**
+(`vorstand-summary`) + Config-Wiring (inkl. `projectLeads`) + Schritt-3-Übertragung.
+
+**Zyklus davor gebaut (2026-07-15, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
 weiter abgearbeitet — die **3 Prosa-Belege des primären Pilot-Szenarios `materialkosten`** als identitäts-
 bereinigte **Text-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in `data.js` bleibt
 Schritt 3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md): additiver
@@ -246,7 +268,7 @@ durch einen sauberen Take führt. Neu:
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
-- **Zuletzt aktualisiert:** 2026-07-15.
+- **Zuletzt aktualisiert:** 2026-07-16.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
 - **Prototyp-Baufortschritt:** **≈ 92 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 

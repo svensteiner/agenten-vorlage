@@ -1,0 +1,25 @@
+PROJEKTBERICHT — Projekt Beta, Statusbericht
+Autor: Projektleitung Beta (Ing. Tobias Lindner) · Datum: 2026-03-31
+Ablage: Fileserver > Projekte > Beta > Statusbericht_2026-03.docx
+
+Projekt Beta — kundenspezifische, automatisierte Verpackungs- und Palettierlinie
+für die Nordwind Logistik AG (Engineering München, Endmontage Werk 2 Ingolstadt).
+
+Auftragswert / Budget: 8,6 Mio. €. Ziel: schlüsselfertige Übergabe der Anlage
+inklusive Werksabnahme (FAT) beim Kunden.
+
+Status per 31.03.2026: 48 % abgeschlossen, rund 3 Wochen in Verzug. Bislang
+4,7 Mio. € verausgabt.
+
+Ursachen der Verzögerung: (1) Lieferverzug der Steuerungselektronik — der
+Zulieferer ElektroSys hat den Termin um 6 Wochen verschoben. (2) Kunden-
+Änderungswunsch: eine zusätzliche Prüfstation (Scope-Change, +0,4 Mio. €).
+
+Terminrisiko: Der ursprüngliche Liefertermin Q3 2026 wurde auf Q4 2026 verschoben
+(Werksabnahme November 2026). Bei weiterer Verzögerung greift die vertragliche
+Pönale von 0,5 % des Auftragswerts je angefangene Verzugswoche, gedeckelt bei 5 %
+(max. 0,43 Mio. €).
+
+Gegenmaßnahmen: Zweitquelle für die Steuerungselektronik qualifiziert; der Change
+Request wird kaufmännisch beim Kunden geltend gemacht; wöchentliches Eskalations-
+Jour-fixe mit CFO und Vorstand.

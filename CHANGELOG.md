@@ -2,6 +2,34 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-16 — 4 Prosa-Zwillinge gestaged, `projekt-beta` vollständig, Korpus-Abdeckung 6/12 → 10/12 (kein Eingriff in prototype/)
+
+**Zweites Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
+Freigabe** blockiert (Gate B→C). Nach `materialkosten` (5/5) staged dieser Zyklus die **4 Belege des zweiten
+Pilot-Szenarios `projekt-beta`** als identitäts-bereinigte Text-Zwillinge (nicht-gated Pipeline-Hälfte,
+Schritte 1+2 — Laden in `data.js` bleibt Schritt 3/gated). Damit ist `projekt-beta` als **zweites** der 3
+Pilot-Szenarien **komplett** abgedeckt (4/4: Status · Eskalation · Nachtrag · Auftrag).
+
+### Gebaut (nur `pilot-assets/muster-bau-gmbh/` — `prototype/` unverändert)
+- **`build_beta_twins.py`** — reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein
+  Meridian-Leak · synth. Namen present · externe Gegenparteien behalten). Additiv neben den 2 Vorgänger-Generatoren.
+- **`projekt-beta-status_zwilling.txt`** — Projektbericht (Budget 8,6 Mio. €, 48 %/3 Wo. Verzug, Pönale max. 0,43 Mio. €, Q4 2026).
+- **`eskalation-beta-elektronik_zwilling.txt`** — Eskalations-E-Mail Projektleitung → CFO (Cc CEO), 6-Wochen-Verzug ElektroSys, zitierter Verlauf.
+- **`nachtrag-nordwind-beta_zwilling.txt`** — Nachtragsangebot NA-2026-0037 + Positionen (250k+110k+40k = 400.000 € netto / 476.000 € brutto).
+- **`auftrag-nordwind-beta_zwilling.txt`** — Auftragsbestätigung NW-BEST-2026-0091 (Nordwind beauftragt verbindlich, 400.000 € netto / 476.000 € brutto).
+- **README + `pilot.config.js`-Kommentar** fortgeschrieben (Beta-Zwillinge, CEO/CFO-Ersetzung, verschärfte projectLead-Friction).
+
+### Verifiziert (deterministisch, Self-Check + unabhängiger grep)
+- **Korpus-Abdeckung 6/12 → 10/12**; Szenario `projekt-beta` **4/4** Belege gestaged.
+- **Personen-Regel:** Vogel → Hollmann (CFO), Brandt → Moser (CEO), Feldmann → Lindner (Projektleitung Beta),
+  interne Domain `meridian-industrie.example → muster-bau.example`; extern (*Nordwind Logistik AG* / *ElektroSys GmbH*)
+  bleibt. **0 Meridian-Leak** (Firma · Personen · Domain), unabhängiger grep bestätigt.
+- **Friction verschärft:** eine **zweite** Projektleitung (Beta) ohne Config-Rolle → mehrere Projektleitungen
+  → Schritt-3-Empfehlung von einzelner `projectLead`-Rolle auf **Liste `projectLeads`** angehoben.
+- Anker-Zahlen je Datei erhalten (Zahlen bewusst **nicht** perturbiert — verbatim in Szenario-Zitaten).
+- `git status`: nur 5 neue/geänderte Dateien in `pilot-assets/`; `node --check` (app.js + data.js) grün;
+  **29 Docs · 17 Szenarien** unverändert.
+
 ## Phase C (Vorbereitung) — 2026-07-15 — 3 Prosa-Zwillinge gestaged, `materialkosten` vollständig, Korpus-Abdeckung 3/12 → 6/12 (kein Eingriff in prototype/)
 
 **Erstes Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +

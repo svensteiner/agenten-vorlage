@@ -1,0 +1,31 @@
+AUFTRAGSBESTÄTIGUNG — Nachtrag NA-2026-0037 beauftragt
+Aussteller: Einkauf / Projektleitung (Nordwind Logistik AG) · Datum: 2026-04-03
+Ablage: SAP > SD > Aufträge > 2026 > AB_Nordwind_NA-2026-0037.pdf
+
+Auftragsbestätigung / Beauftragung — Nordwind Logistik AG an Muster Bau GmbH.
+
+Bezug: Ihr Nachtragsangebot NA-2026-0037 vom 27.03.2026 zum Rahmenauftrag
+NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie).
+
+Hiermit beauftragen wir den Nachtrag verbindlich: die zusätzliche Prüfstation
+(Kamera-Inspektion) wird zum angebotenen Preis von
+400.000 € netto (476.000 € brutto) freigegeben.
+
+Unsere Bestellnummer: NW-BEST-2026-0091. Mit dieser Beauftragung wird der
+Nachtragswert Bestandteil des Auftragswerts gemäß Ihrem Angebot.
+
+Termin: Die daraus folgende Verschiebung des Liefertermins um rund 3 Wochen auf
+Q4 2026 wird ausdrücklich akzeptiert; die Pönale-Klausel des Hauptvertrags bleibt
+für den genehmigten Scope-Change ausgesetzt.
+
+Freigabe: Projektleitung und Einkauf Nordwind Logistik AG, 03.04.2026. Die
+Rechnungsstellung erfolgt nach erfolgreicher erweiterter Werksabnahme (FAT).
+
+--- Positionen (Beauftragung NW-BEST-2026-0091) ---
+Bezug: Nachtragsangebot NA-2026-0037 · Rahmenauftrag NW-2025-0442
+Pos. 1  Nachtrag NA-2026-0037 — zusätzliche Prüfstation (Kamera-Inspektion) inkl.
+        Engineering, SPS-Integration und erweiterter FAT
+        Menge: 1 Pauschale · Einzelpreis: 400.000,00 € · Summe: 400.000,00 €
+        Nettosumme:                        400.000,00 €
+        USt 19 %:                           76.000,00 €
+        Beauftragter Nachtragswert brutto: 476.000,00 €
