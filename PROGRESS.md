@@ -47,6 +47,26 @@
 
 ## Verlauf
 
+- **Phase C (Vorbereitung) · 3 Prosa-Zwillinge gestaged, `vorstand-summary` vollständig → ALLE 3 Pilot-Szenarien komplett (2026-07-17) ≈ 92 %** —
+  Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Statt Re-Verifikation (Churn) die
+  12-Dok-Checkliste **abgeschlossen**: nach `materialkosten` (5/5) und `projekt-beta` (4/4) jetzt die **3
+  verbleibenden Belege des dritten Pilot-Szenarios `vorstand-summary`** (Projekt-Alpha-Status · Vorstands-
+  protokoll · ESG-Bericht) als identitäts-bereinigte `.txt`-Zwillinge gestaged (nicht-gated Schritte 1+2).
+  Damit sind **alle 3 Pilot-Szenarien** als Zwilling komplett. Neuer Generator `build_vorstand_twins.py`
+  (additiv, mit Self-Check). **⚠ Accounting-Korrektur (CEO-Review):** die 3 Szenarien ziehen **12 Dokument-
+  körper** heran; „10/12" zählte den Controlling-`.xlsx` versehentlich als Körper mit — er ist ein **Zahlen-
+  Overlay ZUSÄTZLICH** zu den 12 (ersetzt keinen Körper). Wahr waren **9/12 Körper**; dieser Zyklus staged die
+  3 fehlenden → **12/12 Körper** (`.xlsx` bleibt Overlay). **Personen-Regel angewandt & verifiziert:** Brandt →
+  Moser (CEO), Ing. Petra Lang → **Nadine Falk** (Projektleitung Alpha); *Nachhaltigkeitsteam* (Team) bleibt;
+  extern *Ferro Nord* bleibt; Self-Check + unabhängiger grep: **0 Meridian-Leak** (Firma · Personen).
+  **Friction verschärft:** die Quelle nennt für „Projektleitung Alpha" **zwei** Namen (Sabine Reinhardt →
+  Bergmann **und** Petra Lang → Falk) — Inkonsistenz im Meridian-Korpus, faithful auf zwei distinkte synth.
+  Namen gemappt (nicht eingeebnet), für Schritt 3 protokolliert → bestätigt Empfehlung **Liste `projectLeads`**.
+  Zahlen bewusst nicht perturbiert (verbatim in Szenario-Zitaten → an Schritt 3 gekoppelt). `prototype/`
+  unverändert; `node --check` grün; **29 Docs · 17 Szenarien** unverändert. Ein Vorbereitungs-Brick hebt kein
+  Gate → **Gate B→C wartet weiter nur auf Sven.** Es verbleibt **kein** Korpus-Körper mehr — nur die
+  `prototype/`-berührenden gated Schritte (data.js-Übertragung + Config-Wiring inkl. `projectLeads`).
+
 - **Phase C (Vorbereitung) · 4 Prosa-Zwillinge gestaged, `projekt-beta` vollständig (2026-07-16) ≈ 92 %** —
   Phase B bleibt auf **Svens Aufnahme + Freigabe** blockiert (Gate B→C). Statt Re-Verifikation (Churn) die
   12-Dok-Checkliste weiter abgearbeitet: nach `materialkosten` (5/5, Vorzyklus) jetzt die **4 Belege des

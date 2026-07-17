@@ -1,0 +1,16 @@
+PROJEKTBERICHT — Projekt Alpha, Statusbericht
+Autor: Projektleitung Alpha (Ing. Nadine Falk) · Datum: 2026-03-31
+Ablage: Fileserver > Projekte > Alpha > Statusbericht_2026-03.docx
+
+Projekt Alpha — Aufbau einer neuen automatisierten Fertigungslinie in Werk 2
+Ingolstadt.
+
+Ziel: Kapazitätserhöhung um 35 % bei Getriebekomponenten. Gesamtbudget: 24 Mio. €.
+
+Status per 31.03.2026: 62 % abgeschlossen, im Zeitplan. Bislang 14,1 Mio. €
+verausgabt.
+
+Risiken: Stahlpreisanstieg belastet das Materialbudget (+0,9 Mio. € erwartet,
+siehe Q1-Bericht). Liefertermin Robotik-Zellen um 3 Wochen verschoben.
+
+Meilenstein: Geplante Inbetriebnahme Q4 2026. Abnahmetests ab Oktober.

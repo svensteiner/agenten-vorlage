@@ -36,14 +36,13 @@ synthetischer Zwilling mit intakten Formeln raus → in `data.js` geladen**, Reu
 43/43 Tests, 4-Schritt-Prozess + Ablaufdiagramm). Das hebt **kein** Gate — Gate B→C wartet weiter nur auf
 Sven —, macht aber den 48-h-Pilot-Prozess konkret verkaufbar.
 
-**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** **alle 5 reinen Phase-C-Doku-Bricks
-sind abgeschlossen** (Szenarienbibliothek · One-Pager · Datenpipeline · PILOT_CONFIG-Spec · PILOT_KIT.md).
-**Weiterhin freeze-konform (nicht gated):** die **2 restlichen Prosa-Korpus-Zwillinge** in `pilot-assets/`
-stagen (Schritte 1+2 berühren `prototype/` **nicht** — s. die 4 Beta-Zwillinge diesen Zyklus + 3 Prosa/2 CSV/
-1 xlsx davor, Abdeckung **10/12**). Verbleibend = die **`vorstand-summary`-eigenen** Prosa-Belege
-(**Vorstandsprotokoll** + **ESG-Bericht**; `projekt-alpha-status` wird dort ebenfalls herangezogen), damit
-alle **3** Pilot-Szenarien vollständig als Zwilling vorliegen, bevor das Gate öffnet. **Gated bis Gate B→C**
-(berührt `prototype/`):
+**► Nächster Zyklus, wenn weiter keine Sven-Rückmeldung vorliegt:** **die Korpus-Zwilling-Vorbereitung ist
+abgeschlossen** — **alle 12 Dokumentkörper sind gestaged**, alle **3** Pilot-Szenarien liegen vollständig als
+Zwilling vor (materialkosten 5/5 · projekt-beta 4/4 · vorstand-summary 3/3; s. 2026-07-17-Eintrag). Damit ist
+**kein** freeze-konformer Vorbereitungs-Brick mehr offen, der `prototype/` **nicht** berührt. Der nächste
+sinnvolle Schritt ist entweder **(a)** ein reiner Re-Verifikations-Tick (Freeze/Links/Aufnahme-Bereitschaft,
+falls Churn akzeptabel) **oder (b)** — sobald Sven freigibt — direkt die **gated** Schritt-3-Arbeit. **Gated
+bis Gate B→C** (berührt `prototype/`):
 1. **PILOT_CONFIG (Implementierung)** — Wiring aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md)
    (`pilot.config.js` + Guard in `data.js` + `applyPilotChrome()`), **inkl. `projectLeads`-Liste** (mehrere
    Projektleitungen Alpha+Beta, s. verschärfte Friction diesen Zyklus). Design fertig → dann 30-Min-Mechanik.
@@ -55,7 +54,31 @@ alle **3** Pilot-Szenarien vollständig als Zwilling vorliegen, bevor das Gate �
 > (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
 > (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-16, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
+**Diesen Zyklus gebaut (2026-07-17, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
+**abgeschlossen** — die **3 verbleibenden Belege des dritten Pilot-Szenarios `vorstand-summary`** als identitäts-
+bereinigte **Text-Zwillinge gestaged** (nicht-gated Schritte 1+2; Laden in `data.js` bleibt Schritt 3/gated).
+Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md): additiver Generator
+`build_vorstand_twins.py` (**mit Self-Check**) + `projekt-alpha-status_zwilling.txt` (Budget 24 Mio. €, 62 % im
+Zeitplan, Inbetriebnahme Q4 2026) + `vorstandsprotokoll-2026-03_zwilling.txt` (TOP1 Ferro Nord, TOP2 Mehrbudget
+0,9 Mio. €, TOP3 ESG 30 % CO₂ bis 2030) + `esg-bericht-2025_zwilling.txt` (CO₂ 41.200 t, −12 % ggü. 2020, 68 %
+Grünstrom). Damit sind **alle 3 Pilot-Szenarien komplett** als Zwilling. **⚠ Accounting korrigiert (CEO-Review):**
+die 3 Szenarien ziehen **12 Dokumentkörper** heran; „10/12" zählte den Controlling-`.xlsx` versehentlich als
+12. Körper — er ist ein **Zahlen-Overlay ZUSÄTZLICH** zu den 12 (ersetzt keinen Körper). Wahr waren **9/12
+Körper**; dieser Zyklus staged die 3 fehlenden → **12/12 Körper** (`.xlsx` bleibt Overlay). **Personen-Regel +
+Rollen-Regel angewandt & verifiziert:** *Markus Brandt → Andreas Moser* (CEO), *Ing. Petra Lang → Nadine Falk*
+(Projektleitung Alpha); *Nachhaltigkeitsteam* (Team, keine Person) bleibt; **externe** Gegenpartei *Ferro Nord*
+(beschlossener Zweitlieferant) bleibt. Self-Check **und** unabhängiger `grep`: **0 Meridian-Leak** (Firma ·
+Personen), alle synth. Namen present, Anker-Zahlen je Datei erhalten. **Friction verschärft:** die Quelle nennt
+für **dieselbe Rolle „Projektleitung Alpha" zwei Namen** — *Sabine Reinhardt* (→ Sandra Bergmann, Vorzyklus) und
+*Ing. Petra Lang* (→ *Nadine Falk*, diesen Zyklus). Inkonsistenz im Meridian-Ausgangskorpus → **faithful** auf
+zwei distinkte synth. Namen gemappt (nicht eingeebnet), für Schritt 3 protokolliert; bestätigt erneut die
+Empfehlung **Liste `projectLeads`** statt einzelner Rolle. **Zahlen bewusst nicht perturbiert** (verbatim in
+Szenario-Zitaten → an Schritt 3 gekoppelt). `git status`: nur 4 neue Dateien in `pilot-assets/`; `node --check`
+(app.js + data.js) grün; Live-Daten unverändert (**29 Docs · 17 Szenarien**). Ein Vorbereitungs-Brick hebt kein
+Gate → **Gate B→C wartet weiter nur auf Sven.** Verbleibt gated: **kein** Korpus-Körper mehr — nur die
+`prototype/`-berührenden Schritte (data.js-Übertragung + Config-Wiring inkl. `projectLeads`).
+
+**Zyklus davor gebaut (2026-07-16, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
 weiter abgearbeitet — die **4 Belege des zweiten Pilot-Szenarios `projekt-beta`** als identitäts-bereinigte
 **Text-Zwillinge gestaged** (die nicht-gated Pipeline-Hälfte, Schritte 1+2; Laden in `data.js` bleibt Schritt
 3/gated). Neu in [`pilot-assets/muster-bau-gmbh/`](pilot-assets/muster-bau-gmbh/README.md): additiver Generator

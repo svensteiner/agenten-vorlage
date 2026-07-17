@@ -229,6 +229,52 @@ Nachnamen bewusst kollisionsfrei zu den Config-Nachnamen (Moser/Hollmann/Baumgar
 (Vorstandsprotokoll · ESG-Bericht; `projekt-alpha-status` wird dort ebenfalls herangezogen). Abdeckung jetzt
 **10/12**; `prototype/` unverändert; Live-Daten unverändert (29 Docs · 17 Szenarien).
 
+## Prosa-Zwillinge des Vorstand-Summary-Szenarios gestaged: Körper-Abdeckung 9/12 → 12/12 (2026-07-17)
+
+Nach `materialkosten` und `projekt-beta` (beide vollständig) staged dieser Zyklus die **drei verbleibenden
+Belege des dritten Pilot-Szenarios `vorstand-summary`** als identitäts-bereinigte Zwillinge — die **nicht-
+gated** Pipeline-Hälfte (Schritte 1+2; das Laden in `data.js` bleibt Schritt 3 / gated). Damit sind **alle 3
+Pilot-Szenarien** als Zwilling vollständig:
+
+| Zwilling | Quelle | Was der Zwilling trägt |
+|---|---|---|
+| `projekt-alpha-status_zwilling.txt` | `projekt-alpha-status` | Projektbericht: neue Fertigungslinie Werk 2, Budget **24 Mio. €**, **62 %** / im Zeitplan, 14,1 Mio. € verausgabt, +0,9 Mio. € Materialrisiko, Inbetriebnahme **Q4 2026** |
+| `vorstandsprotokoll-2026-03_zwilling.txt` | `vorstandsprotokoll-2026-03` | Sitzungsprotokoll 28.03.2026: TOP1 Zweitlieferant **Ferro Nord**, TOP2 Mehrbudget **0,9 Mio. €** Projekt Alpha, TOP3 ESG-Ziel **30 % CO₂ bis 2030** |
+| `esg-bericht-2025_zwilling.txt` | `esg-bericht-2025` | Nachhaltigkeitsbericht CSRD/ESRS: CO₂ **41.200 t** (−12 % ggü. 2020), Scope 1/2 (12.400 / 28.800 t), 68 % Grünstrom, Zielpfad −30 % bis 2030 |
+| `build_vorstand_twins.py` | — | reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein Meridian-Leak · synth. Namen present · externe Gegenpartei behalten) |
+
+**Personen-Regel angewandt & verifiziert:** **Markus Brandt → Andreas Moser** (CEO, `config.people.ceo`),
+**Ing. Petra Lang → Nadine Falk** (Projektleitung Alpha, s. Friction); Rollen-Bezeichner ohne Personennamen
+bleiben (**Nachhaltigkeitsteam** = Team, keine Person); **externe** Gegenpartei *Ferro Nord* (im Protokoll
+beschlossener Zweitlieferant) bleibt. Self-Check **und** unabhängiger `grep`: **0 Meridian-Leak** (Firma ·
+Personen), alle synth. Namen present, Anker-Zahlen je Datei erhalten.
+
+**⚠ Accounting korrigiert (CEO-Review):** Die 3 Pilot-Szenarien ziehen **12 Dokumentkörper** heran (s.
+Checkliste oben). Der frühere Fortschritt „10/12" **zählte den Controlling-`.xlsx` versehentlich als 12. Slot**
+mit — der `.xlsx` ist aber ein **Zahlen-Overlay ZUSÄTZLICH** zu den 12 Körpern (er ersetzt keinen Körper, s.
+Audit Gap 1). Wahr waren nach dem Beta-Zyklus **9/12 Körper** (5 materialkosten + 4 beta). Dieser Zyklus staged
+die **3 fehlenden vorstand-summary-Körper** → **12/12 Körper** (der `.xlsx` bleibt als zusätzliches Overlay).
+
+**Friction verschärft (für Schritt 3 / Config):** Die Quelle nennt für **dieselbe Rolle „Projektleitung Alpha"
+zwei verschiedene Namen** — *Sabine Reinhardt* (Cc der Weiterleitungs-Mail, bereits → Sandra Bergmann) **und**
+*Ing. Petra Lang* (Autor des Alpha-Statusberichts). Das ist eine **Inkonsistenz im Meridian-Ausgangskorpus**.
+Faithful behandelt: beide bleiben als eigenständige Personen erhalten und werden auf **je** einen distinkten
+synthetischen Namen gemappt (Sandra Bergmann bzw. **Nadine Falk**) — die Inkonsistenz wird **nicht** stillschweigend
+eingeebnet, sondern für Schritt 3 protokolliert. Zusammen mit *Projektleitung Beta* (Tobias Lindner) bestätigt
+das erneut: eine **einzelne** `projectLead`-Rolle reicht nicht → **Empfehlung Schritt 3:** Liste `projectLeads`
+(bzw. projekt-scoped Einträge). Nachname *Falk* bewusst kollisionsfrei zu den Config-Nachnamen (Moser/Hollmann/
+Baumgartner/Kessler/Reinhardt/Weiß) sowie zu Bergmann/Lindner; Vorname *Nadine* kollisionsfrei zu *Petra*
+(= Config-CFO Petra Hollmann).
+
+**Zahlen bewusst nicht perturbiert** (gleiche Kopplung: die Werte stehen verbatim in den
+`vorstand-summary` / `esg-co2` / `strategie-ausblick`-Szenario-Antwort-Zitaten in `data.js` → ±10 %-Synthese an
+Schritt 3 gekoppelt).
+
+**Verbleibt für Schritt 3 (gated):** **kein** weiterer Korpus-Körper — **alle 12 sind gestaged**. Es verbleiben
+nur noch die `prototype/`-berührenden Schritte: die redaktionelle Übertragung der Zwillinge in `data.js` +
+das Config-Wiring (inkl. `projectLeads`-Liste). Körper-Abdeckung jetzt **12/12**; `prototype/` unverändert;
+Live-Daten unverändert (29 Docs · 17 Szenarien).
+
 ## Was noch fehlt (gated bis Gate B→C)
 
 **Schritt 3** — die synthetischen Zahlen redaktionell in `prototype/data.js` als `DOCS`/`lineItems`
@@ -245,3 +291,4 @@ Gate offen ist.
 *Ergänzt 2026-07-14 · 2 Struktur-Zwillinge gestaged (Rechnung + Rahmenvertrag), Korpus-Abdeckung 1/12 → 3/12, Personen-Regel verifiziert.*
 *Ergänzt 2026-07-15 · 3 Prosa-Zwillinge gestaged (Q1-Bericht + 2 E-Mails → `materialkosten` vollständig), Abdeckung 3/12 → 6/12, E-Mail-Domain-Regel + projectLead-Friction dokumentiert.*
 *Ergänzt 2026-07-16 · 4 Prosa-Zwillinge gestaged (`projekt-beta` vollständig: Status + Eskalation + Nachtrag + Auftrag), Abdeckung 6/12 → 10/12, CEO/CFO-Ersetzung + 2. projectLead (Beta) → Config-Empfehlung `projectLeads`-Liste.*
+*Ergänzt 2026-07-17 · 3 Prosa-Zwillinge gestaged (`vorstand-summary` vollständig: Alpha-Status + Vorstandsprotokoll + ESG-Bericht) → **alle 3 Pilot-Szenarien komplett**; Accounting korrigiert (Körper 9/12 → **12/12**, `.xlsx` als Overlay geführt); Alpha-Doppel-Lead-Inkonsistenz (Petra Lang → Nadine Falk) protokolliert.*

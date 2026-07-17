@@ -2,6 +2,32 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-17 — 3 Prosa-Zwillinge gestaged, `vorstand-summary` vollständig → ALLE 3 Pilot-Szenarien komplett, Körper-Abdeckung 9/12 → 12/12 (kein Eingriff in prototype/)
+
+**Drittes und letztes Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens
+Aufnahme + Freigabe** blockiert (Gate B→C). Nach `materialkosten` (5/5) und `projekt-beta` (4/4) staged dieser
+Zyklus die **3 verbleibenden Belege des dritten Pilot-Szenarios `vorstand-summary`** als identitäts-bereinigte
+Text-Zwillinge (nicht-gated Pipeline-Hälfte, Schritte 1+2 — Laden in `data.js` bleibt Schritt 3/gated). Damit
+sind **alle 3 Pilot-Szenarien** als Zwilling komplett; die Korpus-Zwilling-Vorbereitung ist abgeschlossen.
+
+### Gebaut (nur `pilot-assets/muster-bau-gmbh/` — `prototype/` unverändert)
+- **`build_vorstand_twins.py`** — reproduzierbarer Generator **mit Self-Check** (Anker-Zahlen erhalten · kein
+  Meridian-Leak · synth. Namen present · externe Gegenpartei behalten). Additiv neben den 3 Vorgänger-Generatoren.
+- **`projekt-alpha-status_zwilling.txt`** — Projektbericht (neue Fertigungslinie Werk 2, Budget 24 Mio. €, 62 % im Zeitplan, 14,1 Mio. € verausgabt, Inbetriebnahme Q4 2026).
+- **`vorstandsprotokoll-2026-03_zwilling.txt`** — Sitzungsprotokoll 28.03.2026 (TOP1 Zweitlieferant Ferro Nord, TOP2 Mehrbudget 0,9 Mio. € Projekt Alpha, TOP3 ESG-Ziel 30 % CO₂ bis 2030).
+- **`esg-bericht-2025_zwilling.txt`** — Nachhaltigkeitsbericht CSRD/ESRS (CO₂ 41.200 t, −12 % ggü. 2020, Scope 1/2 12.400/28.800 t, 68 % Grünstrom, Zielpfad −30 % bis 2030).
+- **README** fortgeschrieben (Vorstand-Zwillinge, CEO/Alpha-Lead-Ersetzung, **Accounting-Korrektur**, Alpha-Doppel-Lead-Friction).
+
+### Verifiziert (deterministisch, Self-Check + unabhängiger grep)
+- **Körper-Abdeckung 9/12 → 12/12**; Szenario `vorstand-summary` **3/3** Belege gestaged → **alle 3 Szenarien komplett**.
+- **⚠ Accounting korrigiert:** die 3 Szenarien ziehen **12 Dokumentkörper** heran; „10/12" zählte den Controlling-`.xlsx`
+  fälschlich als Körper — er ist ein **Zahlen-Overlay ZUSÄTZLICH** zu den 12. Wahr waren 9/12; jetzt 12/12 Körper.
+- **Personen-/Rollen-Regel:** Brandt → Moser (CEO), Ing. Petra Lang → **Nadine Falk** (Projektleitung Alpha);
+  *Nachhaltigkeitsteam* (Team) bleibt; extern *Ferro Nord* bleibt. **0 Meridian-Leak** (Firma · Personen).
+- **Friction:** Quelle nennt für „Projektleitung Alpha" **zwei** Namen (Reinhardt → Bergmann · Lang → Falk) —
+  Korpus-Inkonsistenz, faithful auf zwei distinkte synth. Namen gemappt → bestätigt Empfehlung Liste `projectLeads`.
+- `node --check` (app.js + data.js) grün; **29 Docs · 17 Szenarien** unverändert; nur 4 neue Dateien in `pilot-assets/`.
+
 ## Phase C (Vorbereitung) — 2026-07-16 — 4 Prosa-Zwillinge gestaged, `projekt-beta` vollständig, Korpus-Abdeckung 6/12 → 10/12 (kein Eingriff in prototype/)
 
 **Zweites Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens Aufnahme +
