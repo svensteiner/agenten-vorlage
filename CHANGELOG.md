@@ -2,6 +2,17 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B (Wartepunkt) — 2026-07-18 — Verifikations-Tick (grün), blockiert auf Sven — keine Prototyp-/Feature-Änderung
+
+**Reiner Re-Verifikations-Zyklus, kein Eingriff in `prototype/` (Feature-Freeze gewahrt).** Es ist **kein**
+freeze-konformer Vorbereitungs-Brick mehr offen (Korpus-Zwillinge 12/12, alle 3 Pilot-Szenarien komplett);
+alle verbleibenden Schritte (Schritt-3-Übertragung + PILOT_CONFIG-Wiring) sind **gated auf Gate B→C = Svens
+Aufnahme + Freigabe**. Statt neuen Umfangs (Freeze-Verstoß) oder Doku-Churn: Zustand deterministisch verifiziert.
+- **0 Meridian-Leak** über alle 12 Zwilling-Dateien (Firma · Personen · Domain — unabhängiger `grep`, Exit 1).
+- **Synth. Namen present** in allen 12 Zwilling-Dateien (Muster Bau · Moser · Hollmann · Kessler · Lindner · Falk · Bergmann).
+- **`node --check`** (prototype/app.js + prototype/data.js) grün; **Live-Daten unverändert** (17 Szenarien in data.js).
+- `git status` sauber (Arbeitsbaum clean). **Gate B→C wartet weiterhin allein auf Sven.**
+
 ## Phase C (Vorbereitung) — 2026-07-17 — 3 Prosa-Zwillinge gestaged, `vorstand-summary` vollständig → ALLE 3 Pilot-Szenarien komplett, Körper-Abdeckung 9/12 → 12/12 (kein Eingriff in prototype/)
 
 **Drittes und letztes Pilot-Szenario vollständig als Zwilling, freeze-konform.** Phase B bleibt auf **Svens

@@ -29,6 +29,10 @@
 
 ## Prototyp-Baufortschritt: ≈ 92 % (Phase B — Video-Deliverables fertig, wartet auf Aufnahme)
 
+> **2026-07-18 · Verifikations-Tick (grün):** Kein offener freeze-konformer Brick mehr (Zwillinge 12/12, 3/3
+> Szenarien). Verifiziert: 0 Meridian-Leak (12 Dateien), `node --check` grün, 17 Szenarien unverändert, Baum
+> clean. Nächster Fortschritt ist **gated auf Sven** (Aufnahme/Freigabe) — bis dahin nur, was Sven anmerkt.
+
 | Bereich | Gewicht | Stand | Beitrag |
 |---------|:------:|:-----:|:------:|
 | App-Grundgerüst (Layout, Navigation, Design) | 20 % | 95 % | 19.0 |
