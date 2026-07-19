@@ -38,17 +38,28 @@ window.PILOT_CONFIG = {
       // Auftrag) bereits eingesetzt & verifiziert (procurement/cfo/legal/ceo → s.
       // README); die übrigen (hr/audit + 2 restliche Prosa-Belege des vorstand-
       // summary-Szenarios) folgen im gated Schritt 3.
-      // ⚠ FRICTION (s. README): der Korpus trägt MEHRERE Projektleitungen ohne
-      //   Config-Rolle — "Projektleitung Alpha" (Sabine Reinhardt → Sandra Bergmann)
-      //   UND "Projektleitung Beta" (Markus Feldmann → Tobias Lindner). Eine EINZELNE
-      //   `projectLead`-Rolle reicht nicht → Schritt 3: Liste `projectLeads` oder
-      //   projekt-scoped Einträge (`projectLeadAlpha`/`projectLeadBeta`) ergänzen.
+      // ✅ FRICTION GELÖST (2026-07-19): der Korpus trägt MEHRERE Projektleitungen,
+      //   für die eine EINZELNE `projectLead`-Rolle nicht reicht. Statt einer flachen
+      //   Rolle jetzt projekt-scoped in `projectLeads` (s.u.) — deckt beide Projekte
+      //   und den Alpha-Doppel-Lead faithful ab. Die einzelnen Rollen unten bleiben
+      //   für die Nicht-Projekt-Personen (CEO/CFO/HR/Einkauf/Recht/Audit). Wiring
+      //   (Konsum durch applyPilotChrome/Korpus-Mapping) berührt prototype/ → Schritt 3.
       ceo: "Andreas Moser",
       cfo: "Petra Hollmann",
       hr: "Miriam Baumgartner",
       procurement: "Jürgen Kessler",
-      legal: "Dr. Stefan Reinhardt",
+      legal: "Dr. Stefan Reinhardt", // ≠ projectLead Reinhardt: bewusst getrennt (Kollision vermieden)
       audit: "Claudia Weiß",
+    },
+
+    // Projekt-scoped Projektleitungen (Schritt-3-Empfehlung, jetzt umgesetzt).
+    // Quelle nennt für Alpha ZWEI Namen (Meridian-Inkonsistenz, faithful gemappt,
+    // nicht eingeebnet); Beta einen. Synth. Namen bereits in den Zwillingen gesetzt
+    // & verifiziert (0 Meridian-Leak): s. projekt-alpha-status / projekt-beta-status /
+    // eskalation-beta / email-weiterleitung-materialbudget.
+    projectLeads: {
+      alpha: ["Sandra Bergmann", "Nadine Falk"], // Sabine Reinhardt / Ing. Petra Lang
+      beta: ["Tobias Lindner"], // Markus Feldmann
     },
   },
 

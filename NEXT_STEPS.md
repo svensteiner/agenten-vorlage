@@ -54,6 +54,19 @@ bis Gate B→C** (berührt `prototype/`):
 > (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
 > (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
+**Diesen Zyklus gebaut (2026-07-19, freeze-konform, kein Eingriff in `prototype/`):** die seit ~4 Zyklen nur als
+Kommentar-Friction protokollierte **Multi-`projectLeads`**-Sache **konkret gelöst** — statt eines identischen
+Re-Verifikations-Ticks (Churn). Der Draft [`pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js) (in
+`pilot-assets/`, **nicht** verdrahtet) trägt jetzt `company.projectLeads` **projekt-scoped**:
+`alpha: ["Sandra Bergmann", "Nadine Falk"]` (Alpha-Doppel-Lead faithful, nicht eingeebnet) und
+`beta: ["Tobias Lindner"]` — alle synth. Namen bereits in den Zwillingen gesetzt & verifiziert. `legal`-Kommentar
+klargestellt (*Dr. Stefan Reinhardt* ≠ projectLead *Reinhardt*, Kollision bewusst getrennt). Das **de-riskt den
+gated Schritt-3-Wiring** (die Config-Rolle, die applyPilotChrome/Korpus-Mapping konsumieren muss, steht jetzt
+fertig). Verifiziert: `node --check` (config + prototype/app.js+data.js) grün, `projectLeads`-Arrays strukturell
+korrekt, Config-**Werte** rein synthetisch (0 Meridian-Leak in Daten), **29 Docs · 17 Szenarien** unverändert,
+Baum clean. Hebt kein Gate → **Gate B→C wartet weiter nur auf Sven.** Verbleibt gated: nur `prototype/`-berührende
+Schritte (Schritt-3-Übertrag in `data.js` + Config-**Wiring**, das `projectLeads` nun bereits vorfindet).
+
 **Diesen Zyklus gebaut (2026-07-17, freeze-konform, kein Eingriff in `prototype/`):** die 12-Dokument-Checkliste
 **abgeschlossen** — die **3 verbleibenden Belege des dritten Pilot-Szenarios `vorstand-summary`** als identitäts-
 bereinigte **Text-Zwillinge gestaged** (nicht-gated Schritte 1+2; Laden in `data.js` bleibt Schritt 3/gated).

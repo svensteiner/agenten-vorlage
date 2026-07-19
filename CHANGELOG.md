@@ -2,6 +2,19 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase C (Vorbereitung) — 2026-07-19 — Multi-`projectLeads`-Friction im Draft-`pilot.config.js` gelöst (kein Eingriff in prototype/)
+
+**Statt eines identischen Re-Verifikations-Ticks (Churn) die eine seit ~4 Zyklen offene Friction konkret behoben** —
+freeze-konform, nur `pilot-assets/`, `prototype/` unangetastet. Der Korpus trägt **mehrere** Projektleitungen
+(Alpha: zwei Namen — Meridian-Inkonsistenz, faithful gemappt; Beta: einer), für die eine **einzelne** `projectLead`-
+Rolle nicht reicht. Der Draft `pilot.config.js` trug das bislang nur als Kommentar-Friction. Jetzt umgesetzt:
+- **Neu `company.projectLeads`** (projekt-scoped): `alpha: ["Sandra Bergmann", "Nadine Falk"]`, `beta: ["Tobias Lindner"]` —
+  alle Namen bereits in den Zwillingen gesetzt & verifiziert (Alpha-Doppel-Lead nicht eingeebnet).
+- **`legal`-Kommentar** klargestellt: *Dr. Stefan Reinhardt* (Recht) ≠ projectLead *Reinhardt* (bewusst getrennt, Kollision vermieden).
+- Friction-Kommentar von „⚠ offen" auf „✅ gelöst" umgestellt; Wiring (Konsum) bleibt **gated auf Gate B→C** (berührt prototype/).
+- **Verifiziert:** `node --check` (config) grün; strukturell `alpha`/`beta`-Arrays korrekt, `scenarios: 3`, `active: true`;
+  Config-**Werte** rein synthetisch (0 Meridian-Leak in Daten); `node --check` prototype/app.js+data.js grün; **29 Docs · 17 Szenarien** unverändert; `prototype/` unberührt. **Gate B→C wartet weiter allein auf Sven.**
+
 ## Phase B (Wartepunkt) — 2026-07-18 — Verifikations-Tick (grün), blockiert auf Sven — keine Prototyp-/Feature-Änderung
 
 **Reiner Re-Verifikations-Zyklus, kein Eingriff in `prototype/` (Feature-Freeze gewahrt).** Es ist **kein**

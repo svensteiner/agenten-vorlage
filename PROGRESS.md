@@ -29,6 +29,13 @@
 
 ## Prototyp-Baufortschritt: ≈ 92 % (Phase B — Video-Deliverables fertig, wartet auf Aufnahme)
 
+> **2026-07-19 · Multi-`projectLeads`-Friction gelöst (freeze-konform, kein Eingriff in `prototype/`):** Statt
+> eines identischen Re-Verifikations-Ticks (Churn) die seit ~4 Zyklen offene Friction konkret behoben — Draft
+> `pilot.config.js` (in `pilot-assets/`) trägt jetzt `company.projectLeads` projekt-scoped (`alpha:[Bergmann,Falk]`
+> · `beta:[Lindner]`), Alpha-Doppel-Lead faithful, nicht eingeebnet; `legal ≠ projectLead Reinhardt` klargestellt.
+> De-riskt den gated Schritt-3-Wiring. Verifiziert: `node --check` (config + prototype) grün, Config-Werte rein
+> synthetisch, **29 Docs · 17 Szenarien** unverändert, Baum clean. Nächster Fortschritt **gated auf Sven**.
+>
 > **2026-07-18 · Verifikations-Tick (grün):** Kein offener freeze-konformer Brick mehr (Zwillinge 12/12, 3/3
 > Szenarien). Verifiziert: 0 Meridian-Leak (12 Dateien), `node --check` grün, 17 Szenarien unverändert, Baum
 > clean. Nächster Fortschritt ist **gated auf Sven** (Aufnahme/Freigabe) — bis dahin nur, was Sven anmerkt.
