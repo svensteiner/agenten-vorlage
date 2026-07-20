@@ -54,7 +54,21 @@ bis Gate B→C** (berührt `prototype/`):
 > (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
 > (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-19, freeze-konform, kein Eingriff in `prototype/`):** die seit ~4 Zyklen nur als
+**Diesen Zyklus gebaut (2026-07-20, freeze-konform, kein Eingriff in `prototype/`):** ein **Live-Browser-
+Verifikationstick** statt eines reinen `node --check`-Ticks (Churn). Weil **kein** freeze-konformer Vorbereitungs-
+Brick mehr offen ist, wurde die **Recording-Readiness erstmals wieder real im Browser** belegt — die letzten
+Zyklen fielen am *throttled* Streaming-/Screenshot-Pfad auf DOM/Daten zurück. Statischer Server (`launch.json`
+„prototype", Port 8777) → Prototyp bei **1920×1080** (Video-Auflösung) geladen: **0 Konsolenfehler** (beim Laden
+**und** nach Interaktion mit den Demo-Buttons), Titel korrekt, voller Interaktivbaum präsent (Suche · **▶ Geführte
+Demo** · **⟲ Zurücksetzen** · Composer), App sauber IIFE-gekapselt. Server-Logs: `data.js`/`styles.css`/`app.js`
+je **HTTP 200**; einziger 404 = `favicon.ico` (kosmetisch, im Recording unsichtbar → **bewusst nicht** angefasst:
+Feature-Freeze + „nur ändern, was Sven anmerkt"). Zusätzlich deterministischer Invarianten-Check (VM-Sandbox):
+**29 Docs · 17 Szenarien · DEMO_ORDER→6 · Money-Shot letzt · 0 kaputte Referenzen · Money-Shot 4 Agenten-Karten**.
+Das **Streaming der Geführten Demo** bleibt im Automations-Harness gedrosselt (bekannte Limitierung, **kein**
+Demo-Defekt — Sven nimmt in einem echten Browser auf, wo es abspielt). Hebt **kein** Gate → **Gate B→C wartet
+weiter allein auf Sven.** `git`-Baum clean; `prototype/` unverändert.
+
+**Zyklus davor gebaut (2026-07-19, freeze-konform, kein Eingriff in `prototype/`):** die seit ~4 Zyklen nur als
 Kommentar-Friction protokollierte **Multi-`projectLeads`**-Sache **konkret gelöst** — statt eines identischen
 Re-Verifikations-Ticks (Churn). Der Draft [`pilot.config.js`](pilot-assets/muster-bau-gmbh/pilot.config.js) (in
 `pilot-assets/`, **nicht** verdrahtet) trägt jetzt `company.projectLeads` **projekt-scoped**:

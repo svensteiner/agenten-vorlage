@@ -2,6 +2,23 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B (Wartepunkt) — 2026-07-20 — Live-Browser-Verifikationstick (grün), blockiert auf Sven — keine Prototyp-/Feature-Änderung
+
+**Recording-Readiness erstmals wieder real im Browser belegt** (nicht nur `node --check`), freeze-konform, `prototype/`
+unangetastet. Weil **kein** freeze-konformer Vorbereitungs-Brick mehr offen ist und ein weiterer reiner Daten-Tick
+Churn wäre, diesen Zyklus die Video-Auflösung live geprüft — die letzten Zyklen fielen am *throttled* Streaming-/
+Screenshot-Pfad auf DOM/Daten zurück.
+- **Live geladen** über statischen Server (`launch.json` „prototype", Port 8777) bei **1920×1080**: **0 Konsolenfehler**
+  beim Laden **und** nach Klick auf die Demo-Buttons; Titel „AI Studio — Meridian Industrie GmbH"; voller Interaktivbaum
+  (Suche/Strg+K · **▶ Geführte Demo** · **⟲ Zurücksetzen** · Composer/Senden) vorhanden; App sauber IIFE-gekapselt.
+- **Server-Logs:** `data.js` · `styles.css` · `app.js` je **HTTP 200**; einziger 404 = `favicon.ico` — kosmetisch, im
+  Screen-Recording unsichtbar → **bewusst nicht** angefasst (Feature-Freeze + „nur ändern, was Sven anmerkt").
+- **Deterministischer Invarianten-Check** (VM-Sandbox, Scratchpad): **29 Docs · 17 Szenarien · DEMO_ORDER→6 Szenarien ·
+  Money-Shot letzt · 0 kaputte Beleg-Referenzen · Money-Shot mit 4 Agenten-Karten**.
+- **Bekannte Limitierung:** Das *Streaming der Geführten Demo* wird im Automations-Harness gedrosselt (async setTimeout-
+  Sequenz spielt dort nicht sichtbar durch) — **kein** Demo-Defekt; Sven nimmt in einem echten Browser auf, wo es abspielt.
+- Hebt **kein** Gate → **Gate B→C wartet weiter allein auf Sven.** `git`-Baum clean; `prototype/` unverändert.
+
 ## Phase C (Vorbereitung) — 2026-07-19 — Multi-`projectLeads`-Friction im Draft-`pilot.config.js` gelöst (kein Eingriff in prototype/)
 
 **Statt eines identischen Re-Verifikations-Ticks (Churn) die eine seit ~4 Zyklen offene Friction konkret behoben** —
