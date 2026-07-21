@@ -17,7 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from core.orchestrator import AgentOrchestrator
-from core.scheduling import AdaptiveScheduler
+from core.scheduling import run_scheduled_cycle
 from memory import Memory
 from tools.message_bus import MessageBus
 
@@ -205,25 +205,21 @@ def _run_scheduled() -> None:
     passes through the normal orchestrator and its governance gates.
     """
     cfg = _load_config()
-    scheduler = AdaptiveScheduler(ROOT, cfg)
-    if not scheduler.enabled:
+    try:
+        decision = run_scheduled_cycle(
+            root=ROOT,
+            agent_config=cfg,
+            orchestrator=ORCHESTRATOR,
+            tools=TOOLS,
+        )
+    except Exception as exc:
+        logger.error("Scheduled task failed: %s", exc, exc_info=True)
         return
-    decision = scheduler.evaluate()
     if not decision.should_enqueue:
         logger.info("Schedule idle: %s", decision.reason)
         return
-    scheduler.mark_enqueued(decision)
     logger.info("Scheduled task (%s): %s", decision.reason, decision.request_id)
-    try:
-        result = ORCHESTRATOR.run(decision.task_text or "", tools=TOOLS)
-        scheduler.record_result(success=result.success)
-        if result.success:
-            logger.info("Scheduled task erledigt: %s", decision.request_id)
-        else:
-            logger.warning("Scheduled task fehlgeschlagen: %s", decision.request_id)
-    except Exception as exc:
-        scheduler.record_result(success=False)
-        logger.error("Scheduled task failed: %s", exc, exc_info=True)
+    logger.info("Scheduled task ausgefuehrt: %s", decision.request_id)
 
 
 def _messages() -> None:

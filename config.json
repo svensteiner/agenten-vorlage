@@ -1,8 +1,8 @@
 {
   "_comment": "Agent-Konfiguration — hier anpassen, NICHT im Code",
-  "model": "gpt-4o-mini",
-  "model_fast": "gpt-4o-mini",
-  "model_smart": "gpt-4o",
+  "model": "gpt-5-nano",
+  "model_fast": "gpt-5-nano",
+  "model_smart": "gpt-5.6-luna",
   "model_anthropic": "claude-haiku-4-5-20251001",
   "model_anthropic_fast": "claude-haiku-4-5-20251001",
   "model_anthropic_smart": "claude-sonnet-4-6",

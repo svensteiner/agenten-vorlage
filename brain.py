@@ -65,7 +65,7 @@ def _get_client(use_fast: bool = False, model: str | None = None):
     if api_key and required_provider in {None, "openai"}:
         try:
             from openai import OpenAI
-            default = cfg.get("model", "gpt-4o-mini")
+            default = cfg.get("model", "gpt-5-nano")
             selected_model = model or (cfg.get("model_fast", default) if use_fast else cfg.get("model_smart", default))
             return OpenAI(api_key=api_key), selected_model, "openai"
         except ImportError:
@@ -96,15 +96,23 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
 
     try:
         if provider == "openai":
-            response = client.chat.completions.create(
-                model=selected_model,
-                messages=[
+            request = {
+                "model": selected_model,
+                "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+            }
+            normalized_model = str(selected_model or "").lower()
+            if normalized_model.startswith("gpt-5"):
+                request["max_completion_tokens"] = max_tokens
+                request["reasoning_effort"] = (
+                    "none" if normalized_model.startswith("gpt-5.6") else "minimal"
+                )
+            else:
+                request["temperature"] = temperature
+                request["max_tokens"] = max_tokens
+            response = client.chat.completions.create(**request)
             _session_usage["calls"] += 1
             _session_usage["input_tokens"] += getattr(response.usage, "prompt_tokens", 0)
             _session_usage["output_tokens"] += getattr(response.usage, "completion_tokens", 0)

@@ -2,6 +2,7 @@
 path is exercised with a mocked ``brain.evaluate`` so the test is deterministic
 regardless of environment/API keys (WP-C1 mocked-model backfill)."""
 
+import json
 from pathlib import Path
 
 import brain
@@ -96,3 +97,89 @@ def test_llm_unavailable_marker_falls_back_to_heuristic(monkeypatch):
     )
     result = Verifier().verify("x" * 90, task="topic")
     assert result.metadata["mode"] == "heuristic"
+
+
+def test_sourced_kmu_report_passes_deterministically_without_verifier_llm(monkeypatch):
+    monkeypatch.setattr(
+        brain,
+        "evaluate",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("deterministic controlling evidence needs no verifier LLM")
+        ),
+    )
+    source = "inbox/actuals/demo.xlsx"
+    method = "mapping-defined account groups; month/prior/ytd aggregation"
+    computation = {
+        "source": source,
+        "method": method,
+        "metrics": {
+            "ebitda": {"month": "2800"},
+            "egt": {"month": "-2250"},
+        },
+        "reconciliation": {
+            "source_account_count": 20,
+            "mapped_account_count": 20,
+            "ignored_account_count": 0,
+        },
+    }
+    management = {
+        "mode": "deterministic_fallback",
+        "summary": "A. B. C.",
+        "alarms": [],
+        "actions": ["a", "b", "c"],
+        "citations": {"source": source, "method": method},
+    }
+    context = ProjectContext(
+        project_root=Path("."),
+        config={"quality_threshold": 8},
+        manifest={"workflow": {"name": "kmu-controlling"}},
+    )
+
+    result = Verifier().verify(
+        "\n".join((json.dumps(computation), json.dumps(management))),
+        task="Erstelle den belegten Monatsreport",
+        context=context,
+    )
+
+    assert result.passed is True
+    assert result.score >= 8
+    assert result.metadata["mode"] == "deterministic_controlling"
+
+
+def test_scheduler_missing_data_status_passes_without_verifier_llm(monkeypatch):
+    monkeypatch.setattr(
+        brain,
+        "evaluate",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("scheduler status needs no verifier LLM")
+        ),
+    )
+    signal = {
+        "event_id": "schedule-1234567890abcdef1234",
+        "input_count": 0,
+        "missing_required_groups": [
+            {"id": "actuals", "count": 0, "minimum": 1},
+            {"id": "account_mapping", "count": 0, "minimum": 1},
+        ],
+        "reason": "missing_data",
+        "reasons": ["missing_data"],
+        "required_input_counts": [0, 0],
+    }
+    task = "Profil missing_data.\nSCHEDULER_SIGNAL: " + json.dumps(signal)
+    output = (
+        "Planned step recorded: Scheduled status missing_data: required input "
+        "groups are incomplete: actuals, account_mapping. KPI computation and "
+        "external actions remain paused.\n"
+        "Planned step recorded: Wait for the required inputs and resume only "
+        "after the scheduler validates every required group."
+    )
+    context = ProjectContext(
+        project_root=Path("."),
+        config={"quality_threshold": 8},
+        manifest={"workflow": {"name": "kmu-controlling"}},
+    )
+
+    result = Verifier().verify(output, task=task, context=context)
+
+    assert result.passed is True
+    assert result.metadata["mode"] == "deterministic_missing_data"

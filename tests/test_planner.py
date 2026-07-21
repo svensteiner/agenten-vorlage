@@ -38,6 +38,63 @@ def test_rules_expand_manifest_workflow_steps(monkeypatch):
     assert plan.confidence == 0.74
 
 
+def test_kmu_workflow_uses_rules_without_llm_and_routes_kpi_compute(monkeypatch):
+    calls = []
+    monkeypatch.setattr(brain, "complete", lambda *a, **k: calls.append((a, k)))
+    manifest = {"workflow": {"name": "kmu-controlling", "steps": [
+        "Validate input", "Calculate KPIs deterministically", "Draft report",
+    ]}}
+    plan = Planner().draft("scheduled review", project=_ctx(manifest=manifest), tools={"compute": _Tool()})
+    compute = next(step for step in plan.steps if step.tool == "compute")
+    assert calls == []
+    assert compute.input == '{"operation":"kmu_report","source":"auto"}'
+
+
+def test_scheduler_missing_data_short_circuits_to_toolless_status_wait(monkeypatch):
+    calls = []
+    monkeypatch.setattr(brain, "complete", lambda *a, **k: calls.append((a, k)))
+    manifest = {
+        "workflow": {
+            "name": "kmu-controlling",
+            "steps": [
+                "Validate input",
+                "Calculate KPIs deterministically",
+                "Draft report",
+            ],
+        },
+    }
+    task = (
+        "Profil missing_data: Stoppe KPI-Aussagen.\n"
+        'SCHEDULER_SIGNAL: {"missing_required_groups": '
+        '[{"count": 0, "id": "actuals", "minimum": 1}], '
+        '"reason": "missing_data"}'
+    )
+
+    plan = Planner().draft(
+        task,
+        project=_ctx(manifest=manifest),
+        tools={"compute": _Tool(), "report": _Tool(), "notify": _Tool()},
+    )
+
+    assert calls == []
+    assert [step.action for step in plan.steps] == ["status", "wait"]
+    assert all(step.tool is None for step in plan.steps)
+    assert "actuals" in plan.steps[0].description
+    assert plan.workflow_hint == "kmu-controlling"
+
+
+def test_llm_planner_honors_manifest_model(monkeypatch):
+    called = {}
+
+    def complete(*args, **kwargs):
+        called["model"] = kwargs.get("model")
+        return '{"steps":[{"id":"s","action":"inspect","description":"x"}]}'
+
+    monkeypatch.setattr(brain, "complete", complete)
+    Planner().draft("task", project=_ctx(manifest={"model": {"planner": "cheap-model"}}))
+    assert called["model"] == "cheap-model"
+
+
 def test_rules_match_named_workflow_from_project(monkeypatch):
     monkeypatch.setattr(brain, "complete", lambda *a, **k: "")
     ctx = _ctx(workflows={"daily_report": "First line of the workflow\nmore"})

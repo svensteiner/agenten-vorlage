@@ -3,12 +3,14 @@
 agent_cli.py liegt im Repo-Root (kein Paket), daher wird es — wie test_check.py
 es für tools/check.py tut — per importlib geladen.
 """
+
 import importlib.util
 import json
 import sys
 from pathlib import Path
 
 import pytest
+from core.scheduling import ScheduledDecision
 
 _CLI_PATH = Path(__file__).resolve().parent.parent / "agent_cli.py"
 _spec = importlib.util.spec_from_file_location("agent_cli", _CLI_PATH)
@@ -60,6 +62,7 @@ def generated_project(tmp_path: Path) -> Path:
 
 # ─── SelfTestReport ─────────────────────────────────────────────────────────
 
+
 class TestSelfTestReport:
     def test_ok_when_no_problems(self):
         r = agent_cli.SelfTestReport(passed=("a",), problems=())
@@ -76,6 +79,7 @@ class TestSelfTestReport:
 
 
 # ─── _self_test_project — Happy path ─────────────────────────────────────────
+
 
 class TestSelfTestHappyPath:
     def test_freshly_generated_project_passes(self, generated_project: Path):
@@ -106,6 +110,7 @@ class TestSelfTestHappyPath:
 
 # ─── _self_test_project — Negative paths ─────────────────────────────────────
 
+
 class TestSelfTestNegativePaths:
     def test_missing_core_file_is_a_problem(self, generated_project: Path):
         (generated_project / "project" / "SOUL.md").unlink()
@@ -114,26 +119,40 @@ class TestSelfTestNegativePaths:
         assert any("SOUL.md" in p for p in report.problems)
 
     def test_empty_core_file_is_a_problem(self, generated_project: Path):
-        (generated_project / "project" / "workflows" / "main.md").write_text("", encoding="utf-8")
+        (generated_project / "project" / "workflows" / "main.md").write_text(
+            "", encoding="utf-8"
+        )
         report = agent_cli._self_test_project(generated_project)
         assert not report.ok
         assert any("main.md" in p for p in report.problems)
 
     def test_invalid_json_is_a_problem(self, generated_project: Path):
-        (generated_project / "project" / "manifest.json").write_text("{ kaputt", encoding="utf-8")
+        (generated_project / "project" / "manifest.json").write_text(
+            "{ kaputt", encoding="utf-8"
+        )
         report = agent_cli._self_test_project(generated_project)
         assert not report.ok
         assert any("ungültiges JSON" in p for p in report.problems)
 
-    def test_manifest_skill_without_skill_md_is_a_problem(self, generated_project: Path):
+    def test_manifest_skill_without_skill_md_is_a_problem(
+        self, generated_project: Path
+    ):
         # Skill-Datei löschen, obwohl das Manifest sie weiterhin listet.
-        skill_md = generated_project / "project" / "skills" / "earnings-analysieren" / "SKILL.md"
+        skill_md = (
+            generated_project
+            / "project"
+            / "skills"
+            / "earnings-analysieren"
+            / "SKILL.md"
+        )
         skill_md.unlink()
         report = agent_cli._self_test_project(generated_project)
         assert not report.ok
         assert any("earnings-analysieren" in p for p in report.problems)
 
-    def test_manifest_missing_connector_file_is_a_problem(self, generated_project: Path):
+    def test_manifest_missing_connector_file_is_a_problem(
+        self, generated_project: Path
+    ):
         (generated_project / "project" / "connectors.yaml").unlink()
         report = agent_cli._self_test_project(generated_project)
         assert not report.ok
@@ -141,6 +160,7 @@ class TestSelfTestNegativePaths:
 
 
 # ─── CLI-Verdrahtung ─────────────────────────────────────────────────────────
+
 
 class TestParser:
     def test_setup_accepts_no_self_test_flag(self):
@@ -155,20 +175,36 @@ class TestParser:
 
     def test_factory_commands_accept_instance_identity(self):
         parser = agent_cli.build_parser()
-        create = parser.parse_args(["create", "--tenant", "acme", "--agent", "inbox", "--preset", "kmu-controlling"])
+        create = parser.parse_args(
+            [
+                "create",
+                "--tenant",
+                "acme",
+                "--agent",
+                "inbox",
+                "--preset",
+                "kmu-controlling",
+            ]
+        )
         validate = parser.parse_args(["validate", "--instance", "instances/acme/inbox"])
-        run = parser.parse_args(["run", "--instance", "instances/acme/inbox", "--task", "smoke"])
+        run = parser.parse_args(["run", "--instance", "instances/acme/inbox", "--loop"])
         assert (create.tenant, create.agent) == ("acme", "inbox")
         assert create.preset == "kmu-controlling"
         assert validate.instance == "instances/acme/inbox"
-        assert run.task == "smoke"
+        assert run.loop is True
 
 
 class TestInstanceFactory:
-    def test_create_kmu_controlling_preset_has_hourly_adaptive_schedule_and_safe_defaults(self, tmp_path):
+    def test_create_kmu_controlling_preset_has_hourly_adaptive_schedule_and_safe_defaults(
+        self, tmp_path
+    ):
         args = agent_cli.argparse.Namespace(
-            tenant="Acme GmbH", agent="Controlling", output=str(tmp_path), full=False,
-            no_self_test=False, preset="kmu-controlling",
+            tenant="Acme GmbH",
+            agent="Controlling",
+            output=str(tmp_path),
+            full=False,
+            no_self_test=False,
+            preset="kmu-controlling",
         )
 
         assert agent_cli.cmd_create(args) == 0
@@ -177,19 +213,40 @@ class TestInstanceFactory:
         manifest = json.loads((project / "manifest.json").read_text(encoding="utf-8"))
 
         assert config["loop_interval_minutes"] == 60
+        assert config["quality_threshold"] == 8
         schedule = config["adaptive_schedule"]
         assert schedule["schema_version"] == 1
         assert schedule["enabled"] is True
-        assert set(schedule["prompt_profiles"]) == {
-            "new_input", "changed_input", "recovery", "pending_approval", "periodic_review"
-        }
+        assert {
+            "new_input",
+            "changed_input",
+            "recovery",
+            "pending_approval",
+            "periodic_review",
+        }.issubset(schedule["prompt_profiles"])
+        assert "approval_pending" not in schedule["prompt_profiles"]
         assert schedule["max_consecutive_failures"] >= 1
-        assert manifest["approval_required_for"] == ["external communication", "send", "publish"]
+        assert manifest["approval_required_for"] == [
+            "external communication",
+            "send",
+            "publish",
+        ]
+        instance = project.parent
+        assert all(
+            (instance / directory).is_dir()
+            for directory in ("inbox", "data", "imports", "state", "artifacts")
+        )
 
-    def test_kmu_controlling_preset_writes_operating_files_and_preserves_identity(self, tmp_path):
+    def test_kmu_controlling_preset_writes_operating_files_and_preserves_identity(
+        self, tmp_path
+    ):
         args = agent_cli.argparse.Namespace(
-            tenant="Acme", agent="Finance Pilot", output=str(tmp_path), full=False,
-            no_self_test=True, preset="kmu-controlling",
+            tenant="Acme",
+            agent="Finance Pilot",
+            output=str(tmp_path),
+            full=False,
+            no_self_test=True,
+            preset="kmu-controlling",
         )
 
         assert agent_cli.cmd_create(args) == 0
@@ -198,31 +255,56 @@ class TestInstanceFactory:
         manifest = json.loads((project / "manifest.json").read_text(encoding="utf-8"))
 
         assert config["instance"] == {"tenant_id": "acme", "agent_id": "finance-pilot"}
-        assert manifest["instance"] == {"tenant_id": "acme", "agent_id": "finance-pilot"}
+        assert manifest["instance"] == {
+            "tenant_id": "acme",
+            "agent_id": "finance-pilot",
+        }
         assert (project / "SOUL.md").is_file()
         assert (project / "workflows" / "main.md").is_file()
         assert (project / "knowledge" / "kpi-rules.md").is_file()
-        assert "deterministisch" in (project / "SOUL.md").read_text(encoding="utf-8").lower()
+        assert (
+            "deterministisch"
+            in (project / "SOUL.md").read_text(encoding="utf-8").lower()
+        )
 
-    def test_create_places_identity_in_separate_tenant_agent_root(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+    def test_create_places_identity_in_separate_tenant_agent_root(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            agent_cli, "_collect_answers", lambda mode="beginner": _make_answers()
+        )
         args = agent_cli.argparse.Namespace(
-            tenant="Acme GmbH", agent="Inbox Triage", output=str(tmp_path), full=False,
+            tenant="Acme GmbH",
+            agent="Inbox Triage",
+            output=str(tmp_path),
+            full=False,
             no_self_test=False,
         )
         assert agent_cli.cmd_create(args) == 0
         instance = tmp_path / "acme-gmbh" / "inbox-triage"
-        config = json.loads((instance / "project" / "config.json").read_text(encoding="utf-8"))
-        assert config["instance"] == {"tenant_id": "acme-gmbh", "agent_id": "inbox-triage"}
+        config = json.loads(
+            (instance / "project" / "config.json").read_text(encoding="utf-8")
+        )
+        assert config["instance"] == {
+            "tenant_id": "acme-gmbh",
+            "agent_id": "inbox-triage",
+        }
 
-    def test_create_refuses_existing_target_without_merging(self, tmp_path, monkeypatch):
+    def test_create_refuses_existing_target_without_merging(
+        self, tmp_path, monkeypatch
+    ):
         target = tmp_path / "acme" / "inbox"
         target.mkdir(parents=True)
         sentinel = target / "keep.txt"
         sentinel.write_text("do not overwrite", encoding="utf-8")
-        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+        monkeypatch.setattr(
+            agent_cli, "_collect_answers", lambda mode="beginner": _make_answers()
+        )
         args = agent_cli.argparse.Namespace(
-            tenant="acme", agent="inbox", output=str(tmp_path), full=False,
+            tenant="acme",
+            agent="inbox",
+            output=str(tmp_path),
+            full=False,
             no_self_test=False,
         )
         assert agent_cli.cmd_create(args) == 1
@@ -230,43 +312,271 @@ class TestInstanceFactory:
 
     def test_validate_detects_identity_mismatch(self, tmp_path):
         instance = tmp_path / "acme" / "inbox"
-        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="other")
+        agent_cli._write_template_project(
+            instance, _make_answers(), tenant_id="acme", agent_id="other"
+        )
         report = agent_cli._validate_instance(instance)
         assert not report.ok
         assert any("agent_id" in problem for problem in report.problems)
 
-    def test_run_uses_selected_instance_root_and_identity(self, tmp_path, monkeypatch, capsys):
+    def test_run_uses_selected_instance_root_and_identity(
+        self, tmp_path, monkeypatch, capsys
+    ):
         instance = tmp_path / "acme" / "inbox"
-        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="inbox")
+        agent_cli._write_template_project(
+            instance, _make_answers(), tenant_id="acme", agent_id="inbox"
+        )
         called = {}
 
         class FakeOrchestrator:
             def __init__(self, root):
                 called["root"] = Path(root)
 
-            def run(self, task, *, tenant=None):
-                called.update(task=task, tenant=tenant)
+            def run(self, task, *, tools=None, tenant=None):
+                called.update(task=task, tools=tools, tenant=tenant)
                 return type("Result", (), {"success": True})()
 
         monkeypatch.setattr(agent_cli, "_instance_orchestrator", FakeOrchestrator)
-        args = agent_cli.argparse.Namespace(instance=str(instance), task="offline smoke", tenant=None, extra=[])
+        args = agent_cli.argparse.Namespace(
+            instance=str(instance), task="offline smoke", tenant=None, extra=[]
+        )
         assert agent_cli.cmd_run(args) == 0
-        assert called == {"root": instance, "task": "offline smoke", "tenant": "acme"}
+        assert called == {
+            "root": instance,
+            "task": "offline smoke",
+            "tools": {},
+            "tenant": "acme",
+        }
         assert "acme/inbox" in capsys.readouterr().out
 
-    def test_run_rejects_tenant_that_differs_from_instance(self, tmp_path, monkeypatch, capsys):
+    def test_one_shot_kmu_run_receives_local_controlling_tools(
+        self, tmp_path, monkeypatch
+    ):
+        instance = tmp_path / "acme" / "controlling"
+        agent_cli._write_template_project(
+            instance,
+            agent_cli._kmu_controlling_answers(),
+            tenant_id="acme",
+            agent_id="controlling",
+        )
+        agent_cli._apply_preset(instance, "kmu-controlling")
+        called = {}
+
+        class FakeOrchestrator:
+            def __init__(self, root):
+                called["root"] = Path(root)
+
+            def run(self, task, *, tools=None, tenant=None):
+                called.update(task=task, tools=tools, tenant=tenant)
+                return type("Result", (), {"success": True})()
+
+        monkeypatch.setattr(agent_cli, "_instance_orchestrator", FakeOrchestrator)
+        args = agent_cli.argparse.Namespace(
+            instance=str(instance), task="calculate KPIs", tenant=None, extra=[]
+        )
+
+        assert agent_cli.cmd_run(args) == 0
+        assert set(called["tools"]) == {"read", "compute", "report"}
+        assert called["tenant"] == "acme"
+
+    def test_run_rejects_tenant_that_differs_from_instance(
+        self, tmp_path, monkeypatch, capsys
+    ):
         instance = tmp_path / "acme" / "inbox"
-        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="inbox")
+        agent_cli._write_template_project(
+            instance, _make_answers(), tenant_id="acme", agent_id="inbox"
+        )
         monkeypatch.setattr(
             agent_cli,
             "_instance_orchestrator",
-            lambda root: pytest.fail("orchestrator must not start for a tenant mismatch"),
+            lambda root: pytest.fail(
+                "orchestrator must not start for a tenant mismatch"
+            ),
         )
         args = agent_cli.argparse.Namespace(
             instance=str(instance), task="offline smoke", tenant="other", extra=[]
         )
         assert agent_cli.cmd_run(args) == 1
         assert "other" in capsys.readouterr().out
+
+    def test_instance_schedule_cycle_uses_instance_root_and_preserves_tenant(
+        self, tmp_path, monkeypatch
+    ):
+        instance = tmp_path / "acme" / "controlling"
+        agent_cli._write_template_project(
+            instance,
+            agent_cli._kmu_controlling_answers(),
+            tenant_id="acme",
+            agent_id="controlling",
+        )
+        agent_cli._apply_preset(instance, "kmu-controlling")
+        config = json.loads(
+            (instance / "project" / "config.json").read_text(encoding="utf-8")
+        )
+        calls = {}
+
+        class FakeOrchestrator:
+            def run(self, task, *, tools=None, tenant=None, request_id=None):
+                calls.update(
+                    task=task, tools=tools, tenant=tenant, request_id=request_id
+                )
+                return type("Result", (), {"success": True})()
+
+        def fake_cycle(*, root, agent_config, orchestrator, tools):
+            calls.update(root=root, agent_config=agent_config, tools_argument=tools)
+            orchestrator.run("scheduled", tools=tools, request_id="request-1")
+            return ScheduledDecision(True, "new_input", "request-1", "scheduled")
+
+        monkeypatch.setattr(agent_cli, "run_scheduled_cycle", fake_cycle)
+        agent_cli._run_instance_schedule_cycle(
+            instance, config, "acme", FakeOrchestrator()
+        )
+
+        assert calls["root"] == instance
+        assert calls["agent_config"] == config
+        assert calls["tenant"] == "acme"
+        assert calls["request_id"] == "request-1"
+        assert set(calls["tools_argument"]) == {"read", "compute", "report"}
+
+    def test_instance_schedule_idle_does_not_run_orchestrator(
+        self, tmp_path, monkeypatch
+    ):
+        instance = tmp_path / "acme" / "controlling"
+        config = {"instance": {"tenant_id": "acme", "agent_id": "controlling"}}
+
+        class FailingOrchestrator:
+            def run(self, *args, **kwargs):
+                pytest.fail("idle schedule must not invoke the orchestrator")
+
+        monkeypatch.setattr(
+            agent_cli,
+            "run_scheduled_cycle",
+            lambda **kwargs: ScheduledDecision(False, "idle"),
+        )
+        decision = agent_cli._run_instance_schedule_cycle(
+            instance, config, "acme", FailingOrchestrator()
+        )
+        assert decision.reason == "idle"
+
+    def test_fresh_kmu_missing_data_cycle_records_success_and_waits(
+        self, tmp_path, monkeypatch
+    ):
+        import brain
+        from core.controlling import ControllingComputeTool, ControllingReportTool
+
+        instance = tmp_path / "acme" / "controlling"
+        agent_cli._write_template_project(
+            instance,
+            agent_cli._kmu_controlling_answers(),
+            tenant_id="acme",
+            agent_id="controlling",
+        )
+        agent_cli._apply_preset(instance, "kmu-controlling")
+        config = json.loads(
+            (instance / "project" / "config.json").read_text(encoding="utf-8")
+        )
+        monkeypatch.setattr(
+            brain,
+            "complete",
+            lambda *a, **k: pytest.fail("missing-data status must not call a planner LLM"),
+        )
+        monkeypatch.setattr(
+            brain,
+            "evaluate",
+            lambda *a, **k: {
+                "score": 5,
+                "passes": False,
+                "feedback": ["LLM nicht verfuegbar"],
+            },
+        )
+        monkeypatch.setattr(
+            ControllingComputeTool,
+            "safe_run",
+            lambda *a, **k: pytest.fail("missing-data status must not compute KPIs"),
+        )
+        monkeypatch.setattr(
+            ControllingReportTool,
+            "safe_run",
+            lambda *a, **k: pytest.fail("missing-data status must not write a report"),
+        )
+        orchestrator = agent_cli._instance_orchestrator(instance)
+
+        first = agent_cli._run_instance_schedule_cycle(
+            instance, config, "acme", orchestrator
+        )
+        repeated = agent_cli._run_instance_schedule_cycle(
+            instance, config, "acme", orchestrator
+        )
+
+        assert first.should_enqueue and first.reason == "missing_data"
+        assert repeated.should_enqueue is False
+        assert repeated.reason == "already_enqueued"
+        state = json.loads(
+            (instance / "state" / "adaptive-schedule.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert state["last_result"] == "success"
+        assert state["consecutive_failures"] == 0
+        runs = json.loads(
+            (instance / "state" / "core" / "runs.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert len(runs) == 1
+        assert [step["action"] for step in runs[0]["steps"]] == ["status", "wait"]
+        assert all(step["tool"] is None for step in runs[0]["steps"])
+
+    def test_run_loop_uses_instance_config_interval(self, tmp_path, monkeypatch):
+        instance = tmp_path / "acme" / "controlling"
+        agent_cli._write_template_project(
+            instance, _make_answers(), tenant_id="acme", agent_id="controlling"
+        )
+        config_path = instance / "project" / "config.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["loop_interval_minutes"] = 60
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        calls = {}
+
+        monkeypatch.setattr(
+            agent_cli,
+            "_instance_orchestrator",
+            lambda root: calls.setdefault("root", root) or object(),
+        )
+        monkeypatch.setattr(
+            agent_cli,
+            "_run_instance_loop",
+            lambda root, cfg, tenant, orchestrator: calls.update(
+                loop=(root, cfg["loop_interval_minutes"], tenant, orchestrator)
+            ),
+        )
+        args = agent_cli.argparse.Namespace(
+            instance=str(instance), task=None, tenant=None, extra=[], loop=True
+        )
+
+        assert agent_cli.cmd_run(args) == 0
+        assert calls["loop"][:3] == (instance, 60, "acme")
+
+    def test_instance_loop_survives_cycle_error_until_stopped(
+        self, tmp_path, monkeypatch
+    ):
+        calls = []
+
+        def failing_cycle(*args, **kwargs):
+            calls.append("cycle")
+            raise RuntimeError("temporary failure")
+
+        def stop_after_wait(seconds):
+            calls.append(("wait", seconds))
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(agent_cli, "_run_instance_schedule_cycle", failing_cycle)
+        monkeypatch.setattr(agent_cli.time, "sleep", stop_after_wait)
+        agent_cli._run_instance_loop(
+            tmp_path, {"loop_interval_minutes": 60}, "acme", object()
+        )
+
+        assert calls == ["cycle", ("wait", 3600)]
 
 
 class TestCmdSetupSelfTest:
@@ -276,19 +586,25 @@ class TestCmdSetupSelfTest:
             output=str(out_root), force=True, full=False, no_self_test=False
         )
         # Fragen umgehen: _collect_answers durch feste Antworten ersetzen.
-        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+        monkeypatch.setattr(
+            agent_cli, "_collect_answers", lambda mode="beginner": _make_answers()
+        )
         rc = agent_cli.cmd_setup(args)
         captured = capsys.readouterr()
         assert rc == 0
         assert "Selbsttest" in captured.out
         assert "einsatzbereit" in captured.out
 
-    def test_self_test_failure_returns_nonzero(self, tmp_path: Path, capsys, monkeypatch):
+    def test_self_test_failure_returns_nonzero(
+        self, tmp_path: Path, capsys, monkeypatch
+    ):
         out_root = tmp_path / "out"
         args = agent_cli.argparse.Namespace(
             output=str(out_root), force=True, full=False, no_self_test=False
         )
-        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+        monkeypatch.setattr(
+            agent_cli, "_collect_answers", lambda mode="beginner": _make_answers()
+        )
 
         # Nach dem Schreiben eine Kern-Datei entfernen, damit der Selbsttest scheitert.
         real_write = agent_cli._write_template_project

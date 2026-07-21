@@ -46,10 +46,89 @@ class Planner:
         project: ProjectContext | None = None,
         tools: dict[str, Any] | None = None,
     ) -> Plan:
-        llm_plan = self._draft_with_llm(task, context=context, project=project, tools=tools)
+        scheduled_status = self._draft_scheduled_status(task, project=project)
+        if scheduled_status is not None:
+            return scheduled_status
+        if self._uses_deterministic_kmu_workflow(project):
+            return self._draft_with_rules(
+                task, context=context, project=project, tools=tools
+            )
+        llm_plan = self._draft_with_llm(
+            task, context=context, project=project, tools=tools
+        )
         if llm_plan and llm_plan.steps:
             return llm_plan
-        return self._draft_with_rules(task, context=context, project=project, tools=tools)
+        return self._draft_with_rules(
+            task, context=context, project=project, tools=tools
+        )
+
+    @staticmethod
+    def _uses_deterministic_kmu_workflow(project: ProjectContext | None) -> bool:
+        manifest = (project.manifest if project else {}) or {}
+        workflow = manifest.get("workflow", {}) if isinstance(manifest, dict) else {}
+        return isinstance(workflow, dict) and workflow.get("name") == "kmu-controlling"
+
+    def _draft_scheduled_status(
+        self, task: str, *, project: ProjectContext | None
+    ) -> Plan | None:
+        """Turn trusted scheduler stop signals into a deterministic no-tool plan."""
+        signal: dict[str, Any] | None = None
+        for line in task.splitlines():
+            if not line.startswith("SCHEDULER_SIGNAL:"):
+                continue
+            try:
+                parsed = json.loads(line.removeprefix("SCHEDULER_SIGNAL:").strip())
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if isinstance(parsed, dict):
+                signal = parsed
+        if signal is None or signal.get("reason") != "missing_data":
+            return None
+
+        raw_groups = signal.get("missing_required_groups", [])
+        group_ids = [
+            str(group["id"])
+            for group in raw_groups
+            if isinstance(group, dict)
+            and isinstance(group.get("id"), str)
+            and re.fullmatch(r"[a-z][a-z0-9_-]{0,63}", group["id"])
+        ]
+        group_note = f": {', '.join(group_ids)}" if group_ids else ""
+        manifest = (project.manifest if project else {}) or {}
+        workflow = manifest.get("workflow", {}) if isinstance(manifest, dict) else {}
+        workflow_name = workflow.get("name") if isinstance(workflow, dict) else None
+        metadata = {
+            "source": "scheduler",
+            "status": "missing_data",
+            "missing_required_groups": group_ids,
+        }
+        return Plan(
+            task=task,
+            workflow_hint=str(workflow_name) if workflow_name else None,
+            confidence=1.0,
+            notes=["Deterministic missing-data stop; LLM planning skipped."],
+            steps=[
+                PlanStep(
+                    id="missing_data_status",
+                    action="status",
+                    description=(
+                        f"Scheduled status missing_data: required input groups "
+                        f"are incomplete{group_note}. "
+                        "KPI computation and external actions remain paused."
+                    ),
+                    metadata=dict(metadata),
+                ),
+                PlanStep(
+                    id="missing_data_wait",
+                    action="wait",
+                    description=(
+                        "Wait for the required inputs and resume only after the "
+                        "scheduler validates every required group."
+                    ),
+                    metadata=dict(metadata),
+                ),
+            ],
+        )
 
     def _draft_with_rules(
         self,
@@ -63,7 +142,9 @@ class Planner:
         tools = tools or {}
 
         manifest = (project.manifest if project else {}) or {}
-        workflow_manifest = manifest.get("workflow", {}) if isinstance(manifest, dict) else {}
+        workflow_manifest = (
+            manifest.get("workflow", {}) if isinstance(manifest, dict) else {}
+        )
         workflow_name = workflow_manifest.get("name")
         workflow_steps = workflow_manifest.get("steps") or []
 
@@ -73,7 +154,10 @@ class Planner:
 
         if project and project.workflows:
             for name, text in project.workflows.items():
-                if name.replace("_", " ") in normalized or name.replace("-", " ") in normalized:
+                if (
+                    name.replace("_", " ") in normalized
+                    or name.replace("-", " ") in normalized
+                ):
                     plan.workflow_hint = name
                     plan.notes.append(f"Matched workflow: {name}")
                     if text:
@@ -81,7 +165,9 @@ class Planner:
                     break
 
         if workflow_steps:
-            normalized_steps = [str(step).strip() for step in workflow_steps if str(step).strip()]
+            normalized_steps = [
+                str(step).strip() for step in workflow_steps if str(step).strip()
+            ]
             for index, step_text in enumerate(normalized_steps, start=1):
                 if index == 1:
                     action = "inspect"
@@ -101,7 +187,10 @@ class Planner:
                         tool=tool_name,
                         input=tool_input,
                         requires_human=self._looks_risky(task, step_text),
-                        metadata={"workflow": plan.workflow_hint or "main", "source": "manifest"},
+                        metadata={
+                            "workflow": plan.workflow_hint or "main",
+                            "source": "manifest",
+                        },
                     )
                 )
         else:
@@ -144,7 +233,9 @@ class Planner:
             plan.notes.append(f"Purpose: {manifest['purpose']}")
         if manifest.get("success_criteria"):
             plan.notes.append(f"Success: {manifest['success_criteria']}")
-        plan.confidence = 0.74 if workflow_steps else (0.55 if plan.workflow_hint else 0.35)
+        plan.confidence = (
+            0.74 if workflow_steps else (0.55 if plan.workflow_hint else 0.35)
+        )
         return plan
 
     def _draft_with_llm(
@@ -211,14 +302,28 @@ class Planner:
                 "Only write-enabled subagents (leaf writers) may produce persistent output.",
             ],
         }
-        raw = brain.complete(system, json.dumps(user, ensure_ascii=False), temperature=0.2, max_tokens=900)
+        configured_model = (
+            manifest.get("model", {}).get("planner")
+            if isinstance(manifest.get("model"), dict)
+            else None
+        )
+        raw = brain.complete(
+            system,
+            json.dumps(user, ensure_ascii=False),
+            temperature=0.2,
+            max_tokens=900,
+            model=configured_model
+            if isinstance(configured_model, str) and configured_model.strip()
+            else None,
+        )
         parsed = self._parse_json(raw)
         if not parsed:
             return None
 
         plan = Plan(
             task=task,
-            workflow_hint=parsed.get("workflow_hint") or manifest.get("workflow", {}).get("name"),
+            workflow_hint=parsed.get("workflow_hint")
+            or manifest.get("workflow", {}).get("name"),
             confidence=float(parsed.get("confidence") or 0.78),
             notes=[str(note) for note in parsed.get("notes", []) if str(note).strip()],
         )
@@ -229,7 +334,9 @@ class Planner:
             tool_name = item.get("tool")
             if tool_name not in available:
                 tool_name = None
-            description = str(item.get("description") or item.get("action") or f"Step {index}").strip()
+            description = str(
+                item.get("description") or item.get("action") or f"Step {index}"
+            ).strip()
             plan.steps.append(
                 PlanStep(
                     id=str(item.get("id") or f"step_{index}"),
@@ -237,7 +344,8 @@ class Planner:
                     description=description,
                     tool=tool_name,
                     input=item.get("input") if item.get("input") is not None else None,
-                    requires_human=bool(item.get("requires_human")) or self._looks_risky(task, description),
+                    requires_human=bool(item.get("requires_human"))
+                    or self._looks_risky(task, description),
                     metadata={"source": "llm"},
                 )
             )
@@ -246,11 +354,20 @@ class Planner:
         self._sanitize_plan(plan, task=task, project=project)
         return plan if plan.steps else None
 
-    def _sanitize_plan(self, plan: Plan, *, task: str, project: ProjectContext | None) -> None:
+    def _sanitize_plan(
+        self, plan: Plan, *, task: str, project: ProjectContext | None
+    ) -> None:
         """Remove common LLM planning artifacts before execution."""
         wants_notification = self._mentions_any(
             task,
-            ["benachrichtig", "notify", "slack", "telegram", "meldung", "send notification"],
+            [
+                "benachrichtig",
+                "notify",
+                "slack",
+                "telegram",
+                "meldung",
+                "send notification",
+            ],
         )
         sanitized: list[PlanStep] = []
 
@@ -273,7 +390,9 @@ class Planner:
         verify = [step for step in sanitized if step.action == "verify"]
         plan.steps = non_verify + verify
 
-    def _file_input_is_plausible(self, tool_input: str, project: ProjectContext | None) -> tuple[bool, str]:
+    def _file_input_is_plausible(
+        self, tool_input: str, project: ProjectContext | None
+    ) -> tuple[bool, str]:
         if ":" not in tool_input:
             return False, "file input has no operation prefix"
         op, rest = tool_input.split(":", 1)
@@ -295,7 +414,9 @@ class Planner:
             return False, f"path does not exist: {path_text}"
         return True, ""
 
-    def _repair_project_file_input(self, tool_input: str, project: ProjectContext | None) -> str:
+    def _repair_project_file_input(
+        self, tool_input: str, project: ProjectContext | None
+    ) -> str:
         if project is None or ":" not in tool_input:
             return tool_input
         op, rest = tool_input.split(":", 1)
@@ -317,15 +438,40 @@ class Planner:
         lowered = text.lower()
         return any(needle in lowered for needle in needles)
 
-    def _guess_tool(self, task: str, step_text: str, tools: dict[str, Any]) -> tuple[str | None, str | None]:
+    def _guess_tool(
+        self, task: str, step_text: str, tools: dict[str, Any]
+    ) -> tuple[str | None, str | None]:
         original_text = f"{task} {step_text}"
         lowered = original_text.lower()
-        if "web_search" in tools and any(word in lowered for word in ["such", "recherch", "web", "aktuell", "latest"]):
+        if "web_search" in tools and any(
+            word in lowered for word in ["such", "recherch", "web", "aktuell", "latest"]
+        ):
             return "web_search", task
-        if "notify" in tools and any(word in lowered for word in ["benachrichtig", "notify", "slack", "telegram", "meldung"]):
+        if "notify" in tools and any(
+            word in lowered
+            for word in ["benachrichtig", "notify", "slack", "telegram", "meldung"]
+        ):
             return "notify", task
+        # Narrow offline route for the packaged controlling workflow.  The
+        # compute capability itself fails closed unless exactly one input is
+        # present, so the planner never invents a customer file name.
+        if (
+            "compute" in tools
+            and any(word in lowered for word in ["deterministic", "deterministisch"])
+            and any(
+                word in lowered
+                for word in ["kpi", "account", "konto", "calculate", "berechn"]
+            )
+        ):
+            return "compute", '{"operation":"kmu_report","source":"auto"}'
+        if "report" in tools and "evidence-based management update" in lowered:
+            return "report", '{"source":"auto"}'
         if "file" in tools:
-            match = re.search(r"(?P<op>lies|read|liste|list)\s+(?P<path>[\w./\\-]+)", original_text, re.I)
+            match = re.search(
+                r"(?P<op>lies|read|liste|list)\s+(?P<path>[\w./\\-]+)",
+                original_text,
+                re.I,
+            )
             if match:
                 op = "read" if match.group("op").lower() in {"lies", "read"} else "list"
                 return "file", f"{op}:{match.group('path')}"
@@ -352,7 +498,9 @@ class Planner:
         ]
         return any(term in text for term in risky_terms)
 
-    def _build_skill_hints(self, task: str, project: ProjectContext | None) -> dict[str, str] | None:
+    def _build_skill_hints(
+        self, task: str, project: ProjectContext | None
+    ) -> dict[str, str] | None:
         if not project or not project.skills:
             return None
         task_lower = task.lower()
@@ -366,7 +514,9 @@ class Planner:
                     }
         return None
 
-    def _build_steering_hints(self, task: str, project: ProjectContext | None) -> list[dict[str, Any]]:
+    def _build_steering_hints(
+        self, task: str, project: ProjectContext | None
+    ) -> list[dict[str, Any]]:
         if not project or not project.steering_examples:
             return []
         task_lower = task.lower()
@@ -375,12 +525,14 @@ class Planner:
             example_input = str(example.get("input", "")).lower()
             keywords = [w for w in example_input.split() if len(w) > 3]
             if any(kw in task_lower for kw in keywords):
-                matches.append({
-                    "input": example.get("input"),
-                    "expected_skill": example.get("expected_skill"),
-                    "expected_subagent": example.get("expected_subagent"),
-                    "notes": example.get("notes"),
-                })
+                matches.append(
+                    {
+                        "input": example.get("input"),
+                        "expected_skill": example.get("expected_skill"),
+                        "expected_subagent": example.get("expected_subagent"),
+                        "notes": example.get("notes"),
+                    }
+                )
         return matches[:3]
 
     def _parse_json(self, text: str) -> dict[str, Any]:
