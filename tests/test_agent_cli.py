@@ -4,6 +4,7 @@ agent_cli.py liegt im Repo-Root (kein Paket), daher wird es — wie test_check.p
 es für tools/check.py tut — per importlib geladen.
 """
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -151,6 +152,81 @@ class TestParser:
         parser = agent_cli.build_parser()
         args = parser.parse_args(["setup"])
         assert args.no_self_test is False
+
+    def test_factory_commands_accept_instance_identity(self):
+        parser = agent_cli.build_parser()
+        create = parser.parse_args(["create", "--tenant", "acme", "--agent", "inbox"])
+        validate = parser.parse_args(["validate", "--instance", "instances/acme/inbox"])
+        run = parser.parse_args(["run", "--instance", "instances/acme/inbox", "--task", "smoke"])
+        assert (create.tenant, create.agent) == ("acme", "inbox")
+        assert validate.instance == "instances/acme/inbox"
+        assert run.task == "smoke"
+
+
+class TestInstanceFactory:
+    def test_create_places_identity_in_separate_tenant_agent_root(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+        args = agent_cli.argparse.Namespace(
+            tenant="Acme GmbH", agent="Inbox Triage", output=str(tmp_path), full=False,
+            no_self_test=False,
+        )
+        assert agent_cli.cmd_create(args) == 0
+        instance = tmp_path / "acme-gmbh" / "inbox-triage"
+        config = json.loads((instance / "project" / "config.json").read_text(encoding="utf-8"))
+        assert config["instance"] == {"tenant_id": "acme-gmbh", "agent_id": "inbox-triage"}
+
+    def test_create_refuses_existing_target_without_merging(self, tmp_path, monkeypatch):
+        target = tmp_path / "acme" / "inbox"
+        target.mkdir(parents=True)
+        sentinel = target / "keep.txt"
+        sentinel.write_text("do not overwrite", encoding="utf-8")
+        monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
+        args = agent_cli.argparse.Namespace(
+            tenant="acme", agent="inbox", output=str(tmp_path), full=False,
+            no_self_test=False,
+        )
+        assert agent_cli.cmd_create(args) == 1
+        assert sentinel.read_text(encoding="utf-8") == "do not overwrite"
+
+    def test_validate_detects_identity_mismatch(self, tmp_path):
+        instance = tmp_path / "acme" / "inbox"
+        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="other")
+        report = agent_cli._validate_instance(instance)
+        assert not report.ok
+        assert any("agent_id" in problem for problem in report.problems)
+
+    def test_run_uses_selected_instance_root_and_identity(self, tmp_path, monkeypatch, capsys):
+        instance = tmp_path / "acme" / "inbox"
+        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="inbox")
+        called = {}
+
+        class FakeOrchestrator:
+            def __init__(self, root):
+                called["root"] = Path(root)
+
+            def run(self, task, *, tenant=None):
+                called.update(task=task, tenant=tenant)
+                return type("Result", (), {"success": True})()
+
+        monkeypatch.setattr(agent_cli, "_instance_orchestrator", FakeOrchestrator)
+        args = agent_cli.argparse.Namespace(instance=str(instance), task="offline smoke", tenant=None, extra=[])
+        assert agent_cli.cmd_run(args) == 0
+        assert called == {"root": instance, "task": "offline smoke", "tenant": "acme"}
+        assert "acme/inbox" in capsys.readouterr().out
+
+    def test_run_rejects_tenant_that_differs_from_instance(self, tmp_path, monkeypatch, capsys):
+        instance = tmp_path / "acme" / "inbox"
+        agent_cli._write_template_project(instance, _make_answers(), tenant_id="acme", agent_id="inbox")
+        monkeypatch.setattr(
+            agent_cli,
+            "_instance_orchestrator",
+            lambda root: pytest.fail("orchestrator must not start for a tenant mismatch"),
+        )
+        args = agent_cli.argparse.Namespace(
+            instance=str(instance), task="offline smoke", tenant="other", extra=[]
+        )
+        assert agent_cli.cmd_run(args) == 1
+        assert "other" in capsys.readouterr().out
 
 
 class TestCmdSetupSelfTest:

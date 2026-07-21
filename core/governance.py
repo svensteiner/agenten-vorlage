@@ -207,7 +207,9 @@ class GovernancePolicy:
         declared = {c.name for c in context.connectors}
         if not declared:
             return GovernanceDecision(
-                allowed=True,
+                allowed=False,
+                requires_approval=True,
+                metadata={"connector": connector_name, "declared": []},
                 reason="No connectors declared — connector check skipped.",
             )
         if connector_name in declared:
@@ -260,6 +262,8 @@ class GovernancePolicy:
 
     def _matched_approval_terms(self, terms: list[str], text: str) -> list[str]:
         aliases = {
+            "external communication": ["notify", "send", "email", "message", "slack", "teams"],
+            "write": ["write", "append", "create", "save", "file_write"],
             "delete": ["delete", "remove", "lösch", "loesch", "entfern"],
             "overwrite": ["overwrite", "replace", "überschreib", "ueberschreib", "ersetze"],
             "bulk changes": ["bulk", "massenänder", "massenaender", "massenhaft"],

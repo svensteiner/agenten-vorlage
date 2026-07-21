@@ -41,33 +41,44 @@ def _load_soul() -> str:
     return "Du bist ein autonomer KI-Agent. Handle verantwortungsbewusst."
 
 
-def _get_client(use_fast: bool = False):
+def _provider_for_model(model: str | None) -> str | None:
+    """Return the required provider for known model families, if any."""
+    normalized = (model or "").strip().lower()
+    if normalized.startswith("claude"):
+        return "anthropic"
+    if normalized.startswith(("gpt", "o1", "o3", "o4", "chatgpt")):
+        return "openai"
+    return None
+
+
+def _get_client(use_fast: bool = False, model: str | None = None):
     """Gibt (client, model, provider) zurück. Probiert OpenAI dann Anthropic.
 
     use_fast=True  → günstiges Modell für reflect/evaluate
     use_fast=False → smartes Modell für think/act/proactive
     """
     cfg = _load_config()
+    required_provider = _provider_for_model(model)
 
     # OpenAI
     api_key = os.getenv("OPENAI_API_KEY") or cfg.get("openai_api_key", "")
-    if api_key:
+    if api_key and required_provider in {None, "openai"}:
         try:
             from openai import OpenAI
             default = cfg.get("model", "gpt-4o-mini")
-            model = cfg.get("model_fast", default) if use_fast else cfg.get("model_smart", default)
-            return OpenAI(api_key=api_key), model, "openai"
+            selected_model = model or (cfg.get("model_fast", default) if use_fast else cfg.get("model_smart", default))
+            return OpenAI(api_key=api_key), selected_model, "openai"
         except ImportError:
             pass
 
     # Anthropic
     api_key = os.getenv("ANTHROPIC_API_KEY") or cfg.get("anthropic_api_key", "")
-    if api_key:
+    if api_key and required_provider in {None, "anthropic"}:
         try:
             import anthropic
             default = cfg.get("model_anthropic", "claude-haiku-4-5-20251001")
-            model = cfg.get("model_anthropic_fast", default) if use_fast else cfg.get("model_anthropic_smart", default)
-            return anthropic.Anthropic(api_key=api_key), model, "anthropic"
+            selected_model = model or (cfg.get("model_anthropic_fast", default) if use_fast else cfg.get("model_anthropic_smart", default))
+            return anthropic.Anthropic(api_key=api_key), selected_model, "anthropic"
         except ImportError:
             pass
 
@@ -75,9 +86,9 @@ def _get_client(use_fast: bool = False):
 
 
 def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int = 1000,
-              use_fast: bool = False) -> str:
+              use_fast: bool = False, model: str | None = None) -> str:
     """Ruft LLM auf. Gibt Text zurück oder leeren String bei Fehler."""
-    client, model, provider = _get_client(use_fast=use_fast)
+    client, selected_model, provider = _get_client(use_fast=use_fast, model=model)
 
     if provider == "fallback" or client is None:
         logger.warning("Kein LLM verfügbar — Keyword-Fallback aktiv")
@@ -86,7 +97,7 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
     try:
         if provider == "openai":
             response = client.chat.completions.create(
-                model=model,
+                model=selected_model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
@@ -103,7 +114,7 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
             # Prompt Caching: SOUL.md als ephemeral cache (bis zu 90% Kostenersparnis)
             # Cache TTL: 5 Minuten — rentiert sich bei mehreren Calls pro Session
             response = client.messages.create(
-                model=model,
+                model=selected_model,
                 max_tokens=max_tokens,
                 system=[{
                     "type": "text",
@@ -125,9 +136,16 @@ def _call_llm(system: str, user: str, temperature: float = 0.7, max_tokens: int 
 
 
 def complete(system: str, user: str, temperature: float = 0.7, max_tokens: int = 1000,
-             use_fast: bool = False) -> str:
+             use_fast: bool = False, model: str | None = None) -> str:
     """Public text-completion helper for orchestration layers and subagents."""
-    return _call_llm(system, user, temperature=temperature, max_tokens=max_tokens, use_fast=use_fast)
+    return _call_llm(
+        system,
+        user,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        use_fast=use_fast,
+        model=model,
+    )
 
 
 def _parse_json(text: str) -> dict:

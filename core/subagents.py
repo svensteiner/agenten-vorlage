@@ -112,6 +112,7 @@ Extra context:
             temperature=0.3,
             max_tokens=700,
             use_fast=True,
+            model=model_override,
         )
         if not text:
             text = (

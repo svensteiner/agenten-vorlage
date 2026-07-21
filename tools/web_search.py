@@ -12,6 +12,7 @@ from tools.base_tool import BaseTool
 
 class WebSearchTool(BaseTool):
     name = "web_search"
+    connector_name = "web-search"
     description = "Sucht im Web nach aktuellen Informationen. Input: Suchbegriff."
 
     def run(self, query: str) -> str:

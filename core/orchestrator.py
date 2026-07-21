@@ -170,6 +170,20 @@ class AgentOrchestrator:
             if step.action == "verify" and not step.tool:
                 continue
 
+            connector_names = self._connector_names_for_step(step, tools, context)
+            for connector_name in connector_names:
+                connector_gov = self.governance.allow_connector(connector_name, context=context)
+                if not connector_gov.allowed:
+                    return RunResult(
+                        task=task,
+                        success=False,
+                        plan=plan,
+                        governance=connector_gov,
+                        context=context,
+                        run_spec=run_spec,
+                        metadata={"status": "connector_blocked", "step": step.id, "connector": connector_name},
+                    )
+
             # ── Tool-scope gate (ADR-0019 O3/O5, WP-A1) ──────────────────────
             # The acting sub-agent's WorkerRegistry scope is enforced *in the
             # loop*, not merely available. When the orchestrator itself acts
@@ -317,6 +331,31 @@ class AgentOrchestrator:
                 "outputs": outputs,
             },
         )
+
+    def _connector_names_for_step(
+        self, step, tools: dict[str, Any], context: ProjectContext
+    ) -> tuple[str, ...]:
+        """Identify connector-backed tools without treating ordinary tools as connectors."""
+        metadata = getattr(step, "metadata", {}) or {}
+        explicit = metadata.get("connector")
+        if isinstance(explicit, str) and explicit:
+            return (explicit,)
+
+        tool = tools.get(step.tool) if step.tool else None
+        dynamic_names = getattr(tool, "connector_names", None)
+        if callable(dynamic_names):
+            names = dynamic_names(step.input or "")
+            return tuple(dict.fromkeys(str(name) for name in names if name))
+        declared_by_tool = getattr(tool, "connector_name", None)
+        if isinstance(declared_by_tool, str) and declared_by_tool:
+            return (declared_by_tool,)
+
+        candidates = [
+            connector.name
+            for connector in context.connectors
+            if step.tool and (step.tool == connector.name or step.tool in connector.tools_enabled)
+        ]
+        return (candidates[0],) if len(candidates) == 1 else ()
 
     def _dispatch_activity(self, step, scoped_tools: dict[str, Any]) -> StepResult:
         """Opaque execution-plane activity: perform the dispatch, box the result.

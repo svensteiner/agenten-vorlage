@@ -134,6 +134,12 @@ class TestScopedFileTool:
         result = scoped.safe_run("write:test.txt|content")
         assert "FEHLER" in result
 
+    def test_read_only_worker_cannot_append(self):
+        orig = self._make_original()
+        scoped = _ScopedFileTool(orig, ("file_read",))
+        result = scoped.safe_run("append:test.txt|content")
+        assert "FEHLER" in result
+
     def test_write_only_worker_can_write(self):
         orig = self._make_original()
         scoped = _ScopedFileTool(orig, ("file_write",))

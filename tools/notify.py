@@ -28,6 +28,13 @@ class NotifyTool(BaseTool):
     name = "notify"
     description = "Sendet eine Benachrichtigung via Telegram oder Slack. Input: Nachrichtentext."
 
+    def connector_names(self, input: str) -> tuple[str, ...]:
+        """Return every external channel this message would contact."""
+        prefix = input.split(":", 1)[0].lower().strip() if ":" in input else ""
+        if prefix in {"slack", "telegram"}:
+            return (prefix,)
+        return ("slack", "telegram")
+
     def run(self, input: str) -> str:
         channel = "all"
         message = input.strip()

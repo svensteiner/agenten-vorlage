@@ -23,6 +23,16 @@ connectors: []
 #     description: "Allgemeine Web-Suche"
 #     required: false
 #
+#   - name: slack
+#     url_env: SLACK_WEBHOOK_URL
+#     description: "Slack-Benachrichtigungen"
+#     required: false
+#
+#   - name: telegram
+#     url_env: TELEGRAM_BOT_TOKEN
+#     description: "Telegram-Benachrichtigungen"
+#     required: false
+#
 #   - name: capiq
 #     url_env: CAPIQ_MCP_URL
 #     description: "Capital IQ — Finanzdaten, Multiples, Filings"

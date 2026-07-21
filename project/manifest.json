@@ -50,9 +50,9 @@
     "max_payload_chars": 2000
   },
 
-  "autonomy_level": "max",
-  "approval_required_for": [],
-  "autonomy_note": "Currently running in full-autonomy mode (autonomy_level 'max'): the approval gate is OFF and the agent proceeds on all actions, logging risky ones for audit. Set autonomy_level to 'gated' (and populate approval_required_for) to restore the fail-closed default. See platform/security/00-security-architecture.md (fail-closed doctrine).",
+  "autonomy_level": "gated",
+  "approval_required_for": ["external communication", "write", "delete", "overwrite"],
+  "autonomy_note": "Approval is required by default (autonomy_level 'gated'). Set autonomy_level to 'max' only as an explicit, auditable opt-in for trusted low-risk deployments. See platform/security/00-security-architecture.md (fail-closed doctrine).",
   "tools": [
     "file",
     "notify",
@@ -63,7 +63,7 @@
     "language": "Deutsch",
     "tone": "klar und freundlich",
     "domain_expertise": "Project and process knowledge comes from the project pack.",
-    "hard_limits": "Full-autonomy mode: operates without a human approval gate; risky actions are logged for audit."
+    "hard_limits": "Human approval is required for high-risk actions and configured approval categories."
   },
   "workflow": {
     "name": "main",
@@ -73,7 +73,7 @@
       "Verify the result"
     ],
     "validation": "Verify the output before marking the task complete.",
-    "escalation": "Full-autonomy mode: log the decision and proceed instead of escalating."
+    "escalation": "Escalate high-risk actions and configured approval categories for human approval."
   },
   "memory": {
     "forever": "Roles, processes, and important project conventions.",

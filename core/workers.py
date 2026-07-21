@@ -140,7 +140,7 @@ class _ScopedFileTool:
         op = input_str.split(":")[0].strip().lower()
         if op in ("read", "list") and not self._can_read:
             return "FEHLER: Dieser Worker hat keinen Lesezugriff auf das Dateisystem."
-        if op == "write" and not self._can_write:
+        if op in ("write", "append") and not self._can_write:
             return "FEHLER: Dieser Worker hat keinen Schreibzugriff auf das Dateisystem."
         return self._orig.safe_run(input_str)
 

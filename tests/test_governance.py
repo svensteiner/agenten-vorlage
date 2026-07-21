@@ -57,7 +57,27 @@ def test_ordinary_action_allowed_when_gate_enabled():
     assert decision.allowed is True
 
 
+def test_default_context_requires_approval_for_high_risk_actions():
+    decision = GovernancePolicy().allow("send a notification", risk="high", context=_ctx())
+    assert decision.allowed is False
+    assert decision.requires_approval is True
+
+
 # ── Full-autonomy mode: ordinary actions pass, still flagged in metadata ────
+
+def test_default_external_communication_category_blocks_notify_tool():
+    ctx = _ctx(manifest={"approval_required_for": ["external communication"]})
+    decision = GovernancePolicy().allow("send update", context=ctx, tool="notify")
+    assert decision.allowed is False
+    assert decision.requires_approval is True
+
+
+def test_default_write_category_blocks_file_write_action():
+    ctx = _ctx(manifest={"approval_required_for": ["write"]})
+    decision = GovernancePolicy().allow("write the report", context=ctx, tool="file")
+    assert decision.allowed is False
+    assert decision.requires_approval is True
+
 
 def test_autonomy_flags_but_allows_ordinary_risky_wording():
     ctx = _ctx(manifest={"autonomy_level": "max"})
@@ -121,9 +141,11 @@ def test_allow_connector_undeclared_is_blocked():
     assert "slack" in decision.metadata["declared"]
 
 
-def test_allow_connector_none_declared_skips_check():
+def test_allow_connector_none_declared_is_blocked():
     decision = GovernancePolicy().allow_connector("anything", context=_ctx())
-    assert decision.allowed is True
+    assert decision.allowed is False
+    assert decision.requires_approval is True
+    assert decision.metadata["declared"] == []
 
 
 # ── Audit history ───────────────────────────────────────────────────────────

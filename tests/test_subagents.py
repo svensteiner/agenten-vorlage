@@ -87,12 +87,19 @@ def test_leaf_writer_none_when_no_writer():
 
 
 def test_run_uses_model_output(monkeypatch):
-    monkeypatch.setattr(brain, "complete", lambda *a, **k: "  the researched answer  ")
-    spec = SubagentSpec(name="researcher", keywords=["research"])
+    captured = {}
+
+    def _fake_complete(*args, **kwargs):
+        captured.update(kwargs)
+        return "  the researched answer  "
+
+    monkeypatch.setattr(brain, "complete", _fake_complete)
+    spec = SubagentSpec(name="researcher", keywords=["research"], model="gpt-4.1-mini")
     result = _mgr().run(spec, task="research X", context=_ctx())
     assert result["subagent"] == "researcher"
     assert result["output"] == "the researched answer"
     assert result["can_write"] is False
+    assert captured["model"] == "gpt-4.1-mini"
 
 
 def test_run_falls_back_when_model_empty(monkeypatch):
@@ -124,6 +131,23 @@ def test_default_subagent_model_from_manifest():
     ctx = _ctx(manifest={"model": {"subagents": "claude-sonnet-5"}})
     assert mgr._default_subagent_model(ctx) == "claude-sonnet-5"
     assert mgr._default_subagent_model(None) == "claude-haiku-4-5"
+
+
+def test_complete_forwards_model_override_to_model_call(monkeypatch):
+    captured = {}
+
+    def _fake_call(system, user, **kwargs):
+        captured.update(kwargs)
+        return "ok"
+
+    monkeypatch.setattr(brain, "_call_llm", _fake_call)
+    assert brain.complete("system", "user", model="gpt-4.1-mini") == "ok"
+    assert captured["model"] == "gpt-4.1-mini"
+
+
+def test_model_override_prefers_its_compatible_provider():
+    assert brain._provider_for_model("claude-haiku-4-5") == "anthropic"
+    assert brain._provider_for_model("gpt-4.1-mini") == "openai"
 
 
 def test_default_keywords_for_known_role():

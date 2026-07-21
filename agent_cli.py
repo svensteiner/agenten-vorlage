@@ -231,13 +231,15 @@ def _render_soul(ans: OnboardingAnswers) -> str:
     )
 
 
-def _render_config(ans: OnboardingAnswers) -> dict[str, Any]:
+def _render_config(
+    ans: OnboardingAnswers, *, tenant_id: str | None = None, agent_id: str | None = None
+) -> dict[str, Any]:
     quality = 7
     try:
         quality = int("".join(ch for ch in ans.quality_threshold if ch.isdigit()) or "7")
     except ValueError:
         pass
-    return {
+    config = {
         "project_name": ans.project_name,
         "agent_name": _slugify(ans.project_name),
         "mode": "development",
@@ -249,15 +251,21 @@ def _render_config(ans: OnboardingAnswers) -> dict[str, Any]:
         "memory_scope": ["core", "project"],
         "human_approval_required": [i.strip() for i in ans.require_approval_for.split(",") if i.strip()],
     }
+    if tenant_id and agent_id:
+        config["agent_name"] = agent_id
+        config["instance"] = {"tenant_id": tenant_id, "agent_id": agent_id}
+    return config
 
 
-def _render_manifest(ans: OnboardingAnswers) -> dict[str, Any]:
+def _render_manifest(
+    ans: OnboardingAnswers, *, tenant_id: str | None = None, agent_id: str | None = None
+) -> dict[str, Any]:
     workflow_steps = _split_items(
         ans.steps,
         ["Understand the request", "Use the approved tool or subagent", "Verify the result"],
     )
     skill_names = [_slugify(task) for task in ans.recurring_tasks if task]
-    return {
+    manifest = {
         "project_name": ans.project_name,
         "purpose": ans.main_problem,
         "customer_or_team": ans.customer_or_team,
@@ -298,6 +306,9 @@ def _render_manifest(ans: OnboardingAnswers) -> dict[str, Any]:
             "between_runs": ans.remember_between_runs,
         },
     }
+    if tenant_id and agent_id:
+        manifest["instance"] = {"tenant_id": tenant_id, "agent_id": agent_id}
+    return manifest
 
 
 def _render_workflow(ans: OnboardingAnswers) -> str:
@@ -518,7 +529,13 @@ def _render_steering_examples(ans: OnboardingAnswers) -> list[dict[str, Any]]:
 
 # ─── File writer ──────────────────────────────────────────────────────────────
 
-def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
+def _write_template_project(
+    target_dir: Path,
+    ans: OnboardingAnswers,
+    *,
+    tenant_id: str | None = None,
+    agent_id: str | None = None,
+) -> None:
     project_dir = target_dir / "project"
     docs_dir = target_dir / "docs"
     workflows_dir = project_dir / "workflows"
@@ -538,10 +555,10 @@ def _write_template_project(target_dir: Path, ans: OnboardingAnswers) -> None:
     # Core project files
     (project_dir / "SOUL.md").write_text(_render_soul(ans), encoding="utf-8")
     (project_dir / "config.json").write_text(
-        json.dumps(_render_config(ans), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(_render_config(ans, tenant_id=tenant_id, agent_id=agent_id), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     (project_dir / "manifest.json").write_text(
-        json.dumps(_render_manifest(ans), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(_render_manifest(ans, tenant_id=tenant_id, agent_id=agent_id), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     (project_dir / "AGENTS.md").write_text(
         dedent(f"""\
@@ -661,6 +678,33 @@ def _self_test_project(target_dir: Path) -> SelfTestReport:
     return SelfTestReport(passed=tuple(passed), problems=tuple(problems))
 
 
+def _instance_identity(target_dir: Path) -> tuple[str, str]:
+    """Return the tenant/agent identity encoded by an instance path."""
+    target_dir = Path(target_dir)
+    if len(target_dir.parts) < 2:
+        raise ValueError("Instanzpfad muss <tenant>/<agent> enthalten")
+    return target_dir.parent.name, target_dir.name
+
+
+def _validate_instance(target_dir: Path) -> SelfTestReport:
+    """Offline validation for an isolated factory instance."""
+    report = _self_test_project(target_dir)
+    passed = list(report.passed)
+    problems = list(report.problems)
+    try:
+        tenant_id, agent_id = _instance_identity(target_dir)
+        config = json.loads((target_dir / "project" / "config.json").read_text(encoding="utf-8"))
+        identity = config.get("instance") if isinstance(config, dict) else None
+        expected = {"tenant_id": tenant_id, "agent_id": agent_id}
+        if identity == expected:
+            passed.append(f"Instanzidentität bestätigt: {tenant_id}/{agent_id}")
+        else:
+            problems.append(f"Instanzidentität stimmt nicht: erwartet {expected}, erhalten {identity}")
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        problems.append(f"Instanzidentität konnte nicht geprüft werden: {exc}")
+    return SelfTestReport(passed=tuple(passed), problems=tuple(problems))
+
+
 def _print_self_test(report: SelfTestReport) -> None:
     print()
     print("  ── Selbsttest ──────────────────────────")
@@ -715,6 +759,33 @@ def cmd_setup(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_create(args: argparse.Namespace) -> int:
+    """Create one isolated tenant/agent instance; existing roots are immutable."""
+    tenant_id = _slugify(args.tenant)
+    agent_id = _slugify(args.agent)
+    output_root = Path(args.output or DEFAULT_OUTPUT_ROOT)
+    target_dir = output_root / tenant_id / agent_id
+    if target_dir.exists():
+        print(f"Instanz existiert bereits und wird nicht verändert: {target_dir}")
+        return 1
+
+    answers = _collect_answers(mode="full" if args.full else "beginner")
+    _write_template_project(target_dir, answers, tenant_id=tenant_id, agent_id=agent_id)
+    if not args.no_self_test:
+        report = _validate_instance(target_dir)
+        _print_self_test(report)
+        if not report.ok:
+            return 1
+    print(f"Instanz erstellt: {tenant_id}/{agent_id} ({target_dir})")
+    return 0
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    report = _validate_instance(Path(args.instance))
+    _print_self_test(report)
+    return 0 if report.ok else 1
+
+
 def cmd_status(_: argparse.Namespace) -> int:
     print("\nTemplate status")
     print("───────────────")
@@ -726,12 +797,39 @@ def cmd_status(_: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    instance = getattr(args, "instance", None)
+    if instance:
+        target_dir = Path(instance)
+        report = _validate_instance(target_dir)
+        if not report.ok:
+            _print_self_test(report)
+            return 1
+        tenant_id, agent_id = _instance_identity(target_dir)
+        requested_tenant = getattr(args, "tenant", None)
+        if requested_tenant and _slugify(requested_tenant) != tenant_id:
+            print(
+                f"Tenant '{requested_tenant}' passt nicht zur Instanz "
+                f"'{tenant_id}/{agent_id}'."
+            )
+            return 1
+        task = getattr(args, "task", None) or "offline smoke validation"
+        result = _instance_orchestrator(target_dir).run(task, tenant=tenant_id)
+        print(f"Instance: {tenant_id}/{agent_id}")
+        print(f"Project root: {target_dir}")
+        print(f"Success: {result.success}")
+        return 0 if result.success else 1
     from agent import main as agent_main
     if args.extra:
         import sys
         sys.argv = ["agent.py", *args.extra]
     agent_main()
     return 0
+
+
+def _instance_orchestrator(project_root: Path):
+    """Late import keeps factory validation usable without the legacy runner."""
+    from core.orchestrator import AgentOrchestrator
+    return AgentOrchestrator(project_root)
 
 
 # ─── Output helpers ───────────────────────────────────────────────────────────
@@ -814,7 +912,22 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--no-self-test", action="store_true", help="Selbsttest nach dem Erstellen überspringen")
         p.set_defaults(func=cmd_setup)
 
+    create = sub.add_parser("create", help="Create an isolated tenant/agent instance")
+    create.add_argument("--tenant", required=True, help="Tenant identifier")
+    create.add_argument("--agent", required=True, help="Agent identifier")
+    create.add_argument("--output", help="Instances root (default: instances)")
+    create.add_argument("--full", action="store_true", help="Ask all advanced questions")
+    create.add_argument("--no-self-test", action="store_true", help="Skip self-test")
+    create.set_defaults(func=cmd_create)
+
+    validate = sub.add_parser("validate", help="Validate an instance offline")
+    validate.add_argument("--instance", required=True, help="Instance path <tenant>/<agent>")
+    validate.set_defaults(func=cmd_validate)
+
     run = sub.add_parser("run", help="Agenten starten")
+    run.add_argument("--instance", help="Run instance <tenant>/<agent>")
+    run.add_argument("--tenant", help="Run tenant (default: instance tenant)")
+    run.add_argument("--task", help="Single task for an instance")
     run.add_argument("extra", nargs=argparse.REMAINDER, help="Argumente für agent.py")
     run.set_defaults(func=cmd_run)
 

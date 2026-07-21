@@ -33,6 +33,14 @@ class TestCheckResult:
         assert d["errors"] == ["e"] and d["warnings"] == ["w"] and d["infos"] == ["i"]
 
 
+def test_root_config_defaults_to_gated_human_approval():
+    import json
+
+    config = json.loads((Path(__file__).resolve().parent.parent / "config.json").read_text(encoding="utf-8"))
+    assert config["autonomy_level"] == "gated"
+    assert config["require_human_approval"] is True
+
+
 class TestManifestChecks:
     def _run(self, tmp_path: Path, manifest: dict, monkeypatch) -> check.CheckResult:
         import json
