@@ -492,7 +492,7 @@ def test_live_cycle_renews_lease_and_is_not_recovered(
     monkeypatch.setattr(
         AdaptiveScheduler,
         "_heartbeat_interval_seconds",
-        property(lambda self: 0.01),
+        property(lambda self: 0.05),
         raising=False,
     )
     outcomes = []
@@ -509,21 +509,27 @@ def test_live_cycle_renews_lease_and_is_not_recovered(
 
     state_path = tmp_path / "state" / "scheduler-state.json"
     probe = AdaptiveScheduler(tmp_path, {})
-    token = probe.acquire_dispatch_lock()
+    # The live heartbeat may briefly hold the mutation lock. This setup needs
+    # exclusive access rather than the dispatch path's intentional fail-fast
+    # semantics, so use the scheduler's bounded retry helper.
+    token = probe._acquire_dispatch_lock_with_retry()
     assert token
-    state = json.loads(state_path.read_text(encoding="utf-8"))
-    state["in_flight_at"] = "2000-01-01T00:00:00+00:00"
-    state["in_flight_heartbeat_at"] = "2000-01-01T00:00:00+00:00"
-    state_path.write_text(json.dumps(state), encoding="utf-8")
-    probe.release_dispatch_lock(token)
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["in_flight_at"] = "2000-01-01T00:00:00+00:00"
+        state["in_flight_heartbeat_at"] = "2000-01-01T00:00:00+00:00"
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+    finally:
+        probe.release_dispatch_lock(token)
 
     deadline = time.monotonic() + 2
     while time.monotonic() < deadline:
-        state = json.loads(state_path.read_text(encoding="utf-8"))
-        if state.get("in_flight_heartbeat_at") != "2000-01-01T00:00:00+00:00":
+        state = probe._read_state()
+        heartbeat_at = state.get("in_flight_heartbeat_at")
+        if heartbeat_at and heartbeat_at != "2000-01-01T00:00:00+00:00":
             break
         time.sleep(0.01)
-    assert state.get("in_flight_heartbeat_at") != "2000-01-01T00:00:00+00:00"
+    assert heartbeat_at and heartbeat_at != "2000-01-01T00:00:00+00:00"
     concurrent = AdaptiveScheduler(tmp_path, {}).evaluate()
     assert concurrent.should_enqueue is False
     assert concurrent.reason == "already_enqueued"
