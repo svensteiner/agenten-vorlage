@@ -141,14 +141,20 @@ def _persist_report_transaction(
         # cannot be persisted with stale compute-time provenance.
         _validated_report_provenance(report, source, mapping)
         key = _acceptance_key(root)
+        run = {
+            **run,
+            "acceptance_criteria": {
+                "sourced_totals": _sourced_totals_pass(report),
+                "draft_latency": run["draft_latency_seconds"] < 300,
+                "approval_safety": not external_tools,
+            },
+        }
         history, signed_run = _record_acceptance_run_locked(root, run, key)
         runs = [*history.get("runs", []), signed_run][-_HISTORY_LIMIT:]
         repeatable_count = _consecutive_equal_runs(runs)
         criteria = {
-            "sourced_totals": _sourced_totals_pass(report),
-            "draft_latency": signed_run["draft_latency_seconds"] < 300,
+            **signed_run["acceptance_criteria"],
             "repeatable_runs": repeatable_count >= 3,
-            "approval_safety": not external_tools,
         }
         acceptance = {
             "passed": all(criteria.values()),
@@ -184,6 +190,76 @@ def _persist_report_transaction(
             "history_artifact": history_report.relative_to(root).as_posix(),
             "acceptance": acceptance,
         }
+
+
+def read_acceptance_status(root: Path) -> dict[str, Any]:
+    """Verify signed acceptance state without creating or modifying any file."""
+    empty = {
+        "valid": True,
+        "passed": False,
+        "repeatable_run_count": 0,
+        "sequence": 0,
+        "run_signature": None,
+    }
+    root = Path(root).resolve()
+    declared_state = root / "state"
+    if not declared_state.exists():
+        return empty
+    if declared_state.is_symlink() or not declared_state.is_dir():
+        return {**empty, "valid": False}
+    try:
+        state = declared_state.resolve(strict=True)
+        state.relative_to(root)
+    except (OSError, ValueError):
+        return {**empty, "valid": False}
+
+    key_path = state / ".acceptance-hmac-key"
+    ledger_path = state / "acceptance-ledger.jsonl"
+    head_path = state / "acceptance-head.json"
+    paths = (key_path, ledger_path, head_path)
+    if any(path.is_symlink() for path in paths):
+        return {**empty, "valid": False}
+    if not any(path.exists() for path in paths):
+        return empty
+    if not key_path.is_file() or not head_path.is_file():
+        return {**empty, "valid": False}
+    try:
+        key = key_path.read_bytes()
+        if len(key) != _ACCEPTANCE_KEY_BYTES:
+            raise ValueError("invalid key")
+        runs = _read_acceptance_ledger(ledger_path, key)
+        head = _read_acceptance_head(head_path, key)
+    except (OSError, ValueError):
+        return {**empty, "valid": False}
+
+    sequence = runs[-1]["sequence"] if runs else 0
+    signature = runs[-1]["run_signature"] if runs else None
+    if head["sequence"] != sequence or head["last_run_signature"] != signature:
+        return {**empty, "valid": False}
+    if not runs:
+        return empty
+
+    signed_criteria = runs[-1].get("acceptance_criteria")
+    required = {"sourced_totals", "draft_latency", "approval_safety"}
+    criteria = (
+        {
+            name: signed_criteria.get(name) is True
+            for name in required
+        }
+        if isinstance(signed_criteria, dict) and set(signed_criteria) == required
+        else {name: False for name in required}
+    )
+    repeatable_count = _consecutive_equal_runs(runs)
+    return {
+        "valid": True,
+        "passed": all(criteria.values()) and repeatable_count >= 3,
+        "repeatable_run_count": repeatable_count,
+        "sequence": sequence,
+        "run_signature": signature,
+        "source_file": runs[-1].get("source_file"),
+        "input_fingerprint": runs[-1].get("input_fingerprint"),
+        "mapping_version": runs[-1].get("mapping_version"),
+    }
 
 
 def _safe_file(root: Path, relative: Any, *, allowed_roots: set[str]) -> Path | None:

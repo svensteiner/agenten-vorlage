@@ -4,6 +4,8 @@ agent_cli.py liegt im Repo-Root (kein Paket), daher wird es — wie test_check.p
 es für tools/check.py tut — per importlib geladen.
 """
 
+from datetime import datetime, timezone
+import hashlib
 import importlib.util
 import json
 import sys
@@ -11,6 +13,7 @@ from pathlib import Path
 
 import pytest
 from core.scheduling import ScheduledDecision
+from core.controlling.artifacts import persist_report_artifacts
 
 _CLI_PATH = Path(__file__).resolve().parent.parent / "agent_cli.py"
 _spec = importlib.util.spec_from_file_location("agent_cli", _CLI_PATH)
@@ -192,6 +195,221 @@ class TestParser:
         assert create.preset == "kmu-controlling"
         assert validate.instance == "instances/acme/inbox"
         assert run.loop is True
+
+    def test_status_accepts_instance_path(self):
+        parser = agent_cli.build_parser()
+        status = parser.parse_args(
+            ["status", "--instance", "instances/acme/controlling"]
+        )
+        assert status.instance == "instances/acme/controlling"
+
+
+class TestPilotStatus:
+    @staticmethod
+    def _instance(tmp_path: Path) -> Path:
+        instance = tmp_path / "acme" / "controlling"
+        agent_cli._write_template_project(
+            instance,
+            agent_cli._kmu_controlling_answers(),
+            tenant_id="acme",
+            agent_id="controlling",
+        )
+        agent_cli._apply_preset(instance, "kmu-controlling")
+        return instance
+
+    @staticmethod
+    def _signed_acceptance(instance: Path, runs: int = 4) -> None:
+        source = instance / "inbox" / "actuals" / "demo.csv"
+        source.parent.mkdir(parents=True)
+        source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+        mapping = instance / "project" / "pilot" / "account-mapping.json"
+        mapping.write_text('{"schema_version":1}', encoding="utf-8")
+        report = {
+            "source": "inbox/actuals/demo.csv",
+            "method": "approved deterministic mapping",
+            "report_metadata": {
+                "period_start": "2026-06-01",
+                "period_end": "2026-06-30",
+                "currency": "EUR",
+                "sign_convention": "source_value_times_group_multiplier",
+            },
+            "metrics": {
+                name: {
+                    "month": "1",
+                    "prior": "1",
+                    "ytd": "1",
+                    "ytd_prior": "1",
+                }
+                for name in ("ebitda", "depreciation", "egt")
+            },
+            "groups": {},
+            "material_deviations": [],
+            "reconciliation": {
+                "source_account_count": 1,
+                "mapped_account_count": 1,
+                "ignored_account_count": 0,
+            },
+            "provenance": {
+                "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
+                "calculation_version": "kmu-report-v1",
+            },
+        }
+        management = {
+            "summary": "Belegter Testbericht.",
+            "alarms": [],
+            "actions": ["Prüfen", "Freigeben", "Überwachen"],
+        }
+        now = datetime.now(timezone.utc)
+        for _ in range(runs):
+            persist_report_artifacts(
+                instance,
+                report,
+                management,
+                validated_at=now,
+                draft_created_at=now,
+            )
+
+    def test_ready_instance_shows_green_operator_summary(
+        self, tmp_path, capsys
+    ):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": "2026-07-21T19:00:00+00:00",
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 0
+        assert "acme/controlling" in output
+        assert "GRÜN" in output
+        assert "3/3" in output
+        assert "4/3" not in output
+        assert "0/3" in output
+        assert "latest-controlling-report.html" in output
+        assert "überwacht fortführen" in output
+
+    def test_forged_latest_report_cannot_turn_status_green(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        (instance / "artifacts" / "latest-controlling-report.json").write_text(
+            json.dumps(
+                {"acceptance": {"passed": True, "repeatable_run_count": 99}}
+            ),
+            encoding="utf-8",
+        )
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": "2026-07-21T19:00:00+00:00",
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 1
+        assert "GRÜN" not in output
+
+    def test_status_rejects_symlinked_artifact_directory(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        outside = tmp_path / "outside-artifacts"
+        outside.mkdir()
+        (outside / "latest-controlling-report.json").write_text(
+            json.dumps(
+                {"acceptance": {"passed": True, "repeatable_run_count": 3}}
+            ),
+            encoding="utf-8",
+        )
+        artifacts = instance / "artifacts"
+        artifacts.rmdir()
+        try:
+            artifacts.symlink_to(outside, target_is_directory=True)
+        except OSError:
+            pytest.skip("Symlinks are unavailable on this test host")
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    def test_status_does_not_render_untrusted_multiline_timestamp(
+        self, tmp_path, capsys
+    ):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": "2026-07-21T19:00:00+00:00\nFAKE-GRÜN",
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 1
+        assert "FAKE-GRÜN" not in output
+
+    def test_failed_loop_shows_red_and_action(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "failed",
+                    "last_result_at": "2026-07-21T19:00:00+00:00",
+                    "consecutive_failures": 3,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 1
+        assert "ROT" in output
+        assert "3/3" in output
+        assert "Fehler beheben" in output
+
+    def test_malformed_status_state_fails_closed(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            "{kaputt", encoding="utf-8"
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
 
 
 class TestInstanceFactory:

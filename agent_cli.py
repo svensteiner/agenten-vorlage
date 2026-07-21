@@ -12,6 +12,7 @@ Commands:
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import shutil
 import time
@@ -20,6 +21,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
+from core.controlling.artifacts import read_acceptance_status
 from core.scheduling import ScheduledDecision, run_scheduled_cycle
 
 
@@ -987,7 +989,10 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
-def cmd_status(_: argparse.Namespace) -> int:
+def cmd_status(args: argparse.Namespace) -> int:
+    instance = getattr(args, "instance", None)
+    if instance:
+        return _print_pilot_status(Path(instance))
     print("\nTemplate status")
     print("───────────────")
     print(f"  Core:         {ROOT / 'core'}")
@@ -995,6 +1000,190 @@ def cmd_status(_: argparse.Namespace) -> int:
     print(f"  Docs:         {ROOT / 'docs'}")
     print(f"  Instances:    {DEFAULT_OUTPUT_ROOT}")
     return 0
+
+
+def _safe_status_path(root: Path, relative: str) -> Path | None:
+    """Resolve a fixed instance-relative status path without following symlinks."""
+    relative_path = Path(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        return None
+    candidate = root
+    for part in relative_path.parts:
+        candidate /= part
+        if candidate.is_symlink():
+            return None
+    try:
+        candidate.resolve(strict=False).relative_to(root)
+    except (OSError, ValueError):
+        return None
+    return candidate
+
+
+def _tree_contains_symlink(root: Path) -> bool:
+    """Reject project trees that could make structural validation leave the root."""
+    if root.is_symlink():
+        return True
+    pending = [root]
+    while pending:
+        directory = pending.pop()
+        try:
+            children = list(directory.iterdir())
+        except OSError:
+            return True
+        for child in children:
+            if child.is_symlink():
+                return True
+            if child.is_dir():
+                pending.append(child)
+    return False
+
+
+def _read_status_json(root: Path, relative: str) -> tuple[dict[str, Any], bool]:
+    """Read one fixed status file; the boolean reports malformed/unsafe data."""
+    path = _safe_status_path(root, relative)
+    if path is None:
+        return {}, True
+    if not path.exists():
+        return {}, False
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}, True
+    return (value, False) if isinstance(value, dict) else ({}, True)
+
+
+def _status_timestamp(value: Any) -> tuple[str, bool]:
+    if value is None:
+        return "–", False
+    if (
+        not isinstance(value, str)
+        or len(value) > 64
+        or any(ord(character) < 32 for character in value)
+    ):
+        return "–", True
+    try:
+        datetime.fromisoformat(value)
+    except ValueError:
+        return "–", True
+    return value, False
+
+
+def _print_pilot_status(instance: Path) -> int:
+    """Show a compact, read-only traffic light for a generated pilot instance."""
+    try:
+        instance = instance.resolve(strict=True)
+    except OSError:
+        print("\nKMU-Pilotstatus\n───────────────\n  Ampel: ROT – Instanz fehlt")
+        return 1
+    if _tree_contains_symlink(instance / "project"):
+        print(
+            "\nKMU-Pilotstatus\n───────────────\n"
+            "  Ampel: ROT – unsicherer Projektpfad"
+        )
+        return 1
+    validation = _validate_instance(instance)
+    if not validation.ok:
+        _print_self_test(validation)
+        return 1
+    tenant_id, agent_id = _instance_identity(instance)
+    config, config_invalid = _read_status_json(instance, "project/config.json")
+    latest_relative = "artifacts/latest-controlling-report.json"
+    latest_path = _safe_status_path(instance, latest_relative)
+    latest, latest_invalid = _read_status_json(instance, latest_relative)
+    state_relative = "state/adaptive-schedule.json"
+    state_path = _safe_status_path(instance, state_relative)
+    state, state_invalid = _read_status_json(instance, state_relative)
+
+    acceptance = read_acceptance_status(instance)
+    repeatable = acceptance.get("repeatable_run_count", 0)
+    repeatable = (
+        repeatable
+        if isinstance(repeatable, int) and not isinstance(repeatable, bool)
+        else 0
+    )
+    displayed_repeatable = min(max(repeatable, 0), 3)
+    accepted = acceptance.get("passed") is True
+    schedule = config.get("adaptive_schedule", {}) if isinstance(config, dict) else {}
+    schedule = schedule if isinstance(schedule, dict) else {}
+    max_failures = schedule.get("max_consecutive_failures", 3)
+    max_failures = (
+        max_failures
+        if isinstance(max_failures, int)
+        and not isinstance(max_failures, bool)
+        and max_failures > 0
+        else 3
+    )
+    failures = state.get("consecutive_failures", 0)
+    failures = (
+        failures
+        if isinstance(failures, int) and not isinstance(failures, bool) and failures >= 0
+        else max_failures
+    )
+    last_result = state.get("last_result")
+    provenance = latest.get("provenance") if isinstance(latest, dict) else None
+    signed_sequence = acceptance.get("sequence", 0)
+    view_consistent = (
+        isinstance(provenance, dict)
+        and provenance.get("sequence") == signed_sequence
+        and provenance.get("run_signature") == acceptance.get("run_signature")
+        if isinstance(signed_sequence, int) and signed_sequence > 0
+        else latest_path is not None and not latest_path.exists()
+    )
+    last_result_at, timestamp_invalid = _status_timestamp(
+        state.get("last_result_at")
+    )
+    status_invalid = (
+        config_invalid
+        or latest_invalid
+        or state_invalid
+        or acceptance.get("valid") is not True
+        or not view_consistent
+        or timestamp_invalid
+        or last_result not in {None, "success", "failed"}
+    )
+    loop_failed = last_result == "failed" or failures >= max_failures
+    loop_healthy = (
+        state_path is not None
+        and state_path.exists()
+        and last_result == "success"
+        and failures == 0
+    )
+
+    if status_invalid or loop_failed:
+        light = "ROT – Eingriff erforderlich"
+        next_step = "Fehler beheben und den Stundenloop kontrolliert erneut starten."
+        return_code = 1
+    elif accepted and loop_healthy:
+        light = "GRÜN – pilotbereit"
+        next_step = "Den 30-Tage-Pilot überwacht fortführen."
+        return_code = 0
+    else:
+        light = "GELB – Pilot noch nicht vollständig abgenommen"
+        if latest_path is None or not latest_path.exists():
+            next_step = "Den ersten belegten Managementbericht erzeugen."
+        elif repeatable < 3:
+            next_step = "Den identischen validierten Lauf bis 3/3 wiederholen."
+        else:
+            next_step = "Den Stundenloop einmal ausführen und erneut prüfen."
+        return_code = 1
+
+    loop_result = str(last_result) if last_result else "noch nicht gelaufen"
+    acceptance_label = "bestanden" if accepted else "offen"
+    print("\nKMU-Pilotstatus")
+    print("───────────────")
+    print(f"  Instanz:          {tenant_id}/{agent_id}")
+    print(f"  Ampel:            {light}")
+    print(f"  Abnahme:          {acceptance_label} ({displayed_repeatable}/3)")
+    print(
+        f"  Stundenloop:      {loop_result}; Fehler {failures}/{max_failures}; "
+        f"zuletzt {last_result_at}"
+    )
+    print(
+        "  Managementreport: "
+        f"{instance / 'artifacts' / 'latest-controlling-report.html'}"
+    )
+    print(f"  Nächster Schritt: {next_step}")
+    return return_code
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -1297,7 +1486,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("extra", nargs=argparse.REMAINDER, help="Argumente für agent.py")
     run.set_defaults(func=cmd_run)
 
-    status = sub.add_parser("status", help="Template-Status anzeigen")
+    status = sub.add_parser("status", help="Template- oder Pilotstatus anzeigen")
+    status.add_argument(
+        "--instance",
+        help="Pilot-Ampel für eine Instanz <tenant>/<agent> anzeigen",
+    )
     status.set_defaults(func=cmd_status)
 
     return parser

@@ -10,7 +10,7 @@ import time
 import pytest
 
 from core.controlling import artifacts as artifacts_module
-from core.controlling.artifacts import persist_report_artifacts
+from core.controlling.artifacts import persist_report_artifacts, read_acceptance_status
 from core.controlling.narrative import ControllingReportTool
 
 
@@ -105,6 +105,26 @@ def test_report_writes_human_and_machine_artifacts_with_acceptance_evidence(
     assert evidence["runs"][-1]["external_action_log"] == []
     assert [run["sequence"] for run in evidence["runs"]] == [1, 2, 3]
     assert responses[-1]["acceptance"]["passed"] is True
+    signed_status = read_acceptance_status(tmp_path)
+    assert signed_status["valid"] is True
+    assert signed_status["passed"] is True
+    assert signed_status["repeatable_run_count"] == 3
+    assert signed_status["sequence"] == 3
+
+
+def test_acceptance_status_is_read_only_before_first_run(tmp_path):
+    before = list(tmp_path.rglob("*"))
+
+    status = read_acceptance_status(tmp_path)
+
+    assert status == {
+        "valid": True,
+        "passed": False,
+        "repeatable_run_count": 0,
+        "sequence": 0,
+        "run_signature": None,
+    }
+    assert list(tmp_path.rglob("*")) == before
 
 
 def test_acceptance_history_rejects_duplicated_replayed_runs(tmp_path, monkeypatch):

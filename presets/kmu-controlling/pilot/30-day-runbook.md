@@ -28,11 +28,13 @@
 ## Tage 22–27: Betriebsprobe
 
 - Stündlichen Loop überwachen: neue Datei, geänderte Datei, Leerlauf und Fehlerfall testen.
+- Täglich `py agent_cli.py status --instance <pfad>` prüfen und Ampel, Fehlerzähler sowie nächsten Betreiber-Schritt dokumentieren.
 - Prüfen, dass Leerlauf keine Analyse startet und Fehlergrenze den Loop sicher einfriert.
 - Offene Punkte, Verantwortliche und Termin dokumentieren.
 
 ## Tage 28–30: Entscheidung
 
+- Die Pilot-Ampel muss `GRÜN – pilotbereit` zeigen.
 - Automatischen Nachweis in `artifacts/acceptance-evidence.json` gegen `acceptance-criteria.json` prüfen.
 - Ergebnis als bestanden, nachzubessern oder gestoppt festhalten.
 - Nur bei bestandener Abnahme den nächsten Datenzeitraum oder weitere KPIs freigeben.
