@@ -29,6 +29,19 @@
 
 ## Prototyp-Baufortschritt: ≈ 92 % (Phase B — Video-Deliverables fertig, wartet auf Aufnahme)
 
+> **2026-07-21 · Voll-Korpus-Kohärenz-Audit (grün, kein Eingriff in `prototype/`):** Erstmals möglich, weil die
+> **12 Zwilling-Körper seit 2026-07-17 vollständig** sind — daher statt eines identischen Re-Ticks (Churn) alle 12
+> Zwillinge deterministisch (`grep`) gegen den Draft `pilot.config.js` geprüft: **0 Meridian-Leak** über alle 12
+> (Firma · Domain · alle Quell-Personennamen), **7 von 9** synth. Config-Namen in ≥1 Zwilling präsent. **Neu-Fund:**
+> `hr` (Baumgartner) & `audit` (Weiß) erscheinen in **0** Zwillingen — **korrekt & erwartet**, weil die 3 gewählten
+> Szenarien (materialkosten · projekt-beta · vorstand-summary) **keine** HR-/Audit-Persona referenzieren →
+> **ungenutzte** Korpus-Mapping-Einträge (harmlos; `applyPilotChrome` konsumiert `people` nur fürs Korpus-Ersetzen).
+> **De-riskt den gated Schritt 3** (Wiring weiß: für hr/audit gibt es keine Belege). Zudem den **überholten
+> Config-Kommentar korrigiert** (nur `pilot-assets/`, nicht `prototype/`): „hr/audit + 2 restliche vorstand-Belege
+> folgen in Schritt 3" war seit 2026-07-17 falsch → durch die verifizierte Realität ersetzt. `node --check` (config +
+> app.js + data.js) grün; `git`: nur `pilot.config.js`; **29 Docs · 17 Szenarien** unverändert. Hebt **kein** Gate →
+> **Gate B→C wartet weiter allein auf Sven.** `git`-Baum sonst clean.
+>
 > **2026-07-20 · Live-Browser-Verifikationstick (grün, kein Eingriff in `prototype/`):** Da **kein**
 > freeze-konformer Vorbereitungs-Brick mehr offen ist (Zwillinge 12/12 · 3/3 Szenarien · Multi-`projectLeads`
 > gelöst) und ein weiterer reiner `node --check`-Tick Churn wäre, diesen Zyklus die **Recording-Readiness real

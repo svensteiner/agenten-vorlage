@@ -54,7 +54,22 @@ bis Gate B→C** (berührt `prototype/`):
 > (weitere Korpus-Zwillinge stagen statt re-verifizieren/churnen) — gated bleibt nur, was `prototype/` berührt
 > (Config-Wiring + Schritt 3). Kommt eine Anmerkung von Sven → **die hat Vorrang** vor allem anderen.
 
-**Diesen Zyklus gebaut (2026-07-20, freeze-konform, kein Eingriff in `prototype/`):** ein **Live-Browser-
+**Diesen Zyklus gebaut (2026-07-21, freeze-konform, kein Eingriff in `prototype/`):** der **erste Voll-Korpus-
+Kohärenz-Audit** — jetzt erstmals möglich, weil die **12 Zwilling-Körper seit 2026-07-17 vollständig** sind (vorher
+konnte nur je-Teil geprüft werden). Statt eines identischen Re-Ticks (Churn) alle 12 Zwillinge deterministisch
+(`grep`) gegen den Draft `pilot.config.js` geprüft: **0 Meridian-Leak** über alle 12 (Firma · Domain · alle
+Quell-Personennamen), **7 von 9** synth. Config-Namen in ≥1 Zwilling präsent. **Neu-Fund:** `hr` (Baumgartner) &
+`audit` (Weiß) erscheinen in **0** Zwillingen — **korrekt & erwartet**, weil die 3 gewählten Szenarien (materialkosten ·
+projekt-beta · vorstand-summary) **keine** HR-/Audit-Persona referenzieren → **ungenutzte** Korpus-Mapping-Einträge
+(harmlos; `applyPilotChrome` konsumiert `people` nur fürs Korpus-Ersetzen). **De-riskt Schritt 3:** der Wiring-Schritt
+weiß jetzt, dass es für hr/audit **keine** Belege gibt (nicht danach suchen) — bei anderer Szenario-Wahl (z. B.
+`datenschutz-audit`/`onboarding`) würden sie relevant. Zudem den **überholten Config-Kommentar korrigiert** (nur
+`pilot-assets/`, nicht `prototype/`): die alte Notiz „hr/audit + 2 restliche vorstand-Belege folgen in Schritt 3"
+war seit 2026-07-17 falsch (vorstand-Zwillinge gestaged) → durch die verifizierte Realität ersetzt. `node --check`
+(config + app.js + data.js) grün, `git`: nur `pilot.config.js`, **29 Docs · 17 Szenarien** unverändert. Hebt kein
+Gate → **Gate B→C wartet weiter allein auf Sven.**
+
+**Zyklus davor gebaut (2026-07-20, freeze-konform, kein Eingriff in `prototype/`):** ein **Live-Browser-
 Verifikationstick** statt eines reinen `node --check`-Ticks (Churn). Weil **kein** freeze-konformer Vorbereitungs-
 Brick mehr offen ist, wurde die **Recording-Readiness erstmals wieder real im Browser** belegt — die letzten
 Zyklen fielen am *throttled* Streaming-/Screenshot-Pfad auf DOM/Daten zurück. Statischer Server (`launch.json`
@@ -318,7 +333,7 @@ durch einen sauberen Take führt. Neu:
   der Meter-Balken läuft beim Einblenden in ~760 ms (easeOutCubic) von 0 auf den Zielwert statt zu
   springen; Zahl zählt synchron; Popover-Relevanz-Balken laufen einmalig hoch. Rein additiv
   (`animateBar()`/`wireConfPopBars()`).
-- **Zuletzt aktualisiert:** 2026-07-16.
+- **Zuletzt aktualisiert:** 2026-07-21.
 - **Prototyp liegt in:** [`prototype/`](prototype/) — per Doppelklick auf `index.html` startbar.
 - **Prototyp-Baufortschritt:** **≈ 92 %**; **Phase A abgeschlossen**, Mission jetzt in **Phase B (Video)** (siehe [PROGRESS.md](PROGRESS.md)).
 

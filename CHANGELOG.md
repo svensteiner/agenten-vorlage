@@ -2,6 +2,24 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Phase B (Wartepunkt) — 2026-07-21 — Voll-Korpus-Kohärenz-Audit (12/12) + Config-Kommentar korrigiert, blockiert auf Sven — kein `prototype/`-Eingriff
+
+**Erster Voll-Korpus-Kohärenz-Audit** — jetzt möglich, weil die 12 Zwilling-Körper seit 2026-07-17 vollständig
+sind; ein neuer Winkel statt eines identischen Re-Verifikations-Ticks (Churn). Deterministisch (`grep`) **alle 12
+Zwillinge** gegen den Draft `pilot.config.js` geprüft:
+- **0 Meridian-Leak** über alle 12 Körper — Firma, Domain **und** alle Quell-Personennamen (Krüger/Vogel/Wagner/
+  Brandt/Feldmann/Lang/Sabine Reinhardt) → **0 Treffer**.
+- **7 von 9 synth. Config-Namen** erscheinen in ≥1 Zwilling (Moser · Hollmann · Kessler · Reinhardt · Bergmann ·
+  Falk · Lindner).
+- **⚠ Neu-Fund:** `hr` (Baumgartner) & `audit` (Weiß) erscheinen in **0** Zwillingen — **korrekt & erwartet**: die
+  3 gewählten Pilot-Szenarien (materialkosten · projekt-beta · vorstand-summary) referenzieren **keine** HR-/Audit-
+  Persona → das sind **ungenutzte** Korpus-Mapping-Einträge (harmlos; `applyPilotChrome` nutzt `people` nur fürs
+  Korpus-Ersetzen). **Schritt-3-Hinweis:** nicht nach HR-/Audit-Belegen suchen — es gibt keine.
+- **Config-Kommentar korrigiert** (nur `pilot-assets/`, **nicht** `prototype/`): die überholte Notiz „hr/audit + 2
+  restliche vorstand-Belege folgen in Schritt 3" ersetzt — die vorstand-Zwillinge sind seit 2026-07-17 gestaged; die
+  Realität (hr/audit ungenutzt) ist jetzt im Draft dokumentiert. `node --check` (config + prototype) grün, `git`:
+  nur `pilot.config.js`. Ein Audit-/Doku-Brick hebt kein Gate → **Gate B→C wartet weiter allein auf Sven.**
+
 ## Phase B (Wartepunkt) — 2026-07-20 — Live-Browser-Verifikationstick (grün), blockiert auf Sven — keine Prototyp-/Feature-Änderung
 
 **Recording-Readiness erstmals wieder real im Browser belegt** (nicht nur `node --check`), freeze-konform, `prototype/`

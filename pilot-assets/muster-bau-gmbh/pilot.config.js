@@ -32,12 +32,18 @@ window.PILOT_CONFIG = {
     ],
     people: {
       // Synthetische Namen — ersetzen die Meridian-Personen 1:1 im synth. Korpus.
-      // Stand 2026-07-16: in den Struktur-Zwillingen (Rechnung/Rahmenvertrag), den
-      // 3 Prosa-Zwillingen des Materialkosten-Szenarios (Q1-Bericht + 2 E-Mails) UND
-      // den 4 Prosa-Zwillingen des Projekt-Beta-Szenarios (Status/Eskalation/Nachtrag/
-      // Auftrag) bereits eingesetzt & verifiziert (procurement/cfo/legal/ceo → s.
-      // README); die übrigen (hr/audit + 2 restliche Prosa-Belege des vorstand-
-      // summary-Szenarios) folgen im gated Schritt 3.
+      // Stand 2026-07-21 (Korpus 12/12 vollständig; Voll-Korpus-Kohärenz-Audit):
+      //   • Eingesetzt & in ≥1 Zwilling verifiziert: ceo(Moser) · cfo(Hollmann) ·
+      //     procurement(Kessler) · legal(Reinhardt). (0 Meridian-Leak über alle 12.)
+      //   • ⚠ hr(Baumgartner) & audit(Weiß) erscheinen in 0 Zwillingen — KORREKT &
+      //     erwartet: die 3 gewählten Pilot-Szenarien (materialkosten · projekt-beta ·
+      //     vorstand-summary) referenzieren KEINE HR-/Audit-Persona. Das sind daher
+      //     UNGENUTZTE Korpus-Mapping-Einträge (harmlos: applyPilotChrome nutzt `people`
+      //     nur fürs Korpus-Ersetzen, nicht für die Firmenkarte). Für Schritt 3: NICHT
+      //     nach HR-/Audit-Belegen suchen — es gibt keine. Bei anderer Szenario-Wahl
+      //     (z. B. datenschutz-audit / onboarding) würden sie relevant.
+      //   (Frühere Notiz „hr/audit + 2 restliche vorstand-Belege folgen in Schritt 3"
+      //    war überholt: die vorstand-Zwillinge sind seit 2026-07-17 gestaged.)
       // ✅ FRICTION GELÖST (2026-07-19): der Korpus trägt MEHRERE Projektleitungen,
       //   für die eine EINZELNE `projectLead`-Rolle nicht reicht. Statt einer flachen
       //   Rolle jetzt projekt-scoped in `projectLeads` (s.u.) — deckt beide Projekte

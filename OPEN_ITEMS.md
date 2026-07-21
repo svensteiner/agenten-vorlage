@@ -33,7 +33,10 @@
   wahr 9/12 → jetzt **12/12 Körper**. **Personen-/Rollen-Regel:** intern → Config-Namen + Domain, Team-Rollen &
   extern bleiben (Donau · Ferro Nord · Nordwind · ElektroSys), **0 Leak**; Friction Alpha nennt **zwei** Leads
   (Reinhardt→Bergmann · Lang→Falk), Beta (Lindner) → **✅ gelöst (2026-07-19): `company.projectLeads` projekt-scoped
-  im Draft `pilot.config.js`** (`alpha:[Bergmann,Falk]`/`beta:[Lindner]`); Konsum/Wiring bleibt gated. `prototype/` unverändert.
+  im Draft `pilot.config.js`** (`alpha:[Bergmann,Falk]`/`beta:[Lindner]`); Konsum/Wiring bleibt gated. **Voll-Korpus-
+  Kohärenz-Audit (2026-07-21):** 0 Meridian-Leak über alle 12; 7/9 Config-Namen präsent; **`hr`/`audit` in 0 Zwillingen
+  = korrekt/erwartet** (3 Szenarien ohne HR-/Audit-Persona → ungenutzte Mapping-Einträge, harmlos), Config-Kommentar
+  korrigiert. `prototype/` unverändert.
 - **[Phase C — Vorbereitung] Vorab-Kohärenz-Audit Schicht A ↔ B (2026-07-10)** — die 2 Probelauf-Hälften
   erstmals **gegeneinander** geprüft; 3 nicht-blockierende Lücken protokolliert (12-Dok-Checkliste; 6 Config-
   Personen in 0 Artefakten; §8-CSV noch nicht gestaged). Deterministisch, `prototype/` unverändert.
