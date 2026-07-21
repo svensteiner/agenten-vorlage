@@ -155,15 +155,55 @@ class TestParser:
 
     def test_factory_commands_accept_instance_identity(self):
         parser = agent_cli.build_parser()
-        create = parser.parse_args(["create", "--tenant", "acme", "--agent", "inbox"])
+        create = parser.parse_args(["create", "--tenant", "acme", "--agent", "inbox", "--preset", "kmu-controlling"])
         validate = parser.parse_args(["validate", "--instance", "instances/acme/inbox"])
         run = parser.parse_args(["run", "--instance", "instances/acme/inbox", "--task", "smoke"])
         assert (create.tenant, create.agent) == ("acme", "inbox")
+        assert create.preset == "kmu-controlling"
         assert validate.instance == "instances/acme/inbox"
         assert run.task == "smoke"
 
 
 class TestInstanceFactory:
+    def test_create_kmu_controlling_preset_has_hourly_adaptive_schedule_and_safe_defaults(self, tmp_path):
+        args = agent_cli.argparse.Namespace(
+            tenant="Acme GmbH", agent="Controlling", output=str(tmp_path), full=False,
+            no_self_test=False, preset="kmu-controlling",
+        )
+
+        assert agent_cli.cmd_create(args) == 0
+        project = tmp_path / "acme-gmbh" / "controlling" / "project"
+        config = json.loads((project / "config.json").read_text(encoding="utf-8"))
+        manifest = json.loads((project / "manifest.json").read_text(encoding="utf-8"))
+
+        assert config["loop_interval_minutes"] == 60
+        schedule = config["adaptive_schedule"]
+        assert schedule["schema_version"] == 1
+        assert schedule["enabled"] is True
+        assert set(schedule["prompt_profiles"]) == {
+            "new_input", "changed_input", "recovery", "pending_approval", "periodic_review"
+        }
+        assert schedule["max_consecutive_failures"] >= 1
+        assert manifest["approval_required_for"] == ["external communication", "send", "publish"]
+
+    def test_kmu_controlling_preset_writes_operating_files_and_preserves_identity(self, tmp_path):
+        args = agent_cli.argparse.Namespace(
+            tenant="Acme", agent="Finance Pilot", output=str(tmp_path), full=False,
+            no_self_test=True, preset="kmu-controlling",
+        )
+
+        assert agent_cli.cmd_create(args) == 0
+        project = tmp_path / "acme" / "finance-pilot" / "project"
+        config = json.loads((project / "config.json").read_text(encoding="utf-8"))
+        manifest = json.loads((project / "manifest.json").read_text(encoding="utf-8"))
+
+        assert config["instance"] == {"tenant_id": "acme", "agent_id": "finance-pilot"}
+        assert manifest["instance"] == {"tenant_id": "acme", "agent_id": "finance-pilot"}
+        assert (project / "SOUL.md").is_file()
+        assert (project / "workflows" / "main.md").is_file()
+        assert (project / "knowledge" / "kpi-rules.md").is_file()
+        assert "deterministisch" in (project / "SOUL.md").read_text(encoding="utf-8").lower()
+
     def test_create_places_identity_in_separate_tenant_agent_root(self, tmp_path, monkeypatch):
         monkeypatch.setattr(agent_cli, "_collect_answers", lambda mode="beginner": _make_answers())
         args = agent_cli.argparse.Namespace(

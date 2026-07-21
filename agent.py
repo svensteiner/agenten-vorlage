@@ -17,6 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from core.orchestrator import AgentOrchestrator
+from core.scheduling import AdaptiveScheduler
 from memory import Memory
 from tools.message_bus import MessageBus
 
@@ -197,6 +198,34 @@ def _run_queue() -> None:
             logger.error("Task %s failed: %s", task_id, exc, exc_info=True)
 
 
+def _run_scheduled() -> None:
+    """Run one deterministic, declaratively configured schedule decision.
+
+    Scheduling is deliberately a thin pre-queue layer: all actual work still
+    passes through the normal orchestrator and its governance gates.
+    """
+    cfg = _load_config()
+    scheduler = AdaptiveScheduler(ROOT, cfg)
+    if not scheduler.enabled:
+        return
+    decision = scheduler.evaluate()
+    if not decision.should_enqueue:
+        logger.info("Schedule idle: %s", decision.reason)
+        return
+    scheduler.mark_enqueued(decision)
+    logger.info("Scheduled task (%s): %s", decision.reason, decision.request_id)
+    try:
+        result = ORCHESTRATOR.run(decision.task_text or "", tools=TOOLS)
+        scheduler.record_result(success=result.success)
+        if result.success:
+            logger.info("Scheduled task erledigt: %s", decision.request_id)
+        else:
+            logger.warning("Scheduled task fehlgeschlagen: %s", decision.request_id)
+    except Exception as exc:
+        scheduler.record_result(success=False)
+        logger.error("Scheduled task failed: %s", exc, exc_info=True)
+
+
 def _messages() -> None:
     cfg = _load_config()
     bus = MessageBus(agent_name=cfg.get("agent_name", "automation-agent"))
@@ -226,6 +255,7 @@ def _loop(interval_minutes: int | None = None) -> None:
     while running[0]:
         ORCHESTRATOR.runtime.write_heartbeat(cfg.get("agent_name", "automation-agent"))
         try:
+            _run_scheduled()
             _run_queue()
         except Exception as exc:
             logger.error("Fehler im Zyklus: %s", exc, exc_info=True)

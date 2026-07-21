@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
@@ -21,6 +22,7 @@ from typing import Any
 
 ROOT = Path(__file__).parent
 DEFAULT_OUTPUT_ROOT = ROOT / "instances"
+PRESETS_ROOT = ROOT / "presets"
 
 
 @dataclass
@@ -614,6 +616,74 @@ def _write_template_project(
     (docs_dir / "project-brief.md").write_text(_render_project_brief(ans), encoding="utf-8")
 
 
+def _deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
+    """Merge preset values into a generated document without mutating either input."""
+    merged = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _kmu_controlling_answers() -> OnboardingAnswers:
+    """Generic defaults only; customer data remains a later configuration step."""
+    return OnboardingAnswers(
+        project_name="KMU Controlling Pilot",
+        customer_or_team="KMU Management",
+        main_problem="Finanzielle Abweichungen früh erkennen und verständlich einordnen",
+        success_criteria="Priorisierte, belegte Controlling-Hinweise mit Freigabe vor Außenwirkung",
+        non_goals="Keine Buchhaltung ersetzen und keine Entscheidungen oder Sendungen ohne Freigabe",
+        role="KMU-Controlling-Agent",
+        language="Deutsch",
+        tone="klar, nüchtern, managementtauglich",
+        domain_expertise="Controlling, Liquidität, Ergebnisrechnung und Abweichungsanalyse",
+        hard_limits="Keine Zahlen erfinden; keine externe Kommunikation ohne Freigabe",
+        trigger="stündlicher adaptiver Kontrolllauf",
+        inputs="Saldenlisten, BWA, Budgets, offene Posten und freigegebene Quellen",
+        steps="Daten prüfen\nKennzahlen deterministisch berechnen\nAbweichungen priorisieren\nEntwurf vorlegen",
+        validation="Quellen, Zeitraum, Vorzeichen und Rechenwege prüfen",
+        escalation="Bei fehlenden Daten, Zuordnungsfehlern oder Freigabepflicht an Menschen eskalieren",
+        tools=["read", "compute", "notify"],
+        require_approval_for="external communication, send, publish",
+        never_do="Keine Zahlen erfinden oder extern versenden ohne Freigabe",
+        retry_policy="Bei Fehlern bis zur konfigurierten Grenze wiederholen und dann eskalieren",
+        quality_threshold="8/10",
+        keep_forever="Freigegebene Regeln und Konten-Mappings",
+        keep_temporarily="Eingabestände und Berechnungsartefakte",
+        remember_between_runs="Geprüfte Mapping- und Alarmentscheidungen",
+    )
+
+
+def _apply_preset(target_dir: Path, preset: str) -> None:
+    """Overlay a packaged preset while preserving the instance identity."""
+    preset_dir = PRESETS_ROOT / preset
+    if not preset_dir.is_dir():
+        raise ValueError(f"Unbekanntes Preset: {preset}")
+    project_dir = target_dir / "project"
+
+    for filename in ("config.json", "manifest.json"):
+        generated = json.loads((project_dir / filename).read_text(encoding="utf-8"))
+        overlay = json.loads((preset_dir / filename).read_text(encoding="utf-8"))
+        identity = generated.get("instance")
+        merged = _deep_merge(generated, overlay)
+        if identity is not None:
+            merged["instance"] = identity
+        (project_dir / filename).write_text(
+            json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+
+    for source in preset_dir.rglob("*"):
+        if not source.is_file() or source.name in {"config.json", "manifest.json"}:
+            continue
+        relative = source.relative_to(preset_dir)
+        destination = project_dir / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+
+
+
 # ─── Self-test ────────────────────────────────────────────────────────────────
 
 def _self_test_project(target_dir: Path) -> SelfTestReport:
@@ -769,8 +839,14 @@ def cmd_create(args: argparse.Namespace) -> int:
         print(f"Instanz existiert bereits und wird nicht verändert: {target_dir}")
         return 1
 
-    answers = _collect_answers(mode="full" if args.full else "beginner")
+    preset = getattr(args, "preset", None)
+    if preset and preset != "kmu-controlling":
+        print(f"Unbekanntes Preset: {preset}")
+        return 1
+    answers = _kmu_controlling_answers() if preset else _collect_answers(mode="full" if args.full else "beginner")
     _write_template_project(target_dir, answers, tenant_id=tenant_id, agent_id=agent_id)
+    if preset:
+        _apply_preset(target_dir, preset)
     if not args.no_self_test:
         report = _validate_instance(target_dir)
         _print_self_test(report)
@@ -917,6 +993,7 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--agent", required=True, help="Agent identifier")
     create.add_argument("--output", help="Instances root (default: instances)")
     create.add_argument("--full", action="store_true", help="Ask all advanced questions")
+    create.add_argument("--preset", choices=["kmu-controlling"], help="Create a packaged agent preset")
     create.add_argument("--no-self-test", action="store_true", help="Skip self-test")
     create.set_defaults(func=cmd_create)
 
