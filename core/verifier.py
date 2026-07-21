@@ -251,10 +251,26 @@ class Verifier:
         if not value["source"].strip() or not value["method"].strip():
             return False
         metrics = value["metrics"]
-        for name in ("ebitda", "egt"):
+        for name in ("ebitda", "depreciation", "egt"):
             metric = metrics.get(name)
-            if not isinstance(metric, dict) or not cls._finite_number(metric.get("month")):
+            if not isinstance(metric, dict) or not all(
+                cls._finite_number(metric.get(period))
+                for period in ("month", "prior", "ytd", "ytd_prior")
+            ):
                 return False
+        provenance = value.get("provenance")
+        if (
+            not isinstance(provenance, dict)
+            or set(provenance)
+            != {"input_fingerprint", "mapping_version", "calculation_version"}
+            or provenance.get("calculation_version") != "kmu-report-v1"
+            or not all(
+                isinstance(provenance.get(name), str)
+                and re.fullmatch(r"[0-9a-f]{64}", provenance[name])
+                for name in ("input_fingerprint", "mapping_version")
+            )
+        ):
+            return False
         return True
 
     @staticmethod

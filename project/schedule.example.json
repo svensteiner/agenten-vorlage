@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "input_paths": ["incoming"],
+  "approval_state_file": "state/approvals.json",
+  "review_interval_hours": 168,
+  "prompt": {
+    "template": "Fuehre einen Controlling-Check fuer {agent_name} aus. Ausloeser: {reasons}. Verwende ausschliesslich die sicheren Metadaten: {metadata_json}"
+  }
+}

@@ -5,6 +5,10 @@ logs/
 tasks.json
 .claude/
 
+# Generated local agent instances and scratch runs
+instances/
+work/
+
 # Python
 __pycache__/
 *.pyc

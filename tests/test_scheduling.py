@@ -381,6 +381,26 @@ def test_stale_dispatch_lock_is_recovered_using_configured_lease(tmp_path: Path)
     assert not lock_path.exists()
 
 
+def test_scheduler_rejects_state_path_outside_instance(tmp_path: Path):
+    _write_schedule(tmp_path, state_file="../outside-state.json")
+
+    with pytest.raises(ValueError, match="state"):
+        AdaptiveScheduler(tmp_path, {})
+
+
+def test_fresh_uninitialised_dispatch_lock_is_not_reclaimed(tmp_path: Path):
+    """A contender can observe the lock before its owner writes the payload."""
+    _write_schedule(tmp_path, in_flight_lease_minutes=1)
+    lock_path = tmp_path / "state" / "scheduler-state.dispatch.lock"
+    lock_path.parent.mkdir()
+    lock_path.touch()
+
+    scheduler = AdaptiveScheduler(tmp_path, {})
+
+    assert scheduler.acquire_dispatch_lock() is None
+    assert lock_path.exists()
+
+
 def test_input_hashing_ignores_symlink_targets_outside_instance(tmp_path: Path):
     inbox = tmp_path / "inbox"
     inbox.mkdir()

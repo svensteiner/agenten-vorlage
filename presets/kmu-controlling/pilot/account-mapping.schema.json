@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/kmu-controlling/account-mapping.schema.json",
+  "title": "KMU Report Account Mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_metadata", "source_globs", "columns", "sign_semantics", "groups", "metrics", "thresholds"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "report_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_start", "period_end", "currency", "sign_convention", "row_identifier"],
+      "properties": {
+        "period_start": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "period_end": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "sign_convention": {"const": "source_value_times_group_multiplier"},
+        "row_identifier": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact source-column header whose value is unique for every numeric account row."
+        }
+      }
+    },
+    "source_globs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Safe relative globs for the primary actuals file; exactly one file must match.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(inbox|data|imports)/(?!.*\\.\\.)(?!.*[A-Za-z]:)[^\\\\]+$"
+      }
+    },
+    "columns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["account_id", "account_name", "month", "prior", "ytd", "ytd_prior"],
+      "properties": {
+        "account_id": {"type": "string", "minLength": 1},
+        "account_name": {"type": "string", "minLength": 1},
+        "month": {"type": "string", "minLength": 1},
+        "prior": {"type": "string", "minLength": 1},
+        "ytd": {"type": "string", "minLength": 1},
+        "ytd_prior": {"type": "string", "minLength": 1}
+      }
+    },
+    "sign_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula", "positive_contribution", "negative_contribution"],
+      "properties": {
+        "formula": {"const": "normalized_value = source_value * group.multiplier"},
+        "positive_contribution": {"type": "string", "minLength": 1},
+        "negative_contribution": {"type": "string", "minLength": 1}
+      }
+    },
+    "groups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["multiplier"],
+        "properties": {
+          "prefixes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "name_matches": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "multiplier": {"type": "number"},
+          "ignored": {"type": "boolean", "description": "True only for an intentionally excluded, non-overlapping account group."}
+        },
+        "anyOf": [
+          {"required": ["prefixes"]},
+          {"required": ["name_matches"]}
+        ]
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["ebitda", "depreciation", "egt"],
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {"type": "string", "minLength": 1}
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["material_deviation_abs"],
+      "properties": {
+        "material_deviation_abs": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

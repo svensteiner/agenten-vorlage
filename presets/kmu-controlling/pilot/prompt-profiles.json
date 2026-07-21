@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "selection_rule": "Choose the most specific active condition; missing_data blocks KPI claims for affected scope.",
+  "profiles": {
+    "new_input": {
+      "when": "A new valid input fingerprint is detected.",
+      "objective": "Validate, calculate and draft the first sourced management view.",
+      "stop_condition": "Required data or mapping is missing.",
+      "output": ["status", "summary", "sourced_kpis", "deviations", "next_actions", "artifacts"]
+    },
+    "changed_input": {
+      "when": "A known input fingerprint changes.",
+      "objective": "Recalculate and explain only traceable changes versus the prior accepted run.",
+      "stop_condition": "The changed scope cannot be reconciled.",
+      "output": ["status", "summary", "changed_sources", "changed_kpis", "next_actions", "artifacts"]
+    },
+    "missing_data": {
+      "when": "A required dataset, field, period, currency, sign rule or material mapping is absent or ambiguous.",
+      "objective": "Prevent unsupported KPI claims and request the smallest exact correction.",
+      "safe_retry": "Re-run after the named file, field or mapping is supplied and validated.",
+      "stop_condition": "Do not calculate the affected KPI until validation passes.",
+      "output": ["warning", "root_cause_hint", "missing_items", "affected_kpis", "safe_retry", "stop_condition", "artifacts"]
+    },
+    "recovery": {
+      "when": "The previous scheduled run failed.",
+      "objective": "Retry safely without changing inputs or rules.",
+      "safe_retry": "Use the same source fingerprint and deterministic configuration.",
+      "stop_condition": "Freeze after max_consecutive_failures and escalate.",
+      "output": ["status", "root_cause_hint", "retry_count", "next_actions", "artifacts"]
+    },
+    "pending_approval": {
+      "when": "An external action awaits human approval.",
+      "objective": "Present the exact draft, sources and intended recipient without sending.",
+      "stop_condition": "No external action before explicit approval.",
+      "output": ["status", "summary", "approval_request", "artifacts"]
+    },
+    "periodic_review": {
+      "when": "The configured review interval is due without a more specific signal.",
+      "objective": "Review data freshness, open issues and KPI relevance.",
+      "stop_condition": "Do not restate unchanged results as new findings.",
+      "output": ["status", "summary", "data_freshness", "open_items", "next_actions", "artifacts"]
+    }
+  }
+}

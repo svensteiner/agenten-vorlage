@@ -113,13 +113,19 @@ def test_sourced_kmu_report_passes_deterministically_without_verifier_llm(monkey
         "source": source,
         "method": method,
         "metrics": {
-            "ebitda": {"month": "2800"},
-            "egt": {"month": "-2250"},
+            "ebitda": {"month": "2800", "prior": "3000", "ytd": "8400", "ytd_prior": "9000"},
+            "depreciation": {"month": "-3000", "prior": "-2900", "ytd": "-9000", "ytd_prior": "-8500"},
+            "egt": {"month": "-2250", "prior": "21780", "ytd": "66700", "ytd_prior": "105200"},
         },
         "reconciliation": {
             "source_account_count": 20,
             "mapped_account_count": 20,
             "ignored_account_count": 0,
+        },
+        "provenance": {
+            "input_fingerprint": "a" * 64,
+            "mapping_version": "b" * 64,
+            "calculation_version": "kmu-report-v1",
         },
     }
     management = {

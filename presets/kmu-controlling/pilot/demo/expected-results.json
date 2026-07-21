@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+  "currency": "EUR",
+  "period": "2026-06",
+  "report_metadata": {
+    "period_start": "2026-06-01",
+    "period_end": "2026-06-30",
+    "currency": "EUR",
+    "sign_convention": "source_value_times_group_multiplier",
+    "row_identifier": "Konto"
+  },
+  "metrics": {
+    "revenue_month": "203500",
+    "material_month": "-101700",
+    "personnel_month": "-81900",
+    "ebitda_month": "2800",
+    "egt_month": "-2250",
+    "egt_prior": "21780",
+    "egt_ytd": "66700",
+    "egt_ytd_prior": "105200",
+    "receivables_month": "238500",
+    "liquidity_month": "66150",
+    "payables_month": "-147400"
+  },
+  "reconciliation": {
+    "source_account_count": 20,
+    "mapped_account_count": 20,
+    "ignored_account_count": 0
+  }
+}

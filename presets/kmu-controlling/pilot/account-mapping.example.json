@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "report_metadata": {
+    "period_start": "2026-06-01",
+    "period_end": "2026-06-30",
+    "currency": "EUR",
+    "sign_convention": "source_value_times_group_multiplier",
+    "row_identifier": "Konto"
+  },
+  "source_globs": [
+    "inbox/actuals/**/*.csv",
+    "inbox/actuals/**/*.xlsx",
+    "data/actuals/**/*.csv",
+    "data/actuals/**/*.xlsx",
+    "imports/actuals/**/*.csv",
+    "imports/actuals/**/*.xlsx"
+  ],
+  "columns": {
+    "account_id": "Konto",
+    "account_name": "Bezeichnung",
+    "month": "Monat",
+    "prior": "Vormonat",
+    "ytd": "YTD",
+    "ytd_prior": "YTD Vorjahr"
+  },
+  "sign_semantics": {
+    "formula": "normalized_value = source_value * group.multiplier",
+    "positive_contribution": "A positive normalized value increases the KPI.",
+    "negative_contribution": "A negative normalized value decreases the KPI; verify source signs before setting each multiplier."
+  },
+  "groups": {
+    "revenue": {"prefixes": ["4"], "multiplier": 1},
+    "material": {"prefixes": ["5"], "multiplier": -1},
+    "personnel": {"prefixes": ["6"], "multiplier": -1},
+    "depreciation": {"name_matches": ["Abschreibung", "AfA"], "multiplier": -1},
+    "financial": {"prefixes": ["8"], "multiplier": -1},
+    "receivables": {"prefixes": ["12"], "multiplier": 1},
+    "liquidity": {"prefixes": ["10"], "multiplier": 1},
+    "payables": {"prefixes": ["16"], "multiplier": -1},
+    "ignored_example": {"prefixes": ["99"], "multiplier": 1, "ignored": true}
+  },
+  "metrics": {
+    "ebitda": ["revenue", "material", "personnel"],
+    "depreciation": ["depreciation"],
+    "egt": ["revenue", "material", "personnel", "depreciation", "financial"]
+  },
+  "thresholds": {
+    "material_deviation_abs": 1000
+  }
+}

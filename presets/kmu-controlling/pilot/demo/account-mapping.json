@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "report_metadata": {
+    "period_start": "2026-06-01",
+    "period_end": "2026-06-30",
+    "currency": "EUR",
+    "sign_convention": "source_value_times_group_multiplier",
+    "row_identifier": "Konto"
+  },
+  "source_globs": [
+    "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx"
+  ],
+  "columns": {
+    "account_id": "Konto",
+    "account_name": "Bezeichnung",
+    "month": "Juni 2026",
+    "prior": "Juni 2025",
+    "ytd": "YTD 2026",
+    "ytd_prior": "YTD 2025"
+  },
+  "sign_semantics": {
+    "formula": "normalized_value = source_value * group.multiplier",
+    "positive_contribution": "Positive source values increase the KPI; this demo uses source-native signs.",
+    "negative_contribution": "Negative source values decrease the KPI; every demo group therefore uses multiplier 1."
+  },
+  "groups": {
+    "revenue": {"prefixes": ["4"], "multiplier": 1},
+    "material": {"prefixes": ["5"], "multiplier": 1},
+    "personnel": {"prefixes": ["6"], "multiplier": 1},
+    "depreciation": {"name_matches": ["Abschreibung"], "multiplier": 1},
+    "other_operating": {"prefixes": ["72", "74", "76", "77", "78"], "multiplier": 1},
+    "financial": {"prefixes": ["8"], "multiplier": 1},
+    "receivables": {"prefixes": ["20"], "multiplier": 1},
+    "liquidity": {"prefixes": ["27", "28"], "multiplier": 1},
+    "payables": {"prefixes": ["33", "35", "36"], "multiplier": 1}
+  },
+  "metrics": {
+    "ebitda": ["revenue", "material", "personnel", "other_operating"],
+    "depreciation": ["depreciation"],
+    "egt": ["revenue", "material", "personnel", "other_operating", "depreciation", "financial"]
+  },
+  "thresholds": {
+    "material_deviation_abs": 1000
+  }
+}

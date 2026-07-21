@@ -1,0 +1,47 @@
+{
+  "purpose": "Generischer KMU-Controlling-Agent für belegte Abweichungsanalyse und managementtaugliche Handlungshinweise.",
+  "model": {
+    "default": "gpt-5-nano",
+    "planner": "gpt-5-nano",
+    "narrative": "gpt-5-nano",
+    "escalation_fallback": "gpt-5.6-luna"
+  },
+  "model_policy": {
+    "strategy": "cost_aware",
+    "intent": "Use gpt-5-nano with minimal reasoning for routine planning and aggregate-only drafts. Use gpt-5.6-luna only as an explicit fallback when deterministic validation leaves a material ambiguity; never escalate merely for style.",
+    "credentials": "environment_only_no_keys_in_project_files"
+  },
+  "approval_required_for": [
+    "external communication",
+    "send",
+    "publish"
+  ],
+  "tool_permissions": {
+    "default": "disabled",
+    "enabled": ["read", "compute", "report"],
+    "write_restricted_to_leaf": true
+  },
+  "tools": ["read", "compute", "report"],
+  "workflow": {
+    "name": "kmu-controlling",
+    "steps": [
+      "Validate input and account mapping",
+      "Calculate KPIs deterministically",
+      "Prioritize material deviations",
+      "Draft an evidence-based management update",
+      "Wait for approval before external communication"
+    ],
+    "validation": "Jede Kennzahl muss auf Eingaben, Konten-Mapping, Zeitraum und Rechenweg zurückführbar sein.",
+    "escalation": "Bei fehlendem oder unklarem Konten-Mapping, Datenkonflikten oder externer Aktion Freigabe einholen."
+  },
+  "pilot_pack": {
+    "operator_guide": "pilot/README.md",
+    "data_contract": "pilot/data-contract.json",
+    "account_mapping_schema": "pilot/account-mapping.schema.json",
+    "account_mapping_example": "pilot/account-mapping.example.json",
+    "reference_demo": "pilot/demo/README.md",
+    "prompt_profiles": "pilot/prompt-profiles.json",
+    "runbook": "pilot/30-day-runbook.md",
+    "acceptance_criteria": "pilot/acceptance-criteria.json"
+  }
+}

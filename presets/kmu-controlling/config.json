@@ -1,0 +1,62 @@
+{
+  "loop_interval_minutes": 60,
+  "adaptive_schedule": {
+    "schema_version": 1,
+    "enabled": true,
+    "input_globs": [
+      "inbox/**/*.csv",
+      "inbox/**/*.CSV",
+      "inbox/**/*.xlsx",
+      "inbox/**/*.XLSX",
+      "data/**/*.csv",
+      "data/**/*.CSV",
+      "data/**/*.xlsx",
+      "data/**/*.XLSX",
+      "imports/**/*.csv",
+      "imports/**/*.CSV",
+      "imports/**/*.xlsx",
+      "imports/**/*.XLSX",
+      "project/pilot/account-mapping.json"
+    ],
+    "required_input_groups": [
+      {
+        "name": "actuals",
+        "globs": [
+          "inbox/**/*.csv",
+          "inbox/**/*.CSV",
+          "inbox/**/*.xlsx",
+          "inbox/**/*.XLSX",
+          "data/**/*.csv",
+          "data/**/*.CSV",
+          "data/**/*.xlsx",
+          "data/**/*.XLSX",
+          "imports/**/*.csv",
+          "imports/**/*.CSV",
+          "imports/**/*.xlsx",
+          "imports/**/*.XLSX"
+        ],
+        "minimum": 1
+      },
+      {
+        "name": "account_mapping",
+        "globs": [
+          "project/pilot/account-mapping.json"
+        ],
+        "minimum": 1
+      }
+    ],
+    "state_file": "state/adaptive-schedule.json",
+    "prompt_profiles": {
+      "new_input": "Profil new_input: Validiere neue Controlling-Eingaben nach pilot/data-contract.json. Rechne deterministisch und priorisiere nur belegte Abweichungen. Nutze ausschließlich diese Metadaten: {metadata_json}",
+      "changed_input": "Profil changed_input: Vergleiche geänderte Eingaben mit dem letzten geprüften Stand. Nenne geänderte Quellen, Auswirkungen und Rechenwege. Nutze ausschließlich diese Metadaten: {metadata_json}",
+      "missing_data": "Profil missing_data: Stoppe KPI-Aussagen mit unvollständiger Basis. Nenne fehlende Pflichtfelder oder Dateien, sichere Wiederholung und Stop-Bedingung; erfinde oder schätze nichts.",
+      "recovery": "Profil recovery: Ordne die letzte Störung ein, prüfe eine sichere Wiederholung und eskaliere an der Fehlergrenze. Keine Annahmen und keine externe Aktion. Metadaten: {metadata_json}",
+      "pending_approval": "Profil pending_approval: Fasse offene Freigaben mit Quelle und Wirkung zusammen. Führe keine externe Aktion aus. Metadaten: {metadata_json}",
+      "periodic_review": "Profil periodic_review: Prüfe KPI-Stand, Datenqualität und offene Punkte. Berichte nur relevante nächste Schritte mit Quellen. Metadaten: {metadata_json}"
+    },
+    "prompt_profile_catalog": "pilot/prompt-profiles.json",
+    "periodic_review_hours": 24,
+    "max_consecutive_failures": 3,
+    "idle_policy": "record_and_wait"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "contract_name": "kmu-controlling-pilot-input",
+  "primary_actuals": {
+    "accepted_formats": ["xlsx", "csv"],
+    "allowed_directories": ["inbox", "data", "imports"],
+    "selection_rule": "The active mapping source_globs must resolve to exactly one primary actuals file."
+  },
+  "active_mapping": {
+    "path": "project/pilot/account-mapping.json",
+    "schema": "account-mapping.schema.json",
+    "required_report_metadata": [
+      "period_start",
+      "period_end",
+      "currency",
+      "sign_convention",
+      "row_identifier"
+    ],
+    "metadata_rules": {
+      "period_start": "ISO date YYYY-MM-DD",
+      "period_end": "ISO date YYYY-MM-DD and not before period_start",
+      "currency": "Exactly three uppercase letters, for example EUR",
+      "sign_convention": "Exactly source_value_times_group_multiplier",
+      "row_identifier": "Exact source-column header; non-empty and unique for every numeric account row"
+    }
+  },
+  "required_semantic_columns": [
+    "account_id",
+    "account_name",
+    "month",
+    "prior",
+    "ytd",
+    "ytd_prior"
+  ],
+  "value_rules": {
+    "numeric_account": "An account_id matching a numeric account code is a report row.",
+    "month_and_prior": "Required numeric values for every numeric account row, including balance groups and ignored groups.",
+    "p_and_l_ytd": "ytd and ytd_prior are required numeric values for every group referenced by EBITDA, EBIT, EGT, EBT, depreciation, operating_result or net_income.",
+    "balance_ytd": "ytd and ytd_prior may both be empty for balance groups such as receivables, liquidity and payables.",
+    "empty_cell": "Empty means missing and is never treated as zero.",
+    "decimal_rule": "Use an unambiguous German or international decimal representation. Values such as 1.234 or 1,234 are rejected because they can mean a decimal or a thousands grouping; use 1234, 1234.00, 1234,00, 1.234,00 or 1,234.00. Non-finite values are rejected.",
+    "sign_rule": "normalized_value = source_value * group.multiplier"
+  },
+  "fail_closed_conditions": [
+    "The active mapping is missing, invalid or resolves outside the instance.",
+    "Required report metadata or a required source column is missing.",
+    "A row identifier is empty or duplicated.",
+    "A required period value is empty or non-numeric.",
+    "A numeric account is unmapped or mapped more than once.",
+    "An XLSX is malformed or exceeds archive member or uncompressed-size limits."
+  ],
+  "optional_inputs": {
+    "budget": "If absent, budget variance is omitted and disclosed as unavailable.",
+    "open_items": "If absent, receivables aging is omitted and disclosed as unavailable."
+  }
+}

@@ -32,6 +32,15 @@ def _strict_mapping(*, groups=None, metrics=None, row_identifier="Zeilen-ID"):
         "revenue": {"prefixes": ["4"], "multiplier": 1},
         "liquidity": {"prefixes": ["1"], "multiplier": 1},
     }
+    groups = {
+        name: {**rule, "multiplier": rule.get("multiplier", 1)}
+        for name, rule in groups.items()
+    }
+    metrics = dict(metrics or {"ebitda": ["revenue"], "egt": ["revenue"]})
+    first_group = next(iter(groups))
+    metrics.setdefault("ebitda", [first_group])
+    metrics.setdefault("depreciation", [first_group])
+    metrics.setdefault("egt", [first_group])
     return {
         "schema_version": 1,
         "report_metadata": {
@@ -54,8 +63,9 @@ def _strict_mapping(*, groups=None, metrics=None, row_identifier="Zeilen-ID"):
             "positive_contribution": "Positive increases KPI.",
             "negative_contribution": "Negative decreases KPI.",
         },
+        "source_globs": ["data/*.csv"],
         "groups": groups,
-        "metrics": metrics or {"ebitda": ["revenue"], "egt": ["revenue"]},
+        "metrics": metrics,
         "thresholds": {"material_deviation_abs": 1},
     }
 
@@ -135,6 +145,34 @@ def test_compute_preserves_decimal_separator_meaning(tmp_path):
     )
 
     assert "RESULT: 1201.75" in result
+
+
+@pytest.mark.parametrize("raw", ["1.234", "1,234"])
+def test_compute_rejects_ambiguous_single_separator_numbers(tmp_path, raw):
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "ambiguous.csv").write_text(
+        f"value;note\n{raw};x\n", encoding="utf-8"
+    )
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"sum","source":"data/ambiguous.csv","column":"value"}'
+    )
+
+    assert result.startswith("FEHLER")
+
+
+@pytest.mark.parametrize("raw", ["1.234,56", "1,234.56"])
+def test_compute_accepts_unambiguous_grouped_decimals(tmp_path, raw):
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "amount.csv").write_text(
+        f"value;note\n{raw};x\n", encoding="utf-8"
+    )
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"sum","source":"data/amount.csv","column":"value"}'
+    )
+
+    assert "RESULT: 1234.56" in result
 
 
 def test_compute_rejects_oversized_source_before_parsing(tmp_path):
@@ -441,6 +479,90 @@ def test_kmu_report_fails_closed_for_overlapping_mapping_rules(tmp_path):
     assert "Konto '4000' ist mehrfach zugeordnet" in ControllingComputeTool(
         tmp_path
     ).safe_run('{"operation":"kmu_report","source":"data/salden.csv"}')
+
+
+def test_kmu_report_rejects_duplicate_semantic_column_assignments(tmp_path):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["columns"]["prior"] = mapping["columns"]["month"]
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert "eindeutig" in result
+
+
+def test_kmu_report_rejects_metrics_that_reference_ignored_groups(tmp_path):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping(
+        groups={
+            "revenue": {"prefixes": ["4"], "multiplier": 1},
+            "excluded": {"prefixes": ["9"], "multiplier": 1, "ignored": True},
+        },
+        metrics={"ebitda": ["excluded"], "egt": ["revenue"]},
+    )
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert "ignorierte" in result
+
+
+@pytest.mark.parametrize(
+    ("mutation", "label"),
+    [
+        (lambda mapping: mapping.pop("source_globs"), "source_globs"),
+        (lambda mapping: mapping["metrics"].pop("egt"), "Pflichtkennzahlen"),
+        (
+            lambda mapping: mapping["groups"]["revenue"].pop("multiplier"),
+            "multiplier",
+        ),
+    ],
+    ids=("source-globs", "required-metrics", "group-multiplier"),
+)
+def test_kmu_report_enforces_published_mapping_contract(tmp_path, mutation, label):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mutation(mapping)
+    pilot = tmp_path / "project" / "pilot"
+    pilot.mkdir(parents=True, exist_ok=True)
+    (pilot / "account-mapping.json").write_text(
+        json.dumps(mapping), encoding="utf-8"
+    )
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert label in result
+
+
+def test_kmu_report_provenance_matches_exact_source_and_mapping_bytes(tmp_path):
+    import hashlib
+
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    _write_strict_mapping(tmp_path)
+
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"data/actuals.csv"}'
+        )
+    )
+
+    source = tmp_path / "data" / "actuals.csv"
+    mapping = tmp_path / "project" / "pilot" / "account-mapping.json"
+    assert report["provenance"] == {
+        "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
+        "calculation_version": "kmu-report-v1",
+    }
 
 
 def test_kmu_report_finds_salden_header_after_workbook_title_rows(tmp_path):
