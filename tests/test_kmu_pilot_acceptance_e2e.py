@@ -8,7 +8,6 @@ import shutil
 import time
 
 import agent_cli
-import core.controlling.narrative as narrative_module
 from core.controlling.artifacts import read_acceptance_status
 from core.controlling.narrative import ControllingReportTool
 
@@ -25,9 +24,7 @@ def _is_sha256(value):
     )
 
 
-def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(
-    tmp_path, monkeypatch
-):
+def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(tmp_path):
     """A KMU owner can prove a repeatable, sourced, approval-safe pilot."""
     create = argparse.Namespace(
         tenant="Muster KMU",
@@ -49,17 +46,6 @@ def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(
     shutil.copyfile(
         DEMO / "account-mapping.json",
         instance / "project" / "pilot" / "account-mapping.json",
-    )
-
-    # The acceptance run is deliberately local: even a configured model may
-    # not access an API, credentials, or the network in this test journey.
-    monkeypatch.setattr(ControllingReportTool, "_narrative_model", lambda _self: None)
-    monkeypatch.setattr(
-        narrative_module.brain,
-        "complete",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            AssertionError("offline pilot must not call an LLM API")
-        ),
     )
 
     tool = ControllingReportTool(instance)
@@ -165,6 +151,7 @@ def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(
     repeatable_counts = [
         response["acceptance"]["repeatable_run_count"] for response in responses
     ]
+    assert all(response["mode"] == "deterministic_fallback" for response in responses)
     assert repeatable_counts == [
         1,
         2,

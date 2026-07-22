@@ -720,7 +720,19 @@ def test_kmu_report_handles_realistic_two_section_saldenliste(tmp_path):
     )
 
 
-def test_narrative_uses_aggregate_prompt_and_offline_fallback(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "untrusted_response",
+    [
+        "Das EBITDA beträgt 8. Der YTD-Wert beträgt 10. Die Lage ist stabil.",
+        "Das EBITDA beträgt acht. Die Lage ist stabil. Weitere Prüfung folgt.",
+        "Die Liquidität beträgt ½. Die Lage ist stabil. Weitere Prüfung folgt.",
+        "Es besteht ein qualitatives Liquiditätsrisiko. Die Lage ist angespannt. Prüfung folgt.",
+    ],
+    ids=("digit-swapped", "spelled-number", "unicode-number", "qualitative-risk"),
+)
+def test_narrative_is_deterministic_when_model_is_configured(
+    tmp_path, monkeypatch, untrusted_response
+):
     (tmp_path / "data").mkdir()
     (tmp_path / "project" / "pilot").mkdir(parents=True)
     (tmp_path / "data" / "actuals.csv").write_text(
@@ -741,26 +753,21 @@ def test_narrative_uses_aggregate_prompt_and_offline_fallback(tmp_path, monkeypa
         ),
         encoding="utf-8",
     )
-    seen = {}
     monkeypatch.setattr(
-        "core.controlling.narrative.brain.complete",
-        lambda system, user, **kwargs: (
-            seen.update(user=user)
-            or '{"summary":"A. B. C.","alarms":[],"actions":["a","b","c"]}'
+        "brain.complete",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError(untrusted_response)
         ),
+        raising=False,
     )
     result = json.loads(
         ControllingReportTool(tmp_path).safe_run('{"source":"data/actuals.csv"}')
     )
 
-    assert "Geheimer Kunde" not in seen["user"]
-    assert result["mode"] == "model_draft"
-    (tmp_path / "project" / "manifest.json").unlink()
-    assert (
-        json.loads(
-            ControllingReportTool(tmp_path).safe_run('{"source":"data/actuals.csv"}')
-        )["mode"]
-        == "deterministic_fallback"
+    assert result["mode"] == "deterministic_fallback"
+    assert result["summary"] == (
+        "Der Bericht basiert auf der geprüften Quelle. "
+        "EBITDA im Monat: 10. EGT im Monat: 10."
     )
 
 
@@ -827,11 +834,10 @@ def _stubbed_narrative_tool(tmp_path, monkeypatch, complete):
     monkeypatch.setattr(
         tool._compute, "safe_run", lambda _input: json.dumps(report)
     )
-    monkeypatch.setattr("core.controlling.narrative.brain.complete", complete)
     return tool, report
 
 
-def test_narrative_prompt_allowlists_only_anonymous_aggregate_evidence(
+def test_narrative_ignores_configured_model_response(
     tmp_path, monkeypatch
 ):
     seen = {}
@@ -843,40 +849,9 @@ def test_narrative_prompt_allowlists_only_anonymous_aggregate_evidence(
     tool, _report = _stubbed_narrative_tool(tmp_path, monkeypatch, complete)
 
     result = json.loads(tool.safe_run('{"source":"data/anything.csv"}'))
-    payload = json.loads(seen["user"])
 
-    assert payload["evidence"] == {
-        "metrics": {
-            "ebitda": {"month": "10", "prior": "9", "ytd": "29"},
-            "egt": {"month": "8", "prior": "7", "ytd": "23"},
-        },
-        "reconciliation": {
-            "source_account_count": 2,
-            "mapped_account_count": 2,
-            "ignored_account_count": 0,
-            "mapped_source_period_totals": {
-                "month": "10",
-                "prior": "9",
-                "ytd": "29",
-            },
-            "grouped_period_totals": {
-                "month": "10",
-                "prior": "9",
-                "ytd": "29",
-            },
-        },
-    }
-    outbound = seen["system"] + seen["user"]
-    for private_value in (
-        "4000",
-        "5000",
-        "Geheimer Kunde",
-        "KUNDE-ALPHA-PRIVATE",
-        "PRIVATE-FILE-HASH",
-        "anything.csv",
-    ):
-        assert private_value not in outbound
-    assert result["mode"] == "model_draft"
+    assert seen == {}
+    assert result["mode"] == "deterministic_fallback"
     assert result["citations"] == {
         "source": "data/KUNDE-ALPHA-PRIVATE.csv",
         "method": "mapping-defined account groups",
@@ -911,18 +886,20 @@ def test_narrative_rejects_ungrounded_or_external_model_content(
     assert len(result["actions"]) == 3
 
 
-def test_narrative_accepts_numbers_present_in_aggregate_evidence(tmp_path, monkeypatch):
+def test_narrative_rejects_numbers_even_when_present_at_wrong_coordinates(
+    tmp_path, monkeypatch
+):
     response = json.dumps(
         {
             "summary": (
-                "Das EBITDA betr\u00e4gt 10. Der Vorwert betr\u00e4gt 9. "
-                "Der YTD-Wert betr\u00e4gt 29."
+                "Das EBITDA beträgt 8. Der YTD-Wert beträgt 10. "
+                "Die Lage ist stabil."
             ),
-            "alarms": ["EBITDA bleibt bei 10."],
-            "actions": ["Pr\u00fcfen.", "Priorisieren.", "Intern freigeben."],
+            "alarms": [],
+            "actions": ["Prüfen.", "Priorisieren.", "Intern freigeben."],
         }
     )
-    tool, _report = _stubbed_narrative_tool(
+    tool, report = _stubbed_narrative_tool(
         tmp_path,
         monkeypatch,
         lambda _system, _user, **_kwargs: response,
@@ -930,7 +907,30 @@ def test_narrative_accepts_numbers_present_in_aggregate_evidence(tmp_path, monke
 
     result = json.loads(tool.safe_run('{"source":"data/anything.csv"}'))
 
-    assert result["mode"] == "model_draft"
+    assert result == ControllingReportTool._fallback(report)
+
+
+def test_narrative_rejects_numeric_free_model_content_as_untrusted(tmp_path, monkeypatch):
+    response = json.dumps(
+        {
+            "summary": (
+                "Die Ergebnislage bleibt beobachtungsbedürftig. "
+                "Die Entwicklung wird intern nachverfolgt. "
+                "Der deterministische Bericht enthält alle Kennzahlen."
+            ),
+            "alarms": ["Die Ergebnisentwicklung bleibt im Fokus."],
+            "actions": ["Pr\u00fcfen.", "Priorisieren.", "Intern freigeben."],
+        }
+    )
+    tool, report = _stubbed_narrative_tool(
+        tmp_path,
+        monkeypatch,
+        lambda _system, _user, **_kwargs: response,
+    )
+
+    result = json.loads(tool.safe_run('{"source":"data/anything.csv"}'))
+
+    assert result == ControllingReportTool._fallback(report)
 
 
 def _write_strict_actuals(tmp_path, rows):
