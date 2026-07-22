@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,8 @@ import json
 import os
 import shutil
 import stat
+import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -52,6 +55,13 @@ LOOP_WORK_REASONS = frozenset(
 )
 MAX_LOOP_INTERVAL_MINUTES = 1440
 MAX_STATUS_JSON_BYTES = 1024 * 1024
+SUPERVISOR_HEALTH_RELATIVE = "state/supervisor-health.json"
+SUPERVISOR_LOCK_RELATIVE = "state/.supervisor.lock"
+SUPERVISOR_STATUSES = frozenset({"running", "backoff", "frozen", "stopped"})
+MAX_SUPERVISOR_CRASHES = 20
+MAX_SUPERVISOR_BACKOFF_SECONDS = 3600
+MAX_SUPERVISOR_HEALTH_AGE = timedelta(minutes=15)
+SUPERVISOR_HEARTBEAT_SECONDS = 60
 PRODUCTION_EVIDENCE_REFERENCE = "state/production-attestation-reference.json"
 PRODUCTION_TRUST_ROOT_ENV = "AGENT_PRODUCTION_TRUST_ROOT"
 PRODUCTION_KEY_FILES = ("platform.pub", "security.pub", "control-plane.pub")
@@ -1418,6 +1428,262 @@ def _loop_health_is_fresh(
     )
 
 
+def _supervisor_config(config: dict[str, Any]) -> tuple[bool, int, int, int]:
+    """Return the bounded opt-in supervisor settings without accepting junk."""
+    raw = config.get("supervisor", {})
+    if not isinstance(raw, dict):
+        raise ValueError("supervisor configuration must be an object")
+    required = raw.get("supervisor_required", config.get("supervisor_required", False))
+    threshold = raw.get("crash_threshold", 3)
+    base_backoff = raw.get("base_backoff_seconds", 5)
+    max_backoff = raw.get("max_backoff_seconds", 300)
+    if not isinstance(required, bool):
+        raise ValueError("supervisor_required must be a boolean")
+    for value, label, upper in (
+        (threshold, "crash_threshold", MAX_SUPERVISOR_CRASHES),
+        (base_backoff, "base_backoff_seconds", MAX_SUPERVISOR_BACKOFF_SECONDS),
+        (max_backoff, "max_backoff_seconds", MAX_SUPERVISOR_BACKOFF_SECONDS),
+    ):
+        if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= upper:
+            raise ValueError(f"supervisor {label} must be an integer from 1 to {upper}")
+    if base_backoff > max_backoff:
+        raise ValueError("supervisor base_backoff_seconds must not exceed max_backoff_seconds")
+    return required, threshold, base_backoff, max_backoff
+
+
+def _supervisor_health_is_fresh(health: dict[str, Any], now: datetime | None = None) -> bool:
+    """Strict, content-free supervisor heartbeat validation for status."""
+    if set(health) != {
+        "schema_version", "status", "restart_count", "consecutive_crashes",
+        "exit_code", "updated_at", "next_restart_at",
+    }:
+        return False
+    if health.get("schema_version") != 1 or health.get("status") not in SUPERVISOR_STATUSES:
+        return False
+    for key in ("restart_count", "consecutive_crashes"):
+        value = health.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= MAX_SUPERVISOR_CRASHES:
+            return False
+    exit_code = health.get("exit_code")
+    if exit_code is not None and (not isinstance(exit_code, int) or isinstance(exit_code, bool)):
+        return False
+    next_restart_at = health.get("next_restart_at")
+    if next_restart_at is not None and not isinstance(next_restart_at, str):
+        return False
+    try:
+        updated = datetime.fromisoformat(health["updated_at"])
+        if updated.tzinfo is None or updated.utcoffset() is None:
+            return False
+        updated = updated.astimezone(timezone.utc)
+        current = now or datetime.now(timezone.utc)
+        age = current - updated
+        if health["status"] == "backoff":
+            if next_restart_at is None:
+                return False
+            restart_at = datetime.fromisoformat(next_restart_at)
+            if restart_at.tzinfo is None or restart_at.utcoffset() is None:
+                return False
+            until_restart = restart_at.astimezone(timezone.utc) - updated
+            if until_restart < timedelta(0) or until_restart > timedelta(seconds=MAX_SUPERVISOR_BACKOFF_SECONDS) + LOOP_HEALTH_GRACE:
+                return False
+        elif next_restart_at is not None:
+            return False
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return False
+    return -LOOP_HEALTH_GRACE <= age <= MAX_SUPERVISOR_HEALTH_AGE
+
+
+def _write_supervisor_health(
+    instance_root: Path, status: str, restart_count: int, consecutive_crashes: int,
+    exit_code: int | None, next_restart_at: datetime | None = None,
+    *, now: datetime | None = None,
+) -> None:
+    """Atomically write bounded health only; never persist tenant paths or errors."""
+    if status not in SUPERVISOR_STATUSES:
+        raise ValueError("unsupported supervisor status")
+    if any(not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= MAX_SUPERVISOR_CRASHES
+           for value in (restart_count, consecutive_crashes)):
+        raise ValueError("invalid supervisor counters")
+    if exit_code is not None and (not isinstance(exit_code, int) or isinstance(exit_code, bool)):
+        raise ValueError("invalid supervisor exit code")
+    instance_root = Path(instance_root)
+    if _is_link_or_junction(instance_root):
+        raise OSError("unsafe supervisor health path")
+    root = instance_root.resolve(strict=True)
+    state = _safe_status_path(root, "state")
+    target = _safe_status_path(root, SUPERVISOR_HEALTH_RELATIVE)
+    if state is None or target is None or _is_link_or_junction(root):
+        raise OSError("unsafe supervisor health path")
+    state.mkdir(parents=True, exist_ok=True)
+    if not state.is_dir() or _is_link_or_junction(state) or state.resolve(strict=True) != state:
+        raise OSError("unsafe supervisor health path")
+    temporary = _safe_status_path(root, f"state/.supervisor-health.{os.getpid()}.{time.time_ns()}.tmp")
+    if temporary is None:
+        raise OSError("unsafe supervisor health path")
+    timestamp = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    payload = {
+        "schema_version": 1, "status": status, "restart_count": restart_count,
+        "consecutive_crashes": consecutive_crashes, "exit_code": exit_code,
+        "updated_at": timestamp.isoformat(),
+        "next_restart_at": next_restart_at.astimezone(timezone.utc).isoformat() if next_restart_at else None,
+    }
+    try:
+        descriptor = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
+            stream.flush()
+            os.fsync(stream.fileno())
+        if (
+            _is_link_or_junction(root)
+            or _safe_status_path(root, "state") != state
+            or _safe_status_path(root, SUPERVISOR_HEALTH_RELATIVE) != target
+            or _safe_status_path(root, temporary.relative_to(root).as_posix()) != temporary
+        ):
+            raise OSError("unsafe supervisor health path changed")
+        os.replace(temporary, target)
+    finally:
+        with contextlib.suppress(OSError):
+            if temporary.exists() and not _is_link_or_junction(temporary):
+                temporary.unlink()
+
+
+@contextlib.contextmanager
+def _supervisor_lock(instance_root: Path):
+    """One supervisor per instance; OS locks release automatically after a crash."""
+    instance_root = Path(instance_root)
+    if _is_link_or_junction(instance_root):
+        raise OSError("unsafe supervisor lock path")
+    root = instance_root.resolve(strict=True)
+    if os.name == "nt":
+        # A named kernel mutex has no tenant path on disk and releases on process death.
+        import ctypes
+        from ctypes import wintypes
+
+        identity = hashlib.sha256(str(root).casefold().encode("utf-8")).hexdigest()
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateMutexW.argtypes = (ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
+        kernel32.CreateMutexW.restype = wintypes.HANDLE
+        kernel32.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+        kernel32.WaitForSingleObject.restype = wintypes.DWORD
+        kernel32.ReleaseMutex.argtypes = (wintypes.HANDLE,)
+        kernel32.ReleaseMutex.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        ctypes.set_last_error(0)
+        handle = kernel32.CreateMutexW(None, False, f"Global\\AIStudioXYZ.Supervisor.{identity}")
+        if not handle:
+            raise OSError("unable to create supervisor mutex")
+        if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS, including same process
+            kernel32.CloseHandle(handle)
+            raise RuntimeError("supervisor already running for this instance")
+        result = kernel32.WaitForSingleObject(handle, 0)
+        if result not in {0, 0x80}:  # WAIT_OBJECT_0 / WAIT_ABANDONED
+            kernel32.CloseHandle(handle)
+            if result == 0x102:  # WAIT_TIMEOUT
+                raise RuntimeError("supervisor already running for this instance")
+            raise OSError("unable to acquire supervisor mutex")
+        try:
+            yield
+        finally:
+            kernel32.ReleaseMutex(handle)
+            kernel32.CloseHandle(handle)
+        return
+
+    lock_path = _safe_status_path(root, SUPERVISOR_LOCK_RELATIVE)
+    if lock_path is None:
+        raise OSError("unsafe supervisor lock path")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if _is_link_or_junction(lock_path.parent) or lock_path.parent.resolve(strict=True) != lock_path.parent:
+        raise OSError("unsafe supervisor lock path")
+    flags = os.O_CREAT | os.O_RDWR
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(lock_path, flags, 0o600)
+    try:
+        if _is_link_or_junction(lock_path) or os.fstat(descriptor).st_ino != lock_path.lstat().st_ino:
+            raise OSError("unsafe supervisor lock path")
+        stream = os.fdopen(descriptor, "a+", encoding="utf-8")
+    except Exception:
+        os.close(descriptor)
+        raise
+    try:
+        try:
+            import fcntl
+            fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            raise RuntimeError("supervisor already running for this instance") from exc
+        yield
+    finally:
+        with contextlib.suppress(OSError):
+            import fcntl
+            fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+        with contextlib.suppress(OSError):
+            stream.close()
+
+
+def _supervise_instance(
+    instance_root: Path, config: dict[str, Any], *, child_factory: Any = subprocess.Popen,
+    sleep: Any = time.sleep, now: Any = lambda: datetime.now(timezone.utc),
+) -> int:
+    """Restart unexpected loop exits with bounded backoff, then freeze fail-closed."""
+    _required, threshold, base_backoff, max_backoff = _supervisor_config(config)
+    restarts = crashes = 0
+    exit_code: int | None = None
+    with _supervisor_lock(instance_root):
+        try:
+            while True:
+                _write_supervisor_health(instance_root, "running", restarts, crashes, exit_code, now=now())
+                try:
+                    child = child_factory([sys.executable, str(ROOT / "agent_cli.py"), "run", "--instance", str(instance_root), "--loop"])
+                    # Poll rather than a blocking wait so a healthy long-lived child refreshes health.
+                    while (polled := child.poll()) is None:
+                        sleep(SUPERVISOR_HEARTBEAT_SECONDS)
+                        _write_supervisor_health(instance_root, "running", restarts, crashes, None, now=now())
+                    exit_code = polled
+                except OSError:
+                    exit_code = 1
+                # A child has no trusted "clean stop" protocol. Any exit is unexpected;
+                # only an explicit operator interrupt of this supervisor writes stopped.
+                crashes += 1
+                if crashes >= threshold:
+                    _write_supervisor_health(instance_root, "frozen", restarts, crashes, exit_code, now=now())
+                    print("Supervisor eingefroren: Crash-Grenze erreicht. Betreiber-Eingriff erforderlich.")
+                    return 1
+                delay = min(base_backoff * (2 ** (crashes - 1)), max_backoff)
+                restart_at = now() + timedelta(seconds=delay)
+                remaining = delay
+                while remaining:
+                    _write_supervisor_health(
+                        instance_root, "backoff", restarts, crashes, exit_code,
+                        restart_at, now=now(),
+                    )
+                    chunk = min(remaining, SUPERVISOR_HEARTBEAT_SECONDS)
+                    sleep(chunk)
+                    remaining -= chunk
+                restarts += 1
+        except KeyboardInterrupt:
+            # Do not leave a child loop behind when the operator stops the supervisor.
+            child_running = False
+            if "child" in locals():
+                try:
+                    child_running = child.poll() is None
+                except KeyboardInterrupt:
+                    child_running = False
+            if child_running:
+                with contextlib.suppress(OSError):
+                    child.terminate()
+                try:
+                    child.wait(timeout=10)
+                except (OSError, subprocess.TimeoutExpired):
+                    with contextlib.suppress(OSError):
+                        child.kill()
+                    with contextlib.suppress(OSError, subprocess.TimeoutExpired):
+                        child.wait(timeout=5)
+            _write_supervisor_health(instance_root, "stopped", restarts, crashes, exit_code, now=now())
+            print("Supervisor gestoppt.")
+            return 0
+
+
 def _print_pilot_status(instance: Path) -> int:
     """Show a compact, read-only traffic light for a generated pilot instance."""
     try:
@@ -1446,6 +1712,9 @@ def _print_pilot_status(instance: Path) -> int:
     health_relative = "state/loop-health.json"
     health_path = _safe_status_path(instance, health_relative)
     health, health_invalid = _read_status_json(instance, health_relative)
+    supervisor_health, supervisor_health_invalid = _read_status_json(
+        instance, SUPERVISOR_HEALTH_RELATIVE
+    )
 
     acceptance = read_acceptance_status(instance)
     repeatable = acceptance.get("repeatable_run_count", 0)
@@ -1475,15 +1744,25 @@ def _print_pilot_status(instance: Path) -> int:
     last_result = state.get("last_result")
     try:
         interval = _loop_interval_minutes(config)
+        supervisor_required, _threshold, _base_backoff, _max_backoff = _supervisor_config(config)
         interval_invalid = False
     except ValueError:
         interval = 60
+        supervisor_required = True
         interval_invalid = True
     health_fresh = (
         health_path is not None
         and health_path.exists()
         and not health_invalid
         and _loop_health_is_fresh(health, interval)
+    )
+    supervisor_fresh = (
+        not supervisor_required
+        or (
+            not supervisor_health_invalid
+            and _supervisor_health_is_fresh(supervisor_health)
+            and supervisor_health.get("status") in {"running", "backoff"}
+        )
     )
     provenance = latest.get("provenance") if isinstance(latest, dict) else None
     signed_sequence = acceptance.get("sequence", 0)
@@ -1507,6 +1786,7 @@ def _print_pilot_status(instance: Path) -> int:
         or last_result not in {None, "success", "failed"}
         or interval_invalid
         or not health_fresh
+        or not supervisor_fresh
     )
     loop_failed = last_result == "failed" or failures >= max_failures
     loop_healthy = (
@@ -1546,6 +1826,8 @@ def _print_pilot_status(instance: Path) -> int:
         f"  Stundenloop:      {loop_result}; Fehler {failures}/{max_failures}; "
         f"zuletzt {last_result_at}"
     )
+    if supervisor_required:
+        print(f"  Supervisor:       {supervisor_health.get('status', 'fehlt')}")
     print(
         "  Managementreport: "
         f"{instance / 'artifacts' / 'latest-controlling-report.html'}"
@@ -1594,6 +1876,26 @@ def cmd_run(args: argparse.Namespace) -> int:
         sys.argv = ["agent.py", *args.extra]
     agent_main()
     return 0
+
+
+def cmd_supervise(args: argparse.Namespace) -> int:
+    """Run the optional external-process supervisor; task registration is operator-owned."""
+    target_dir = Path(args.instance)
+    report = _validate_instance(target_dir)
+    if not report.ok:
+        _print_self_test(report)
+        return 1
+    try:
+        config = json.loads(
+            (target_dir / "project" / "config.json").read_text(encoding="utf-8")
+        )
+        if not isinstance(config, dict):
+            raise ValueError("invalid instance config")
+        _supervisor_config(config)
+        return _supervise_instance(target_dir, config)
+    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Supervisor nicht gestartet: {exc}")
+        return 1
 
 
 def _instance_orchestrator(project_root: Path):
@@ -1938,6 +2240,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run.add_argument("extra", nargs=argparse.REMAINDER, help="Argumente für agent.py")
     run.set_defaults(func=cmd_run)
+
+    supervise = sub.add_parser(
+        "supervise", help="Optionalen Loop-Supervisor für eine Instanz ausführen"
+    )
+    supervise.add_argument("--instance", required=True, help="Instance path <tenant>/<agent>")
+    supervise.set_defaults(func=cmd_supervise)
 
     status = sub.add_parser("status", help="Template- oder Pilotstatus anzeigen")
     status.add_argument(

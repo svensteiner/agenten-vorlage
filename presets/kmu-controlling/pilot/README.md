@@ -33,6 +33,17 @@ Jedes kontenähnliche Datenkonto mit Zahlen muss genau eine Gruppe treffen. Bewu
 
 Monat und Vormonat sind für jedes numerische Konto Pflicht. Für alle GuV-Gruppen, die in EBITDA, EBIT, EGT/EBT, Abschreibung, Betriebsergebnis oder Jahresergebnis eingehen, sind auch YTD und YTD-Vorjahr Pflicht. Bilanzgruppen dürfen leere YTD-Felder enthalten. Leere Zellen werden nie als Null geschätzt; ein Vertragsfehler endet mit `FEHLER`.
 
+## Optional: beaufsichtigter Stundenloop
+
+Für einen Betriebs-Piloten kann der Betreiber in `project/config.json` unter
+`supervisor.supervisor_required` auf `true` setzen und anschließend einen eigenen
+Windows-Task bzw. Service anlegen, der `py agent_cli.py supervise --instance <pfad>`
+startet. Der Befehl registriert oder startet **keinen** OS-Task selbst. Pro Instanz
+ist genau ein Supervisor erlaubt; unerwartete Abstürze werden begrenzt erneut
+gestartet und nach der Crash-Grenze sichtbar eingefroren. Bei aktiviertem Modus
+wird die Statusampel bei fehlender, veralteter, ungültiger oder eingefrorener
+Supervisor-Health rot.
+
 ## Erwartete Ausgabe
 
 - Status: `success`, `warning` oder `error`

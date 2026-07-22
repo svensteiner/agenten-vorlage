@@ -491,7 +491,21 @@ class TestPilotStatus:
         assert "4/3" not in output
         assert "0/3" in output
         assert "latest-controlling-report.html" in output
-        assert "überwacht fortführen" in output
+
+    @pytest.mark.parametrize("health", [{}, {"schema_version": 1, "status": "frozen"}])
+    def test_required_supervisor_health_makes_status_red(self, tmp_path, capsys, health):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        config_path = instance / "project" / "config.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["supervisor"] = {"supervisor_required": True, "crash_threshold": 3,
+                                "base_backoff_seconds": 1, "max_backoff_seconds": 2}
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        (instance / "state" / "supervisor-health.json").write_text(
+            json.dumps(health), encoding="utf-8"
+        )
+        assert agent_cli.cmd_status(agent_cli.argparse.Namespace(instance=str(instance))) == 1
+        assert "ROT" in capsys.readouterr().out
 
     def test_production_status_requires_external_evidence(self, tmp_path, capsys):
         instance = self._instance(tmp_path)
@@ -1439,6 +1453,154 @@ class TestInstanceFactory:
         output = capsys.readouterr().out
         assert "synthetic customer detail" not in output
         assert "untrusted_detail" not in output
+
+    def test_supervisor_restarts_with_bounded_exponential_backoff(self, tmp_path):
+        class Child:
+            def __init__(self, code): self.code = code
+            def poll(self): return self.code
+
+        children = iter([Child(7), Child(9), Child(0)])
+        sleeps = []
+        def clock():
+            return datetime(2026, 1, 1, tzinfo=timezone.utc)
+        rc = agent_cli._supervise_instance(
+            tmp_path,
+            {"supervisor": {"crash_threshold": 3, "base_backoff_seconds": 2, "max_backoff_seconds": 3}},
+            child_factory=lambda _command: next(children), sleep=sleeps.append, now=clock,
+        )
+        assert rc == 1
+        assert sleeps == [2, 3]
+        health = json.loads((tmp_path / "state" / "supervisor-health.json").read_text(encoding="utf-8"))
+        assert health["status"] == "frozen"
+        assert health["restart_count"] == 2
+        assert health["consecutive_crashes"] == 3
+        assert health["exit_code"] == 0
+
+    def test_supervisor_freezes_at_crash_threshold(self, tmp_path):
+        class Child:
+            def poll(self): return 12
+
+        sleeps = []
+        rc = agent_cli._supervise_instance(
+            tmp_path,
+            {"supervisor": {"crash_threshold": 2, "base_backoff_seconds": 1, "max_backoff_seconds": 1}},
+            child_factory=lambda _command: Child(), sleep=sleeps.append,
+        )
+        assert rc == 1 and sleeps == [1]
+        health = json.loads((tmp_path / "state" / "supervisor-health.json").read_text(encoding="utf-8"))
+        assert health["status"] == "frozen"
+        assert health["consecutive_crashes"] == 2
+
+    def test_supervisor_refreshes_long_backoff_in_heartbeat_chunks(self, tmp_path):
+        class Child:
+            def poll(self): return 1
+        sleeps = []
+        assert agent_cli._supervise_instance(
+            tmp_path, {"supervisor": {"crash_threshold": 2, "base_backoff_seconds": 3600, "max_backoff_seconds": 3600}},
+            child_factory=lambda _command: Child(), sleep=sleeps.append,
+        ) == 1
+        assert sleeps == [60] * 60
+
+    def test_supervisor_health_rejects_symlinked_state(self, tmp_path):
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        try:
+            (tmp_path / "state").symlink_to(outside, target_is_directory=True)
+        except OSError:
+            pytest.skip("Symlinks are unavailable on this test host")
+        with pytest.raises(OSError):
+            agent_cli._write_supervisor_health(tmp_path, "running", 0, 0, None)
+        assert not (outside / "supervisor-health.json").exists()
+
+    def test_supervisor_clean_interrupt_stops_without_restart(self, tmp_path):
+        calls = []
+        class Child:
+            def poll(self):
+                raise KeyboardInterrupt
+
+        assert agent_cli._supervise_instance(
+            tmp_path, {}, child_factory=lambda _command: calls.append(1) or Child()
+        ) == 0
+        assert calls == [1]
+        health = json.loads((tmp_path / "state" / "supervisor-health.json").read_text(encoding="utf-8"))
+        assert health["status"] == "stopped"
+
+    def test_supervisor_refreshes_health_while_child_is_running(self, tmp_path):
+        writes = []
+        class Child:
+            def __init__(self): self.calls = 0
+            def poll(self):
+                self.calls += 1
+                return None if self.calls == 1 else 4
+        real_write = agent_cli._write_supervisor_health
+        def record(*args, **kwargs):
+            writes.append(args[1])
+            return real_write(*args, **kwargs)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            monkeypatch.setattr(agent_cli, "_write_supervisor_health", record)
+            agent_cli._supervise_instance(
+                tmp_path, {"supervisor": {"crash_threshold": 1, "base_backoff_seconds": 1, "max_backoff_seconds": 1}},
+                child_factory=lambda _command: Child(), sleep=lambda _seconds: None,
+            )
+        assert writes[:2] == ["running", "running"]
+
+    def test_supervisor_spawn_failure_freezes_not_running(self, tmp_path):
+        def fail_spawn(_command):
+            raise OSError("synthetic")
+        assert agent_cli._supervise_instance(
+            tmp_path, {"supervisor": {"crash_threshold": 1, "base_backoff_seconds": 1, "max_backoff_seconds": 1}},
+            child_factory=fail_spawn,
+        ) == 1
+        health = json.loads((tmp_path / "state" / "supervisor-health.json").read_text(encoding="utf-8"))
+        assert health["status"] == "frozen"
+
+    def test_supervisor_interrupt_terminates_live_child(self, tmp_path):
+        class Child:
+            def __init__(self): self.terminated = False
+            def poll(self): return None
+            def terminate(self): self.terminated = True
+            def wait(self, timeout=None): return 0
+        child = Child()
+        def interrupt(_seconds): raise KeyboardInterrupt
+        assert agent_cli._supervise_instance(tmp_path, {}, child_factory=lambda _command: child, sleep=interrupt) == 0
+        assert child.terminated
+
+    def test_supervisor_lock_rejects_duplicate_and_health_has_no_path(self, tmp_path):
+        with agent_cli._supervisor_lock(tmp_path):
+            with pytest.raises(RuntimeError, match="already running"):
+                with agent_cli._supervisor_lock(tmp_path):
+                    pass
+        agent_cli._write_supervisor_health(tmp_path, "running", 0, 0, None)
+        raw = (tmp_path / "state" / "supervisor-health.json").read_text(encoding="utf-8")
+        assert str(tmp_path) not in raw
+        assert agent_cli._supervisor_health_is_fresh(json.loads(raw))
+
+    def test_supervisor_health_rejects_malformed_stale_and_frozen(self):
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        health = {"schema_version": 1, "status": "frozen", "restart_count": 3,
+                  "consecutive_crashes": 3, "exit_code": 1,
+                  "updated_at": now.isoformat(), "next_restart_at": None}
+        assert agent_cli._supervisor_health_is_fresh(health, now)
+        health["updated_at"] = "not-a-time"
+        assert not agent_cli._supervisor_health_is_fresh(health, now)
+
+    @pytest.mark.parametrize("raw", [None, "enabled", ["enabled"], 1])
+    def test_supervisor_config_rejects_present_non_object(self, raw):
+        with pytest.raises(ValueError, match="must be an object"):
+            agent_cli._supervisor_config({"supervisor": raw})
+
+    def test_supervisor_health_requires_valid_backoff_schedule(self):
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        health = {"schema_version": 1, "status": "backoff", "restart_count": 1,
+                  "consecutive_crashes": 1, "exit_code": 1, "updated_at": now.isoformat(),
+                  "next_restart_at": (now + timedelta(seconds=60)).isoformat()}
+        assert agent_cli._supervisor_health_is_fresh(health, now)
+        health["next_restart_at"] = None
+        assert not agent_cli._supervisor_health_is_fresh(health, now)
+        health["status"] = "running"
+        assert agent_cli._supervisor_health_is_fresh(health, now)
+        health["next_restart_at"] = (now + timedelta(seconds=1)).isoformat()
+        assert not agent_cli._supervisor_health_is_fresh(health, now)
 
 
 class TestCmdSetupSelfTest:

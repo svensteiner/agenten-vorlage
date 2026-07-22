@@ -1,5 +1,11 @@
 {
   "loop_interval_minutes": 60,
+  "supervisor": {
+    "supervisor_required": false,
+    "crash_threshold": 3,
+    "base_backoff_seconds": 5,
+    "max_backoff_seconds": 300
+  },
   "adaptive_schedule": {
     "schema_version": 1,
     "enabled": true,
