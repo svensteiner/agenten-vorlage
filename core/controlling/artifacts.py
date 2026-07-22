@@ -97,16 +97,9 @@ def persist_report_artifacts(
         )
         if key in report
     }
-    kpi_hash = _json_hash(
-        {
-            "report_metadata": sanitized_report.get("report_metadata"),
-            "period_labels": sanitized_report.get("period_labels"),
-            "sign_convention": sanitized_report.get("sign_convention"),
-            "sign_convention_note": sanitized_report.get("sign_convention_note"),
-            "metrics": sanitized_report.get("metrics"),
-            "reconciliation": sanitized_report.get("reconciliation"),
-        }
-    )
+    # Kept as kpi_result_hash for ledger compatibility, but it now binds the
+    # complete persisted draft rather than only a KPI subset.
+    kpi_hash = _json_hash({"report": sanitized_report, "management": management})
     report_provenance = _validated_report_provenance(report, source, mapping)
     run = {
         "recorded_at": _iso(draft_created_at),

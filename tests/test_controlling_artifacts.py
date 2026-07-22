@@ -806,6 +806,87 @@ def test_repeatable_runs_require_timely_criteria_for_every_counted_run(tmp_path)
     assert status["passed"] is True
 
 
+def test_repeatability_resets_when_deviations_or_alarms_change(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    changed_report = json.loads(json.dumps(report))
+    changed_report["material_deviations"] = [{"metric": "synthetic", "delta": "1"}]
+    changed_management = {
+        **management,
+        "alarms": ["Synthetische Abweichung prüfen."],
+    }
+    now = datetime.now(timezone.utc)
+
+    first = persist_report_artifacts(
+        tmp_path, report, management, validated_at=now, draft_created_at=now
+    )
+    changed = persist_report_artifacts(
+        tmp_path,
+        changed_report,
+        changed_management,
+        validated_at=now + timedelta(seconds=1),
+        draft_created_at=now + timedelta(seconds=1),
+    )
+    restored = persist_report_artifacts(
+        tmp_path,
+        report,
+        management,
+        validated_at=now + timedelta(seconds=2),
+        draft_created_at=now + timedelta(seconds=2),
+    )
+
+    assert [
+        first["acceptance"]["repeatable_run_count"],
+        changed["acceptance"]["repeatable_run_count"],
+        restored["acceptance"]["repeatable_run_count"],
+    ] == [1, 1, 1]
+    assert restored["acceptance"]["passed"] is False
+
+
+def test_kpi_result_hash_binds_groups_and_management_draft(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    changed_groups = json.loads(json.dumps(report))
+    changed_groups["groups"]["revenue"]["month"] = "203501"
+    changed_management = {
+        **management,
+        "summary": "D. E. F.",
+        "actions": ["D", "E", "F"],
+    }
+    now = datetime.now(timezone.utc)
+
+    for offset, current_report, current_management in (
+        (0, report, management),
+        (1, changed_groups, management),
+        (2, report, changed_management),
+    ):
+        persist_report_artifacts(
+            tmp_path,
+            current_report,
+            current_management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+    hashes = [
+        run["kpi_result_hash"]
+        for run in json.loads(
+            (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+                encoding="utf-8"
+            )
+        )["runs"]
+    ]
+
+    assert len(set(hashes)) == 3
+
+
 def test_acceptance_rejects_negative_draft_latency_without_clamping(tmp_path):
     source = tmp_path / "inbox" / "actuals" / "demo.csv"
     source.parent.mkdir(parents=True)
