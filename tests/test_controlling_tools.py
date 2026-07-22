@@ -404,8 +404,51 @@ def test_kmu_report_rejects_zero_multiplier_and_requires_ignored_flag(
     assert "ignored:true" in result
 
 
+@pytest.mark.parametrize("ignored", (False, True), ids=("included", "ignored"))
+@pytest.mark.parametrize(
+    "multiplier", (2, -2, 0.5, -0.5, "2", "-0.5", "1", "-1", True, False)
+)
+def test_kmu_report_rejects_non_sign_multiplier(tmp_path, ignored, multiplier):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["groups"]["revenue"].update(multiplier=multiplier, ignored=ignored)
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert "vorzeichen" in result.casefold()
+
+
+@pytest.mark.parametrize("multiplier", (1, -1, 1.0, -1.0))
+def test_kmu_report_accepts_sign_only_multiplier(tmp_path, multiplier):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["groups"]["revenue"]["multiplier"] = multiplier
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert not result.startswith("FEHLER")
+
+
 @pytest.mark.parametrize("multiplier", (0, -0, 0.0))
 def test_mapping_schema_rejects_numeric_zero_multiplier(multiplier):
+    schema = json.loads(
+        (Path(__file__).parents[1] / "presets" / "kmu-controlling" / "pilot" / "account-mapping.schema.json").read_text(encoding="utf-8")
+    )
+    mapping = _strict_mapping()
+    mapping["groups"]["revenue"]["multiplier"] = multiplier
+
+    assert list(Draft202012Validator(schema).iter_errors(mapping))
+
+
+@pytest.mark.parametrize("multiplier", (2, -2, 0.5, -0.5))
+def test_mapping_schema_rejects_non_sign_multiplier(multiplier):
     schema = json.loads(
         (Path(__file__).parents[1] / "presets" / "kmu-controlling" / "pilot" / "account-mapping.schema.json").read_text(encoding="utf-8")
     )
