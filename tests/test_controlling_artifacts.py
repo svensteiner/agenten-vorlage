@@ -650,6 +650,43 @@ def test_acceptance_status_is_read_only_before_first_run(tmp_path):
     assert list(tmp_path.rglob("*")) == before
 
 
+def test_interrupted_human_view_write_does_not_publish_new_latest_json(
+    tmp_path, monkeypatch
+):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    (tmp_path / "project" / "pilot").mkdir(parents=True)
+    (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
+        "Konto;Monat\n4000;1\n", encoding="utf-8"
+    )
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path, report, management, validated_at=now, draft_created_at=now
+    )
+    latest_path = tmp_path / "artifacts" / "latest-controlling-report.json"
+    published = latest_path.read_bytes()
+    original_atomic_text = artifacts_module._atomic_text
+
+    def interrupt_html(path, text):
+        if path.name == "latest-controlling-report.html":
+            raise OSError("synthetic interrupted HTML publication")
+        original_atomic_text(path, text)
+
+    monkeypatch.setattr(artifacts_module, "_atomic_text", interrupt_html)
+
+    with pytest.raises(OSError, match="interrupted HTML"):
+        persist_report_artifacts(
+            tmp_path, report, management, validated_at=now, draft_created_at=now
+        )
+
+    assert latest_path.read_bytes() == published
+    status = read_acceptance_status(tmp_path)
+    assert status["valid"] is True
+    assert status["sequence"] == 2
+
+
 def test_acceptance_history_rejects_duplicated_replayed_runs(tmp_path, monkeypatch):
     (tmp_path / "inbox" / "actuals").mkdir(parents=True)
     (tmp_path / "project" / "pilot").mkdir(parents=True)

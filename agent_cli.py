@@ -32,7 +32,7 @@ from typing import Any
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from core.controlling.artifacts import read_acceptance_status
+from core.controlling.artifacts import read_acceptance_status, render_html
 from core.scheduling import ScheduledDecision, run_scheduled_cycle
 
 
@@ -55,6 +55,7 @@ LOOP_WORK_REASONS = frozenset(
 )
 MAX_LOOP_INTERVAL_MINUTES = 1440
 MAX_STATUS_JSON_BYTES = 1024 * 1024
+MAX_MANAGEMENT_REPORT_HTML_BYTES = 5 * 1024 * 1024
 SUPERVISOR_HEALTH_RELATIVE = "state/supervisor-health.json"
 SUPERVISOR_LOCK_RELATIVE = "state/.supervisor.lock"
 SUPERVISOR_STATUSES = frozenset({"running", "backoff", "frozen", "stopped"})
@@ -1139,6 +1140,57 @@ def _read_status_json(root: Path, relative: str) -> tuple[dict[str, Any], bool]:
     return (value, False) if isinstance(value, dict) else ({}, True)
 
 
+def _same_file_identity(left: os.stat_result, right: os.stat_result) -> bool:
+    """Compare a path lstat with an opened descriptor without trusting a name."""
+    return (
+        stat.S_ISREG(left.st_mode)
+        and stat.S_ISREG(right.st_mode)
+        and left.st_dev == right.st_dev
+        and left.st_ino == right.st_ino
+    )
+
+
+def _verified_management_report_view(root: Path, payload: dict[str, Any]) -> bool:
+    """Require the displayed HTML view to be the exact deterministic payload view."""
+    relative = "artifacts/latest-controlling-report.html"
+    path = _safe_status_path(root, relative)
+    if path is None:
+        return False
+    try:
+        expected = render_html(payload).encode("utf-8")
+        if len(expected) > MAX_MANAGEMENT_REPORT_HTML_BYTES:
+            return False
+        before = path.lstat()
+        if (
+            _is_link_or_junction(root)
+            or _is_link_or_junction(path)
+            or not stat.S_ISREG(before.st_mode)
+            or before.st_size > MAX_MANAGEMENT_REPORT_HTML_BYTES
+        ):
+            return False
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags)
+        try:
+            opened = os.fstat(descriptor)
+            if not _same_file_identity(before, opened):
+                return False
+            with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                raw = stream.read(MAX_MANAGEMENT_REPORT_HTML_BYTES + 1)
+            after = path.lstat()
+            if (
+                len(raw) > MAX_MANAGEMENT_REPORT_HTML_BYTES
+                or not _same_file_identity(before, after)
+                or _is_link_or_junction(root)
+                or _safe_status_path(root, relative) != path
+            ):
+                return False
+        finally:
+            os.close(descriptor)
+    except (OSError, KeyError, TypeError, ValueError, AttributeError, UnicodeError):
+        return False
+    return hmac.compare_digest(raw, expected)
+
+
 def _bounded_json_file(path: Path) -> dict[str, Any] | None:
     """Read one small regular JSON object without accepting a link/reparse path."""
     try:
@@ -1766,12 +1818,24 @@ def _print_pilot_status(instance: Path) -> int:
     )
     provenance = latest.get("provenance") if isinstance(latest, dict) else None
     signed_sequence = acceptance.get("sequence", 0)
+    human_relative = "artifacts/latest-controlling-report.html"
+    human_path = _safe_status_path(instance, human_relative)
     view_consistent = (
         isinstance(provenance, dict)
         and provenance.get("sequence") == signed_sequence
         and provenance.get("run_signature") == acceptance.get("run_signature")
         if isinstance(signed_sequence, int) and signed_sequence > 0
-        else latest_path is not None and not latest_path.exists()
+        else (
+            latest_path is not None
+            and human_path is not None
+            and not latest_path.exists()
+            and not human_path.exists()
+        )
+    )
+    human_view_verified = (
+        _verified_management_report_view(instance, latest)
+        if isinstance(signed_sequence, int) and signed_sequence > 0 and view_consistent
+        else False
     )
     last_result_at, timestamp_invalid = _status_timestamp(
         state.get("last_result_at")
@@ -1782,6 +1846,7 @@ def _print_pilot_status(instance: Path) -> int:
         or state_invalid
         or acceptance.get("valid") is not True
         or not view_consistent
+        or (isinstance(signed_sequence, int) and signed_sequence > 0 and not human_view_verified)
         or timestamp_invalid
         or last_result not in {None, "success", "failed"}
         or interval_invalid
@@ -1828,10 +1893,10 @@ def _print_pilot_status(instance: Path) -> int:
     )
     if supervisor_required:
         print(f"  Supervisor:       {supervisor_health.get('status', 'fehlt')}")
-    print(
-        "  Managementreport: "
-        f"{instance / 'artifacts' / 'latest-controlling-report.html'}"
-    )
+    if human_view_verified:
+        print(f"  Managementreport: {human_path}")
+    else:
+        print("  Managementreport: nicht verfügbar bzw. nicht verifiziert")
     print(f"  Nächster Schritt: {next_step}")
     return return_code
 

@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from core.controlling import artifacts as artifacts_module
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from core.scheduling import ScheduledDecision
 from core.controlling.artifacts import persist_report_artifacts
@@ -223,7 +224,7 @@ class TestPilotStatus:
     @staticmethod
     def _signed_acceptance(instance: Path, runs: int = 4) -> None:
         source = instance / "inbox" / "actuals" / "demo.csv"
-        source.parent.mkdir(parents=True)
+        source.parent.mkdir(parents=True, exist_ok=True)
         source.write_text("Konto;Monat\n4000;1\n7000;0\n", encoding="utf-8")
         mapping = instance / "project" / "pilot" / "account-mapping.json"
         mapping_definition = json.loads(
@@ -491,6 +492,125 @@ class TestPilotStatus:
         assert "4/3" not in output
         assert "0/3" in output
         assert "latest-controlling-report.html" in output
+
+    @pytest.mark.parametrize(
+        ("replacement", "label"),
+        [
+            (b"<html>tampered</html>", "modified"),
+            (b"\xff", "invalid-utf8"),
+            (b"x" * (agent_cli.MAX_MANAGEMENT_REPORT_HTML_BYTES + 1), "oversized"),
+        ],
+        ids=["modified", "invalid-utf8", "oversized"],
+    )
+    def test_status_rejects_unverified_management_report_view(
+        self, tmp_path, capsys, replacement, label
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        html = instance / "artifacts" / "latest-controlling-report.html"
+        html.write_bytes(replacement)
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 1, label
+        assert "ROT" in output
+        assert "Managementreport: nicht verfügbar bzw. nicht verifiziert" in output
+        assert str(html) not in output
+
+    @pytest.mark.parametrize("mutation", ["missing-management", "wrong-report-type"])
+    def test_status_fails_closed_for_renderer_invalid_latest_payload(
+        self, tmp_path, capsys, mutation
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        latest = instance / "artifacts" / "latest-controlling-report.json"
+        payload = json.loads(latest.read_text(encoding="utf-8"))
+        if mutation == "missing-management":
+            payload.pop("management")
+        else:
+            payload["report"] = []
+        latest.write_text(json.dumps(payload), encoding="utf-8")
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    def test_status_rejects_stale_management_report_view(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        html = instance / "artifacts" / "latest-controlling-report.html"
+        stale = html.read_bytes()
+        self._signed_acceptance(instance, runs=1)
+        html.write_bytes(stale)
+        self._loop_health(instance)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": datetime.now(timezone.utc).isoformat(),
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    def test_status_rejects_symlinked_management_report_view(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        html = instance / "artifacts" / "latest-controlling-report.html"
+        outside = tmp_path / "outside-report.html"
+        outside.write_bytes(html.read_bytes())
+        html.unlink()
+        try:
+            html.symlink_to(outside)
+        except OSError:
+            pytest.skip("Symlinks are unavailable on this test host")
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    def test_interrupted_view_publication_leaves_status_red(
+        self, tmp_path, capsys, monkeypatch
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        latest = instance / "artifacts" / "latest-controlling-report.json"
+        published = latest.read_bytes()
+        original_atomic_text = artifacts_module._atomic_text
+
+        def interrupt_html(path, text):
+            if path.name == "latest-controlling-report.html":
+                raise OSError("synthetic interrupted HTML publication")
+            original_atomic_text(path, text)
+
+        monkeypatch.setattr(artifacts_module, "_atomic_text", interrupt_html)
+        with pytest.raises(OSError, match="interrupted HTML"):
+            self._signed_acceptance(instance, runs=1)
+        assert latest.read_bytes() == published
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
 
     @pytest.mark.parametrize("health", [{}, {"schema_version": 1, "status": "frozen"}])
     def test_required_supervisor_health_makes_status_red(self, tmp_path, capsys, health):

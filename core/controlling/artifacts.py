@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+import contextlib
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -181,6 +182,12 @@ def _persist_report_transaction(
             "provenance": signed_run,
             "acceptance": acceptance,
         }
+        # JSON is written with sorted keys. Render from that same canonical
+        # object so reloading latest JSON and rendering it produces identical
+        # UTF-8 HTML bytes.
+        payload = json.loads(
+            json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        )
         stamp = draft_created_at.astimezone(timezone.utc).strftime(
             "%Y%m%dT%H%M%S%fZ"
         )
@@ -191,11 +198,14 @@ def _persist_report_transaction(
         markdown = artifacts / "latest-controlling-report.md"
         human_report = artifacts / "latest-controlling-report.html"
         history_path = artifacts / "acceptance-evidence.json"
+        # The latest JSON is the status authority.  Publish it only after every
+        # human-facing shared view is durable, otherwise an interrupted write
+        # could make a new report look accepted without a matching review view.
         _atomic_json(history_report, payload)
         _atomic_json(history_path, {"schema_version": 1, "runs": runs})
-        _atomic_json(latest, payload)
         _atomic_text(markdown, _markdown(payload))
-        _atomic_text(human_report, _html(payload))
+        _atomic_text(human_report, render_html(payload))
+        _atomic_json(latest, payload)
         return {
             "artifact": latest.relative_to(root).as_posix(),
             "human_artifact": human_report.relative_to(root).as_posix(),
@@ -1071,6 +1081,11 @@ def _markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_html(payload: dict[str, Any]) -> str:
+    """Render the canonical human management-report view for a payload."""
+    return _html(payload)
+
+
 def _html(payload: dict[str, Any]) -> str:
     """Render a dependency-free management report that is safe to open locally."""
     report = payload["report"]
@@ -1121,11 +1136,33 @@ def _atomic_json(path: Path, value: Any) -> None:
 
 
 def _atomic_text(path: Path, text: str) -> None:
+    _atomic_bytes(path, text.encode("utf-8"))
+
+
+def _atomic_bytes(path: Path, data: bytes) -> None:
+    """Atomically replace an artifact after syncing its complete byte payload."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{secrets.token_hex(8)}.tmp")
     try:
-        temporary.write_text(text, encoding="utf-8")
+        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
+        descriptor = os.open(temporary, flags, 0o600)
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
         os.replace(temporary, path)
+        # Directory fsync is unsupported on Windows and some filesystems; the
+        # data file has already been synced, so lack of directory support is
+        # deliberately best-effort rather than a portability failure.
+        with contextlib.suppress(OSError):
+            directory_fd = os.open(
+                path.parent,
+                os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_BINARY", 0),
+            )
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     finally:
         try:
             temporary.unlink()
