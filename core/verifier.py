@@ -8,6 +8,7 @@ from typing import Any
 
 import brain
 
+from core.controlling.tools import pilot_availability
 from .context import ProjectContext
 
 
@@ -250,6 +251,8 @@ class Verifier:
             return False
         if not value["source"].strip() or not value["method"].strip():
             return False
+        if value.get("availability") != pilot_availability():
+            return False
         metrics = value["metrics"]
         for name in ("ebitda", "depreciation", "egt"):
             metric = metrics.get(name)
@@ -263,7 +266,7 @@ class Verifier:
             not isinstance(provenance, dict)
             or set(provenance)
             != {"input_fingerprint", "mapping_version", "calculation_version"}
-            or provenance.get("calculation_version") != "kmu-report-v2"
+            or provenance.get("calculation_version") != "kmu-report-v3"
             or not all(
                 isinstance(provenance.get(name), str)
                 and re.fullmatch(r"[0-9a-f]{64}", provenance[name])

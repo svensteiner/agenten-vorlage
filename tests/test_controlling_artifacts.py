@@ -13,7 +13,7 @@ import pytest
 from core.controlling import artifacts as artifacts_module
 from core.controlling.artifacts import persist_report_artifacts, read_acceptance_status
 from core.controlling.narrative import ControllingReportTool
-from core.controlling.tools import ControllingComputeTool
+from core.controlling.tools import ControllingComputeTool, pilot_availability
 
 
 def _hold_acceptance_lock_in_process(root, ready, *, crash=False):
@@ -146,6 +146,7 @@ def _aggregate_report(root):
         "material_deviations": [
             {"account_id": "5000", "month_vs_prior": "-22600"}
         ],
+        "availability": pilot_availability(),
         "reconciliation": {
             "source_account_count": 5,
             "mapped_account_count": 5,
@@ -166,7 +167,7 @@ def _aggregate_report(root):
         "provenance": {
             "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
             "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-            "calculation_version": "kmu-report-v2",
+            "calculation_version": "kmu-report-v3",
         },
         "raw_rows": [{"account_id": "4000", "customer": "must-not-persist"}],
     }
@@ -193,6 +194,7 @@ def _report_with_reconciled_totals():
             "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
             "die Kennzahl, negative Werte verringern sie."
         ),
+        "availability": pilot_availability(),
         "metrics": {
             "ebitda": {
                 "month": "10",

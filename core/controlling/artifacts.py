@@ -28,6 +28,7 @@ from core.controlling.tools import (
     RESERVED_DERIVED_METRIC_NAMES,
     _SIGN_CONVENTION,
     _SIGN_CONVENTION_NOTE,
+    pilot_availability,
     is_safe_report_label,
     labels_are_unique,
 )
@@ -38,8 +39,8 @@ else:
     import fcntl
 
 
-CALCULATION_VERSION = "kmu-report-v2"
-PRESENTATION_VERSION = "management-renderer-v1"
+CALCULATION_VERSION = "kmu-report-v3"
+PRESENTATION_VERSION = "management-renderer-v2"
 _HISTORY_LIMIT = 100
 _MAX_HISTORY_BYTES = 1_000_000
 _MAX_LEDGER_BYTES = 50 * 1024 * 1024
@@ -96,6 +97,7 @@ def persist_report_artifacts(
             "groups",
             "material_deviations",
             "reconciliation",
+            "availability",
         )
         if key in report
     }
@@ -1051,6 +1053,7 @@ def _sourced_totals_pass(
         and report.get("sign_convention") == _SIGN_CONVENTION
         and report.get("sign_convention_note") == _SIGN_CONVENTION_NOTE
         and metadata.get("sign_convention") == _SIGN_CONVENTION
+        and report.get("availability") == pilot_availability()
     )
     return bool(
         counts_ok
@@ -1715,6 +1718,15 @@ def _management_material_deviations(report: dict[str, Any]) -> list[tuple[str, s
     return [(account_id, amount) for _, account_id, amount in parsed[:5]]
 
 
+def _availability_limitations(report: dict[str, Any]) -> list[str]:
+    if report.get("availability") != pilot_availability():
+        return []
+    return [
+        "Budgetabweichung: nicht verfügbar (in diesem Piloten nicht verarbeitet).",
+        "Forderungsalterung: nicht verfügbar (in diesem Piloten nicht verarbeitet).",
+    ]
+
+
 def _markdown(payload: dict[str, Any]) -> str:
     report = payload["report"]
     management = payload["management"]
@@ -1772,6 +1784,10 @@ def _markdown(payload: dict[str, Any]) -> str:
             f"| {markdown_cell(account_id)} | {markdown_cell(amount)} |"
             for account_id, amount in deviations
         )
+    limitations = _availability_limitations(report)
+    if limitations:
+        lines.extend(["", "## Verfügbarkeitsgrenzen", ""])
+        lines.extend(f"- {limitation}" for limitation in limitations)
     lines.extend(["", "## Nächste Schritte", ""])
     lines.extend(f"- {item}" for item in management.get("actions", []))
     acceptance = payload["acceptance"]
@@ -1825,6 +1841,15 @@ def _html(payload: dict[str, Any]) -> str:
         if deviation_rows
         else ""
     )
+    availability_section = "".join(
+        f"<li>{esc(limitation)}</li>"
+        for limitation in _availability_limitations(report)
+    )
+    if availability_section:
+        availability_section = (
+            "<section><h2>Verfügbarkeitsgrenzen</h2><ul>"
+            f"{availability_section}</ul></section>"
+        )
     alarms = "".join(
         f"<li>{esc(item)}</li>" for item in management.get("alarms", [])
     )
@@ -1846,6 +1871,7 @@ table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{padding:11px;bo
 <p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p>
 <table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
 {deviations_section}
+{availability_section}
 <div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions}</ol></section></div>
 <h2>Pilot-Abnahme</h2><span class="badge {status_class}">{status}</span> <span>{acceptance['repeatable_run_count']}/3 identische Wiederholungsläufe</span>
 <footer>Quelle: {esc(report.get('source', '–'))}<br>Methode: {esc(report.get('method', '–'))}</footer>

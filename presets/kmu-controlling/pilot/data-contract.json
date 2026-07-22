@@ -50,7 +50,7 @@
     "An XLSX is malformed or exceeds archive member or uncompressed-size limits."
   ],
   "optional_inputs": {
-    "budget": "If absent, budget variance is omitted and disclosed as unavailable.",
-    "open_items": "If absent, receivables aging is omitted and disclosed as unavailable."
+    "budget": "Budget variance is unavailable and not processed by this pilot, even when optional-looking files exist.",
+    "open_items": "Receivables aging is unavailable and not processed by this pilot, even when optional-looking files exist."
   }
 }

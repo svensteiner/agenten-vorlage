@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import brain
+from core.controlling.tools import pilot_availability
 
 from core.context import ProjectContext
 from core.verifier import Verifier
@@ -122,10 +123,11 @@ def test_sourced_kmu_report_passes_deterministically_without_verifier_llm(monkey
             "mapped_account_count": 20,
             "ignored_account_count": 0,
         },
+        "availability": pilot_availability(),
         "provenance": {
             "input_fingerprint": "a" * 64,
             "mapping_version": "b" * 64,
-            "calculation_version": "kmu-report-v2",
+            "calculation_version": "kmu-report-v3",
         },
     }
     management = {

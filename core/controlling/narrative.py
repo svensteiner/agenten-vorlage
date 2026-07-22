@@ -61,7 +61,9 @@ class ControllingReportTool:
                 f"EBITDA im Monat: {ebitda}. EGT im Monat: {egt}."
             ),
             "alarms": [
-                f"Materielle Abweichungen: {len(report.get('material_deviations', []))}."
+                f"Materielle Abweichungen: {len(report.get('material_deviations', []))}.",
+                "Budgetabweichung nicht verfügbar: in diesem Piloten nicht verarbeitet.",
+                "Forderungsalterung nicht verfügbar: in diesem Piloten nicht verarbeitet.",
             ],
             "actions": [
                 "Kontenzuordnung prüfen.",

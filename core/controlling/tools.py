@@ -32,7 +32,11 @@ _SIGN_CONVENTION_NOTE = (
     "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
     "die Kennzahl, negative Werte verringern sie."
 )
-_CALCULATION_VERSION = "kmu-report-v2"
+_CALCULATION_VERSION = "kmu-report-v3"
+_PILOT_AVAILABILITY_TEMPLATE = (
+    ("budget_variance", "unavailable", "not_processed_by_this_pilot"),
+    ("receivables_aging", "unavailable", "not_processed_by_this_pilot"),
+)
 PNL_METRIC_NAMES = frozenset(
     {
         "ebitda",
@@ -69,6 +73,14 @@ def is_safe_report_label(value: Any) -> bool:
         and 0 < len(value) <= 80
         and not any(unicodedata.category(char).startswith("C") for char in value)
     )
+
+
+def pilot_availability() -> dict[str, dict[str, str]]:
+    """Return the closed, JSON-compatible availability contract for this pilot."""
+    return {
+        name: {"status": status, "processing": processing}
+        for name, status, processing in _PILOT_AVAILABILITY_TEMPLATE
+    }
 
 
 def labels_are_unique(values: list[Any]) -> bool:
@@ -287,6 +299,7 @@ class ControllingComputeTool(_InstanceInputCapability):
             },
             "material_deviations": self._deviations(rows, mapping),
             "reconciliation": reconciliation,
+            "availability": pilot_availability(),
             "provenance": {
                 "input_fingerprint": source_fingerprint,
                 "mapping_version": mapping["_mapping_version"],

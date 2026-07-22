@@ -687,7 +687,7 @@ def test_kmu_report_provenance_matches_exact_source_and_mapping_bytes(tmp_path):
     assert report["provenance"] == {
         "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
         "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-        "calculation_version": "kmu-report-v2",
+        "calculation_version": "kmu-report-v3",
     }
 
 
@@ -1054,6 +1054,79 @@ def test_kmu_report_returns_validated_report_metadata_locally(tmp_path):
     )
 
     assert report["report_metadata"] == mapping["report_metadata"]
+
+
+def test_kmu_report_discloses_unprocessed_budget_and_receivables_aging_end_to_end(tmp_path):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _write_strict_mapping(tmp_path)
+    (tmp_path / "imports").mkdir()
+    (tmp_path / "imports" / "budget.csv").write_text("optional\n1\n", encoding="utf-8")
+    (tmp_path / "imports" / "open-items.csv").write_text("optional\n1\n", encoding="utf-8")
+
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"data/actuals.csv"}'
+        )
+    )
+
+    expected_availability = {
+        "budget_variance": {
+            "status": "unavailable",
+            "processing": "not_processed_by_this_pilot",
+        },
+        "receivables_aging": {
+            "status": "unavailable",
+            "processing": "not_processed_by_this_pilot",
+        },
+    }
+    assert report["availability"] == expected_availability
+    assert artifacts_module._sourced_totals_pass(report, mapping)
+    del report["availability"]
+    assert not artifacts_module._sourced_totals_pass(report, mapping)
+
+    draft = json.loads(
+        ControllingReportTool(tmp_path).safe_run(
+            '{"source":"data/actuals.csv"}'
+        )
+    )
+    assert any("Budgetabweichung" in alarm for alarm in draft["alarms"])
+    assert any("Forderungsalterung" in alarm for alarm in draft["alarms"])
+    latest_path = tmp_path / draft["artifact"]
+    latest = json.loads(latest_path.read_text(encoding="utf-8"))
+    assert latest["report"]["availability"] == expected_availability
+    markdown = (tmp_path / "artifacts" / "latest-controlling-report.md").read_text(encoding="utf-8")
+    html = (tmp_path / draft["human_artifact"]).read_text(encoding="utf-8")
+    for limitation in ("Budgetabweichung", "Forderungsalterung"):
+        assert limitation in markdown
+        assert limitation in html
+
+    del latest["report"]["availability"]
+    latest_path.write_text(json.dumps(latest), encoding="utf-8")
+    assert artifacts_module.read_acceptance_status(tmp_path)["valid"] is False
+
+
+def test_kmu_report_availability_cannot_mutate_future_reports_or_acceptance(tmp_path):
+    assert not hasattr(controlling_tools, "PILOT_AVAILABILITY")
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _write_strict_mapping(tmp_path)
+    tool = ControllingComputeTool(tmp_path)
+    request = '{"operation":"kmu_report","source":"data/actuals.csv"}'
+
+    report = json.loads(tool.safe_run(request))
+    report["availability"]["budget_variance"]["status"] = "available"
+
+    assert not artifacts_module._sourced_totals_pass(report, mapping)
+    fresh_report = json.loads(tool.safe_run(request))
+    assert fresh_report["availability"] == {
+        "budget_variance": {
+            "status": "unavailable",
+            "processing": "not_processed_by_this_pilot",
+        },
+        "receivables_aging": {
+            "status": "unavailable",
+            "processing": "not_processed_by_this_pilot",
+        },
+    }
 
 
 def test_kmu_report_publishes_mapping_bound_period_labels_and_sign_note(tmp_path):

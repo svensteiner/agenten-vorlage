@@ -18,7 +18,7 @@ from core.controlling import artifacts as artifacts_module
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from core.scheduling import ScheduledDecision
 from core.controlling.artifacts import persist_report_artifacts
-from core.controlling.tools import _SIGN_CONVENTION, _SIGN_CONVENTION_NOTE
+from core.controlling.tools import _SIGN_CONVENTION, _SIGN_CONVENTION_NOTE, pilot_availability
 
 _CLI_PATH = Path(__file__).resolve().parent.parent / "agent_cli.py"
 _spec = importlib.util.spec_from_file_location("agent_cli", _CLI_PATH)
@@ -299,6 +299,7 @@ class TestPilotStatus:
             },
             "groups": groups,
             "material_deviations": [],
+            "availability": pilot_availability(),
             "reconciliation": {
                 "source_account_count": 2,
                 "mapped_account_count": 2,
@@ -313,7 +314,7 @@ class TestPilotStatus:
             "provenance": {
                 "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
                 "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-                "calculation_version": "kmu-report-v2",
+                "calculation_version": "kmu-report-v3",
             },
         }
         for metric_name in ("material_ratio", "personnel_ratio"):
