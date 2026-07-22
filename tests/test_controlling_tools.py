@@ -386,6 +386,35 @@ def test_kmu_report_returns_error_for_malformed_multiplier(tmp_path, multiplier)
     assert result.startswith("FEHLER")
 
 
+@pytest.mark.parametrize("ignored", (False, True), ids=("included", "ignored"))
+@pytest.mark.parametrize("multiplier", (0, -0, 0.0, "0", "-0.0"))
+def test_kmu_report_rejects_zero_multiplier_and_requires_ignored_flag(
+    tmp_path, ignored, multiplier
+):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["groups"]["revenue"].update(multiplier=multiplier, ignored=ignored)
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert "ignored:true" in result
+
+
+@pytest.mark.parametrize("multiplier", (0, -0, 0.0))
+def test_mapping_schema_rejects_numeric_zero_multiplier(multiplier):
+    schema = json.loads(
+        (Path(__file__).parents[1] / "presets" / "kmu-controlling" / "pilot" / "account-mapping.schema.json").read_text(encoding="utf-8")
+    )
+    mapping = _strict_mapping()
+    mapping["groups"]["revenue"]["multiplier"] = multiplier
+
+    assert list(Draft202012Validator(schema).iter_errors(mapping))
+
+
 def test_kmu_report_returns_error_for_malformed_source_glob(tmp_path):
     (tmp_path / "data").mkdir()
     _write_compute_mapping(

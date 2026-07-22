@@ -413,7 +413,14 @@ class ControllingComputeTool(_InstanceInputCapability):
                 raise ValueError(
                     "Konten-Mapping enthält eine ungültige Gruppenregel."
                 )
-            self._finite_decimal(rule["multiplier"], "Gruppen-Multiplikator")
+            multiplier = self._finite_decimal(
+                rule["multiplier"], "Gruppen-Multiplikator"
+            )
+            if multiplier == 0:
+                raise ValueError(
+                    "multiplier darf nicht 0 sein; Ausschlüsse verwenden "
+                    "ignored:true mit einem von 0 verschiedenen multiplier."
+                )
         required_metrics = {"ebitda", "depreciation", "egt"}
         if not required_metrics <= set(metrics):
             raise ValueError(

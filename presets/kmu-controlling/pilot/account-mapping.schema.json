@@ -76,7 +76,7 @@
         "properties": {
           "prefixes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
           "name_matches": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-          "multiplier": {"type": "number"},
+          "multiplier": {"type": "number", "not": {"const": 0}},
           "ignored": {"type": "boolean", "description": "True only for an intentionally excluded, non-overlapping account group."}
         },
         "anyOf": [
