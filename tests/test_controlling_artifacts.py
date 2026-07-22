@@ -806,6 +806,67 @@ def test_repeatable_runs_require_timely_criteria_for_every_counted_run(tmp_path)
     assert status["passed"] is True
 
 
+def test_acceptance_rejects_negative_draft_latency_without_clamping(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    now = datetime.now(timezone.utc)
+
+    result = persist_report_artifacts(
+        tmp_path,
+        report,
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now - timedelta(minutes=10),
+    )
+    run = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )["runs"][-1]
+
+    assert run["draft_latency_seconds"] == -600
+    assert run["acceptance_criteria"]["draft_latency"] is False
+    assert result["acceptance"]["repeatable_run_count"] == 0
+    assert result["acceptance"]["passed"] is False
+    status = read_acceptance_status(tmp_path)
+    assert status["repeatable_run_count"] == 0
+    assert status["passed"] is False
+
+
+@pytest.mark.parametrize(
+    ("latency", "expected"),
+    [
+        (timedelta(0), True),
+        (timedelta(seconds=299, microseconds=999000), True),
+        (timedelta(seconds=300), False),
+    ],
+    ids=("zero", "just-under-limit", "limit"),
+)
+def test_draft_latency_acceptance_bounds(tmp_path, latency, expected):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path,
+        _aggregate_report(tmp_path),
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now + latency,
+    )
+    run = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )["runs"][-1]
+
+    assert run["acceptance_criteria"]["draft_latency"] is expected
+
+
 def test_acceptance_status_is_read_only_before_first_run(tmp_path):
     before = list(tmp_path.rglob("*"))
 

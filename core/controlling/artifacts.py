@@ -112,9 +112,7 @@ def persist_report_artifacts(
         "recorded_at": _iso(draft_created_at),
         "validation_completed_at": _iso(validated_at),
         "draft_created_at": _iso(draft_created_at),
-        "draft_latency_seconds": max(
-            0.0, (draft_created_at - validated_at).total_seconds()
-        ),
+        "draft_latency_seconds": (draft_created_at - validated_at).total_seconds(),
         "input_fingerprint": report_provenance["input_fingerprint"],
         "mapping_version": report_provenance["mapping_version"],
         "calculation_version": report_provenance["calculation_version"],
@@ -186,7 +184,7 @@ def _persist_report_transaction(
             ],
             "acceptance_criteria": {
                 "sourced_totals": _sourced_totals_pass(report, acceptance_mapping),
-                "draft_latency": run["draft_latency_seconds"] < 300,
+                "draft_latency": 0 <= run["draft_latency_seconds"] < 300,
                 "approval_safety": _approval_safety_pass(run, policy_snapshot),
             },
         }
