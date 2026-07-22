@@ -31,6 +31,9 @@ MAX_INPUT_SCAN_ENTRIES = 10_000
 MAX_INPUT_PATTERNS = 100
 MAX_INPUT_PATTERN_LENGTH = 512
 MAX_REQUIRED_INPUT_GROUPS = 100
+# Tolerate small distributed-clock drift, but never let a future timestamp
+# indefinitely extend a lease.
+MAX_FUTURE_LEASE_SKEW = timedelta(minutes=5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -448,7 +451,7 @@ class AdaptiveScheduler:
         try:
             lease_timestamp = state.get("in_flight_heartbeat_at") or state.get("in_flight_at")
             heartbeat_at = _as_utc(datetime.fromisoformat(lease_timestamp))
-            if now - heartbeat_at < self._in_flight_lease:
+            if _lease_timestamp_is_live(heartbeat_at, now, self._in_flight_lease):
                 return True
         except (KeyError, TypeError, ValueError):
             pass
@@ -546,7 +549,7 @@ class AdaptiveScheduler:
         except (OSError, json.JSONDecodeError, AttributeError):
             return
 
-    def _dispatch_lock_is_stale(self) -> bool:
+    def _dispatch_lock_is_stale(self, *, now: datetime | None = None) -> bool:
         try:
             raw_payload = self.dispatch_lock_path.read_text(encoding="utf-8")
         except FileNotFoundError:
@@ -569,7 +572,9 @@ class AdaptiveScheduler:
                 return True
             except OSError:
                 return False
-        return _as_utc(None) - acquired_at >= self._in_flight_lease
+        return not _lease_timestamp_is_live(
+            acquired_at, _as_utc(now), self._in_flight_lease
+        )
 
 
 def _bounded_instance_files(root: Path) -> list[tuple[str, Path]]:
@@ -669,6 +674,13 @@ def _has_open_approvals(path: Path) -> bool:
 def _as_utc(value: datetime | None) -> datetime:
     value = value or datetime.now(timezone.utc)
     return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+
+def _lease_timestamp_is_live(
+    timestamp: datetime, now: datetime, lease: timedelta
+) -> bool:
+    """Treat only bounded future drift and an unexpired lease as live."""
+    return timestamp <= now + MAX_FUTURE_LEASE_SKEW and now - timestamp < lease
 
 
 def _is_within(path: Path, root: Path) -> bool:

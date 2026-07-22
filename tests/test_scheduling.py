@@ -406,6 +406,71 @@ def test_stale_in_flight_lease_recovers_as_bounded_failure(tmp_path: Path):
     assert state["consecutive_failures"] == 1
 
 
+def test_far_future_in_flight_lease_is_recovered_as_bounded_failure(tmp_path: Path):
+    (tmp_path / "incoming").mkdir()
+    (tmp_path / "incoming" / "report.csv").write_text("v1", encoding="utf-8")
+    _write_schedule(tmp_path, in_flight_lease_minutes=15)
+    now = datetime(2026, 7, 21, tzinfo=timezone.utc)
+    scheduler = AdaptiveScheduler(tmp_path, {})
+    scheduler.mark_enqueued(scheduler.evaluate(now=now))
+    state_path = tmp_path / "state" / "scheduler-state.json"
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state["in_flight_at"] = "2026-07-22T00:00:00+00:00"
+    state["in_flight_heartbeat_at"] = "2026-07-22T00:00:00+00:00"
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+
+    recovered = AdaptiveScheduler(tmp_path, {}).evaluate(now=now)
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+
+    assert recovered.should_enqueue and recovered.reason == "recovery"
+    assert state["last_result"] == "failed"
+    assert state["consecutive_failures"] == 1
+    assert "in_flight_request_id" not in state
+
+
+def test_far_future_dispatch_lock_is_stale_and_recoverable(tmp_path: Path, monkeypatch):
+    _write_schedule(tmp_path, in_flight_lease_minutes=1)
+    lock_path = tmp_path / "state" / "scheduler-state.dispatch.lock"
+    lock_path.parent.mkdir()
+    lock_path.write_text(
+        json.dumps({"token": "future", "acquired_at": "2026-07-22T00:00:00+00:00"}),
+        encoding="utf-8",
+    )
+    scheduler = AdaptiveScheduler(tmp_path, {})
+    now = datetime(2026, 7, 21, tzinfo=timezone.utc)
+
+    assert scheduler._dispatch_lock_is_stale(now=now) is True
+    monkeypatch.setattr(
+        "core.scheduling._as_utc",
+        lambda value: now if value is None else value.astimezone(timezone.utc),
+    )
+    token = scheduler.acquire_dispatch_lock()
+    assert token
+    scheduler.release_dispatch_lock(token)
+
+
+def test_within_future_lease_skew_remains_live(tmp_path: Path):
+    (tmp_path / "incoming").mkdir()
+    (tmp_path / "incoming" / "report.csv").write_text("v1", encoding="utf-8")
+    _write_schedule(tmp_path, in_flight_lease_minutes=15)
+    now = datetime(2026, 7, 21, tzinfo=timezone.utc)
+    scheduler = AdaptiveScheduler(tmp_path, {})
+    scheduler.mark_enqueued(scheduler.evaluate(now=now))
+    state_path = tmp_path / "state" / "scheduler-state.json"
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state["in_flight_heartbeat_at"] = "2026-07-21T00:04:00+00:00"
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+
+    assert AdaptiveScheduler(tmp_path, {}).evaluate(now=now).reason == "already_enqueued"
+
+    lock_path = tmp_path / "state" / "scheduler-state.dispatch.lock"
+    lock_path.write_text(
+        json.dumps({"token": "future", "acquired_at": "2026-07-21T00:04:00"}),
+        encoding="utf-8",
+    )
+    assert AdaptiveScheduler(tmp_path, {})._dispatch_lock_is_stale(now=now) is False
+
+
 def test_unsafe_input_and_approval_paths_cannot_escape_instance(tmp_path: Path):
     outside = tmp_path.parent / "outside-approval.json"
     outside.write_text('[{"status": "pending"}]', encoding="utf-8")
