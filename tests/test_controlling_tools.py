@@ -6,6 +6,7 @@ from jsonschema import Draft202012Validator
 from openpyxl import Workbook
 import pytest
 
+from core.controlling import artifacts as artifacts_module
 import core.controlling.tools as controlling_tools
 from core.controlling.tools import ControllingComputeTool, InstanceReadTool
 from core.controlling.narrative import ControllingReportTool
@@ -686,7 +687,7 @@ def test_kmu_report_provenance_matches_exact_source_and_mapping_bytes(tmp_path):
     assert report["provenance"] == {
         "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
         "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-        "calculation_version": "kmu-report-v1",
+        "calculation_version": "kmu-report-v2",
     }
 
 
@@ -1205,6 +1206,68 @@ def test_kmu_report_allows_blank_ytd_periods_for_balance_groups(tmp_path):
 
     assert report["metrics"]["liquidity"]["ytd"] is None
     assert report["metrics"]["liquidity"]["ytd_prior"] is None
+
+
+def test_balance_group_propagates_partial_ytd_to_metric_and_reconciliation(tmp_path):
+    _write_strict_actuals(
+        tmp_path,
+        [
+            "p1;4000;Umsatz;10;9;30;27",
+            "b1;1000;Bank A;20;19;60;57",
+            "b2;1001;Bank B;25;24;;",
+        ],
+    )
+    mapping = _write_strict_mapping(tmp_path)
+
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"data/actuals.csv"}'
+        )
+    )
+
+    assert report["groups"]["liquidity"]["ytd"] is None
+    assert report["groups"]["liquidity"]["ytd_prior"] is None
+    assert report["metrics"]["liquidity"]["ytd"] is None
+    assert report["metrics"]["liquidity"]["ytd_prior"] is None
+    assert report["reconciliation"]["mapped_source_period_totals"]["ytd"] is None
+    assert report["reconciliation"]["grouped_period_totals"]["ytd"] is None
+    assert artifacts_module._sourced_totals_pass(report, mapping)
+
+
+def test_free_metric_propagates_missing_balance_group_ytd_to_acceptance(tmp_path):
+    groups = {
+        "revenue": {"prefixes": ["4"], "multiplier": 1},
+        "liquidity": {"prefixes": ["1"], "multiplier": 1},
+    }
+    metrics = {
+        "ebitda": ["revenue"],
+        "depreciation": ["revenue"],
+        "egt": ["revenue"],
+        "free_kpi": ["revenue", "liquidity"],
+    }
+    _write_strict_actuals(
+        tmp_path,
+        [
+            "p1;4000;Umsatz;10;9;30;27",
+            "b1;1000;Bank;20;19;;",
+        ],
+    )
+    mapping = _write_strict_mapping(tmp_path, groups=groups, metrics=metrics)
+
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"data/actuals.csv"}'
+        )
+    )
+
+    assert report["metrics"]["free_kpi"]["month"] == "30"
+    assert report["metrics"]["free_kpi"]["ytd"] is None
+    assert report["metrics"]["free_kpi"]["ytd_prior"] is None
+    assert artifacts_module._sourced_totals_pass(report, mapping)
+
+    partial_ytd = json.loads(json.dumps(report))
+    partial_ytd["metrics"]["free_kpi"]["ytd"] = "30"
+    assert not artifacts_module._sourced_totals_pass(partial_ytd, mapping)
 
 
 def test_kmu_report_rejects_mapping_symlink_outside_instance(tmp_path, monkeypatch):

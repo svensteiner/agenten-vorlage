@@ -144,9 +144,15 @@ def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(tmp_path):
         and run["calculation_version"]
         for run in runs
     )
+    assert all(
+        isinstance(run["presentation_version"], str)
+        and run["presentation_version"]
+        for run in runs
+    )
     assert len({run["input_fingerprint"] for run in runs}) == 1
     assert len({run["mapping_version"] for run in runs}) == 1
     assert len({run["calculation_version"] for run in runs}) == 1
+    assert len({run["presentation_version"] for run in runs}) == 1
     assert len({run["kpi_result_hash"] for run in runs}) == 1
     repeatable_counts = [
         response["acceptance"]["repeatable_run_count"] for response in responses

@@ -263,7 +263,7 @@ class Verifier:
             not isinstance(provenance, dict)
             or set(provenance)
             != {"input_fingerprint", "mapping_version", "calculation_version"}
-            or provenance.get("calculation_version") != "kmu-report-v1"
+            or provenance.get("calculation_version") != "kmu-report-v2"
             or not all(
                 isinstance(provenance.get(name), str)
                 and re.fullmatch(r"[0-9a-f]{64}", provenance[name])

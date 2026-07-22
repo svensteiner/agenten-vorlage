@@ -38,7 +38,7 @@ else:
     import fcntl
 
 
-CALCULATION_VERSION = "kmu-report-v1"
+CALCULATION_VERSION = "kmu-report-v2"
 PRESENTATION_VERSION = "management-renderer-v1"
 _HISTORY_LIMIT = 100
 _MAX_HISTORY_BYTES = 1_000_000
@@ -282,6 +282,13 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         return {**empty, "valid": False}
     if not runs:
         return empty
+
+    latest_run = runs[-1]
+    if (
+        latest_run.get("calculation_version") != CALCULATION_VERSION
+        or latest_run.get("presentation_version") != PRESENTATION_VERSION
+    ):
+        return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
 
     current_policy = _approval_policy_snapshot(root)
     last_policy_hash = runs[-1].get("approval_policy_hash")
@@ -1144,15 +1151,22 @@ def _reconciled_report_values_pass(
             return False
     if mapped_row_count != reconciliation.get("mapped_account_count"):
         return False
+    if any(
+        period not in mapped_source or period not in grouped
+        for period in REPORT_PERIODS
+    ):
+        return False
 
     for period in REPORT_PERIODS:
-        expected_total = sum(
-            (
-                value
-                for values in normalized_groups.values()
-                if (value := values[period]) is not None
-            ),
-            Decimal("0"),
+        values = [
+            normalized_groups[group_name][period]
+            for group_name in report_groups
+            if report_groups[group_name]["row_count"] > 0
+        ]
+        expected_total = (
+            None
+            if any(value is None for value in values)
+            else sum(values, Decimal("0"))
         )
         source_total = _validated_decimal(mapped_source.get(period))
         grouped_total = _validated_decimal(grouped.get(period))
@@ -1237,8 +1251,8 @@ def _reconciled_report_values_pass(
 def _sum_optional_group_values(
     groups: dict[str, dict[str, Decimal | None]], refs: list[str], period: str
 ) -> Decimal | None:
-    values = [groups[ref][period] for ref in refs if groups[ref][period] is not None]
-    return sum(values, Decimal("0")) if values else None
+    values = [groups[ref][period] for ref in refs]
+    return None if any(value is None for value in values) else sum(values, Decimal("0"))
 
 
 def _report_metric_passes(

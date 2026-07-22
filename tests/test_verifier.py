@@ -125,7 +125,7 @@ def test_sourced_kmu_report_passes_deterministically_without_verifier_llm(monkey
         "provenance": {
             "input_fingerprint": "a" * 64,
             "mapping_version": "b" * 64,
-            "calculation_version": "kmu-report-v1",
+            "calculation_version": "kmu-report-v2",
         },
     }
     management = {

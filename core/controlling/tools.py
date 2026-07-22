@@ -32,7 +32,7 @@ _SIGN_CONVENTION_NOTE = (
     "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
     "die Kennzahl, negative Werte verringern sie."
 )
-_CALCULATION_VERSION = "kmu-report-v1"
+_CALCULATION_VERSION = "kmu-report-v2"
 PNL_METRIC_NAMES = frozenset(
     {
         "ebitda",
@@ -595,6 +595,8 @@ class ControllingComputeTool(_InstanceInputCapability):
         }
         source_totals = {period: None for period in periods}
         grouped_totals = {period: None for period in periods}
+        missing_source_periods: set[str] = set()
+        missing_group_periods = {name: set() for name in out}
         source_account_count = mapped_account_count = ignored_account_count = 0
         row_identifier = mapping["report_metadata"]["row_identifier"]
         seen_row_ids: set[str] = set()
@@ -641,6 +643,9 @@ class ControllingComputeTool(_InstanceInputCapability):
                 rule.get("multiplier", 1), "Gruppen-Multiplikator"
             )
             for period in periods:
+                if values[period] is None:
+                    missing_source_periods.add(period)
+                    missing_group_periods[group].add(period)
                 source_totals[period] = self._add(
                     source_totals[period], values[period], mult
                 )
@@ -649,6 +654,12 @@ class ControllingComputeTool(_InstanceInputCapability):
                 )
                 out[group][period] = self._add(out[group][period], values[period], mult)
             out[group]["accounts"].append(account)
+        for period in missing_source_periods:
+            source_totals[period] = None
+            grouped_totals[period] = None
+        for group, missing_periods in missing_group_periods.items():
+            for period in missing_periods:
+                out[group][period] = None
         return out, {
             "source_account_count": source_account_count,
             "mapped_account_count": mapped_account_count,
@@ -709,9 +720,14 @@ class ControllingComputeTool(_InstanceInputCapability):
         periods = tuple(period for period in groups[refs[0]] if period != "accounts")
         out = self._empty(periods)
         for ref in refs:
-            for period in periods:
-                out[period] = self._add(out[period], groups[ref][period], Decimal("1"))
             out["accounts"].extend(groups[ref]["accounts"])
+        for period in periods:
+            values = [groups[ref][period] for ref in refs]
+            out[period] = (
+                None
+                if any(value is None for value in values)
+                else sum(values, Decimal("0"))
+            )
         return out
 
     @staticmethod

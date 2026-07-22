@@ -166,7 +166,7 @@ def _aggregate_report(root):
         "provenance": {
             "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
             "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-            "calculation_version": "kmu-report-v1",
+            "calculation_version": "kmu-report-v2",
         },
         "raw_rows": [{"account_id": "4000", "customer": "must-not-persist"}],
     }
@@ -279,15 +279,15 @@ def _report_with_reconciled_totals():
             "mapped_source_period_totals": {
                 "month": "28.00",
                 "prior": 26,
-                "ytd": "23.0",
-                "ytd_prior": "21",
+                "ytd": None,
+                "ytd_prior": None,
                 "detail": "synthetic-extra",
             },
             "grouped_period_totals": {
                 "month": 28,
                 "prior": "26.000",
-                "ytd": 23.0,
-                "ytd_prior": "21.00",
+                "ytd": None,
+                "ytd_prior": None,
                 "detail": "different-extra-is-allowed",
             },
         },
@@ -526,8 +526,8 @@ def test_sourced_totals_accept_ratio_zero_and_none_semantics(semantics):
         report["metrics"]["ebitda"]["ytd"] = "58"
         report["metrics"]["egt"]["ytd"] = "52"
         report["metrics"]["material_ratio"]["ytd"] = None
-        report["reconciliation"]["mapped_source_period_totals"]["ytd"] = "52"
-        report["reconciliation"]["grouped_period_totals"]["ytd"] = "52"
+        report["reconciliation"]["mapped_source_period_totals"]["ytd"] = None
+        report["reconciliation"]["grouped_period_totals"]["ytd"] = None
         mapping["metrics"]["ebitda"] = ["revenue"]
         mapping["metrics"]["egt"] = ["revenue", "depreciation"]
         report["metrics"]["ebitda"] = {
@@ -957,6 +957,58 @@ def test_repeatability_resets_when_presentation_version_changes(tmp_path, monkey
         (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(encoding="utf-8")
     )
     assert [run["presentation_version"] for run in evidence["runs"]] == ["renderer-v1", "renderer-v1", "renderer-v2"]
+
+
+@pytest.mark.parametrize(
+    ("version_name", "legacy_version"),
+    (("CALCULATION_VERSION", "kmu-report-legacy"), ("PRESENTATION_VERSION", "renderer-legacy")),
+)
+def test_acceptance_status_rejects_latest_run_with_stale_semantics_version(
+    tmp_path, monkeypatch, version_name, legacy_version
+):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    current_calculation = artifacts_module.CALCULATION_VERSION
+    current_presentation = artifacts_module.PRESENTATION_VERSION
+    report = _aggregate_report(tmp_path)
+    if version_name == "CALCULATION_VERSION":
+        report["provenance"]["calculation_version"] = legacy_version
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+
+    monkeypatch.setattr(artifacts_module, version_name, legacy_version)
+    for offset in range(3):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+    monkeypatch.setattr(artifacts_module, "CALCULATION_VERSION", current_calculation)
+    monkeypatch.setattr(artifacts_module, "PRESENTATION_VERSION", current_presentation)
+
+    stale = read_acceptance_status(tmp_path)
+
+    assert stale["valid"] is False
+    assert stale["passed"] is False
+    evidence = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(encoding="utf-8")
+    )
+    assert evidence["runs"][-1]["calculation_version"] != current_calculation or evidence["runs"][-1]["presentation_version"] != current_presentation
+
+    current = _aggregate_report(tmp_path)
+    next_run = persist_report_artifacts(
+        tmp_path,
+        current,
+        management,
+        validated_at=now + timedelta(seconds=3),
+        draft_created_at=now + timedelta(seconds=3),
+    )
+    assert next_run["acceptance"]["repeatable_run_count"] == 1
+    assert read_acceptance_status(tmp_path)["valid"] is True
 
 
 def test_kpi_result_hash_binds_groups_and_management_draft(tmp_path):

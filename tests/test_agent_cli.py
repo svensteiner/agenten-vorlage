@@ -237,6 +237,8 @@ class TestPilotStatus:
                 / "account-mapping.example.json"
             ).read_text(encoding="utf-8")
         )
+        mapping_definition["metrics"]["ebitda"] = ["revenue"]
+        mapping_definition["metrics"]["egt"] = ["revenue", "depreciation"]
         mapping.write_text(json.dumps(mapping_definition), encoding="utf-8")
         periods = ("month", "prior", "ytd", "ytd_prior")
         groups = {
@@ -311,7 +313,7 @@ class TestPilotStatus:
             "provenance": {
                 "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
                 "mapping_version": hashlib.sha256(mapping.read_bytes()).hexdigest(),
-                "calculation_version": "kmu-report-v1",
+                "calculation_version": "kmu-report-v2",
             },
         }
         for metric_name in ("material_ratio", "personnel_ratio"):

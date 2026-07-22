@@ -20,11 +20,11 @@
     },
     {
       "id": "repeatable_runs",
-      "metric": "consecutive_runs_with_identical_inputs_config_and_kpi_results",
+      "metric": "consecutive_runs_with_identical_inputs_config_calculation_and_presentation_semantics_and_kpi_results",
       "operator": "greater_than_or_equal",
       "target": 3,
       "unit": "runs",
-      "evidence_required": ["sequence", "run_id", "previous_run_signature", "run_signature", "input_fingerprint", "mapping_version", "calculation_version", "kpi_result_hash"]
+      "evidence_required": ["sequence", "run_id", "previous_run_signature", "run_signature", "input_fingerprint", "mapping_version", "calculation_version", "presentation_version", "kpi_result_hash"]
     },
     {
       "id": "approval_safety",
