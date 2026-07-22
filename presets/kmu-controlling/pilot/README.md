@@ -2,6 +2,16 @@
 
 Dieser Ordner ist das betriebsfertige, kundennamensfreie Pilot-Pack. Er ersetzt weder Buchhaltung noch fachliche Freigabe.
 
+**Produktionshinweis:** Die fachliche Pilot-Ampel allein ist keine Freigabe für
+reale Mandantendaten. Vor Produktion ist der
+[Storage-Sicherheitsvertrag](../../../docs/adr/ADR-0001-kmu-pilot-storage-security-contract.md)
+auf dem Zielsystem nachzuweisen. Zwingend sind je Tenant eine eigene
+eingeschränkte Service-Identität und ein eigener
+Prozess-/Container-/VM-/Namespace-/Volume-Scope ohne Mount oder Zugriff auf
+fremde Tenant-Volumes. ACLs und Anwendungs-Preflights sind nur zusätzliche
+Härtung. Der P1 bleibt bis zu aktueller, signierter Produktions-Evidenz offen;
+die grüne CLI-Ampel ist notwendig, aber allein nicht hinreichend.
+
 Für den ersten Pitch und Trockenlauf enthält `demo/` einen vollständig
 fiktiven Referenzfall mit Saldenliste, freigegebenem Mapping und geprüften
 Sollwerten. So lässt sich die technische Kette vor Kundendaten reproduzierbar
