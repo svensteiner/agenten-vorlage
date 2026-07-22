@@ -39,6 +39,7 @@ else:
 
 
 CALCULATION_VERSION = "kmu-report-v1"
+PRESENTATION_VERSION = "management-renderer-v1"
 _HISTORY_LIMIT = 100
 _MAX_HISTORY_BYTES = 1_000_000
 _MAX_LEDGER_BYTES = 50 * 1024 * 1024
@@ -110,6 +111,7 @@ def persist_report_artifacts(
         "input_fingerprint": report_provenance["input_fingerprint"],
         "mapping_version": report_provenance["mapping_version"],
         "calculation_version": report_provenance["calculation_version"],
+        "presentation_version": PRESENTATION_VERSION,
         "kpi_result_hash": kpi_hash,
         "source_file": report.get("source"),
         "period": sanitized_report.get("report_metadata"),
@@ -968,6 +970,7 @@ def _consecutive_equal_runs(runs: list[dict[str, Any]]) -> int:
         "input_fingerprint",
         "mapping_version",
         "calculation_version",
+        "presentation_version",
         "kpi_result_hash",
         "approval_policy_hash",
     )
@@ -1669,6 +1672,35 @@ def _valid_policy_evidence(run: dict[str, Any]) -> bool:
     )
 
 
+def _management_material_deviations(report: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return the five largest report-backed movements in a stable display form."""
+    raw_deviations = report.get("material_deviations")
+    if not isinstance(raw_deviations, list):
+        return []
+
+    parsed: list[tuple[Decimal, str, str]] = []
+    for item in raw_deviations:
+        if not isinstance(item, dict):
+            continue
+        account_id = item.get("account_id")
+        raw_amount = item.get("month_vs_prior")
+        if not isinstance(account_id, str) or not account_id.strip() or isinstance(raw_amount, bool):
+            continue
+        try:
+            amount = Decimal(str(raw_amount))
+        except (InvalidOperation, ValueError):
+            continue
+        if not amount.is_finite():
+            continue
+        amount_text = str(amount.copy_abs()) if amount.is_zero() else str(amount)
+        parsed.append(
+            (amount, account_id, amount_text if amount < 0 else f"+{amount_text}")
+        )
+
+    parsed.sort(key=lambda item: (-abs(item[0]), item[1]))
+    return [(account_id, amount) for _, account_id, amount in parsed[:5]]
+
+
 def _markdown(payload: dict[str, Any]) -> str:
     report = payload["report"]
     management = payload["management"]
@@ -1710,6 +1742,21 @@ def _markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {name} | {values.get('month', '–')} | {values.get('prior', '–')} "
             f"| {values.get('ytd', '–')} | {values.get('ytd_prior', '–')} |"
+        )
+    deviations = _management_material_deviations(report)
+    if deviations:
+        lines.extend(
+            [
+                "",
+                "## Wesentliche Abweichungen",
+                "",
+                "| Konto | Monat ggü. Vormonat |",
+                "|---|---:|",
+            ]
+        )
+        lines.extend(
+            f"| {markdown_cell(account_id)} | {markdown_cell(amount)} |"
+            for account_id, amount in deviations
         )
     lines.extend(["", "## Nächste Schritte", ""])
     lines.extend(f"- {item}" for item in management.get("actions", []))
@@ -1753,6 +1800,17 @@ def _html(payload: dict[str, Any]) -> str:
             for period in ("month", "prior", "ytd", "ytd_prior")
         )
         metric_rows.append(f"<tr><th>{esc(name.upper())}</th>{cells}</tr>")
+    deviation_rows = "".join(
+        f"<tr><th>{esc(account_id)}</th><td>{esc(amount)}</td></tr>"
+        for account_id, amount in _management_material_deviations(report)
+    )
+    deviations_section = (
+        "<h2>Wesentliche Abweichungen</h2>"
+        "<table><thead><tr><th>Konto</th><th>Monat ggü. Vormonat</th>"
+        f"</tr></thead><tbody>{deviation_rows}</tbody></table>"
+        if deviation_rows
+        else ""
+    )
     alarms = "".join(
         f"<li>{esc(item)}</li>" for item in management.get("alarms", [])
     )
@@ -1773,6 +1831,7 @@ table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{padding:11px;bo
 <p class="summary">{esc(management.get('summary', ''))}</p>
 <p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p>
 <table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
+{deviations_section}
 <div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions}</ol></section></div>
 <h2>Pilot-Abnahme</h2><span class="badge {status_class}">{status}</span> <span>{acceptance['repeatable_run_count']}/3 identische Wiederholungsläufe</span>
 <footer>Quelle: {esc(report.get('source', '–'))}<br>Methode: {esc(report.get('method', '–'))}</footer>

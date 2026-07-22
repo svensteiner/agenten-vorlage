@@ -372,6 +372,81 @@ def test_management_views_use_escaped_mapping_period_labels_and_sign_note(tmp_pa
     assert report["sign_convention_note"] in markdown
 
 
+def test_management_views_show_deterministic_top_material_deviations():
+    report = {
+        "report_metadata": {},
+        "period_labels": {},
+        "sign_convention_note": "synthetisch",
+        "metrics": {},
+        "material_deviations": [
+            {"account_id": "3000", "month_vs_prior": "-25"},
+            {"account_id": "9000", "month_vs_prior": "50"},
+            {"account_id": "1000", "month_vs_prior": "-50"},
+            {"account_id": "2000", "month_vs_prior": "10"},
+            {"account_id": "4000", "month_vs_prior": "-5"},
+            {"account_id": "5000", "month_vs_prior": "1"},
+        ],
+    }
+    payload = {
+        "report": report,
+        "management": {"summary": "synthetisch", "alarms": [], "actions": []},
+        "acceptance": {"passed": False, "repeatable_run_count": 0},
+    }
+
+    markdown = artifacts_module._markdown(payload)
+    html = artifacts_module.render_html(payload)
+
+    expected = [("1000", "-50"), ("9000", "+50"), ("3000", "-25"), ("2000", "+10"), ("4000", "-5")]
+    markdown_positions = []
+    html_positions = []
+    for account_id, amount in expected:
+        markdown_item = f"| {account_id} | {amount} |"
+        html_item = f"<th>{account_id}</th><td>{amount}</td>"
+        assert markdown_item in markdown
+        assert html_item in html
+        markdown_positions.append(markdown.index(markdown_item))
+        html_positions.append(html.index(html_item))
+    assert markdown_positions == sorted(markdown_positions)
+    assert html_positions == sorted(html_positions)
+    assert "5000 | +1" not in markdown
+    assert "<th>5000</th><td>+1</td>" not in html
+
+
+def test_management_views_normalize_zero_and_escape_material_deviations():
+    report = {
+        "report_metadata": {},
+        "period_labels": {},
+        "sign_convention_note": "synthetisch",
+        "metrics": {},
+        "material_deviations": [
+            {"account_id": "<script>|[x](y)&", "month_vs_prior": "3"},
+            {"account_id": "0100", "month_vs_prior": "-0"},
+            {"account_id": "0200", "month_vs_prior": "-0.0"},
+            {"account_id": "bool-skip", "month_vs_prior": True},
+            {"account_id": "nan-skip", "month_vs_prior": "NaN"},
+            {"account_id": "infinity-skip", "month_vs_prior": "Infinity"},
+        ],
+    }
+    payload = {
+        "report": report,
+        "management": {"summary": "synthetisch", "alarms": [], "actions": []},
+        "acceptance": {"passed": False, "repeatable_run_count": 0},
+    }
+
+    markdown = artifacts_module._markdown(payload)
+    html = artifacts_module.render_html(payload)
+
+    assert "| &lt;script&gt;\\|\\[x\\]\\(y\\)&amp; | +3 |" in markdown
+    assert "<th>&lt;script&gt;|[x](y)&amp;</th><td>+3</td>" in html
+    assert "| 0100 | +0 |" in markdown
+    assert "| 0200 | +0.0 |" in markdown
+    assert "<th>0100</th><td>+0</td>" in html
+    assert "<th>0200</th><td>+0.0</td>" in html
+    for skipped in ("bool-skip", "nan-skip", "infinity-skip"):
+        assert skipped not in markdown
+        assert skipped not in html
+
+
 @pytest.mark.parametrize(
     "hostile",
     [
@@ -845,6 +920,43 @@ def test_repeatability_resets_when_deviations_or_alarms_change(tmp_path):
         restored["acceptance"]["repeatable_run_count"],
     ] == [1, 1, 1]
     assert restored["acceptance"]["passed"] is False
+
+
+def test_repeatability_resets_when_presentation_version_changes(tmp_path, monkeypatch):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+
+    monkeypatch.setattr(artifacts_module, "PRESENTATION_VERSION", "renderer-v1", raising=False)
+    old_runs = [
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+        for offset in (0, 1)
+    ]
+    monkeypatch.setattr(artifacts_module, "PRESENTATION_VERSION", "renderer-v2")
+    current_run = persist_report_artifacts(
+        tmp_path,
+        report,
+        management,
+        validated_at=now + timedelta(seconds=2),
+        draft_created_at=now + timedelta(seconds=2),
+    )
+
+    assert [run["acceptance"]["repeatable_run_count"] for run in old_runs] == [1, 2]
+    assert current_run["acceptance"]["repeatable_run_count"] == 1
+    evidence = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(encoding="utf-8")
+    )
+    assert [run["presentation_version"] for run in evidence["runs"]] == ["renderer-v1", "renderer-v1", "renderer-v2"]
 
 
 def test_kpi_result_hash_binds_groups_and_management_draft(tmp_path):
