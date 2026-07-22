@@ -174,6 +174,27 @@ notwendig, aber für die Produktionsfreigabe nicht hinreichend. Ein lokaler
 Testlauf unter nur einem OS-Principal, ein sauberer Anwendungstest oder ein
 erfolgreicher Preflight schließt diesen P1 nicht.
 
+`python agent_cli.py status --instance <pfad> --production` prüft zusätzlich
+eine Referenz, die nur eine opaque Attestation-ID enthält. Der
+servicekontrollierte Trust Root wird ausschließlich über
+`AGENT_PRODUCTION_TRUST_ROOT` konfiguriert; UNC-, Link-/Reparse- und
+Tenant-Volume-Pfade werden abgelehnt. Darunter liegen feste Pfade für die
+Attestation, zwei unabhängig per Ed25519 geprüfte Platform-/Security-Signaturen
+und separat unter `runtime/<tenant>/<agent>/` signierte, höchstens 15 Minuten alte Runtime-Fakten. Diese müssen
+Tenant, Agent, Generation, Service-Identität und alle vier Fingerprints exakt
+an die höchstens 30 Tage gültige Attestation binden. Ohne diese aktuelle,
+signierte Evidenz bleibt die Produktionsfreigabe rot; die lokale Pilot-Ampel
+wird dadurch niemals als Produktionsfreigabe interpretiert.
+
+Der ausgelieferte, geschützte Paket-Build enthält den Ed25519-Control-Plane-
+Root-Key als Trust Anchor. Der Trust Root muss eine von diesem Key signierte,
+kurzlebige `trust-config.json` mit drei SHA-256-Key-Pins enthalten; fehlende,
+falsche oder doppelte Schlüssel/Pins sperren die Freigabe. Der Provisioner
+liefert den autorisierten Root-Key im Build und die Signatur aus. Ein
+Platzhalter-Build ohne autorisierte Signatur bleibt fail-closed. Trust Root,
+Trust-Konfiguration und Root-Key sind Teil des Deployment-Fingerprints und
+dürfen weder aus der Tenant-Referenz noch aus dem Tenant-Dateibaum stammen.
+
 ## Verworfene Alternativen
 
 - **Gemeinsame privilegierte Service-Identität mit ACL-Trennung:** verworfen;

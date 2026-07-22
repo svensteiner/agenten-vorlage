@@ -4,7 +4,8 @@ agent_cli.py liegt im Repo-Root (kein Paket), daher wird es — wie test_check.p
 es für tools/check.py tut — per importlib geladen.
 """
 
-from datetime import datetime, timezone
+import base64
+from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
 import json
@@ -12,6 +13,8 @@ import sys
 from pathlib import Path
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from core.scheduling import ScheduledDecision
 from core.controlling.artifacts import persist_report_artifacts
 
@@ -349,6 +352,116 @@ class TestPilotStatus:
             encoding="utf-8",
         )
 
+    @staticmethod
+    def _production_evidence(instance: Path, external: Path, **overrides) -> Path:
+        now = datetime.now(timezone.utc)
+        current_overrides = overrides.pop("current_overrides", {})
+        evidence_id = "synthetic-001"
+        fingerprints = {
+            "deployment": "deploy-sha256:synthetic",
+            "image": "image-sha256:synthetic",
+            "acl_parent_chain": "acl-sha256:synthetic",
+            "namespace_volume": "volume-sha256:synthetic",
+        }
+        evidence = {
+            "schema_version": 1,
+            "attestation_id": evidence_id,
+            "tenant_id": "acme",
+            "agent_id": "controlling",
+            "deployment_generation": "generation-synthetic-1",
+            "issued_at": (now - timedelta(minutes=1)).isoformat(),
+            "signed_at": now.isoformat(),
+            "expires_at": (now + timedelta(days=1)).isoformat(),
+            "service_identity": "svc-acme-controlling",
+            "tenant_identity": "tenant-acme",
+            "fingerprints": fingerprints,
+            "matrix": {name: "passed" for name in agent_cli.PRODUCTION_MATRIX_OUTCOMES},
+        }
+        evidence.update(overrides)
+        attestation_dir = external / "attestations" / evidence_id
+        keys_dir = external / "keys"
+        runtime_dir = external / "runtime"
+        attestation_dir.mkdir(parents=True)
+        keys_dir.mkdir()
+        runtime_dir.mkdir()
+        signers = {}
+        for name in ("platform", "security", "control-plane"):
+            private = Ed25519PrivateKey.generate()
+            signers[name] = private
+            (keys_dir / f"{name}.pub").write_bytes(
+                base64.b64encode(
+                    private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+                )
+            )
+        root_signer = Ed25519PrivateKey.generate()
+        agent_cli.CONTROL_PLANE_ROOT_PUBLIC_KEY_B64 = base64.b64encode(
+            root_signer.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        ).decode("ascii")
+        key_pins = {
+            f"{name}.pub": hashlib.sha256(
+                signers[name].public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+            ).hexdigest()
+            for name in ("platform", "security", "control-plane")
+        }
+        trust_config = {
+            "schema_version": 1,
+            "trust_config_id": "synthetic-trust-001",
+            "issued_at": (now - timedelta(minutes=1)).isoformat(),
+            "signed_at": now.isoformat(),
+            "expires_at": (now + timedelta(days=1)).isoformat(),
+            "key_pins": key_pins,
+        }
+        config_bytes = agent_cli._canonical_json(trust_config)
+        (external / "trust-config.json").write_bytes(config_bytes)
+        (external / "trust-config.sig").write_bytes(
+            base64.b64encode(root_signer.sign(config_bytes))
+        )
+        canonical = agent_cli._canonical_json(evidence)
+        (attestation_dir / "attestation.json").write_bytes(canonical)
+        for name in ("platform", "security"):
+            (attestation_dir / f"{name}.sig").write_bytes(
+                base64.b64encode(signers[name].sign(canonical))
+            )
+        facts = {
+            name: evidence[name]
+            for name in (
+                "schema_version", "attestation_id", "tenant_id", "agent_id",
+                "deployment_generation", "service_identity", "tenant_identity", "fingerprints",
+                "issued_at", "signed_at", "expires_at",
+            )
+        }
+        facts["issued_at"] = (now - timedelta(minutes=1)).isoformat()
+        facts["signed_at"] = now.isoformat()
+        facts["expires_at"] = (now + timedelta(minutes=10)).isoformat()
+        facts.update(current_overrides)
+        facts_bytes = agent_cli._canonical_json(facts)
+        runtime_tenant = runtime_dir / "acme" / "controlling"
+        runtime_tenant.mkdir(parents=True)
+        (runtime_tenant / "current-facts.json").write_bytes(facts_bytes)
+        (runtime_tenant / "current-facts.sig").write_bytes(
+            base64.b64encode(signers["control-plane"].sign(facts_bytes))
+        )
+        reference = instance / "state" / "production-attestation-reference.json"
+        reference.write_text(
+            json.dumps({"schema_version": 1, "attestation_id": evidence_id}),
+            encoding="utf-8",
+        )
+        return external
+
+    def _production_ready(self, instance: Path) -> None:
+        self._signed_acceptance(instance)
+        self._loop_health(instance)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": datetime.now(timezone.utc).isoformat(),
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
     def test_ready_instance_shows_green_operator_summary(
         self, tmp_path, capsys
     ):
@@ -379,6 +492,192 @@ class TestPilotStatus:
         assert "0/3" in output
         assert "latest-controlling-report.html" in output
         assert "überwacht fortführen" in output
+
+    def test_production_status_requires_external_evidence(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    def test_production_status_rejects_malformed_or_incomplete_evidence(self, tmp_path, capsys, monkeypatch):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        external = tmp_path / "trust"
+        external.mkdir()
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(external))
+        (instance / "state" / "production-attestation-reference.json").write_text(
+            json.dumps({"schema_version": 1, "attestation_id": "synthetic-001"}),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"tenant_id": "other"},
+            {"expires_at": "2020-01-01T00:00:00+00:00"},
+        ],
+    )
+    def test_production_status_rejects_mismatched_or_expired_evidence(
+        self, tmp_path, capsys, monkeypatch, overrides
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        trust = self._production_evidence(instance, tmp_path / "trust", **overrides)
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("inside_instance", [True, False])
+    def test_production_status_rejects_overlapping_tenant_trust_root(self, tmp_path, capsys, monkeypatch, inside_instance):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        local = instance / "state" / "trust" if inside_instance else tmp_path
+        trust = self._production_evidence(instance, local)
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        ("mutation", "current_overrides"),
+        [
+            ("tamper", {}),
+            (None, {"expires_at": "2020-01-01T00:00:00+00:00"}),
+            (None, {"deployment_generation": "replayed-generation"}),
+        ],
+    )
+    def test_production_status_rejects_tampered_stale_or_replayed_runtime_facts(
+        self, tmp_path, capsys, monkeypatch, mutation, current_overrides
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        trust = self._production_evidence(
+            instance, tmp_path / "trust", current_overrides=current_overrides
+        )
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+        if mutation == "tamper":
+            path = trust / "attestations" / "synthetic-001" / "attestation.json"
+            path.write_bytes(path.read_bytes().replace(b"synthetic", b"tampered", 1))
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("trust_root", ["\\\\server\\share", "//server/share", "C:\\relative\\..\\escape"])
+    def test_production_status_rejects_unc_or_invalid_trust_root(
+        self, tmp_path, capsys, monkeypatch, trust_root
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, trust_root)
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("case", ["missing_config", "wrong_root", "key_swap", "duplicate"])
+    def test_production_status_rejects_untrusted_or_duplicate_trust_keys(
+        self, tmp_path, capsys, monkeypatch, case
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        trust = self._production_evidence(instance, tmp_path / "trust")
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+        if case == "missing_config":
+            (trust / "trust-config.json").unlink()
+        elif case == "wrong_root":
+            path = trust / "trust-config.sig"
+            path.write_bytes(base64.b64encode(Ed25519PrivateKey.generate().sign(
+                (trust / "trust-config.json").read_bytes()
+            )))
+        elif case == "key_swap":
+            replacement = Ed25519PrivateKey.generate().public_key().public_bytes(
+                Encoding.Raw, PublicFormat.Raw
+            )
+            (trust / "keys" / "platform.pub").write_bytes(base64.b64encode(replacement))
+        else:
+            raw = (trust / "keys" / "platform.pub").read_bytes()
+            (trust / "keys" / "security.pub").write_bytes(raw)
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    def test_production_status_rejects_root_swap(self, tmp_path, capsys, monkeypatch):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        first_trust = self._production_evidence(instance, tmp_path / "trust-one")
+        self._production_evidence(instance, tmp_path / "trust-two")
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(first_trust))
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    def test_production_status_rejects_reference_path_traversal(self, tmp_path, capsys, monkeypatch):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        trust = self._production_evidence(instance, tmp_path / "trust")
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+        (instance / "state" / "production-attestation-reference.json").write_text(
+            json.dumps({"schema_version": 1, "attestation_id": "../other"}),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 1
+        assert "Produktionsfreigabe: ROT" in capsys.readouterr().out
+
+    def test_production_status_accepts_complete_external_synthetic_evidence(
+        self, tmp_path, capsys, monkeypatch
+    ):
+        instance = self._instance(tmp_path)
+        self._production_ready(instance)
+        trust = self._production_evidence(instance, tmp_path / "trust")
+        monkeypatch.setenv(agent_cli.PRODUCTION_TRUST_ROOT_ENV, str(trust))
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance), production=True)
+        )
+
+        assert result == 0
+        assert "Produktionsfreigabe: GRÜN" in capsys.readouterr().out
 
     @pytest.mark.parametrize("poll_result", ["success", "idle", "already_enqueued"])
     def test_fresh_running_loop_health_allows_green_status(

@@ -12,6 +12,9 @@ Commands:
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -22,6 +25,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from core.controlling.artifacts import read_acceptance_status
 from core.scheduling import ScheduledDecision, run_scheduled_cycle
@@ -46,6 +52,27 @@ LOOP_WORK_REASONS = frozenset(
 )
 MAX_LOOP_INTERVAL_MINUTES = 1440
 MAX_STATUS_JSON_BYTES = 1024 * 1024
+PRODUCTION_EVIDENCE_REFERENCE = "state/production-attestation-reference.json"
+PRODUCTION_TRUST_ROOT_ENV = "AGENT_PRODUCTION_TRUST_ROOT"
+PRODUCTION_KEY_FILES = ("platform.pub", "security.pub", "control-plane.pub")
+# Provisioning replaces this package trust anchor with the authorized release root.
+# The placeholder deliberately verifies no production trust configuration.
+CONTROL_PLANE_ROOT_PUBLIC_KEY_B64 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+MAX_ATTESTATION_TTL = timedelta(days=30)
+MAX_CURRENT_FACTS_TTL = timedelta(minutes=15)
+PRODUCTION_MATRIX_OUTCOMES = frozenset(
+    {
+        "own_input",
+        "own_control_areas",
+        "foreign_scope",
+        "link_junction_e2e",
+        "own_service",
+        "restart",
+    }
+)
+PRODUCTION_FINGERPRINTS = frozenset(
+    {"deployment", "image", "acl_parent_chain", "namespace_volume"}
+)
 
 
 @dataclass
@@ -1010,7 +1037,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_status(args: argparse.Namespace) -> int:
     instance = getattr(args, "instance", None)
     if instance:
+        if getattr(args, "production", False):
+            return _print_production_status(Path(instance))
         return _print_pilot_status(Path(instance))
+    if getattr(args, "production", False):
+        print("Produktionsstatus braucht --instance.")
+        return 1
     print("\nTemplate status")
     print("───────────────")
     print(f"  Core:         {ROOT / 'core'}")
@@ -1095,6 +1127,231 @@ def _read_status_json(root: Path, relative: str) -> tuple[dict[str, Any], bool]:
     ):
         return {}, True
     return (value, False) if isinstance(value, dict) else ({}, True)
+
+
+def _bounded_json_file(path: Path) -> dict[str, Any] | None:
+    """Read one small regular JSON object without accepting a link/reparse path."""
+    try:
+        if _is_link_or_junction(path) or not path.is_file():
+            return None
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_STATUS_JSON_BYTES + 1)
+        if len(raw) > MAX_STATUS_JSON_BYTES:
+            return None
+        value = json.loads(raw.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _valid_production_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or len(value) > 64 or any(ord(c) < 32 for c in value):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def _nonempty_evidence_text(value: Any, *, limit: int = 512) -> bool:
+    return (
+        isinstance(value, str)
+        and 0 < len(value.strip()) <= limit
+        and all(ord(character) >= 32 for character in value)
+    )
+
+
+def _canonical_json(value: dict[str, Any]) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+
+
+def _safe_trust_root() -> Path | None:
+    raw_root = os.environ.get(PRODUCTION_TRUST_ROOT_ENV)
+    if not raw_root or raw_root.startswith(("\\\\", "//")) or len(raw_root) > 1024:
+        return None
+    root = Path(raw_root)
+    if not root.is_absolute():
+        return None
+    try:
+        current = Path(root.anchor)
+        for part in root.parts[1:]:
+            current /= part
+            if _is_link_or_junction(current):
+                return None
+        resolved = root.resolve(strict=True)
+        if str(resolved).startswith(("\\\\", "//")):
+            return None
+        if os.name == "nt":
+            import ctypes
+
+            if ctypes.windll.kernel32.GetDriveTypeW(root.anchor) == 4:  # DRIVE_REMOTE
+                return None
+        return resolved if resolved.is_dir() and not _is_link_or_junction(resolved) else None
+    except OSError:
+        return None
+
+
+def _safe_trust_file(root: Path, *parts: str) -> Path | None:
+    path = root
+    for part in parts:
+        if not part or Path(part).name != part:
+            return None
+        path /= part
+        if _is_link_or_junction(path):
+            return None
+    try:
+        return path if path.is_file() and not _is_link_or_junction(path) else None
+    except OSError:
+        return None
+
+
+def _bounded_bytes(path: Path, limit: int = 4096) -> bytes | None:
+    try:
+        with path.open("rb") as stream:
+            value = stream.read(limit + 1)
+        return value if len(value) <= limit else None
+    except OSError:
+        return None
+
+
+def _opaque_evidence_id(value: Any) -> str | None:
+    if not isinstance(value, str) or not 1 <= len(value) <= 64:
+        return None
+    return value if value[0].isalnum() and all(c.islower() or c.isdigit() or c in "_-" for c in value) else None
+
+
+def _load_public_key(path: Path, expected_pin: str) -> Ed25519PublicKey | None:
+    try:
+        encoded = _bounded_bytes(path)
+        raw = base64.b64decode(encoded, validate=True) if encoded is not None else b""
+        if (
+            len(raw) != 32
+            or len(expected_pin) != 64
+            or expected_pin.lower() != expected_pin
+            or any(character not in "0123456789abcdef" for character in expected_pin)
+            or not hmac.compare_digest(hashlib.sha256(raw).hexdigest(), expected_pin)
+        ):
+            return None
+        return Ed25519PublicKey.from_public_bytes(raw)
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _verify_signed_payload(root: Path, payload_path: Path, signature_path: Path, key_name: str, key_pins: dict[str, str]) -> dict[str, Any] | None:
+    payload = _bounded_json_file(payload_path)
+    key_path = _safe_trust_file(root, "keys", key_name)
+    key = _load_public_key(key_path, key_pins.get(key_name, "")) if key_path else None
+    try:
+        encoded = _bounded_bytes(signature_path)
+        signature = base64.b64decode(encoded, validate=True) if encoded is not None else b""
+        if payload is None or key is None or len(signature) != 64:
+            return None
+        key.verify(signature, _canonical_json(payload))
+        return payload
+    except (OSError, ValueError, TypeError, InvalidSignature):
+        return None
+
+
+def _time_window(payload: dict[str, Any], maximum_ttl: timedelta, now: datetime) -> bool:
+    issued = _valid_production_timestamp(payload.get("issued_at"))
+    signed = _valid_production_timestamp(payload.get("signed_at"))
+    expires = _valid_production_timestamp(payload.get("expires_at"))
+    return bool(issued and signed and expires and issued <= signed <= now < expires and expires - issued <= maximum_ttl)
+
+
+def _valid_fingerprints(value: Any) -> bool:
+    return isinstance(value, dict) and set(value) == PRODUCTION_FINGERPRINTS and all(_nonempty_evidence_text(value[name]) for name in PRODUCTION_FINGERPRINTS)
+
+
+def _trusted_key_pins(root: Path, now: datetime) -> dict[str, str] | None:
+    config_path = _safe_trust_file(root, "trust-config.json")
+    signature_path = _safe_trust_file(root, "trust-config.sig")
+    try:
+        root_raw = base64.b64decode(CONTROL_PLANE_ROOT_PUBLIC_KEY_B64, validate=True)
+        root_key = Ed25519PublicKey.from_public_bytes(root_raw)
+        config = _bounded_json_file(config_path) if config_path else None
+        encoded = _bounded_bytes(signature_path) if signature_path else None
+        signature = base64.b64decode(encoded, validate=True) if encoded is not None else b""
+        if config is None or len(signature) != 64:
+            return None
+        root_key.verify(signature, _canonical_json(config))
+    except (ValueError, TypeError, InvalidSignature):
+        return None
+    if set(config) != {"schema_version", "trust_config_id", "issued_at", "signed_at", "expires_at", "key_pins"} or config.get("schema_version") != 1 or _opaque_evidence_id(config.get("trust_config_id")) is None or not _time_window(config, MAX_ATTESTATION_TTL, now):
+        return None
+    pins = config.get("key_pins")
+    if not isinstance(pins, dict) or set(pins) != set(PRODUCTION_KEY_FILES) or len(set(pins.values())) != 3:
+        return None
+    return pins
+
+
+def _production_evidence_valid(instance: Path) -> bool:
+    """Verify pinned signatures and fresh runtime facts from a controlled trust root."""
+    reference, invalid = _read_status_json(instance, PRODUCTION_EVIDENCE_REFERENCE)
+    if invalid or set(reference) != {"schema_version", "attestation_id"} or reference.get("schema_version") != 1:
+        return False
+    attestation_id = _opaque_evidence_id(reference.get("attestation_id"))
+    root = _safe_trust_root()
+    if attestation_id is None or root is None:
+        return False
+    now = datetime.now(timezone.utc)
+    key_pins = _trusted_key_pins(root, now)
+    if key_pins is None:
+        return False
+    try:
+        root.relative_to(instance)
+        return False
+    except ValueError:
+        pass
+    try:
+        instance.relative_to(root)
+        return False
+    except ValueError:
+        pass
+    tenant_id, agent_id = _instance_identity(instance)
+    attestation = _safe_trust_file(root, "attestations", attestation_id, "attestation.json")
+    platform_sig = _safe_trust_file(root, "attestations", attestation_id, "platform.sig")
+    security_sig = _safe_trust_file(root, "attestations", attestation_id, "security.sig")
+    facts = _safe_trust_file(root, "runtime", tenant_id, agent_id, "current-facts.json")
+    facts_sig = _safe_trust_file(root, "runtime", tenant_id, agent_id, "current-facts.sig")
+    if not all((attestation, platform_sig, security_sig, facts, facts_sig)):
+        return False
+    payload = _verify_signed_payload(root, attestation, platform_sig, "platform.pub", key_pins)
+    security_payload = _verify_signed_payload(root, attestation, security_sig, "security.pub", key_pins)
+    runtime = _verify_signed_payload(root, facts, facts_sig, "control-plane.pub", key_pins)
+    if payload is None or security_payload != payload or runtime is None:
+        return False
+    if set(payload) != {"schema_version", "attestation_id", "tenant_id", "agent_id", "deployment_generation", "service_identity", "tenant_identity", "fingerprints", "matrix", "issued_at", "signed_at", "expires_at"}:
+        return False
+    if payload.get("schema_version") != 1 or payload.get("attestation_id") != attestation_id or payload.get("tenant_id") != tenant_id or payload.get("agent_id") != agent_id:
+        return False
+    if not _time_window(payload, MAX_ATTESTATION_TTL, now) or not _nonempty_evidence_text(payload.get("deployment_generation")) or not _nonempty_evidence_text(payload.get("service_identity")) or not _nonempty_evidence_text(payload.get("tenant_identity")) or not _valid_fingerprints(payload.get("fingerprints")):
+        return False
+    matrix = payload.get("matrix")
+    if not isinstance(matrix, dict) or set(matrix) != PRODUCTION_MATRIX_OUTCOMES or any(matrix[name] != "passed" for name in PRODUCTION_MATRIX_OUTCOMES):
+        return False
+    if set(runtime) != {"schema_version", "attestation_id", "tenant_id", "agent_id", "deployment_generation", "service_identity", "tenant_identity", "fingerprints", "issued_at", "signed_at", "expires_at"}:
+        return False
+    required = ("attestation_id", "tenant_id", "agent_id", "deployment_generation", "service_identity", "tenant_identity", "fingerprints")
+    return bool(runtime.get("schema_version") == 1 and _time_window(runtime, MAX_CURRENT_FACTS_TTL, now) and all(runtime.get(name) == payload.get(name) for name in required))
+
+
+def _print_production_status(instance: Path) -> int:
+    """Show the separate production gate; local status is never evidence."""
+    local_result = _print_pilot_status(instance)
+    try:
+        resolved = instance.resolve(strict=True)
+    except OSError:
+        resolved = instance
+    evidence_valid = _production_evidence_valid(resolved) if local_result == 0 else False
+    if evidence_valid:
+        print("  Produktionsfreigabe: GRÜN – externe Evidenz gültig")
+        return 0
+    print("  Produktionsfreigabe: ROT – externe Evidenz fehlt oder ist ungültig")
+    return 1
 
 
 def _status_timestamp(value: Any) -> tuple[str, bool]:
@@ -1686,6 +1943,11 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument(
         "--instance",
         help="Pilot-Ampel für eine Instanz <tenant>/<agent> anzeigen",
+    )
+    status.add_argument(
+        "--production",
+        action="store_true",
+        help="separate fail-closed Produktionsfreigabe mit externer Evidenz prüfen",
     )
     status.set_defaults(func=cmd_status)
 
