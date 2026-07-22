@@ -270,11 +270,32 @@ class TestPilotStatus:
                 draft_created_at=now,
             )
 
+    @staticmethod
+    def _loop_health(
+        instance: Path,
+        *,
+        status: str = "running",
+        poll_result: str = "success",
+        updated_at: str | None = None,
+    ) -> None:
+        (instance / "state" / "loop-health.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": status,
+                    "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
+                    "poll_result": poll_result,
+                }
+            ),
+            encoding="utf-8",
+        )
+
     def test_ready_instance_shows_green_operator_summary(
         self, tmp_path, capsys
     ):
         instance = self._instance(tmp_path)
         self._signed_acceptance(instance)
+        self._loop_health(instance)
         (instance / "state" / "adaptive-schedule.json").write_text(
             json.dumps(
                 {
@@ -299,6 +320,189 @@ class TestPilotStatus:
         assert "0/3" in output
         assert "latest-controlling-report.html" in output
         assert "überwacht fortführen" in output
+
+    @pytest.mark.parametrize("poll_result", ["success", "idle", "already_enqueued"])
+    def test_fresh_running_loop_health_allows_green_status(
+        self, tmp_path, capsys, poll_result
+    ):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        self._loop_health(instance, poll_result=poll_result)
+        (instance / "state" / "adaptive-schedule.json").write_text(
+            json.dumps(
+                {
+                    "last_result": "success",
+                    "last_result_at": datetime.now(timezone.utc).isoformat(),
+                    "consecutive_failures": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 0
+        assert "GRÜN" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        ("health", "raw"),
+        [
+            (
+                {
+                    "status": "running",
+                    "updated_at": "2020-01-01T00:00:00+00:00",
+                    "poll_result": "success",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "running",
+                    "updated_at": "not-a-date",
+                    "poll_result": "success",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "running",
+                    "updated_at": "2026-07-22T01:00:00",
+                    "poll_result": "success",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "running",
+                    "updated_at": "0001-01-01T00:00:00+14:00",
+                    "poll_result": "success",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "running",
+                    "updated_at": "FUTURE",
+                    "poll_result": "success",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "running",
+                    "updated_at": "NOW",
+                    "poll_result": "success",
+                    "schema_version": True,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "error",
+                    "updated_at": "NOW",
+                    "poll_result": "error",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (
+                {
+                    "status": "stopped",
+                    "updated_at": "NOW",
+                    "poll_result": "stopped",
+                    "schema_version": 1,
+                },
+                None,
+            ),
+            (None, "{kaputt"),
+        ],
+    )
+    def test_unhealthy_loop_health_is_red(self, tmp_path, capsys, health, raw):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        if health is not None:
+            health = dict(health)
+            if health["updated_at"] == "NOW":
+                health["updated_at"] = datetime.now(timezone.utc).isoformat()
+            elif health["updated_at"] == "FUTURE":
+                health["updated_at"] = "2999-01-01T00:00:00+00:00"
+            raw = json.dumps(health)
+        (instance / "state" / "loop-health.json").write_text(
+            raw, encoding="utf-8"
+        )
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    def test_missing_loop_health_is_red(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("interval", [True, 0, 1441, 10**100])
+    def test_invalid_loop_interval_makes_status_red(
+        self, tmp_path, capsys, interval
+    ):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        self._loop_health(instance)
+        config_path = instance / "project" / "config.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["loop_interval_minutes"] = interval
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+
+        assert result == 1
+        assert "ROT" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            pytest.param(b"\xff", id="invalid-utf8"),
+            pytest.param(b"[" * 1100 + b"]" * 1100, id="recursive-json"),
+            pytest.param(
+                b"{" + b'"x":0,' * 180000 + b'"y":0}',
+                id="over-size-limit",
+            ),
+            pytest.param(
+                b'{"number":' + b"9" * 5000 + b"}",
+                id="integer-digit-limit",
+            ),
+        ],
+    )
+    def test_status_json_reader_fails_closed_for_unsafe_payloads(
+        self, tmp_path, payload
+    ):
+        root = tmp_path / "instance"
+        (root / "state").mkdir(parents=True)
+        (root / "state" / "loop-health.json").write_bytes(payload)
+
+        value, invalid = agent_cli._read_status_json(
+            root, "state/loop-health.json"
+        )
+
+        assert value == {}
+        assert invalid is True
 
     def test_forged_latest_report_cannot_turn_status_green(self, tmp_path, capsys):
         instance = self._instance(tmp_path)
@@ -775,8 +979,35 @@ class TestInstanceFactory:
         assert agent_cli.cmd_run(args) == 0
         assert calls["loop"][:3] == (instance, 60, "acme")
 
+    @pytest.mark.parametrize("interval", [True, 0, 1441, 10**100])
+    def test_instance_loop_rejects_invalid_interval(self, tmp_path, interval):
+        with pytest.raises(ValueError, match="loop interval"):
+            agent_cli._run_instance_loop(
+                tmp_path,
+                {"loop_interval_minutes": interval},
+                "acme",
+                object(),
+            )
+
+        assert not (tmp_path / "state" / "loop-health.json").exists()
+
+    def test_loop_health_rejects_symlinked_state_directory(self, tmp_path):
+        instance = tmp_path / "instance"
+        outside = tmp_path / "outside"
+        instance.mkdir()
+        outside.mkdir()
+        try:
+            (instance / "state").symlink_to(outside, target_is_directory=True)
+        except OSError:
+            pytest.skip("Symlinks are unavailable on this test host")
+
+        with pytest.raises(OSError):
+            agent_cli._write_loop_health(instance, "running", "success")
+
+        assert not (outside / "loop-health.json").exists()
+
     def test_instance_loop_survives_cycle_error_until_stopped(
-        self, tmp_path, monkeypatch
+        self, tmp_path, monkeypatch, capsys
     ):
         calls = []
 
@@ -795,6 +1026,61 @@ class TestInstanceFactory:
         )
 
         assert calls == ["cycle", ("wait", 3600)]
+        health = json.loads(
+            (tmp_path / "state" / "loop-health.json").read_text(encoding="utf-8")
+        )
+        assert health["status"] == "stopped"
+        assert health["poll_result"] == "stopped"
+        assert "temporary failure" not in json.dumps(health)
+        assert "temporary failure" not in capsys.readouterr().out
+
+    def test_instance_loop_records_each_poll_and_error_without_details(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        decisions = iter(
+            [
+                ScheduledDecision(True, "missing_data"),
+                ScheduledDecision(False, "already_enqueued"),
+                ScheduledDecision(False, "schedule_disabled"),
+                ScheduledDecision(False, "frozen_after_failures"),
+                ScheduledDecision(False, "untrusted_detail"),
+            ]
+        )
+        writes = []
+
+        def cycle(*args, **kwargs):
+            try:
+                return next(decisions)
+            except StopIteration:
+                raise RuntimeError("synthetic customer detail")
+
+        def record(root, status, poll_result):
+            writes.append((status, poll_result))
+
+        def sleep(_seconds):
+            if len(writes) >= 6:
+                raise KeyboardInterrupt
+
+        monkeypatch.setattr(agent_cli, "_run_instance_schedule_cycle", cycle)
+        monkeypatch.setattr(agent_cli, "_write_loop_health", record)
+        monkeypatch.setattr(agent_cli.time, "sleep", sleep)
+
+        agent_cli._run_instance_loop(
+            tmp_path, {"loop_interval_minutes": 60}, "acme", object()
+        )
+
+        assert writes == [
+            ("running", "success"),
+            ("running", "already_enqueued"),
+            ("error", "error"),
+            ("error", "error"),
+            ("error", "error"),
+            ("error", "error"),
+            ("stopped", "stopped"),
+        ]
+        output = capsys.readouterr().out
+        assert "synthetic customer detail" not in output
+        assert "untrusted_detail" not in output
 
 
 class TestCmdSetupSelfTest:

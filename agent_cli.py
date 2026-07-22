@@ -12,9 +12,11 @@ Commands:
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import json
+import os
 import shutil
+import stat
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +30,22 @@ from core.scheduling import ScheduledDecision, run_scheduled_cycle
 ROOT = Path(__file__).parent
 DEFAULT_OUTPUT_ROOT = ROOT / "instances"
 PRESETS_ROOT = ROOT / "presets"
+LOOP_HEALTH_GRACE = timedelta(minutes=5)
+LOOP_HEALTH_STATUSES = frozenset({"running", "error", "stopped"})
+LOOP_POLL_RESULTS = frozenset({"success", "idle", "already_enqueued", "error", "stopped"})
+LOOP_WORK_REASONS = frozenset(
+    {
+        "missing_data",
+        "new_input",
+        "changed_input",
+        "input_changed",
+        "pending_approval",
+        "recovery",
+        "periodic_review",
+    }
+)
+MAX_LOOP_INTERVAL_MINUTES = 1440
+MAX_STATUS_JSON_BYTES = 1024 * 1024
 
 
 @dataclass
@@ -1002,6 +1020,23 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _is_link_or_junction(path: Path) -> bool:
+    """Treat Windows junctions/reparse redirects like symbolic links."""
+    try:
+        if path.is_symlink():
+            return True
+        is_junction = getattr(path, "is_junction", None)
+        if is_junction is not None and is_junction():
+            return True
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        return bool(attributes & reparse_flag)
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+
+
 def _safe_status_path(root: Path, relative: str) -> Path | None:
     """Resolve a fixed instance-relative status path without following symlinks."""
     relative_path = Path(relative)
@@ -1010,7 +1045,7 @@ def _safe_status_path(root: Path, relative: str) -> Path | None:
     candidate = root
     for part in relative_path.parts:
         candidate /= part
-        if candidate.is_symlink():
+        if _is_link_or_junction(candidate):
             return None
     try:
         candidate.resolve(strict=False).relative_to(root)
@@ -1046,8 +1081,18 @@ def _read_status_json(root: Path, relative: str) -> tuple[dict[str, Any], bool]:
     if not path.exists():
         return {}, False
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_STATUS_JSON_BYTES + 1)
+        if len(raw) > MAX_STATUS_JSON_BYTES:
+            return {}, True
+        value = json.loads(raw.decode("utf-8"))
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        RecursionError,
+        ValueError,
+    ):
         return {}, True
     return (value, False) if isinstance(value, dict) else ({}, True)
 
@@ -1066,6 +1111,54 @@ def _status_timestamp(value: Any) -> tuple[str, bool]:
     except ValueError:
         return "–", True
     return value, False
+
+
+def _loop_interval_minutes(config: dict[str, Any]) -> int:
+    """Return the shared validated status/runtime loop interval."""
+    interval = config.get("loop_interval_minutes", 60)
+    if (
+        not isinstance(interval, int)
+        or isinstance(interval, bool)
+        or not 1 <= interval <= MAX_LOOP_INTERVAL_MINUTES
+    ):
+        raise ValueError("loop interval must be an integer from 1 to 1440 minutes")
+    return interval
+
+
+def _loop_health_is_fresh(
+    health: dict[str, Any], interval_minutes: int
+) -> bool:
+    """Validate the bounded heartbeat contract and reject stale/future values."""
+    status = health.get("status")
+    poll_result = health.get("poll_result")
+    updated_at = health.get("updated_at")
+    schema_version = health.get("schema_version")
+    if (
+        not isinstance(schema_version, int)
+        or isinstance(schema_version, bool)
+        or schema_version != 1
+        or status not in LOOP_HEALTH_STATUSES
+        or poll_result not in LOOP_POLL_RESULTS
+        or not isinstance(updated_at, str)
+        or len(updated_at) > 64
+        or any(ord(character) < 32 for character in updated_at)
+    ):
+        return False
+    try:
+        timestamp = datetime.fromisoformat(updated_at)
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+            return False
+        age = datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)
+        maximum_age = (
+            timedelta(minutes=2 * interval_minutes) + LOOP_HEALTH_GRACE
+        )
+    except (ValueError, OverflowError):
+        return False
+    return (
+        status == "running"
+        and poll_result not in {"error", "stopped"}
+        and -LOOP_HEALTH_GRACE <= age <= maximum_age
+    )
 
 
 def _print_pilot_status(instance: Path) -> int:
@@ -1093,6 +1186,9 @@ def _print_pilot_status(instance: Path) -> int:
     state_relative = "state/adaptive-schedule.json"
     state_path = _safe_status_path(instance, state_relative)
     state, state_invalid = _read_status_json(instance, state_relative)
+    health_relative = "state/loop-health.json"
+    health_path = _safe_status_path(instance, health_relative)
+    health, health_invalid = _read_status_json(instance, health_relative)
 
     acceptance = read_acceptance_status(instance)
     repeatable = acceptance.get("repeatable_run_count", 0)
@@ -1120,6 +1216,18 @@ def _print_pilot_status(instance: Path) -> int:
         else max_failures
     )
     last_result = state.get("last_result")
+    try:
+        interval = _loop_interval_minutes(config)
+        interval_invalid = False
+    except ValueError:
+        interval = 60
+        interval_invalid = True
+    health_fresh = (
+        health_path is not None
+        and health_path.exists()
+        and not health_invalid
+        and _loop_health_is_fresh(health, interval)
+    )
     provenance = latest.get("provenance") if isinstance(latest, dict) else None
     signed_sequence = acceptance.get("sequence", 0)
     view_consistent = (
@@ -1140,6 +1248,8 @@ def _print_pilot_status(instance: Path) -> int:
         or not view_consistent
         or timestamp_invalid
         or last_result not in {None, "success", "failed"}
+        or interval_invalid
+        or not health_fresh
     )
     loop_failed = last_result == "failed" or failures >= max_failures
     loop_healthy = (
@@ -1147,6 +1257,7 @@ def _print_pilot_status(instance: Path) -> int:
         and state_path.exists()
         and last_result == "success"
         and failures == 0
+        and health_fresh
     )
 
     if status_invalid or loop_failed:
@@ -1326,6 +1437,85 @@ def _run_instance_schedule_cycle(
     )
 
 
+def _write_loop_health(
+    instance_root: Path, status: str, poll_result: str
+) -> None:
+    """Persist a heartbeat with ADR-0001 defense-in-depth path preflights.
+
+    These portable checks complement, but do not replace, the ADR-mandated
+    service identity and deployment/volume isolation boundary.
+    """
+    if status not in LOOP_HEALTH_STATUSES or poll_result not in LOOP_POLL_RESULTS:
+        raise ValueError("unsupported loop health value")
+    instance_root = Path(instance_root)
+    if _is_link_or_junction(instance_root):
+        raise OSError("unsafe instance root")
+    try:
+        root = instance_root.resolve(strict=True)
+    except OSError as exc:
+        raise OSError("unsafe instance root") from exc
+    if not root.is_dir():
+        raise OSError("unsafe instance root")
+    state_dir = _safe_status_path(root, "state")
+    if state_dir is None:
+        raise OSError("unsafe loop health state path")
+    state_dir.mkdir(parents=True, exist_ok=True)
+    if (
+        not state_dir.is_dir()
+        or _is_link_or_junction(state_dir)
+        or state_dir.resolve(strict=True) != state_dir
+    ):
+        raise OSError("unsafe loop health state path")
+    target = _safe_status_path(root, "state/loop-health.json")
+    temporary = _safe_status_path(
+        root,
+        f"state/.loop-health.{os.getpid()}.{time.time_ns()}.tmp",
+    )
+    if target is None or temporary is None:
+        raise OSError("unsafe loop health file path")
+    payload = {
+        "schema_version": 1,
+        "status": status,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "poll_result": poll_result,
+    }
+    try:
+        descriptor = os.open(
+            temporary,
+            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+            0o600,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(
+                json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+            )
+            stream.flush()
+            os.fsync(stream.fileno())
+        if (
+            _safe_status_path(root, "state") != state_dir
+            or _safe_status_path(root, "state/loop-health.json") != target
+            or _safe_status_path(root, temporary.relative_to(root).as_posix())
+            != temporary
+        ):
+            raise OSError("unsafe loop health path changed")
+        os.replace(temporary, target)
+    finally:
+        try:
+            if temporary.exists() and not _is_link_or_junction(temporary):
+                temporary.unlink()
+        except OSError:
+            pass
+
+
+def _decision_loop_health(decision: ScheduledDecision) -> tuple[str, str]:
+    """Map only exhaustive, structurally consistent scheduler outcomes healthy."""
+    if decision.should_enqueue and decision.reason in LOOP_WORK_REASONS:
+        return "running", "success"
+    if not decision.should_enqueue and decision.reason in {"idle", "already_enqueued"}:
+        return "running", decision.reason
+    return "error", "error"
+
+
 def _run_instance_loop(
     instance_root: Path,
     config: dict[str, Any],
@@ -1333,8 +1523,7 @@ def _run_instance_loop(
     orchestrator: Any,
 ) -> None:
     """Run a generated instance's adaptive scheduler at its configured interval."""
-    interval = config.get("loop_interval_minutes", 60)
-    interval = interval if isinstance(interval, int) and interval > 0 else 60
+    interval = _loop_interval_minutes(config)
     print(
         f"Instanz-Loop gestartet: {tenant_id}/{config.get('agent_name', 'agent')} alle {interval} Minuten"
     )
@@ -1344,11 +1533,18 @@ def _run_instance_loop(
                 decision = _run_instance_schedule_cycle(
                     instance_root, config, tenant_id, orchestrator
                 )
-                print(f"Schedule: {decision.reason}")
-            except Exception as exc:
-                print(f"Schedule-Fehler: {exc}")
+                status, poll_result = _decision_loop_health(decision)
+                _write_loop_health(instance_root, status, poll_result)
+                if status == "running":
+                    print(f"Schedule: {decision.reason}")
+                else:
+                    print("Schedule-Fehler: ungültige Scheduler-Entscheidung.")
+            except Exception:
+                _write_loop_health(instance_root, "error", "error")
+                print("Schedule-Fehler: Poll fehlgeschlagen.")
             time.sleep(interval * 60)
     except KeyboardInterrupt:
+        _write_loop_health(instance_root, "stopped", "stopped")
         print("Instanz-Loop gestoppt.")
 
 
