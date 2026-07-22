@@ -291,6 +291,8 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         or latest_run.get("presentation_version") != PRESENTATION_VERSION
     ):
         return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
+    if not _current_signed_inputs_match(root, latest_run):
+        return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
 
     current_policy = _approval_policy_snapshot(root)
     last_policy_hash = runs[-1].get("approval_policy_hash")
@@ -541,6 +543,221 @@ def _safe_file(root: Path, relative: Any, *, allowed_roots: set[str]) -> Path | 
     if not parts or parts[0] not in allowed_roots or not candidate.is_file():
         return None
     return candidate
+
+
+def _current_signed_inputs_match(root: Path, run: dict[str, Any]) -> bool:
+    """Verify current safe source and mapping bytes against the latest signature."""
+    return (
+        _current_signed_input_matches(
+            root,
+            run.get("source_file"),
+            allowed_roots={"inbox", "data", "imports"},
+            max_bytes=_MAX_SOURCE_BYTES,
+            expected_hash=run.get("input_fingerprint"),
+        )
+        and _current_signed_input_matches(
+            root,
+            "project/pilot/account-mapping.json",
+            allowed_roots={"project"},
+            max_bytes=_MAX_MAPPING_BYTES,
+            expected_hash=run.get("mapping_version"),
+        )
+    )
+
+
+def _current_signed_input_matches(
+    root: Path,
+    relative: Any,
+    *,
+    allowed_roots: set[str],
+    max_bytes: int,
+    expected_hash: Any,
+) -> bool:
+    if not isinstance(relative, str) or not relative.strip() or not isinstance(expected_hash, str):
+        return False
+    relative_path = Path(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        return False
+    if not relative_path.parts or relative_path.parts[0] not in allowed_roots or not re_full_sha256(expected_hash):
+        return False
+    try:
+        raw = _read_current_signed_input(root, relative_path, max_bytes=max_bytes)
+    except (OSError, ValueError):
+        return False
+    current_hash = hashlib.sha256(raw).hexdigest()
+    return hmac.compare_digest(current_hash, expected_hash)
+
+
+def _read_current_signed_input(root: Path, relative: Path, *, max_bytes: int) -> bytes:
+    """Read one current provenance authority from pinned handles/descriptors."""
+    lexical_root = Path(os.path.abspath(root))
+    if not _policy_path_components_safe(lexical_root):
+        raise ValueError("Unsicherer Eingabepfad.")
+    return (
+        _read_current_signed_input_windows(lexical_root, relative, max_bytes=max_bytes)
+        if os.name == "nt"
+        else _read_current_signed_input_posix(lexical_root, relative, max_bytes=max_bytes)
+    )
+
+
+def _after_current_input_first_read() -> None:
+    """No-op seam used only to exercise replacement races in regression tests."""
+
+
+def _after_current_input_root_open() -> None:
+    """No-op seam used only to exercise root-path races in regression tests."""
+
+
+def _read_current_signed_input_posix(root: Path, relative: Path, *, max_bytes: int) -> bytes:
+    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    file_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        root_fd = os.open(root, directory_flags)
+        descriptors.append(root_fd)
+        _after_current_input_root_open()
+        parent_fd = root_fd
+        directory_entries: list[tuple[str, int, os.stat_result]] = []
+        for part in relative.parts[:-1]:
+            descriptor = os.open(part, directory_flags, dir_fd=parent_fd)
+            descriptors.append(descriptor)
+            identity = os.fstat(descriptor)
+            if not stat.S_ISDIR(identity.st_mode):
+                raise ValueError("Eingabeordner ist ungültig.")
+            directory_entries.append((part, parent_fd, identity))
+            parent_fd = descriptor
+        file_name = relative.parts[-1]
+        file_fd = os.open(file_name, file_flags, dir_fd=parent_fd)
+        descriptors.append(file_fd)
+        root_identity = os.fstat(root_fd)
+        file_identity = os.fstat(file_fd)
+        if not stat.S_ISDIR(root_identity.st_mode) or not stat.S_ISREG(file_identity.st_mode):
+            raise ValueError("Eingabe ist ungültig.")
+        raw = _read_current_input_fd_twice(file_fd, file_identity, max_bytes=max_bytes)
+        if (
+            not _same_policy_file_state(file_identity, os.fstat(file_fd))
+            or not _same_policy_identity(root_identity, os.stat(root, follow_symlinks=False))
+            or not _policy_path_components_safe(root)
+            or any(
+                not _same_policy_identity(identity, os.stat(name, dir_fd=parent, follow_symlinks=False))
+                for name, parent, identity in directory_entries
+            )
+            or not _same_policy_identity(file_identity, os.stat(file_name, dir_fd=parent_fd, follow_symlinks=False))
+        ):
+            raise ValueError("Eingabe wurde verändert.")
+        return raw
+    finally:
+        for descriptor in reversed(descriptors):
+            with contextlib.suppress(OSError):
+                os.close(descriptor)
+
+
+def _read_current_input_fd_twice(descriptor: int, identity: os.stat_result, *, max_bytes: int) -> bytes:
+    if identity.st_size > max_bytes:
+        raise ValueError("Eingabe ist zu groß.")
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    first = os.read(descriptor, max_bytes + 1)
+    middle = os.fstat(descriptor)
+    _after_current_input_first_read()
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    second = os.read(descriptor, max_bytes + 1)
+    after = os.fstat(descriptor)
+    if (
+        len(first) > max_bytes
+        or first != second
+        or len(first) != identity.st_size
+        or not _same_policy_file_state(identity, middle)
+        or not _same_policy_file_state(identity, after)
+    ):
+        raise ValueError("Eingabe wurde während des Lesens verändert.")
+    return first
+
+
+def _read_current_signed_input_windows(root: Path, relative: Path, *, max_bytes: int) -> bytes:
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel32.CreateFileW
+    create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    create.restype = wintypes.HANDLE
+    close = kernel32.CloseHandle
+    close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+    final = kernel32.GetFinalPathNameByHandleW
+    final.argtypes, final.restype = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD], wintypes.DWORD
+    read = kernel32.ReadFile
+    read.argtypes, read.restype = [wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), wintypes.LPVOID], wintypes.BOOL
+    seek = kernel32.SetFilePointerEx
+    seek.argtypes, seek.restype = [wintypes.HANDLE, ctypes.c_longlong, ctypes.POINTER(ctypes.c_longlong), wintypes.DWORD], wintypes.BOOL
+    info = kernel32.GetFileInformationByHandle
+
+    class FileInfo(ctypes.Structure):
+        _fields_ = [("attributes", wintypes.DWORD), ("creation_low", wintypes.DWORD), ("creation_high", wintypes.DWORD), ("access_low", wintypes.DWORD), ("access_high", wintypes.DWORD), ("write_low", wintypes.DWORD), ("write_high", wintypes.DWORD), ("volume", wintypes.DWORD), ("size_high", wintypes.DWORD), ("size_low", wintypes.DWORD), ("links", wintypes.DWORD), ("index_high", wintypes.DWORD), ("index_low", wintypes.DWORD)]
+
+    info.argtypes, info.restype = [wintypes.HANDLE, ctypes.POINTER(FileInfo)], wintypes.BOOL
+    paths = [root]
+    current = root
+    for part in relative.parts:
+        current = current / part
+        paths.append(current)
+    if any(_is_link_or_junction(path) for path in paths):
+        raise ValueError("Eingabepfad wurde umgeleitet.")
+    invalid = ctypes.c_void_p(-1).value
+    handles: list[Any] = []
+    try:
+        for index, path in enumerate(paths):
+            flags = 0x00200000 | (0x02000000 if index < len(paths) - 1 else 0)
+            handle = create(str(path), 0x80000000, 0x00000001, None, 3, flags, None)
+            if handle in (invalid, None):
+                raise OSError(ctypes.get_last_error(), "CreateFileW failed")
+            handles.append(handle)
+            if _windows_final_path(final, handle) != os.path.normcase(str(path.resolve(strict=True))):
+                raise ValueError("Eingabepfad wurde umgeleitet.")
+            if index == 0:
+                _after_current_input_root_open()
+        file_handle = handles[-1]
+        before = FileInfo()
+        if not info(file_handle, ctypes.byref(before)) or before.attributes & 0x400:
+            raise ValueError("Eingabe ist kein regulärer Handle.")
+        size = (before.size_high << 32) | before.size_low
+        if size > max_bytes:
+            raise ValueError("Eingabe ist zu groß.")
+        first = _windows_read_current_input_handle(read, seek, file_handle, max_bytes=max_bytes)
+        _after_current_input_first_read()
+        second = _windows_read_current_input_handle(read, seek, file_handle, max_bytes=max_bytes)
+        after = FileInfo()
+        if (
+            not info(file_handle, ctypes.byref(after))
+            or _windows_file_identity(before) != _windows_file_identity(after)
+            or first != second
+            or len(first) != size
+            or not _policy_path_components_safe(root)
+            or any(_is_link_or_junction(path) for path in paths)
+            or any(
+                _windows_final_path(final, handle) != os.path.normcase(str(path.resolve(strict=True)))
+                for path, handle in zip(paths, handles)
+            )
+        ):
+            raise ValueError("Eingabe wurde verändert.")
+        return first
+    finally:
+        for handle in reversed(handles):
+            close(handle)
+
+
+def _windows_read_current_input_handle(read_file: Any, set_pointer: Any, handle: Any, *, max_bytes: int) -> bytes:
+    import ctypes
+    from ctypes import wintypes
+
+    if not set_pointer(handle, 0, None, 0):
+        raise OSError(ctypes.get_last_error(), "SetFilePointerEx failed")
+    buffer = ctypes.create_string_buffer(max_bytes + 1)
+    count = wintypes.DWORD()
+    if not read_file(handle, buffer, len(buffer), ctypes.byref(count), None):
+        raise OSError(ctypes.get_last_error(), "ReadFile failed")
+    if count.value > max_bytes:
+        raise ValueError("Eingabe ist zu groß.")
+    return buffer.raw[:count.value]
 
 
 def _sha256(path: Path, *, max_bytes: int) -> str:

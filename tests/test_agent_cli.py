@@ -502,6 +502,22 @@ class TestPilotStatus:
         assert "0/3" in output
         assert "latest-controlling-report.html" in output
 
+    def test_status_rejects_current_signed_source_drift(self, tmp_path, capsys):
+        instance = self._instance(tmp_path)
+        self._signed_acceptance(instance, runs=3)
+        self._loop_health(instance)
+        source = instance / "inbox" / "actuals" / "demo.csv"
+        source.write_bytes(source.read_bytes() + b"changed")
+
+        result = agent_cli.cmd_status(
+            agent_cli.argparse.Namespace(instance=str(instance))
+        )
+        output = capsys.readouterr().out
+
+        assert result == 1
+        assert "ROT" in output
+        assert "Fehler beheben" in output
+
     @pytest.mark.parametrize(
         ("replacement", "label"),
         [

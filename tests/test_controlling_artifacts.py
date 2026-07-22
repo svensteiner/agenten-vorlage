@@ -1284,6 +1284,153 @@ def test_policy_drift_invalidates_signed_acceptance_status(tmp_path, monkeypatch
     assert status["passed"] is False
 
 
+@pytest.mark.parametrize("input_name", ("source", "mapping"))
+@pytest.mark.parametrize("mutation", ("modify", "delete", "replace", "oversized"))
+def test_input_drift_invalidates_signed_acceptance_status(
+    tmp_path, monkeypatch, input_name, mutation
+):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    mapping = tmp_path / "project" / "pilot" / "account-mapping.json"
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+    for offset in range(3):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+    assert read_acceptance_status(tmp_path)["passed"] is True
+
+    target = source if input_name == "source" else mapping
+    if mutation == "modify":
+        target.write_bytes(target.read_bytes() + b"\nchanged")
+    elif mutation == "delete":
+        target.unlink()
+    elif mutation == "replace":
+        replacement = target.with_name(f"replacement-{target.name}")
+        replacement.write_bytes(b"synthetic replacement")
+        os.replace(replacement, target)
+    else:
+        monkeypatch.setattr(
+            artifacts_module,
+            "_MAX_SOURCE_BYTES" if input_name == "source" else "_MAX_MAPPING_BYTES",
+            1,
+        )
+
+    status = read_acceptance_status(tmp_path)
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def test_input_drift_reader_rejects_replacement_during_pinned_read(tmp_path, monkeypatch):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+    for offset in range(3):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+    replacement = source.with_name("replacement.csv")
+    replacement.write_text("Konto;Monat\n4000;2\n", encoding="utf-8")
+    swapped = False
+
+    def replace_after_first_read():
+        nonlocal swapped
+        if not swapped:
+            swapped = True
+            os.replace(replacement, source)
+
+    monkeypatch.setattr(
+        artifacts_module, "_after_current_input_first_read", replace_after_first_read
+    )
+
+    status = read_acceptance_status(tmp_path)
+
+    assert swapped is True
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def test_input_drift_reader_rejects_root_path_redirect_after_root_open(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+    for offset in range(3):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+
+    def redirect_root_path():
+        monkeypatch.setattr(
+            artifacts_module, "_policy_path_components_safe", lambda _root: False
+        )
+
+    monkeypatch.setattr(
+        artifacts_module,
+        "_after_current_input_root_open",
+        redirect_root_path,
+        raising=False,
+    )
+
+    status = read_acceptance_status(tmp_path)
+
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def test_input_drift_reader_rejects_symlinked_source(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+    for offset in range(3):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
+    target = source.with_name("source-target.csv")
+    source.rename(target)
+    try:
+        source.symlink_to(target)
+    except OSError:
+        pytest.skip("Symlinks are unavailable for this test account")
+
+    status = read_acceptance_status(tmp_path)
+
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
 def test_unsafe_run_breaks_repeatability_even_after_safe_policy_is_restored(
     tmp_path, monkeypatch
 ):
