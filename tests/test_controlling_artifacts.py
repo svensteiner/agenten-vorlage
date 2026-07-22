@@ -1220,9 +1220,14 @@ def test_interrupted_human_view_write_does_not_publish_new_latest_json(
     report = _aggregate_report(tmp_path)
     management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
     now = datetime.now(timezone.utc)
-    persist_report_artifacts(
-        tmp_path, report, management, validated_at=now, draft_created_at=now
-    )
+    for offset in (0, 1):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=offset),
+            draft_created_at=now + timedelta(seconds=offset),
+        )
     latest_path = tmp_path / "artifacts" / "latest-controlling-report.json"
     published = latest_path.read_bytes()
     original_atomic_text = artifacts_module._atomic_text
@@ -1236,13 +1241,194 @@ def test_interrupted_human_view_write_does_not_publish_new_latest_json(
 
     with pytest.raises(OSError, match="interrupted HTML"):
         persist_report_artifacts(
-            tmp_path, report, management, validated_at=now, draft_created_at=now
+            tmp_path,
+            report,
+            management,
+            validated_at=now + timedelta(seconds=2),
+            draft_created_at=now + timedelta(seconds=2),
         )
 
     assert latest_path.read_bytes() == published
     status = read_acceptance_status(tmp_path)
-    assert status["valid"] is True
-    assert status["sequence"] == 2
+    assert status["valid"] is False
+    assert status["passed"] is False
+    assert status["sequence"] == 3
+
+    monkeypatch.setattr(artifacts_module, "_atomic_text", original_atomic_text)
+    persist_report_artifacts(
+        tmp_path,
+        report,
+        management,
+        validated_at=now + timedelta(seconds=3),
+        draft_created_at=now + timedelta(seconds=3),
+    )
+    assert read_acceptance_status(tmp_path)["valid"] is True
+
+
+@pytest.mark.parametrize(
+    ("artifact", "mutation"),
+    [
+        ("latest-controlling-report.json", "tamper"),
+        ("latest-controlling-report.md", "missing"),
+        ("latest-controlling-report.html", "tamper"),
+    ],
+)
+def test_acceptance_status_rejects_missing_or_tampered_published_views(
+    tmp_path, artifact, mutation
+):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path,
+        _aggregate_report(tmp_path),
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now,
+    )
+    path = tmp_path / "artifacts" / artifact
+    if mutation == "missing":
+        path.unlink()
+    else:
+        path.write_text("synthetic tamper", encoding="utf-8")
+
+    status = read_acceptance_status(tmp_path)
+
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def test_acceptance_status_rejects_coherent_view_tamper_without_hash_update(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path,
+        _aggregate_report(tmp_path),
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now,
+    )
+    artifacts = tmp_path / "artifacts"
+    payload = json.loads(
+        (artifacts / "latest-controlling-report.json").read_text(encoding="utf-8")
+    )
+    payload["management"]["summary"] = "Manipuliert. Aber kohärent. Sichtbar."
+    (artifacts / "latest-controlling-report.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    (artifacts / "latest-controlling-report.md").write_text(
+        artifacts_module._markdown(payload), encoding="utf-8"
+    )
+    (artifacts / "latest-controlling-report.html").write_text(
+        artifacts_module.render_html(payload), encoding="utf-8"
+    )
+
+    assert read_acceptance_status(tmp_path)["valid"] is False
+
+
+def test_acceptance_status_rejects_malformed_latest_payload_without_throwing(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path,
+        _aggregate_report(tmp_path),
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now,
+    )
+    latest = tmp_path / "artifacts" / "latest-controlling-report.json"
+    payload = json.loads(latest.read_text(encoding="utf-8"))
+    del payload["acceptance"]
+    latest.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    status = read_acceptance_status(tmp_path)
+
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def _rewrite_latest_views(tmp_path, mutate):
+    artifacts = tmp_path / "artifacts"
+    latest = artifacts / "latest-controlling-report.json"
+    payload = json.loads(latest.read_text(encoding="utf-8"))
+    mutate(payload)
+    latest.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    (artifacts / "latest-controlling-report.md").write_text(
+        artifacts_module._markdown(payload), encoding="utf-8"
+    )
+    (artifacts / "latest-controlling-report.html").write_text(
+        artifacts_module.render_html(payload), encoding="utf-8"
+    )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload["acceptance"].update(passed=True),
+        lambda payload: payload["acceptance"].update(repeatable_run_count=True),
+        lambda payload: payload["acceptance"]["criteria"].update(repeatable_runs=True),
+        lambda payload: payload["provenance"].update(source_file="synthetic-other.csv"),
+        lambda payload: payload.update(generated_at="2026-01-01T00:00:00+00:00"),
+    ],
+    ids=("acceptance-passed", "acceptance-bool-count", "acceptance-criteria", "provenance", "generated-at"),
+)
+def test_acceptance_status_rejects_coherent_signed_field_tamper(tmp_path, mutate):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    persist_report_artifacts(
+        tmp_path, report, management, validated_at=now, draft_created_at=now
+    )
+    assert read_acceptance_status(tmp_path)["valid"] is True
+
+    _rewrite_latest_views(tmp_path, mutate)
+    status = read_acceptance_status(tmp_path)
+
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+    persist_report_artifacts(
+        tmp_path,
+        report,
+        management,
+        validated_at=now + timedelta(seconds=1),
+        draft_created_at=now + timedelta(seconds=1),
+    )
+    assert read_acceptance_status(tmp_path)["valid"] is True
+
+
+def test_acceptance_status_accepts_published_views_larger_than_one_megabyte(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    now = datetime.now(timezone.utc)
+    persist_report_artifacts(
+        tmp_path,
+        _aggregate_report(tmp_path),
+        {
+            "summary": "synthetisch " * 110_000,
+            "alarms": [],
+            "actions": ["A", "B", "C"],
+        },
+        validated_at=now,
+        draft_created_at=now,
+    )
+
+    assert (tmp_path / "artifacts" / "latest-controlling-report.html").stat().st_size > 1_000_000
+    assert read_acceptance_status(tmp_path)["valid"] is True
 
 
 def test_acceptance_history_rejects_duplicated_replayed_runs(tmp_path, monkeypatch):

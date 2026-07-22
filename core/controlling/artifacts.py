@@ -46,6 +46,7 @@ _MAX_LEDGER_RUNS = 10_000
 _MAX_SOURCE_BYTES = 25 * 1024 * 1024
 _MAX_MAPPING_BYTES = 1024 * 1024
 _MAX_POLICY_BYTES = 1024 * 1024
+_MAX_PUBLISHED_VIEW_BYTES = 50 * 1024 * 1024
 _ACCEPTANCE_KEY_BYTES = 32
 _ACCEPTANCE_LOCK_WAIT_SECONDS = 5
 _LOCAL_PILOT_TOOLS = {"read", "compute", "report"}
@@ -289,7 +290,6 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         or not hmac.compare_digest(last_policy_hash, _json_hash(current_policy))
     ):
         return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
-
     signed_criteria = runs[-1].get("acceptance_criteria")
     criteria = (
         {
@@ -303,9 +303,16 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         else {name: False for name in _REQUIRED_REPEATABLE_CRITERIA}
     )
     repeatable_count = _consecutive_equal_runs(runs)
+    expected_acceptance = {
+        "passed": all(criteria.values()) and repeatable_count >= 3,
+        "repeatable_run_count": repeatable_count,
+        "criteria": {**criteria, "repeatable_runs": repeatable_count >= 3},
+    }
+    if not _published_report_views_match(root, runs[-1], expected_acceptance):
+        return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
     return {
         "valid": True,
-        "passed": all(criteria.values()) and repeatable_count >= 3,
+        "passed": expected_acceptance["passed"],
         "repeatable_run_count": repeatable_count,
         "sequence": sequence,
         "run_signature": signature,
@@ -313,6 +320,203 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         "input_fingerprint": runs[-1].get("input_fingerprint"),
         "mapping_version": runs[-1].get("mapping_version"),
     }
+
+
+def _published_report_views_match(
+    root: Path, run: dict[str, Any], expected_acceptance: dict[str, Any]
+) -> bool:
+    """Bind signed acceptance to the exact latest machine and human views."""
+    try:
+        payload_bytes, markdown, html_bytes = _read_published_view_bundle(root)
+        payload = json.loads(payload_bytes.decode("utf-8"))
+        provenance = payload.get("provenance") if isinstance(payload, dict) else None
+        report = payload.get("report") if isinstance(payload, dict) else None
+        management = payload.get("management") if isinstance(payload, dict) else None
+        acceptance = payload.get("acceptance") if isinstance(payload, dict) else None
+        result_hash = run.get("kpi_result_hash")
+        if (
+            not isinstance(provenance, dict)
+            or not isinstance(report, dict)
+            or not isinstance(management, dict)
+            or not isinstance(acceptance, dict)
+            or not isinstance(acceptance.get("passed"), bool)
+            or not isinstance(acceptance.get("repeatable_run_count"), int)
+            or isinstance(acceptance.get("repeatable_run_count"), bool)
+            or acceptance != expected_acceptance
+            or payload.get("schema_version") != 1
+            or payload.get("generated_at") != run.get("draft_created_at")
+            or payload.get("provenance") != run
+            or not isinstance(result_hash, str)
+            or not re_full_sha256(result_hash)
+            or not hmac.compare_digest(
+                _json_hash({"report": report, "management": management}), result_hash
+            )
+            or provenance.get("sequence") != run.get("sequence")
+            or not isinstance(provenance.get("run_signature"), str)
+            or not isinstance(run.get("run_signature"), str)
+            or not hmac.compare_digest(
+                provenance["run_signature"], run["run_signature"]
+            )
+        ):
+            return False
+        return (
+            markdown == _markdown(payload).encode("utf-8")
+            and html_bytes == render_html(payload).encode("utf-8")
+        )
+    except (
+        OSError, UnicodeDecodeError, ValueError, TypeError, KeyError,
+        AttributeError, RecursionError, OverflowError, json.JSONDecodeError,
+    ):
+        return False
+
+
+def _read_published_view_bundle(root: Path) -> tuple[bytes, bytes, bytes]:
+    """Pin root/artifacts and read the three latest views as one stable bundle."""
+    lexical_root = Path(os.path.abspath(root))
+    if not _policy_path_components_safe(lexical_root):
+        raise ValueError("Unsicherer Artefaktpfad.")
+    return (
+        _read_published_view_bundle_windows(lexical_root)
+        if os.name == "nt"
+        else _read_published_view_bundle_posix(lexical_root)
+    )
+
+
+def _read_published_view_bundle_windows(root: Path) -> tuple[bytes, bytes, bytes]:
+    """Pin the complete Windows view hierarchy by handles, not path lookups."""
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel32.CreateFileW
+    create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    create.restype = wintypes.HANDLE
+    close = kernel32.CloseHandle
+    close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+    final = kernel32.GetFinalPathNameByHandleW
+    final.argtypes, final.restype = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD], wintypes.DWORD
+    read = kernel32.ReadFile
+    read.argtypes, read.restype = [wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), wintypes.LPVOID], wintypes.BOOL
+    seek = kernel32.SetFilePointerEx
+    seek.argtypes, seek.restype = [wintypes.HANDLE, ctypes.c_longlong, ctypes.POINTER(ctypes.c_longlong), wintypes.DWORD], wintypes.BOOL
+    info = kernel32.GetFileInformationByHandle
+
+    class FileInfo(ctypes.Structure):
+        _fields_ = [("attributes", wintypes.DWORD), ("creation_low", wintypes.DWORD), ("creation_high", wintypes.DWORD), ("access_low", wintypes.DWORD), ("access_high", wintypes.DWORD), ("write_low", wintypes.DWORD), ("write_high", wintypes.DWORD), ("volume", wintypes.DWORD), ("size_high", wintypes.DWORD), ("size_low", wintypes.DWORD), ("links", wintypes.DWORD), ("index_high", wintypes.DWORD), ("index_low", wintypes.DWORD)]
+
+    info.argtypes, info.restype = [wintypes.HANDLE, ctypes.POINTER(FileInfo)], wintypes.BOOL
+    artifacts = root / "artifacts"
+    names = ("latest-controlling-report.json", "latest-controlling-report.md", "latest-controlling-report.html")
+    paths = [root, artifacts, *(artifacts / name for name in names)]
+    invalid = ctypes.c_void_p(-1).value
+    handles: list[Any] = []
+    try:
+        for index, path in enumerate(paths):
+            flags = 0x00200000 | (0x02000000 if index < 2 else 0)
+            handle = create(str(path), 0x80000000, 0x00000001, None, 3, flags, None)
+            if handle in (invalid, None):
+                raise OSError(ctypes.get_last_error(), "CreateFileW failed")
+            handles.append(handle)
+            if _windows_final_path(final, handle) != os.path.normcase(str(path.resolve(strict=True))):
+                raise ValueError("Artefaktpfad wurde umgeleitet.")
+        if os.path.dirname(_windows_final_path(final, handles[1])) != _windows_final_path(final, handles[0]):
+            raise ValueError("Artefaktordner gehört nicht zum Root.")
+        if any(os.path.dirname(_windows_final_path(final, handle)) != _windows_final_path(final, handles[1]) for handle in handles[2:]):
+            raise ValueError("Artefaktdatei gehört nicht zum Artefaktordner.")
+        before = []
+        for handle in handles[2:]:
+            item = FileInfo()
+            if not info(handle, ctypes.byref(item)) or item.attributes & 0x400:
+                raise ValueError("Artefakt ist kein regulärer Handle.")
+            size = (item.size_high << 32) | item.size_low
+            if size > _MAX_PUBLISHED_VIEW_BYTES:
+                raise ValueError("Artefakt ist zu groß.")
+            before.append(item)
+        raws = [_windows_read_published_handle(read, seek, handle) for handle in handles[2:]]
+        for handle, identity, raw in zip(handles[2:], before, raws):
+            after = FileInfo()
+            size = (identity.size_high << 32) | identity.size_low
+            if not info(handle, ctypes.byref(after)) or _windows_file_identity(identity) != _windows_file_identity(after) or len(raw) != size:
+                raise ValueError("Artefakt wurde verändert.")
+        return tuple(raws)  # type: ignore[return-value]
+    finally:
+        for handle in reversed(handles):
+            close(handle)
+
+
+def _windows_read_published_handle(read_file: Any, set_pointer: Any, handle: Any) -> bytes:
+    import ctypes
+    from ctypes import wintypes
+
+    if not set_pointer(handle, 0, None, 0):
+        raise OSError(ctypes.get_last_error(), "SetFilePointerEx failed")
+    buffer = ctypes.create_string_buffer(_MAX_PUBLISHED_VIEW_BYTES + 1)
+    count = wintypes.DWORD()
+    if not read_file(handle, buffer, len(buffer), ctypes.byref(count), None):
+        raise OSError(ctypes.get_last_error(), "ReadFile failed")
+    if count.value > _MAX_PUBLISHED_VIEW_BYTES:
+        raise ValueError("Artefakt ist zu groß.")
+    first = buffer.raw[:count.value]
+    if not set_pointer(handle, 0, None, 0):
+        raise OSError(ctypes.get_last_error(), "SetFilePointerEx failed")
+    count = wintypes.DWORD()
+    if not read_file(handle, buffer, len(buffer), ctypes.byref(count), None):
+        raise OSError(ctypes.get_last_error(), "ReadFile failed")
+    second = buffer.raw[:count.value]
+    if first != second:
+        raise ValueError("Artefakt wurde während des Lesens verändert.")
+    return first
+
+
+def _read_published_view_bundle_posix(root: Path) -> tuple[bytes, bytes, bytes]:
+    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    file_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        root_fd = os.open(root, directory_flags)
+        descriptors.append(root_fd)
+        artifacts_fd = os.open("artifacts", directory_flags, dir_fd=root_fd)
+        descriptors.append(artifacts_fd)
+        names = ("latest-controlling-report.json", "latest-controlling-report.md", "latest-controlling-report.html")
+        fds = [os.open(name, file_flags, dir_fd=artifacts_fd) for name in names]
+        descriptors.extend(fds)
+        root_identity, artifacts_identity = os.fstat(root_fd), os.fstat(artifacts_fd)
+        identities = [os.fstat(fd) for fd in fds]
+        if not stat.S_ISDIR(root_identity.st_mode) or not stat.S_ISDIR(artifacts_identity.st_mode):
+            raise ValueError("Artefaktordner ist ungültig.")
+        raws = [_read_published_fd_twice(fd, identity) for fd, identity in zip(fds, identities)]
+        if (
+            not all(_same_policy_file_state(identity, os.fstat(fd)) for fd, identity in zip(fds, identities))
+            or not _same_policy_identity(root_identity, os.stat(root, follow_symlinks=False))
+            or not _same_policy_identity(artifacts_identity, os.stat("artifacts", dir_fd=root_fd, follow_symlinks=False))
+            or any(not _same_policy_identity(identity, os.stat(name, dir_fd=artifacts_fd, follow_symlinks=False)) for name, identity in zip(names, identities))
+        ):
+            raise ValueError("Artefakt-Bundle wurde verändert.")
+        return tuple(raws)  # type: ignore[return-value]
+    finally:
+        for descriptor in reversed(descriptors):
+            with contextlib.suppress(OSError):
+                os.close(descriptor)
+
+
+def _read_published_fd_twice(descriptor: int, identity: os.stat_result) -> bytes:
+    if not stat.S_ISREG(identity.st_mode) or identity.st_size > _MAX_PUBLISHED_VIEW_BYTES:
+        raise ValueError("Artefakt ist ungültig oder zu groß.")
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    first = os.read(descriptor, _MAX_PUBLISHED_VIEW_BYTES + 1)
+    middle = os.fstat(descriptor)
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    second = os.read(descriptor, _MAX_PUBLISHED_VIEW_BYTES + 1)
+    after = os.fstat(descriptor)
+    if (
+        len(first) > _MAX_PUBLISHED_VIEW_BYTES
+        or first != second
+        or len(first) != identity.st_size
+        or not _same_policy_file_state(identity, middle)
+        or not _same_policy_file_state(identity, after)
+    ):
+        raise ValueError("Artefakt wurde während des Lesens verändert.")
+    return first
 
 
 def _safe_file(root: Path, relative: Any, *, allowed_roots: set[str]) -> Path | None:
