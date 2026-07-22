@@ -35,6 +35,9 @@ einer servicekontrollierten Parentkette neu zu provisionieren.
 - KPI-Werte, Quellen und Priorisierung vergleichen.
 - Laufzeit ab validierter Eingabe bis zum Entwurf messen.
 - Prüfen, dass `artifacts/acceptance-evidence.json` drei identische KPI-Hashes belegt.
+- Prüfen, dass jeder Lauf denselben `approval_policy_hash` mit aktivem
+  Freigabe-Gate, den Begriffen `external communication`, `send`, `publish` und
+  keinen externen Tool-Fähigkeiten belegt.
 
 ## Tage 15–21: Fachliche Abnahme
 

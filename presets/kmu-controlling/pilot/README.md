@@ -57,7 +57,11 @@ Supervisor-Health rot.
 
 Nach drei Läufen mit identischer Eingabe, identischem Mapping und identischen
 KPI-Ergebnissen wechselt der lokale Abnahmenachweis auf `passed`, sofern auch
-Quellenbezug, Laufzeit und Aktionssicherheit bestanden sind. Jeder Lauf erhält
+Quellenbezug, Laufzeit und Aktionssicherheit bestanden sind. Die Abnahme bindet
+pro Lauf einen kanonischen Hash der lokalen Freigaberichtlinie (`config.json` und
+`manifest.json`): Freigabe-Gate aktiv, die drei externen Freigabebegriffe und
+nur `read`/`compute`/`report` sind zwingend. Jede nachträgliche Policy-Änderung
+macht einen zuvor grünen Status sofort ungültig. Jeder Lauf erhält
 eine fortlaufende Nummer, eine eigene ID und eine lokal HMAC-verkettete Signatur.
 Das signierte, append-only Laufbuch und sein separat signierter Head liegen im
 ignorierten Instanzordner `state/`; `artifacts/acceptance-evidence.json` ist nur

@@ -4,6 +4,7 @@ import hashlib
 import json
 from multiprocessing import get_context
 import os
+from pathlib import Path
 import threading
 import time
 
@@ -73,6 +74,23 @@ def _write_acceptance_mapping(root):
     path = root / "project" / "pilot" / "account-mapping.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(_acceptance_mapping()), encoding="utf-8")
+    (root / "project" / "config.json").write_text(
+        json.dumps({"autonomy_level": "standard", "require_human_approval": True}),
+        encoding="utf-8",
+    )
+    (root / "project" / "manifest.json").write_text(
+        json.dumps(
+            {
+                "autonomy_level": "standard",
+                "approval_required_for": ["external communication", "send", "publish"],
+                "tool_permissions": {
+                    "default": "disabled",
+                    "enabled": ["read", "compute", "report"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _aggregate_report(root):
@@ -648,6 +666,251 @@ def test_acceptance_status_is_read_only_before_first_run(tmp_path):
         "run_signature": None,
     }
     assert list(tmp_path.rglob("*")) == before
+
+
+@pytest.mark.parametrize(
+    ("config", "manifest"),
+    [
+        ({"require_human_approval": False}, None),
+        (None, {"autonomy_level": "max", "approval_required_for": ["external communication", "send", "publish"], "tool_permissions": {"default": "disabled", "enabled": ["read"]}}),
+        (None, {"approval_required_for": ["send", "publish"], "tool_permissions": {"default": "disabled", "enabled": ["read"]}}),
+        (None, {"approval_required_for": ["external communication", "send", "publish"], "tool_permissions": {"default": "disabled", "enabled": ["read", "send"]}}),
+    ],
+)
+def test_approval_policy_snapshot_fails_closed_for_unsafe_governance(
+    tmp_path, config, manifest
+):
+    _write_acceptance_mapping(tmp_path)
+    if config is not None:
+        (tmp_path / "project" / "config.json").write_text(json.dumps(config), encoding="utf-8")
+    if manifest is not None:
+        (tmp_path / "project" / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    snapshot = artifacts_module._approval_policy_snapshot(tmp_path)
+
+    assert snapshot["gate_active"] is False
+
+
+def test_config_autonomy_level_cannot_disable_manifest_approval_gate(tmp_path):
+    _write_acceptance_mapping(tmp_path)
+    (tmp_path / "project" / "config.json").write_text(
+        json.dumps({"autonomy_level": "max", "require_human_approval": True}),
+        encoding="utf-8",
+    )
+
+    snapshot = artifacts_module._approval_policy_snapshot(tmp_path)
+
+    assert snapshot["autonomy_level"] == "standard"
+    assert snapshot["gate_active"] is True
+
+
+def test_nested_relative_instance_policy_snapshot_passes(tmp_path, monkeypatch):
+    instance = tmp_path / "instances" / "nested" / "pilot"
+    _write_acceptance_mapping(instance)
+    monkeypatch.chdir(tmp_path)
+
+    snapshot = artifacts_module._approval_policy_snapshot(
+        Path("instances/nested/pilot")
+    )
+
+    assert snapshot["policy_valid"] is True
+    assert snapshot["gate_active"] is True
+    assert artifacts_module._approval_safety_pass(
+        {
+            "approval_log": [],
+            "external_action_log": [],
+            "external_actions_without_explicit_approval": 0,
+        },
+        snapshot,
+    )
+
+
+def test_link_in_first_relative_instance_component_fails_closed(
+    tmp_path, monkeypatch
+):
+    target = tmp_path / "actual" / "nested" / "pilot"
+    _write_acceptance_mapping(target)
+    link = tmp_path / "linked"
+    try:
+        link.symlink_to(tmp_path / "actual", target_is_directory=True)
+    except OSError:
+        pytest.skip("Directory links unavailable for this test account")
+    monkeypatch.chdir(tmp_path)
+
+    snapshot = artifacts_module._approval_policy_snapshot(Path("linked/nested/pilot"))
+
+    assert snapshot["policy_valid"] is False
+    assert snapshot["gate_active"] is False
+
+
+def test_approval_policy_snapshot_rejects_missing_malformed_and_symlink_files(tmp_path):
+    _write_acceptance_mapping(tmp_path)
+    config = tmp_path / "project" / "config.json"
+    config.unlink()
+    assert artifacts_module._approval_policy_snapshot(tmp_path)["policy_valid"] is False
+
+
+def test_approval_policy_snapshot_rejects_oversize_and_replaced_policy_file(tmp_path, monkeypatch):
+    _write_acceptance_mapping(tmp_path)
+    config = tmp_path / "project" / "config.json"
+    config.write_bytes(b"{" + b" " * artifacts_module._MAX_POLICY_BYTES)
+    assert artifacts_module._approval_policy_snapshot(tmp_path)["policy_valid"] is False
+
+    _write_acceptance_mapping(tmp_path)
+    replacement = tmp_path / "replacement.json"
+    replacement.write_text('{"require_human_approval": false}', encoding="utf-8")
+    swapped = False
+    if os.name == "nt":
+        original_read = artifacts_module._windows_read_policy_handle
+
+        def replace_after_descriptor_read(read_file, set_pointer, handle):
+            nonlocal swapped
+            raw = original_read(read_file, set_pointer, handle)
+            if not swapped:
+                swapped = True
+                os.replace(replacement, config)
+            return raw
+
+        monkeypatch.setattr(
+            artifacts_module,
+            "_windows_read_policy_handle",
+            replace_after_descriptor_read,
+        )
+    else:
+        original_read = artifacts_module.os.read
+
+        def replace_after_descriptor_read(descriptor, count):
+            nonlocal swapped
+            raw = original_read(descriptor, count)
+            if not swapped:
+                swapped = True
+                os.replace(replacement, config)
+            return raw
+
+        monkeypatch.setattr(artifacts_module.os, "read", replace_after_descriptor_read)
+    assert artifacts_module._approval_policy_snapshot(tmp_path)["policy_valid"] is False
+
+    config.write_text("{", encoding="utf-8")
+    assert artifacts_module._approval_policy_snapshot(tmp_path)["policy_valid"] is False
+
+    config.unlink()
+    target = tmp_path / "config-target.json"
+    target.write_text("{}", encoding="utf-8")
+    try:
+        config.symlink_to(target)
+    except OSError:
+        pytest.skip("Symlinks unavailable for this test account")
+    assert artifacts_module._approval_policy_snapshot(tmp_path)["policy_valid"] is False
+
+
+def test_policy_drift_invalidates_signed_acceptance_status(tmp_path, monkeypatch):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    (tmp_path / "inbox" / "actuals" / "demo.csv").write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    monkeypatch.setattr(tool._compute, "safe_run", lambda *_: json.dumps(_aggregate_report(tmp_path)))
+    for _ in range(3):
+        json.loads(tool.safe_run('{"source":"auto"}'))
+    assert read_acceptance_status(tmp_path)["passed"] is True
+
+    config_path = tmp_path / "project" / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["require_human_approval"] = False
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    status = read_acceptance_status(tmp_path)
+    assert status["valid"] is False
+    assert status["passed"] is False
+
+
+def test_unsafe_run_breaks_repeatability_even_after_safe_policy_is_restored(
+    tmp_path, monkeypatch
+):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
+        "Konto;Monat\n4000;1\n", encoding="utf-8"
+    )
+    _write_acceptance_mapping(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    monkeypatch.setattr(
+        tool._compute,
+        "safe_run",
+        lambda *_: json.dumps(_aggregate_report(tmp_path)),
+    )
+    manifest_path = tmp_path / "project" / "manifest.json"
+    safe_manifest = manifest_path.read_text(encoding="utf-8")
+    first = json.loads(tool.safe_run('{"source":"auto"}'))
+    manifest = json.loads(safe_manifest)
+    manifest["autonomy_level"] = "max"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    unsafe = json.loads(tool.safe_run('{"source":"auto"}'))
+    manifest_path.write_text(safe_manifest, encoding="utf-8")
+    restored = json.loads(tool.safe_run('{"source":"auto"}'))
+
+    assert first["acceptance"]["repeatable_run_count"] == 1
+    assert unsafe["acceptance"]["repeatable_run_count"] == 0
+    assert restored["acceptance"]["repeatable_run_count"] == 1
+    assert restored["acceptance"]["passed"] is False
+    for _ in range(2):
+        restored = json.loads(tool.safe_run('{"source":"auto"}'))
+    assert restored["acceptance"]["repeatable_run_count"] == 3
+    assert restored["acceptance"]["passed"] is True
+
+
+def test_policy_change_between_bundle_read_and_signing_fails_closed(
+    tmp_path, monkeypatch
+):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
+        "Konto;Monat\n4000;1\n", encoding="utf-8"
+    )
+    _write_acceptance_mapping(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    monkeypatch.setattr(
+        tool._compute,
+        "safe_run",
+        lambda *_: json.dumps(_aggregate_report(tmp_path)),
+    )
+    original_key = artifacts_module._acceptance_key
+
+    def change_policy_after_initial_bundle(root):
+        key = original_key(root)
+        config_path = root / "project" / "config.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["require_human_approval"] = False
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        return key
+
+    monkeypatch.setattr(artifacts_module, "_acceptance_key", change_policy_after_initial_bundle)
+    response = json.loads(tool.safe_run('{"source":"auto"}'))
+    evidence = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    snapshot = evidence["runs"][-1]["approval_policy_snapshot"]
+    assert response["acceptance"]["criteria"]["approval_safety"] is False
+    assert response["acceptance"]["passed"] is False
+    assert snapshot["policy_valid"] is False
+    assert "policy_changed_during_acceptance" in snapshot["validation_errors"]
+
+
+def test_acceptance_rejects_tampered_policy_snapshot_or_hash(tmp_path, monkeypatch):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    (tmp_path / "inbox" / "actuals" / "demo.csv").write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    monkeypatch.setattr(tool._compute, "safe_run", lambda *_: json.dumps(_aggregate_report(tmp_path)))
+    json.loads(tool.safe_run('{"source":"auto"}'))
+    ledger = tmp_path / "state" / "acceptance-ledger.jsonl"
+    run = json.loads(ledger.read_text(encoding="utf-8"))
+    run["approval_policy_hash"] = "0" * 64
+    ledger.write_text(json.dumps(run) + "\n", encoding="utf-8")
+
+    status = read_acceptance_status(tmp_path)
+    assert status["valid"] is False
+    assert status["passed"] is False
 
 
 def test_interrupted_human_view_write_does_not_publish_new_latest_json(

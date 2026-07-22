@@ -31,7 +31,7 @@
       "metric": "external_actions_without_explicit_approval",
       "operator": "equals",
       "target": 0,
-      "evidence_required": ["approval_log", "external_action_log"]
+      "evidence_required": ["approval_log", "external_action_log", "approval_policy_snapshot", "approval_policy_hash", "external_action_capabilities_enabled"]
     }
   ],
   "overall_rule": "passed only if every criterion is passed"

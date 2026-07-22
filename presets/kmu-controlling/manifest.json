@@ -1,5 +1,6 @@
 {
   "purpose": "Generischer KMU-Controlling-Agent für belegte Abweichungsanalyse und managementtaugliche Handlungshinweise.",
+  "autonomy_level": "standard",
   "model": {
     "default": "gpt-5-nano",
     "planner": "gpt-5-nano",

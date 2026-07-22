@@ -1,4 +1,5 @@
 {
+  "require_human_approval": true,
   "loop_interval_minutes": 60,
   "supervisor": {
     "supervisor_required": false,

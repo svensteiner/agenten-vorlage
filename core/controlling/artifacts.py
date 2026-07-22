@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import stat
 import threading
 import time
 from typing import Any
@@ -40,9 +41,11 @@ _MAX_LEDGER_BYTES = 50 * 1024 * 1024
 _MAX_LEDGER_RUNS = 10_000
 _MAX_SOURCE_BYTES = 25 * 1024 * 1024
 _MAX_MAPPING_BYTES = 1024 * 1024
+_MAX_POLICY_BYTES = 1024 * 1024
 _ACCEPTANCE_KEY_BYTES = 32
 _ACCEPTANCE_LOCK_WAIT_SECONDS = 5
 _LOCAL_PILOT_TOOLS = {"read", "compute", "report"}
+_REQUIRED_APPROVAL_TERMS = {"external communication", "send", "publish"}
 _ACCEPTANCE_THREAD_LOCK = threading.Lock()
 
 
@@ -91,7 +94,6 @@ def persist_report_artifacts(
             "reconciliation": sanitized_report.get("reconciliation"),
         }
     )
-    external_tools = _enabled_external_tools(root)
     report_provenance = _validated_report_provenance(report, source, mapping)
     run = {
         "recorded_at": _iso(draft_created_at),
@@ -113,7 +115,6 @@ def persist_report_artifacts(
         "reconciliation_result": report.get("reconciliation"),
         "approval_log": [],
         "external_action_log": [],
-        "external_action_capabilities_enabled": external_tools,
         "external_actions_without_explicit_approval": 0,
     }
     return _persist_report_transaction(
@@ -125,7 +126,6 @@ def persist_report_artifacts(
         sanitized_report=sanitized_report,
         management=management,
         run=run,
-        external_tools=external_tools,
         kpi_hash=kpi_hash,
         draft_created_at=draft_created_at,
     )
@@ -141,7 +141,6 @@ def _persist_report_transaction(
     sanitized_report: dict[str, Any],
     management: dict[str, Any],
     run: dict[str, Any],
-    external_tools: list[str],
     kpi_hash: str,
     draft_created_at: datetime,
 ) -> dict[str, Any]:
@@ -153,13 +152,29 @@ def _persist_report_transaction(
         acceptance_mapping = _load_acceptance_mapping(
             mapping, expected_hash=report_provenance["mapping_version"]
         )
+        policy_snapshot = _approval_policy_snapshot(root)
+        policy_hash = _json_hash(policy_snapshot)
         key = _acceptance_key(root)
+        signing_policy_snapshot = _approval_policy_snapshot(root)
+        signing_policy_hash = _json_hash(signing_policy_snapshot)
+        if not hmac.compare_digest(policy_hash, signing_policy_hash):
+            signing_policy_snapshot = _invalidated_policy_snapshot(
+                signing_policy_snapshot, "policy_changed_during_acceptance"
+            )
+            signing_policy_hash = _json_hash(signing_policy_snapshot)
+        policy_snapshot = signing_policy_snapshot
+        policy_hash = signing_policy_hash
         run = {
             **run,
+            "approval_policy_snapshot": policy_snapshot,
+            "approval_policy_hash": policy_hash,
+            "external_action_capabilities_enabled": policy_snapshot[
+                "enabled_external_capabilities"
+            ],
             "acceptance_criteria": {
                 "sourced_totals": _sourced_totals_pass(report, acceptance_mapping),
                 "draft_latency": run["draft_latency_seconds"] < 300,
-                "approval_safety": not external_tools,
+                "approval_safety": _approval_safety_pass(run, policy_snapshot),
             },
         }
         history, signed_run = _record_acceptance_run_locked(root, run, key)
@@ -260,6 +275,16 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         return {**empty, "valid": False}
     if not runs:
         return empty
+
+    current_policy = _approval_policy_snapshot(root)
+    last_policy_hash = runs[-1].get("approval_policy_hash")
+    if (
+        not _valid_policy_evidence(runs[-1])
+        or not current_policy["policy_valid"]
+        or not isinstance(last_policy_hash, str)
+        or not hmac.compare_digest(last_policy_hash, _json_hash(current_policy))
+    ):
+        return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
 
     signed_criteria = runs[-1].get("acceptance_criteria")
     required = {"sourced_totals", "draft_latency", "approval_safety"}
@@ -734,11 +759,18 @@ def _consecutive_equal_runs(runs: list[dict[str, Any]]) -> int:
         "mapping_version",
         "calculation_version",
         "kpi_result_hash",
+        "approval_policy_hash",
     )
     expected = tuple(runs[-1].get(key) for key in keys)
     count = 0
     for run in reversed(runs):
-        if tuple(run.get(key) for key in keys) != expected:
+        criteria = run.get("acceptance_criteria")
+        if (
+            tuple(run.get(key) for key in keys) != expected
+            or not _valid_policy_evidence(run)
+            or not isinstance(criteria, dict)
+            or criteria.get("approval_safety") is not True
+        ):
             break
         count += 1
     return count
@@ -1014,25 +1046,397 @@ def _validated_optional_decimal(value: Any) -> tuple[bool, Decimal | None]:
     return (True, decimal) if decimal.is_finite() else (False, None)
 
 
-def _enabled_external_tools(root: Path) -> list[str]:
-    try:
-        manifest = json.loads(
-            (root / "project" / "manifest.json").read_text(encoding="utf-8")
-        )
-    except (OSError, json.JSONDecodeError):
-        return []
-    permissions = manifest.get("tool_permissions", {}) if isinstance(manifest, dict) else {}
-    enabled = permissions.get("enabled", []) if isinstance(permissions, dict) else []
-    return (
-        sorted(
-            {
-                str(name).lower()
+def _approval_policy_snapshot(root: Path) -> dict[str, Any]:
+    """Read the two policy authorities once, bounded and fail-closed."""
+    errors: list[str] = []
+    config, manifest = _read_policy_bundle(root, errors)
+
+    autonomy_level = "standard"
+    require_human_approval = True
+    if isinstance(config, dict):
+        raw_approval = config.get("require_human_approval", True)
+        if raw_approval is True:
+            require_human_approval = True
+        elif raw_approval is False:
+            require_human_approval = False
+            errors.append("human_approval_disabled")
+        else:
+            require_human_approval = False
+            errors.append("invalid_require_human_approval")
+
+    approval_terms: list[str] = []
+    enabled_external_capabilities: list[str] = []
+    if isinstance(manifest, dict):
+        raw_autonomy = manifest.get("autonomy_level", "standard")
+        if isinstance(raw_autonomy, str) and raw_autonomy == raw_autonomy.strip() and raw_autonomy:
+            autonomy_level = raw_autonomy.lower()
+        else:
+            autonomy_level = "invalid"
+            errors.append("invalid_autonomy_level")
+        raw_terms = manifest.get("approval_required_for")
+        if not isinstance(raw_terms, list) or any(
+            not isinstance(term, str) or not term or term != term.strip()
+            for term in raw_terms
+        ):
+            errors.append("invalid_approval_required_for")
+        else:
+            approval_terms = sorted({" ".join(term.lower().split()) for term in raw_terms})
+            if not _REQUIRED_APPROVAL_TERMS <= set(approval_terms):
+                errors.append("missing_required_approval_terms")
+
+        permissions = manifest.get("tool_permissions")
+        if not isinstance(permissions, dict) or permissions.get("default") != "disabled":
+            errors.append("invalid_tool_permissions")
+        else:
+            enabled = permissions.get("enabled")
+            if not isinstance(enabled, list) or any(
+                not isinstance(name, str) or not name or name != name.strip()
                 for name in enabled
-                if str(name).lower() not in _LOCAL_PILOT_TOOLS
-            }
+            ):
+                errors.append("invalid_enabled_tools")
+            else:
+                normalized_tools = sorted({name.lower() for name in enabled})
+                enabled_external_capabilities = [
+                    name for name in normalized_tools if name not in _LOCAL_PILOT_TOOLS
+                ]
+                if enabled_external_capabilities:
+                    errors.append("external_tool_enabled")
+
+    policy_valid = not errors
+    return {
+        "schema_version": 1,
+        "policy_valid": policy_valid,
+        "gate_active": policy_valid and autonomy_level != "max" and require_human_approval,
+        "autonomy_level": autonomy_level,
+        "require_human_approval": require_human_approval,
+        "approval_terms": approval_terms,
+        "enabled_external_capabilities": enabled_external_capabilities,
+        "validation_errors": sorted(set(errors)),
+    }
+
+
+def _read_policy_bundle(
+    root: Path, errors: list[str]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Pin and read config+manifest as one stable, bounded filesystem bundle."""
+    try:
+        lexical_root = Path(os.path.abspath(root))
+        if not _policy_path_components_safe(lexical_root):
+            raise ValueError
+        return (
+            _read_policy_bundle_windows(lexical_root)
+            if os.name == "nt"
+            else _read_policy_bundle_posix(lexical_root)
         )
-        if isinstance(enabled, list)
-        else []
+    except (
+        OSError,
+        ValueError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+        RecursionError,
+    ):
+        errors.append("invalid_policy_bundle")
+        return None, None
+
+
+def _read_policy_bundle_posix(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    directory_flags = (
+        os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    )
+    file_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        root_fd = os.open(root, directory_flags)
+        descriptors.append(root_fd)
+        project_fd = os.open("project", directory_flags, dir_fd=root_fd)
+        descriptors.append(project_fd)
+        file_fds = []
+        for name in ("config.json", "manifest.json"):
+            descriptor = os.open(name, file_flags, dir_fd=project_fd)
+            file_fds.append(descriptor)
+            descriptors.append(descriptor)
+        root_identity = os.fstat(root_fd)
+        project_identity = os.fstat(project_fd)
+        file_identities = [os.fstat(fd) for fd in file_fds]
+        if not stat.S_ISDIR(root_identity.st_mode) or not stat.S_ISDIR(project_identity.st_mode):
+            raise ValueError
+        if any(not stat.S_ISREG(item.st_mode) for item in file_identities):
+            raise ValueError
+        raw = [_read_policy_fd_twice(fd, identity) for fd, identity in zip(file_fds, file_identities)]
+        if any(
+            not _same_policy_file_state(identity, os.fstat(fd))
+            for fd, identity in zip(file_fds, file_identities)
+        ):
+            raise ValueError
+        if not _same_policy_identity(root_identity, os.stat(root, follow_symlinks=False)):
+            raise ValueError
+        if not _same_policy_identity(project_identity, os.stat("project", dir_fd=root_fd, follow_symlinks=False)):
+            raise ValueError
+        for name, identity in zip(("config.json", "manifest.json"), file_identities):
+            if not _same_policy_identity(identity, os.stat(name, dir_fd=project_fd, follow_symlinks=False)):
+                raise ValueError
+        return _decode_policy_bundle(raw)
+    finally:
+        for descriptor in reversed(descriptors):
+            with contextlib.suppress(OSError):
+                os.close(descriptor)
+
+
+def _read_policy_fd_twice(descriptor: int, identity: os.stat_result) -> bytes:
+    if identity.st_size > _MAX_POLICY_BYTES:
+        raise ValueError
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    first = os.read(descriptor, _MAX_POLICY_BYTES + 1)
+    middle = os.fstat(descriptor)
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    second = os.read(descriptor, _MAX_POLICY_BYTES + 1)
+    after = os.fstat(descriptor)
+    if (
+        len(first) > _MAX_POLICY_BYTES
+        or first != second
+        or not _same_policy_file_state(identity, middle)
+        or not _same_policy_file_state(identity, after)
+        or identity.st_size != len(first)
+    ):
+        raise ValueError
+    return first
+
+
+def _read_policy_bundle_windows(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create_file = kernel32.CreateFileW
+    create_file.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    create_file.restype = wintypes.HANDLE
+    close_handle = kernel32.CloseHandle
+    close_handle.argtypes = [wintypes.HANDLE]
+    close_handle.restype = wintypes.BOOL
+    final_path = kernel32.GetFinalPathNameByHandleW
+    final_path.argtypes = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD]
+    final_path.restype = wintypes.DWORD
+    read_file = kernel32.ReadFile
+    read_file.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), wintypes.LPVOID]
+    read_file.restype = wintypes.BOOL
+    set_pointer = kernel32.SetFilePointerEx
+    set_pointer.argtypes = [wintypes.HANDLE, ctypes.c_longlong, ctypes.POINTER(ctypes.c_longlong), wintypes.DWORD]
+    set_pointer.restype = wintypes.BOOL
+    get_info = kernel32.GetFileInformationByHandle
+
+    class FileInfo(ctypes.Structure):
+        _fields_ = [
+            ("attributes", wintypes.DWORD), ("creation_low", wintypes.DWORD),
+            ("creation_high", wintypes.DWORD), ("access_low", wintypes.DWORD),
+            ("access_high", wintypes.DWORD), ("write_low", wintypes.DWORD),
+            ("write_high", wintypes.DWORD), ("volume", wintypes.DWORD),
+            ("size_high", wintypes.DWORD), ("size_low", wintypes.DWORD),
+            ("links", wintypes.DWORD), ("index_high", wintypes.DWORD),
+            ("index_low", wintypes.DWORD),
+        ]
+
+    get_info.argtypes = [wintypes.HANDLE, ctypes.POINTER(FileInfo)]
+    get_info.restype = wintypes.BOOL
+    invalid = ctypes.c_void_p(-1).value
+    handles: list[Any] = []
+    project = root / "project"
+    paths = [root, project, project / "config.json", project / "manifest.json"]
+    try:
+        if not _policy_path_components_safe(root) or any(
+            _is_link_or_junction(path) for path in paths
+        ):
+            raise ValueError
+        for index, path in enumerate(paths):
+            flags = 0x00200000 | (0x02000000 if index < 2 else 0)
+            handle = create_file(str(path), 0x80000000, 0x00000001, None, 3, flags, None)
+            if handle == invalid or handle is None:
+                raise OSError(ctypes.get_last_error(), "CreateFileW failed")
+            handles.append(handle)
+            if _windows_final_path(final_path, handle) != os.path.normcase(str(path.resolve(strict=True))):
+                raise ValueError
+        raws = []
+        for handle in handles[2:]:
+            before = FileInfo()
+            if not get_info(handle, ctypes.byref(before)):
+                raise OSError(ctypes.get_last_error(), "GetFileInformationByHandle failed")
+            size = (before.size_high << 32) | before.size_low
+            if size > _MAX_POLICY_BYTES or before.attributes & 0x400:
+                raise ValueError
+            first = _windows_read_policy_handle(read_file, set_pointer, handle)
+            second = _windows_read_policy_handle(read_file, set_pointer, handle)
+            after = FileInfo()
+            if (
+                not get_info(handle, ctypes.byref(after))
+                or _windows_file_identity(before) != _windows_file_identity(after)
+                or first != second
+                or len(first) != size
+            ):
+                raise ValueError
+            raws.append(first)
+        if not _policy_path_components_safe(root) or any(
+            _is_link_or_junction(path) for path in paths
+        ):
+            raise ValueError
+        return _decode_policy_bundle(raws)
+    finally:
+        for handle in reversed(handles):
+            close_handle(handle)
+
+
+def _windows_final_path(final_path: Any, handle: Any) -> str:
+    import ctypes
+
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = final_path(handle, buffer, len(buffer), 0)
+    if not length or length >= len(buffer):
+        raise OSError(ctypes.get_last_error(), "GetFinalPathNameByHandleW failed")
+    value = buffer.value
+    if value.startswith("\\\\?\\UNC\\"):
+        value = "\\\\" + value[8:]
+    elif value.startswith("\\\\?\\"):
+        value = value[4:]
+    return os.path.normcase(value)
+
+
+def _windows_file_identity(info: Any) -> tuple[int, ...]:
+    return (
+        info.attributes,
+        info.creation_low,
+        info.creation_high,
+        info.write_low,
+        info.write_high,
+        info.volume,
+        info.size_high,
+        info.size_low,
+        info.index_high,
+        info.index_low,
+    )
+
+
+def _windows_read_policy_handle(read_file: Any, set_pointer: Any, handle: Any) -> bytes:
+    import ctypes
+    from ctypes import wintypes
+
+    if not set_pointer(handle, 0, None, 0):
+        raise OSError(ctypes.get_last_error(), "SetFilePointerEx failed")
+    buffer = ctypes.create_string_buffer(_MAX_POLICY_BYTES + 1)
+    read = wintypes.DWORD()
+    if not read_file(handle, buffer, len(buffer), ctypes.byref(read), None):
+        raise OSError(ctypes.get_last_error(), "ReadFile failed")
+    if read.value > _MAX_POLICY_BYTES:
+        raise ValueError
+    return buffer.raw[: read.value]
+
+
+def _decode_policy_bundle(raws: list[bytes]) -> tuple[dict[str, Any], dict[str, Any]]:
+    values: list[dict[str, Any]] = []
+    for raw in raws:
+        value = json.loads(raw.decode("utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError
+        values.append(value)
+    return values[0], values[1]
+
+
+def _policy_path_components_safe(root: Path) -> bool:
+    current = Path(root.anchor)
+    try:
+        if not root.is_absolute() or _is_link_or_junction(current):
+            return False
+        parts = root.parts
+        start = 1 if parts and parts[0] == root.anchor else 0
+        for part in parts[start:]:
+            current /= part
+            if _is_link_or_junction(current):
+                return False
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def _invalidated_policy_snapshot(snapshot: dict[str, Any], error: str) -> dict[str, Any]:
+    errors = snapshot.get("validation_errors")
+    return {
+        **snapshot,
+        "policy_valid": False,
+        "gate_active": False,
+        "validation_errors": sorted({*(errors if isinstance(errors, list) else []), error}),
+    }
+
+
+def _is_link_or_junction(path: Path) -> bool:
+    """Reject every name that could redirect this security-sensitive read."""
+    try:
+        if path.is_symlink():
+            return True
+        is_junction = getattr(path, "is_junction", None)
+        if is_junction is not None and is_junction():
+            return True
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+        return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+    except (OSError, ValueError):
+        return True
+
+
+def _same_policy_identity(
+    expected: os.stat_result | None, actual: os.stat_result | None
+) -> bool:
+    return (
+        expected is not None
+        and actual is not None
+        and expected.st_dev == actual.st_dev
+        and expected.st_ino == actual.st_ino
+        and expected.st_mode == actual.st_mode
+    )
+
+
+def _same_policy_file_state(
+    expected: os.stat_result | None, actual: os.stat_result | None
+) -> bool:
+    return (
+        _same_policy_identity(expected, actual)
+        and expected is not None
+        and actual is not None
+        and expected.st_size == actual.st_size
+        and expected.st_mtime_ns == actual.st_mtime_ns
+        and expected.st_ctime_ns == actual.st_ctime_ns
+    )
+
+
+def _approval_safety_pass(run: dict[str, Any], snapshot: dict[str, Any]) -> bool:
+    return (
+        snapshot["policy_valid"] is True
+        and snapshot["gate_active"] is True
+        and _REQUIRED_APPROVAL_TERMS <= set(snapshot["approval_terms"])
+        and snapshot["enabled_external_capabilities"] == []
+        and run.get("approval_log") == []
+        and run.get("external_action_log") == []
+        and run.get("external_actions_without_explicit_approval") == 0
+    )
+
+
+def _valid_policy_evidence(run: dict[str, Any]) -> bool:
+    snapshot = run.get("approval_policy_snapshot")
+    policy_hash = run.get("approval_policy_hash")
+    return (
+        isinstance(snapshot, dict)
+        and isinstance(policy_hash, str)
+        and re_full_sha256(policy_hash)
+        and hmac.compare_digest(policy_hash, _json_hash(snapshot))
+        and snapshot.get("schema_version") == 1
+        and snapshot.get("policy_valid") is True
+        and snapshot.get("gate_active") is True
+        and snapshot.get("enabled_external_capabilities") == []
+        and isinstance(snapshot.get("approval_terms"), list)
+        and _REQUIRED_APPROVAL_TERMS <= set(snapshot["approval_terms"])
     )
 
 

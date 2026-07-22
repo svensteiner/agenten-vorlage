@@ -176,6 +176,14 @@ def test_packaged_kmu_pilot_passes_all_acceptance_gates_offline(
     assert all(run["external_action_log"] == [] for run in runs)
     assert all(run["external_action_capabilities_enabled"] == [] for run in runs)
     assert all(run["external_actions_without_explicit_approval"] == 0 for run in runs)
+    assert all(_is_sha256(run["approval_policy_hash"]) for run in runs)
+    assert len({run["approval_policy_hash"] for run in runs}) == 1
+    assert all(run["approval_policy_snapshot"]["gate_active"] is True for run in runs)
+    assert all(run["approval_policy_snapshot"]["policy_valid"] is True for run in runs)
+    assert all(
+        run["approval_policy_snapshot"]["enabled_external_capabilities"] == []
+        for run in runs
+    )
     assert latest["acceptance"]["criteria"]["approval_safety"] is True
 
     signed_status = read_acceptance_status(instance)
