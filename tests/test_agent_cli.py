@@ -221,9 +221,43 @@ class TestPilotStatus:
     def _signed_acceptance(instance: Path, runs: int = 4) -> None:
         source = instance / "inbox" / "actuals" / "demo.csv"
         source.parent.mkdir(parents=True)
-        source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+        source.write_text("Konto;Monat\n4000;1\n7000;0\n", encoding="utf-8")
         mapping = instance / "project" / "pilot" / "account-mapping.json"
-        mapping.write_text('{"schema_version":1}', encoding="utf-8")
+        mapping_definition = json.loads(
+            (
+                Path(agent_cli.__file__).parent
+                / "presets"
+                / "kmu-controlling"
+                / "pilot"
+                / "account-mapping.example.json"
+            ).read_text(encoding="utf-8")
+        )
+        mapping.write_text(json.dumps(mapping_definition), encoding="utf-8")
+        periods = ("month", "prior", "ytd", "ytd_prior")
+        groups = {
+            name: {
+                **{period: None for period in periods},
+                "account_ids": [],
+                "row_count": 0,
+            }
+            for name, rule in mapping_definition["groups"].items()
+            if rule.get("ignored") is not True
+        }
+        groups["revenue"] = {
+            **{period: "1" for period in periods},
+            "account_ids": ["4000"],
+            "row_count": 1,
+        }
+        groups["depreciation"] = {
+            **{period: "0" for period in periods},
+            "account_ids": ["7000"],
+            "row_count": 1,
+        }
+
+        def aggregate_metric(refs, period):
+            values = [int(groups[ref][period]) for ref in refs if groups[ref][period] is not None]
+            return str(sum(values)) if values else None
+
         report = {
             "source": "inbox/actuals/demo.csv",
             "method": "approved deterministic mapping",
@@ -235,19 +269,34 @@ class TestPilotStatus:
             },
             "metrics": {
                 name: {
-                    "month": "1",
-                    "prior": "1",
-                    "ytd": "1",
-                    "ytd_prior": "1",
+                    **{
+                        period: aggregate_metric(
+                            mapping_definition["metrics"][name], period
+                        )
+                        for period in periods
+                    },
+                    "account_ids": sorted(
+                        {
+                            account_id
+                            for ref in mapping_definition["metrics"][name]
+                            for account_id in groups[ref]["account_ids"]
+                        }
+                    ),
                 }
-                for name in ("ebitda", "depreciation", "egt")
+                for name in mapping_definition["metrics"]
             },
-            "groups": {},
+            "groups": groups,
             "material_deviations": [],
             "reconciliation": {
-                "source_account_count": 1,
-                "mapped_account_count": 1,
+                "source_account_count": 2,
+                "mapped_account_count": 2,
                 "ignored_account_count": 0,
+                "mapped_source_period_totals": {
+                    period: "1" for period in periods
+                },
+                "grouped_period_totals": {
+                    period: "1.0" for period in periods
+                },
             },
             "provenance": {
                 "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -255,6 +304,16 @@ class TestPilotStatus:
                 "calculation_version": "kmu-report-v1",
             },
         }
+        for metric_name in ("material_ratio", "personnel_ratio"):
+            report["metrics"][metric_name] = {
+                **{period: None for period in periods},
+                "account_ids": ["4000"],
+            }
+        for metric_name in ("receivables", "liquidity", "payables"):
+            report["metrics"][metric_name] = {
+                **{period: None for period in periods},
+                "account_ids": [],
+            }
         management = {
             "summary": "Belegter Testbericht.",
             "alarms": [],

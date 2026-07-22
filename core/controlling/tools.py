@@ -28,7 +28,7 @@ _MAX_XLSX_MEMBER_BYTES = 32 * 1024 * 1024
 _SIGN_CONVENTION = "source_value_times_group_multiplier"
 _SIGN_FORMULA = "normalized_value = source_value * group.multiplier"
 _CALCULATION_VERSION = "kmu-report-v1"
-_PNL_METRICS = frozenset(
+PNL_METRIC_NAMES = frozenset(
     {
         "ebitda",
         "ebit",
@@ -38,6 +38,21 @@ _PNL_METRICS = frozenset(
         "operating_result",
         "net_income",
     }
+)
+REPORT_PERIODS = ("month", "prior", "ytd", "ytd_prior")
+MANDATORY_MAPPING_METRICS = frozenset({"ebitda", "depreciation", "egt"})
+DERIVED_RATIO_METRICS = (
+    ("material_ratio", "material", "revenue"),
+    ("personnel_ratio", "personnel", "revenue"),
+)
+DIRECT_BALANCE_METRICS = (
+    ("receivables", "receivables"),
+    ("liquidity", "liquidity"),
+    ("payables", "payables"),
+)
+RESERVED_DERIVED_METRIC_NAMES = frozenset(
+    metric_name
+    for metric_name, *_groups in (*DERIVED_RATIO_METRICS, *DIRECT_BALANCE_METRICS)
 )
 
 
@@ -219,19 +234,26 @@ class ControllingComputeTool(_InstanceInputCapability):
             name: self._metric(groups, refs)
             for name, refs in mapping["metrics"].items()
         }
-        revenue = groups.get("revenue", self._empty())
-        for group in ("material", "personnel"):
+        for metric_name, numerator, denominator in DERIVED_RATIO_METRICS:
+            if numerator in groups:
+                ratio_periods = tuple(
+                    period for period in groups[numerator] if period != "accounts"
+                )
+                metrics[metric_name] = self._ratio(
+                    groups[numerator],
+                    groups.get(denominator, self._empty(ratio_periods)),
+                )
+        for metric_name, group in DIRECT_BALANCE_METRICS:
             if group in groups:
-                metrics[f"{group}_ratio"] = self._ratio(groups[group], revenue)
-        for group in ("receivables", "liquidity", "payables"):
-            if group in groups:
-                metrics[group] = groups[group]
+                metrics[metric_name] = groups[group]
         report = {
             "source": self._source_label(path),
             "method": "mapping-defined account groups; month/prior/ytd aggregation",
             "report_metadata": mapping["report_metadata"],
             "metrics": {k: self._public(v) for k, v in metrics.items()},
-            "groups": {k: self._public(v) for k, v in groups.items()},
+            "groups": {
+                k: self._public(v, include_row_count=True) for k, v in groups.items()
+            },
             "material_deviations": self._deviations(rows, mapping),
             "reconciliation": reconciliation,
             "provenance": {
@@ -374,6 +396,10 @@ class ControllingComputeTool(_InstanceInputCapability):
             raise ValueError(
                 "Konten-Mapping benötigt die Pflichtkennzahlen ebitda, depreciation und egt."
             )
+        if RESERVED_DERIVED_METRIC_NAMES.intersection(metrics):
+            raise ValueError(
+                "Konten-Mapping verwendet einen reservierten abgeleiteten Kennzahlnamen."
+            )
         if not all(
             isinstance(v, list)
             and v
@@ -514,7 +540,11 @@ class ControllingComputeTool(_InstanceInputCapability):
     ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
         cols = mapping["columns"]
         periods = self._periods(mapping)
-        out = {n: self._empty(periods) for n in mapping["groups"]}
+        out = {
+            name: self._empty(periods)
+            for name, rule in mapping["groups"].items()
+            if rule.get("ignored") is not True
+        }
         source_totals = {period: None for period in periods}
         grouped_totals = {period: None for period in periods}
         source_account_count = mapped_account_count = ignored_account_count = 0
@@ -523,7 +553,7 @@ class ControllingComputeTool(_InstanceInputCapability):
         pnl_groups = {
             group
             for metric, refs in mapping["metrics"].items()
-            if metric.casefold() in _PNL_METRICS
+            if metric.casefold() in PNL_METRIC_NAMES
             for group in refs
         }
         for row in rows:
@@ -564,7 +594,7 @@ class ControllingComputeTool(_InstanceInputCapability):
             )
             for period in periods:
                 source_totals[period] = self._add(
-                    source_totals[period], values[period], Decimal("1")
+                    source_totals[period], values[period], mult
                 )
                 grouped_totals[period] = self._add(
                     grouped_totals[period], values[period], mult
@@ -689,8 +719,10 @@ class ControllingComputeTool(_InstanceInputCapability):
             reverse=True,
         )
 
-    def _public(self, value: dict[str, Any]) -> dict[str, Any]:
-        return {
+    def _public(
+        self, value: dict[str, Any], *, include_row_count: bool = False
+    ) -> dict[str, Any]:
+        public = {
             **{
                 p: (self._format(value[p]) if value[p] is not None else None)
                 for p in value
@@ -698,6 +730,9 @@ class ControllingComputeTool(_InstanceInputCapability):
             },
             "account_ids": sorted(set(value["accounts"])),
         }
+        if include_row_count:
+            public["row_count"] = len(value["accounts"])
+        return public
 
     @staticmethod
     def _column(request: dict[str, Any], key: str) -> str:

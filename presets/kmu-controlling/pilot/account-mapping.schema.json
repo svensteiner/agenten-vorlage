@@ -79,6 +79,11 @@
     "metrics": {
       "type": "object",
       "required": ["ebitda", "depreciation", "egt"],
+      "propertyNames": {
+        "not": {
+          "enum": ["material_ratio", "personnel_ratio", "receivables", "liquidity", "payables"]
+        }
+      },
       "additionalProperties": {
         "type": "array",
         "minItems": 1,

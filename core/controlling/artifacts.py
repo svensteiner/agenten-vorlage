@@ -17,6 +17,15 @@ import threading
 import time
 from typing import Any
 
+from core.controlling.tools import (
+    DERIVED_RATIO_METRICS,
+    DIRECT_BALANCE_METRICS,
+    MANDATORY_MAPPING_METRICS,
+    PNL_METRIC_NAMES,
+    REPORT_PERIODS,
+    RESERVED_DERIVED_METRIC_NAMES,
+)
+
 if os.name == "nt":
     import msvcrt
 else:
@@ -139,12 +148,15 @@ def _persist_report_transaction(
     with _acceptance_write_lock(root):
         # Revalidate after waiting for the lock so a replaced source or mapping
         # cannot be persisted with stale compute-time provenance.
-        _validated_report_provenance(report, source, mapping)
+        report_provenance = _validated_report_provenance(report, source, mapping)
+        acceptance_mapping = _load_acceptance_mapping(
+            mapping, expected_hash=report_provenance["mapping_version"]
+        )
         key = _acceptance_key(root)
         run = {
             **run,
             "acceptance_criteria": {
-                "sourced_totals": _sourced_totals_pass(report),
+                "sourced_totals": _sourced_totals_pass(report, acceptance_mapping),
                 "draft_latency": run["draft_latency_seconds"] < 300,
                 "approval_safety": not external_tools,
             },
@@ -722,10 +734,32 @@ def _consecutive_equal_runs(runs: list[dict[str, Any]]) -> int:
     return count
 
 
-def _sourced_totals_pass(report: dict[str, Any]) -> bool:
+def _load_acceptance_mapping(
+    path: Path, *, expected_hash: str
+) -> dict[str, Any] | None:
+    try:
+        mapping_bytes = path.read_bytes()
+        if (
+            len(mapping_bytes) > _MAX_MAPPING_BYTES
+            or hashlib.sha256(mapping_bytes).hexdigest() != expected_hash
+        ):
+            return None
+        mapping = json.loads(mapping_bytes.decode("utf-8"))
+    except (OSError, ValueError, UnicodeError, json.JSONDecodeError, RecursionError):
+        return None
+    return mapping if isinstance(mapping, dict) else None
+
+
+def _sourced_totals_pass(
+    report: dict[str, Any], mapping: dict[str, Any] | None
+) -> bool:
     reconciliation = report.get("reconciliation")
     metadata = report.get("report_metadata")
-    if not isinstance(reconciliation, dict) or not isinstance(metadata, dict):
+    if (
+        not isinstance(reconciliation, dict)
+        or not isinstance(metadata, dict)
+        or not isinstance(mapping, dict)
+    ):
         return False
     source = reconciliation.get("source_account_count")
     mapped = reconciliation.get("mapped_account_count")
@@ -738,31 +772,236 @@ def _sourced_totals_pass(report: dict[str, Any]) -> bool:
         isinstance(metadata.get(key), str) and metadata[key].strip()
         for key in ("period_start", "period_end", "currency", "sign_convention")
     )
-    metrics = report.get("metrics")
-    mandatory_metrics_ok = isinstance(metrics, dict) and all(
-        isinstance(metrics.get(name), dict)
-        and all(
-            _finite_metric_value(metrics[name].get(period))
-            for period in ("month", "prior", "ytd", "ytd_prior")
-        )
-        for name in ("ebitda", "depreciation", "egt")
-    )
     return bool(
         counts_ok
         and metadata_ok
-        and mandatory_metrics_ok
+        and _reconciled_report_values_pass(report, reconciliation, mapping)
         and report.get("source")
         and report.get("method")
     )
 
 
-def _finite_metric_value(value: Any) -> bool:
-    if value is None or isinstance(value, bool):
+def _reconciled_report_values_pass(
+    report: dict[str, Any],
+    reconciliation: dict[str, Any],
+    mapping: dict[str, Any],
+) -> bool:
+    mapping_groups = mapping.get("groups")
+    metric_refs = mapping.get("metrics")
+    report_groups = report.get("groups")
+    report_metrics = report.get("metrics")
+    mapped_source = reconciliation.get("mapped_source_period_totals")
+    grouped = reconciliation.get("grouped_period_totals")
+    if (
+        not isinstance(mapping_groups, dict)
+        or not mapping_groups
+        or not all(
+            isinstance(name, str) and name and isinstance(rule, dict)
+            for name, rule in mapping_groups.items()
+        )
+        or not isinstance(metric_refs, dict)
+        or not MANDATORY_MAPPING_METRICS <= set(metric_refs)
+        or RESERVED_DERIVED_METRIC_NAMES.intersection(metric_refs)
+        or not isinstance(report_groups, dict)
+        or not isinstance(report_metrics, dict)
+        or not isinstance(mapped_source, dict)
+        or not isinstance(grouped, dict)
+    ):
         return False
+
+    non_ignored_groups = {
+        name for name, rule in mapping_groups.items() if rule.get("ignored") is not True
+    }
+    if not report_groups or set(report_groups) != non_ignored_groups:
+        return False
+    pnl_groups = {
+        ref
+        for metric_name, refs in metric_refs.items()
+        if isinstance(metric_name, str)
+        and metric_name.casefold() in PNL_METRIC_NAMES
+        and isinstance(refs, list)
+        for ref in refs
+        if isinstance(ref, str)
+    }
+
+    normalized_groups: dict[str, dict[str, Decimal | None]] = {}
+    mapped_row_count = 0
+    for group_name in report_groups:
+        group = report_groups.get(group_name)
+        if not isinstance(group, dict):
+            return False
+        group_account_ids = group.get("account_ids")
+        row_count = group.get("row_count")
+        if (
+            set(group) != {*REPORT_PERIODS, "account_ids", "row_count"}
+            or not isinstance(group_account_ids, list)
+            or any(
+                not isinstance(account_id, str) or not account_id.strip()
+                for account_id in group_account_ids
+            )
+            or len(set(group_account_ids)) != len(group_account_ids)
+            or not isinstance(row_count, int)
+            or isinstance(row_count, bool)
+            or row_count < len(group_account_ids)
+        ):
+            return False
+        mapped_row_count += row_count
+        normalized_groups[group_name] = {}
+        for period in REPORT_PERIODS:
+            valid, value = _validated_optional_decimal(group.get(period))
+            if not valid:
+                return False
+            normalized_groups[group_name][period] = value
+        if (
+            (row_count == 0) != (not group_account_ids)
+            or row_count == 0
+            and any(normalized_groups[group_name][period] is not None for period in REPORT_PERIODS)
+            or row_count > 0
+            and any(
+                normalized_groups[group_name][period] is None
+                for period in ("month", "prior")
+            )
+        ):
+            return False
+        if group_account_ids and group_name in pnl_groups and any(
+            normalized_groups[group_name][period] is None
+            for period in ("ytd", "ytd_prior")
+        ):
+            return False
+    if mapped_row_count != reconciliation.get("mapped_account_count"):
+        return False
+
+    for period in REPORT_PERIODS:
+        expected_total = sum(
+            (
+                value
+                for values in normalized_groups.values()
+                if (value := values[period]) is not None
+            ),
+            Decimal("0"),
+        )
+        source_total = _validated_decimal(mapped_source.get(period))
+        grouped_total = _validated_decimal(grouped.get(period))
+        if source_total != expected_total or grouped_total != expected_total:
+            return False
+
+    expected_metric_names = set(metric_refs)
+    expected_metric_names.update(
+        name
+        for name, numerator, _denominator in DERIVED_RATIO_METRICS
+        if numerator in normalized_groups
+    )
+    expected_metric_names.update(
+        name
+        for name, group_name in DIRECT_BALANCE_METRICS
+        if group_name in normalized_groups
+    )
+    if set(report_metrics) != expected_metric_names:
+        return False
+
+    for metric_name, refs in metric_refs.items():
+        if (
+            not isinstance(metric_name, str)
+            or not metric_name
+            or not isinstance(refs, list)
+            or not refs
+            or len(refs) != len(set(refs))
+            or any(
+                not isinstance(ref, str)
+                or ref not in non_ignored_groups
+                or ref not in normalized_groups
+                for ref in refs
+            )
+        ):
+            return False
+        expected_values = {
+            period: _sum_optional_group_values(normalized_groups, refs, period)
+            for period in REPORT_PERIODS
+        }
+        expected_accounts = sorted(
+            {
+                account_id
+                for ref in refs
+                for account_id in report_groups[ref]["account_ids"]
+            }
+        )
+        if not _report_metric_passes(
+            report_metrics.get(metric_name),
+            expected_values,
+            expected_accounts,
+            mandatory=metric_name in MANDATORY_MAPPING_METRICS,
+        ):
+            return False
+
+    for metric_name, numerator, denominator in DERIVED_RATIO_METRICS:
+        if numerator not in normalized_groups:
+            continue
+        expected_values = {}
+        for period in REPORT_PERIODS:
+            a = normalized_groups[numerator][period]
+            b = normalized_groups.get(denominator, {}).get(period)
+            expected_values[period] = abs(a) / abs(b) if a is not None and b else None
+        expected_accounts = sorted(
+            set(report_groups[numerator]["account_ids"])
+            | set(report_groups.get(denominator, {}).get("account_ids", []))
+        )
+        if not _report_metric_passes(
+            report_metrics.get(metric_name), expected_values, expected_accounts
+        ):
+            return False
+
+    for metric_name, group_name in DIRECT_BALANCE_METRICS:
+        if group_name in normalized_groups and not _report_metric_passes(
+            report_metrics.get(metric_name),
+            normalized_groups[group_name],
+            report_groups[group_name]["account_ids"],
+        ):
+            return False
+    return True
+
+
+def _sum_optional_group_values(
+    groups: dict[str, dict[str, Decimal | None]], refs: list[str], period: str
+) -> Decimal | None:
+    values = [groups[ref][period] for ref in refs if groups[ref][period] is not None]
+    return sum(values, Decimal("0")) if values else None
+
+
+def _report_metric_passes(
+    metric: Any,
+    expected_values: dict[str, Decimal | None],
+    expected_account_ids: list[str],
+    *,
+    mandatory: bool = False,
+) -> bool:
+    if (
+        not isinstance(metric, dict)
+        or set(metric) != {*REPORT_PERIODS, "account_ids"}
+        or metric.get("account_ids") != expected_account_ids
+    ):
+        return False
+    for period in REPORT_PERIODS:
+        valid, actual = _validated_optional_decimal(metric.get(period))
+        if not valid or mandatory and actual is None or actual != expected_values[period]:
+            return False
+    return True
+
+
+def _validated_decimal(value: Any) -> Decimal | None:
+    valid, decimal = _validated_optional_decimal(value)
+    return decimal if valid else None
+
+
+def _validated_optional_decimal(value: Any) -> tuple[bool, Decimal | None]:
+    if value is None:
+        return True, None
+    if isinstance(value, bool):
+        return False, None
     try:
-        return Decimal(str(value)).is_finite()
+        decimal = Decimal(str(value))
     except (InvalidOperation, ValueError):
-        return False
+        return False, None
+    return (True, decimal) if decimal.is_finite() else (False, None)
 
 
 def _enabled_external_tools(root: Path) -> list[str]:

@@ -1,6 +1,8 @@
 import json
+from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from jsonschema import Draft202012Validator
 from openpyxl import Workbook
 import pytest
 
@@ -428,6 +430,7 @@ def test_kmu_report_deviations_cover_every_mapped_non_ignored_account(tmp_path):
         item["account_id"]: item["month_vs_prior"]
         for item in report["material_deviations"]
     } == {"4000": "100", "5000": "60"}
+    assert "ignored" not in report["groups"]
 
 
 def test_kmu_report_fails_closed_for_unmapped_account(tmp_path):
@@ -512,6 +515,56 @@ def test_kmu_report_rejects_metrics_that_reference_ignored_groups(tmp_path):
 
     assert result.startswith("FEHLER")
     assert "ignorierte" in result
+
+
+@pytest.mark.parametrize(
+    "reserved_name",
+    (
+        "material_ratio",
+        "personnel_ratio",
+        "receivables",
+        "liquidity",
+        "payables",
+    ),
+)
+def test_kmu_report_rejects_reserved_derived_metric_names(tmp_path, reserved_name):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["metrics"][reserved_name] = ["revenue"]
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+    assert "reserv" in result.casefold()
+
+
+@pytest.mark.parametrize(
+    "reserved_name",
+    (
+        "material_ratio",
+        "personnel_ratio",
+        "receivables",
+        "liquidity",
+        "payables",
+    ),
+)
+def test_mapping_schema_rejects_reserved_derived_metric_names(reserved_name):
+    schema = json.loads(
+        (
+            Path(__file__).parents[1]
+            / "presets"
+            / "kmu-controlling"
+            / "pilot"
+            / "account-mapping.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    mapping = _strict_mapping()
+    mapping["metrics"][reserved_name] = ["revenue"]
+
+    assert list(Draft202012Validator(schema).iter_errors(mapping))
 
 
 @pytest.mark.parametrize(
@@ -661,6 +714,10 @@ def test_kmu_report_handles_realistic_two_section_saldenliste(tmp_path):
     assert report["metrics"]["liquidity"]["month"] == "66150"
     assert report["reconciliation"]["source_account_count"] == 7
     assert report["reconciliation"]["mapped_account_count"] == 7
+    assert (
+        report["reconciliation"]["mapped_source_period_totals"]
+        == report["reconciliation"]["grouped_period_totals"]
+    )
 
 
 def test_narrative_uses_aggregate_prompt_and_offline_fallback(tmp_path, monkeypatch):

@@ -12,6 +12,7 @@ import pytest
 from core.controlling import artifacts as artifacts_module
 from core.controlling.artifacts import persist_report_artifacts, read_acceptance_status
 from core.controlling.narrative import ControllingReportTool
+from core.controlling.tools import ControllingComputeTool
 
 
 def _hold_acceptance_lock_in_process(root, ready, *, crash=False):
@@ -20,6 +21,58 @@ def _hold_acceptance_lock_in_process(root, ready, *, crash=False):
         if crash:
             os._exit(0)
         time.sleep(0.5)
+
+
+def _acceptance_mapping():
+    return {
+        "schema_version": 1,
+        "report_metadata": {
+            "period_start": "2026-06-01",
+            "period_end": "2026-06-30",
+            "currency": "EUR",
+            "sign_convention": "source_value_times_group_multiplier",
+            "row_identifier": "Zeilen-ID",
+        },
+        "columns": {
+            "account_id": "Konto",
+            "account_name": "Bezeichnung",
+            "month": "Monat",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
+        "sign_semantics": {
+            "formula": "normalized_value = source_value * group.multiplier",
+            "positive_contribution": "Positive increases KPI.",
+            "negative_contribution": "Negative decreases KPI.",
+        },
+        "source_globs": ["inbox/actuals/*.csv"],
+        "groups": {
+            "revenue": {"prefixes": ["4"], "multiplier": 1},
+            "material": {"prefixes": ["5"], "multiplier": -1},
+            "personnel": {"prefixes": ["6"], "multiplier": -1},
+            "depreciation": {"prefixes": ["7"], "multiplier": -1},
+            "financial": {"prefixes": ["8"], "multiplier": -1},
+        },
+        "metrics": {
+            "ebitda": ["revenue", "material", "personnel"],
+            "depreciation": ["depreciation"],
+            "egt": [
+                "revenue",
+                "material",
+                "personnel",
+                "depreciation",
+                "financial",
+            ],
+        },
+        "thresholds": {"material_deviation_abs": 1000},
+    }
+
+
+def _write_acceptance_mapping(root):
+    path = root / "project" / "pilot" / "account-mapping.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_acceptance_mapping()), encoding="utf-8")
 
 
 def _aggregate_report(root):
@@ -36,18 +89,50 @@ def _aggregate_report(root):
             "row_identifier": ["account_id"],
         },
         "metrics": {
-            "ebitda": {"month": "2800", "prior": "3000", "ytd": "8400", "ytd_prior": "9000", "account_ids": ["4000"]},
+            "ebitda": {"month": "2800", "prior": "3000", "ytd": "10000", "ytd_prior": "-5000", "account_ids": ["4000", "5000", "6000"]},
             "depreciation": {"month": "-3000", "prior": "-2900", "ytd": "-9000", "ytd_prior": "-8500", "account_ids": ["7000"]},
-            "egt": {"month": "-2250", "prior": "21780", "ytd": "66700", "ytd_prior": "105200", "account_ids": ["4000", "5000"]},
+            "egt": {"month": "-2250", "prior": "-1900", "ytd": "-5000", "ytd_prior": "-19000", "account_ids": ["4000", "5000", "6000", "7000", "8000"]},
+            "material_ratio": {
+                "month": "0.5",
+                "prior": "0.5",
+                "ytd": "0.5",
+                "ytd_prior": "0.5090909090909090909090909091",
+                "account_ids": ["4000", "5000"],
+            },
+            "personnel_ratio": {
+                "month": "0.4862407862407862407862407862",
+                "prior": "0.485",
+                "ytd": "0.4833333333333333333333333333",
+                "ytd_prior": "0.5",
+                "account_ids": ["4000", "6000"],
+            },
         },
-        "groups": {"revenue": {"month": "203500", "account_ids": ["4000"]}},
+        "groups": {
+            "revenue": {"month": "203500", "prior": "200000", "ytd": "600000", "ytd_prior": "550000", "account_ids": ["4000"], "row_count": 1},
+            "material": {"month": "-101750", "prior": "-100000", "ytd": "-300000", "ytd_prior": "-280000", "account_ids": ["5000"], "row_count": 1},
+            "personnel": {"month": "-98950", "prior": "-97000", "ytd": "-290000", "ytd_prior": "-275000", "account_ids": ["6000"], "row_count": 1},
+            "depreciation": {"month": "-3000", "prior": "-2900", "ytd": "-9000", "ytd_prior": "-8500", "account_ids": ["7000"], "row_count": 1},
+            "financial": {"month": "-2050", "prior": "-2000", "ytd": "-6000", "ytd_prior": "-5500", "account_ids": ["8000"], "row_count": 1},
+        },
         "material_deviations": [
             {"account_id": "5000", "month_vs_prior": "-22600"}
         ],
         "reconciliation": {
-            "source_account_count": 2,
-            "mapped_account_count": 2,
+            "source_account_count": 5,
+            "mapped_account_count": 5,
             "ignored_account_count": 0,
+            "mapped_source_period_totals": {
+                "month": "-2250",
+                "prior": "-1900",
+                "ytd": "-5000",
+                "ytd_prior": "-19000",
+            },
+            "grouped_period_totals": {
+                "month": "-2250.00",
+                "prior": -1900,
+                "ytd": "-5000.0",
+                "ytd_prior": "-19000",
+            },
         },
         "provenance": {
             "input_fingerprint": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -58,6 +143,446 @@ def _aggregate_report(root):
     }
 
 
+def _report_with_reconciled_totals():
+    return {
+        "source": "inbox/actuals/demo.csv",
+        "method": "synthetic deterministic aggregation",
+        "report_metadata": {
+            "period_start": "2026-06-01",
+            "period_end": "2026-06-30",
+            "currency": "EUR",
+            "sign_convention": "source_value_times_group_multiplier",
+        },
+        "metrics": {
+            "ebitda": {
+                "month": "10",
+                "prior": "9",
+                "ytd": "29",
+                "ytd_prior": "27",
+                "account_ids": ["4000", "5000"],
+            },
+            "depreciation": {
+                "month": "-2",
+                "prior": "-2",
+                "ytd": "-6",
+                "ytd_prior": "-6",
+                "account_ids": ["7000"],
+            },
+            "egt": {
+                "month": "8",
+                "prior": "7",
+                "ytd": "23",
+                "ytd_prior": "21",
+                "account_ids": ["4000", "5000", "7000"],
+            },
+            "material_ratio": {
+                "month": "0.5",
+                "prior": "0.5",
+                "ytd": "0.5",
+                "ytd_prior": "0.5",
+                "account_ids": ["4000", "5000"],
+            },
+            "receivables": {
+                "month": "20",
+                "prior": "19",
+                "ytd": None,
+                "ytd_prior": None,
+                "account_ids": ["1200"],
+            },
+        },
+        "groups": {
+            "revenue": {
+                "month": "20",
+                "prior": "18",
+                "ytd": "58",
+                "ytd_prior": "54",
+                "account_ids": ["4000"],
+                "row_count": 1,
+            },
+            "material": {
+                "month": "-10",
+                "prior": "-9",
+                "ytd": "-29",
+                "ytd_prior": "-27",
+                "account_ids": ["5000"],
+                "row_count": 1,
+            },
+            "depreciation": {
+                "month": "-2",
+                "prior": "-2",
+                "ytd": "-6",
+                "ytd_prior": "-6",
+                "account_ids": ["7000"],
+                "row_count": 1,
+            },
+            "receivables": {
+                "month": "20",
+                "prior": "19",
+                "ytd": None,
+                "ytd_prior": None,
+                "account_ids": ["1200"],
+                "row_count": 1,
+            },
+            "unused_balance": {
+                "month": None,
+                "prior": None,
+                "ytd": None,
+                "ytd_prior": None,
+                "account_ids": [],
+                "row_count": 0,
+            },
+        },
+        "reconciliation": {
+            "source_account_count": 5,
+            "mapped_account_count": 4,
+            "ignored_account_count": 1,
+            "mapped_source_period_totals": {
+                "month": "28.00",
+                "prior": 26,
+                "ytd": "23.0",
+                "ytd_prior": "21",
+                "detail": "synthetic-extra",
+            },
+            "grouped_period_totals": {
+                "month": 28,
+                "prior": "26.000",
+                "ytd": 23.0,
+                "ytd_prior": "21.00",
+                "detail": "different-extra-is-allowed",
+            },
+        },
+    }
+
+
+def _reconciliation_mapping():
+    return {
+        "groups": {
+            "revenue": {},
+            "material": {},
+            "depreciation": {},
+            "receivables": {},
+            "unused_balance": {},
+            "ignored_example": {"ignored": True},
+        },
+        "metrics": {
+            "ebitda": ["revenue", "material"],
+            "depreciation": ["depreciation"],
+            "egt": ["revenue", "material", "depreciation"],
+        },
+    }
+
+
+def test_sourced_totals_accept_decimal_equivalence_and_ignored_accounts():
+    report = _report_with_reconciled_totals()
+
+    assert artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_ignored_group_in_report():
+    report = _report_with_reconciled_totals()
+    report["groups"]["ignored_example"] = {
+        "month": "0",
+        "prior": "0",
+        "ytd": "0",
+        "ytd_prior": "0",
+        "account_ids": [],
+        "row_count": 0,
+    }
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("failure", ("missing", "wrong", "nonfinite"))
+def test_sourced_totals_reject_invalid_derived_ratio(failure):
+    report = _report_with_reconciled_totals()
+    if failure == "missing":
+        del report["metrics"]["material_ratio"]
+    elif failure == "wrong":
+        report["metrics"]["material_ratio"]["month"] = "0.6"
+    else:
+        report["metrics"]["material_ratio"]["month"] = "Infinity"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("semantics", ("zero_denominator", "none_numerator"))
+def test_sourced_totals_accept_ratio_zero_and_none_semantics(semantics):
+    report = _report_with_reconciled_totals()
+    mapping = _reconciliation_mapping()
+    if semantics == "zero_denominator":
+        report["groups"]["revenue"]["month"] = "0"
+        report["metrics"]["ebitda"]["month"] = "-10"
+        report["metrics"]["egt"]["month"] = "-12"
+        report["metrics"]["material_ratio"]["month"] = None
+        report["reconciliation"]["mapped_source_period_totals"]["month"] = "8"
+        report["reconciliation"]["grouped_period_totals"]["month"] = "8"
+    else:
+        report["groups"]["material"]["ytd"] = None
+        report["metrics"]["ebitda"]["ytd"] = "58"
+        report["metrics"]["egt"]["ytd"] = "52"
+        report["metrics"]["material_ratio"]["ytd"] = None
+        report["reconciliation"]["mapped_source_period_totals"]["ytd"] = "52"
+        report["reconciliation"]["grouped_period_totals"]["ytd"] = "52"
+        mapping["metrics"]["ebitda"] = ["revenue"]
+        mapping["metrics"]["egt"] = ["revenue", "depreciation"]
+        report["metrics"]["ebitda"] = {
+            "month": "20", "prior": "18", "ytd": "58", "ytd_prior": "54",
+            "account_ids": ["4000"],
+        }
+        report["metrics"]["egt"] = {
+            "month": "18", "prior": "16", "ytd": "52", "ytd_prior": "48",
+            "account_ids": ["4000", "7000"],
+        }
+
+    assert artifacts_module._sourced_totals_pass(report, mapping)
+
+
+def test_sourced_totals_reject_missing_ytd_for_referenced_pnl_group():
+    report = _report_with_reconciled_totals()
+    report["groups"]["material"]["ytd"] = None
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_wrong_direct_balance_metric():
+    report = _report_with_reconciled_totals()
+    report["metrics"]["receivables"]["month"] = "21"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_unknown_metric():
+    report = _report_with_reconciled_totals()
+    report["metrics"]["unknown"] = {
+        "month": "0",
+        "prior": "0",
+        "ytd": "0",
+        "ytd_prior": "0",
+        "account_ids": [],
+    }
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("failure", ("missing", "wrong"))
+def test_sourced_totals_reject_invalid_metric_account_ids(failure):
+    report = _report_with_reconciled_totals()
+    if failure == "missing":
+        del report["metrics"]["ebitda"]["account_ids"]
+    else:
+        report["metrics"]["ebitda"]["account_ids"] = ["5000", "4000"]
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("account_error", ("duplicate", "missing"))
+def test_sourced_totals_reject_incomplete_or_duplicate_account_ids(account_error):
+    report = _report_with_reconciled_totals()
+    if account_error == "duplicate":
+        report["groups"]["material"]["account_ids"] = ["4000"]
+    else:
+        report["groups"]["material"]["account_ids"] = []
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("bad_row_count", (None, 0, True))
+def test_sourced_totals_reject_missing_wrong_or_bool_row_count(bad_row_count):
+    report = _report_with_reconciled_totals()
+    if bad_row_count is None:
+        del report["groups"]["material"]["row_count"]
+    else:
+        report["groups"]["material"]["row_count"] = bad_row_count
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("shape_error", ("phantom_rows", "numeric_empty", "ids_without_rows"))
+def test_sourced_totals_reject_non_producer_group_shape(shape_error):
+    report = _report_with_reconciled_totals()
+    group = report["groups"]["unused_balance"]
+    if shape_error == "phantom_rows":
+        group["row_count"] = 1
+    elif shape_error == "numeric_empty":
+        group["month"] = "0"
+    else:
+        group["account_ids"] = ["9999"]
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_load_acceptance_mapping_fails_closed_on_value_error(tmp_path, monkeypatch):
+    mapping = tmp_path / "account-mapping.json"
+    mapping.write_text("{}", encoding="utf-8")
+
+    def fail_read(_path):
+        raise ValueError("synthetic concurrent replacement")
+
+    monkeypatch.setattr(type(mapping), "read_bytes", fail_read)
+
+    assert (
+        artifacts_module._load_acceptance_mapping(mapping, expected_hash="0" * 64)
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    "totals_name",
+    ("mapped_source_period_totals", "grouped_period_totals"),
+)
+def test_sourced_totals_reject_missing_reconciliation_totals(totals_name):
+    report = _report_with_reconciled_totals()
+    del report["reconciliation"][totals_name]
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_period_mismatch():
+    report = _report_with_reconciled_totals()
+    report["reconciliation"]["grouped_period_totals"]["prior"] = "9.01"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize(
+    ("totals_name", "invalid_value"),
+    (
+        ("mapped_source_period_totals", float("nan")),
+        ("mapped_source_period_totals", True),
+        ("grouped_period_totals", "-Infinity"),
+        ("grouped_period_totals", None),
+    ),
+)
+def test_sourced_totals_reject_invalid_period_values(totals_name, invalid_value):
+    report = _report_with_reconciled_totals()
+    report["reconciliation"][totals_name]["month"] = invalid_value
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize(
+    "totals_name",
+    ("mapped_source_period_totals", "grouped_period_totals"),
+)
+def test_sourced_totals_reject_missing_required_period(totals_name):
+    report = _report_with_reconciled_totals()
+    del report["reconciliation"][totals_name]["ytd_prior"]
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_wrong_kpi_with_equal_global_totals():
+    report = _report_with_reconciled_totals()
+    report["metrics"]["ebitda"]["month"] = "11"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_sourced_totals_reject_compensating_group_errors():
+    report = _report_with_reconciled_totals()
+    report["groups"]["revenue"]["month"] = "21"
+    report["groups"]["depreciation"]["month"] = "-3"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize("missing", ("group", "reference"))
+def test_sourced_totals_reject_missing_mapping_group_or_reference(missing):
+    report = _report_with_reconciled_totals()
+    mapping = _reconciliation_mapping()
+    if missing == "group":
+        del report["groups"]["material"]
+    else:
+        mapping["metrics"]["ebitda"].append("missing-group")
+
+    assert not artifacts_module._sourced_totals_pass(report, mapping)
+
+
+def test_sourced_totals_reject_malformed_group_decimal():
+    report = _report_with_reconciled_totals()
+    report["groups"]["material"]["ytd"] = "not-a-decimal"
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_compute_to_persist_acceptance_reconciles_negative_multipliers(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Monat;Vormonat;YTD;YTD Vorjahr\n"
+        "r1;4000;Umsatz;203500;200000;600000;550000\n"
+        "r2;5000;Material;101750;100000;300000;280000\n"
+        "r3;6000;Personal;98950;97000;290000;275000\n"
+        "r4;7000;Abschreibung;3000;2900;9000;8500\n"
+        "r5;8000;Finanzergebnis;2050;2000;6000;5500\n"
+        "r6;5000;Material zweite Zeile;0;0;0;0\n",
+        encoding="utf-8",
+    )
+    _write_acceptance_mapping(tmp_path)
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"inbox/actuals/demo.csv"}'
+        )
+    )
+    now = datetime.now(timezone.utc)
+
+    result = persist_report_artifacts(
+        tmp_path,
+        report,
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now,
+    )
+
+    assert (
+        report["reconciliation"]["mapped_source_period_totals"]
+        == report["reconciliation"]["grouped_period_totals"]
+    )
+    assert result["acceptance"]["criteria"]["sourced_totals"] is True
+
+
+def test_compute_to_persist_accepts_ratio_without_revenue_group(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Monat;Vormonat;YTD;YTD Vorjahr\n"
+        "r1;5000;Material;10;9;29;27\n"
+        "r2;7000;Abschreibung;2;2;6;6\n",
+        encoding="utf-8",
+    )
+    mapping = _acceptance_mapping()
+    mapping["groups"] = {
+        name: mapping["groups"][name] for name in ("material", "depreciation")
+    }
+    mapping["metrics"] = {
+        "ebitda": ["depreciation"],
+        "depreciation": ["depreciation"],
+        "egt": ["depreciation"],
+    }
+    _write_acceptance_mapping(tmp_path)
+    mapping_path = tmp_path / "project" / "pilot" / "account-mapping.json"
+    mapping_path.write_text(json.dumps(mapping), encoding="utf-8")
+    report = json.loads(
+        ControllingComputeTool(tmp_path).safe_run(
+            '{"operation":"kmu_report","source":"inbox/actuals/demo.csv"}'
+        )
+    )
+    now = datetime.now(timezone.utc)
+    result = persist_report_artifacts(
+        tmp_path,
+        report,
+        {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+        validated_at=now,
+        draft_created_at=now,
+    )
+
+    assert all(
+        report["metrics"]["material_ratio"][period] is None
+        for period in ("month", "prior", "ytd", "ytd_prior")
+    )
+    assert result["acceptance"]["criteria"]["sourced_totals"] is True
+
+
 def test_report_writes_human_and_machine_artifacts_with_acceptance_evidence(
     tmp_path, monkeypatch
 ):
@@ -66,9 +591,7 @@ def test_report_writes_human_and_machine_artifacts_with_acceptance_evidence(
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         "Konto;Monat\n4000;1\n", encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -100,7 +623,7 @@ def test_report_writes_human_and_machine_artifacts_with_acceptance_evidence(
     assert len(evidence["runs"]) == 3
     assert len({run["kpi_result_hash"] for run in evidence["runs"]}) == 1
     assert evidence["runs"][-1]["source_file"] == "inbox/actuals/demo.csv"
-    assert evidence["runs"][-1]["mapped_accounts"] == 2
+    assert evidence["runs"][-1]["mapped_accounts"] == 5
     assert evidence["runs"][-1]["approval_log"] == []
     assert evidence["runs"][-1]["external_action_log"] == []
     assert [run["sequence"] for run in evidence["runs"]] == [1, 2, 3]
@@ -133,9 +656,7 @@ def test_acceptance_history_rejects_duplicated_replayed_runs(tmp_path, monkeypat
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         "Konto;Monat\n4000;1\n", encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -168,9 +689,7 @@ def test_acceptance_uses_authoritative_ledger_after_evidence_rollback(
     source = tmp_path / "inbox" / "actuals" / "demo.csv"
     source_a = "Konto;Monat\n4000;1\n"
     source.write_text(source_a, encoding="utf-8")
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -203,9 +722,7 @@ def test_acceptance_rejects_authoritative_ledger_truncation(tmp_path, monkeypatc
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         "Konto;Monat\n4000;1\n", encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -231,9 +748,7 @@ def test_acceptance_rejects_tampered_middle_ledger_record(tmp_path, monkeypatch)
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         "Konto;Monat\n4000;1\n", encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -262,9 +777,7 @@ def test_acceptance_serializes_parallel_writers(tmp_path, monkeypatch):
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         "Konto;Monat\n4000;1\n", encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     monkeypatch.setattr(
         tool._compute,
@@ -343,9 +856,7 @@ def test_parallel_older_run_cannot_overwrite_newer_shared_reports(
     (tmp_path / "inbox" / "actuals" / "demo.csv").write_text(
         source_a.read_text(encoding="utf-8"), encoding="utf-8"
     )
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     tool = ControllingReportTool(tmp_path)
     b_computed = threading.Event()
 
@@ -419,9 +930,7 @@ def test_artifact_persistence_rejects_source_replacement_after_computation(tmp_p
     (tmp_path / "project" / "pilot").mkdir(parents=True)
     source = tmp_path / "inbox" / "actuals" / "demo.csv"
     source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
-    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
-        '{"schema_version":1}', encoding="utf-8"
-    )
+    _write_acceptance_mapping(tmp_path)
     report = _aggregate_report(tmp_path)
     source.write_text("Konto;Monat\n4000;999\n", encoding="utf-8")
     now = datetime.now(timezone.utc)
