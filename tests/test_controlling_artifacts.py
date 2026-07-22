@@ -106,6 +106,17 @@ def _aggregate_report(root):
             "sign_convention": "source_value_times_group_multiplier",
             "row_identifier": ["account_id"],
         },
+        "period_labels": {
+            "month": "Monat",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
+        "sign_convention": "source_value_times_group_multiplier",
+        "sign_convention_note": (
+            "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
+            "die Kennzahl, negative Werte verringern sie."
+        ),
         "metrics": {
             "ebitda": {"month": "2800", "prior": "3000", "ytd": "10000", "ytd_prior": "-5000", "account_ids": ["4000", "5000", "6000"]},
             "depreciation": {"month": "-3000", "prior": "-2900", "ytd": "-9000", "ytd_prior": "-8500", "account_ids": ["7000"]},
@@ -171,6 +182,17 @@ def _report_with_reconciled_totals():
             "currency": "EUR",
             "sign_convention": "source_value_times_group_multiplier",
         },
+        "period_labels": {
+            "month": "Monat",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
+        "sign_convention": "source_value_times_group_multiplier",
+        "sign_convention_note": (
+            "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
+            "die Kennzahl, negative Werte verringern sie."
+        ),
         "metrics": {
             "ebitda": {
                 "month": "10",
@@ -274,6 +296,12 @@ def _report_with_reconciled_totals():
 
 def _reconciliation_mapping():
     return {
+        "columns": {
+            "month": "Monat",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
         "groups": {
             "revenue": {},
             "material": {},
@@ -294,6 +322,90 @@ def test_sourced_totals_accept_decimal_equivalence_and_ignored_accounts():
     report = _report_with_reconciled_totals()
 
     assert artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda report: report["period_labels"].update(month="Manipuliert"),
+        lambda report: report.update(sign_convention="other"),
+        lambda report: report.update(sign_convention_note="Freier Text"),
+    ],
+    ids=("period-label", "sign-code", "sign-note"),
+)
+def test_sourced_totals_rejects_altered_report_semantics(mutate):
+    report = _report_with_reconciled_totals()
+    mutate(report)
+
+    assert not artifacts_module._sourced_totals_pass(report, _reconciliation_mapping())
+
+
+def test_management_views_use_escaped_mapping_period_labels_and_sign_note(tmp_path):
+    report = {
+        "period_labels": {
+            "month": "<Juni & Ist>",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
+        "sign_convention_note": (
+            "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
+            "die Kennzahl, negative Werte verringern sie."
+        ),
+        "metrics": {},
+        "report_metadata": {},
+    }
+    payload = {
+        "report": report,
+        "management": {"summary": "synthetisch", "alarms": [], "actions": []},
+        "acceptance": {"passed": False, "repeatable_run_count": 0},
+    }
+
+    html = artifacts_module.render_html(payload)
+    markdown = artifacts_module._markdown(payload)
+
+    assert "&lt;Juni &amp; Ist&gt;" in html
+    assert "<Juni & Ist>" not in html
+    assert "&lt;Juni &amp; Ist&gt;" in markdown
+    assert "<Juni & Ist>" not in markdown
+    assert report["sign_convention_note"] in html
+    assert report["sign_convention_note"] in markdown
+
+
+@pytest.mark.parametrize(
+    "hostile",
+    [
+        "<img src=https://invalid.test/x>",
+        "<script>alert(1)</script>",
+        "A&B",
+        "![x](//attacker.invalid/pixel)",
+        "![x](https:\\/\\/attacker.invalid/pixel)",
+        "[Link](https://attacker.invalid/click)",
+    ],
+)
+def test_markdown_period_labels_are_always_plain_text(hostile):
+    payload = {
+        "report": {
+            "period_labels": {period: hostile for period in ("month", "prior", "ytd", "ytd_prior")},
+            "report_metadata": {},
+            "metrics": {},
+        },
+        "management": {"summary": "synthetisch", "alarms": [], "actions": []},
+        "acceptance": {"passed": False, "repeatable_run_count": 0},
+    }
+
+    markdown = artifacts_module._markdown(payload)
+
+    assert "<img" not in markdown
+    assert "<script" not in markdown
+    assert "![x](" not in markdown
+    assert "[Link](" not in markdown
+    if hostile == "A&B":
+        assert "&amp;" in markdown
+    elif hostile.startswith("<"):
+        assert "&lt;" in markdown
+    else:
+        assert "\\[" in markdown and "\\]\\(" in markdown
 
 
 def test_sourced_totals_reject_ignored_group_in_report():

@@ -18,6 +18,7 @@ from core.controlling import artifacts as artifacts_module
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from core.scheduling import ScheduledDecision
 from core.controlling.artifacts import persist_report_artifacts
+from core.controlling.tools import _SIGN_CONVENTION, _SIGN_CONVENTION_NOTE
 
 _CLI_PATH = Path(__file__).resolve().parent.parent / "agent_cli.py"
 _spec = importlib.util.spec_from_file_location("agent_cli", _CLI_PATH)
@@ -269,8 +270,13 @@ class TestPilotStatus:
                 "period_start": "2026-06-01",
                 "period_end": "2026-06-30",
                 "currency": "EUR",
-                "sign_convention": "source_value_times_group_multiplier",
+                "sign_convention": _SIGN_CONVENTION,
             },
+            "period_labels": {
+                period: mapping_definition["columns"][period] for period in periods
+            },
+            "sign_convention": _SIGN_CONVENTION,
+            "sign_convention_note": _SIGN_CONVENTION_NOTE,
             "metrics": {
                 name: {
                     **{

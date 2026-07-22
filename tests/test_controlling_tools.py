@@ -983,6 +983,88 @@ def test_kmu_report_returns_validated_report_metadata_locally(tmp_path):
     assert report["report_metadata"] == mapping["report_metadata"]
 
 
+def test_kmu_report_publishes_mapping_bound_period_labels_and_sign_note(tmp_path):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["columns"].update(
+        month="Juni <Ist>", prior="Mai & Vergleich", ytd="2026 kumuliert", ytd_prior="2025 kumuliert"
+    )
+    _write_strict_mapping(tmp_path, **mapping)
+    (tmp_path / "data" / "actuals.csv").write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Juni <Ist>;Mai & Vergleich;2026 kumuliert;2025 kumuliert\n"
+        "r1;4000;Umsatz;10;9;10;9\n",
+        encoding="utf-8",
+    )
+
+    report = json.loads(ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    ))
+
+    assert report["period_labels"] == {
+        period: mapping["columns"][period]
+        for period in ("month", "prior", "ytd", "ytd_prior")
+    }
+    assert report["sign_convention"] == "source_value_times_group_multiplier"
+    assert report["sign_convention_note"].startswith("Vorzeichen:")
+
+
+@pytest.mark.parametrize(
+    "label",
+    [" Monat", "Monat ", "Monat\nX", "Monat\u0085X", "Monat\u202eX", "Monat\u200bX", "x" * 81],
+)
+def test_kmu_report_rejects_unsafe_period_labels(tmp_path, label):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["columns"]["month"] = label
+    _write_strict_mapping(tmp_path, **mapping)
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert result.startswith("FEHLER")
+
+
+def test_kmu_report_rejects_casefold_duplicate_period_labels(tmp_path):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["columns"]["prior"] = "monat"
+    _write_strict_mapping(tmp_path, **mapping)
+
+    assert ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    ).startswith("FEHLER")
+
+
+@pytest.mark.parametrize("equivalent", ["Cafe\u0301", "Ｍｏｎａｔ"])
+def test_kmu_report_rejects_nfkc_equivalent_column_labels(tmp_path, equivalent):
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    mapping = _strict_mapping()
+    mapping["columns"]["month"] = "Café" if equivalent == "Cafe\u0301" else "Monat"
+    mapping["columns"]["prior"] = equivalent
+    _write_strict_mapping(tmp_path, **mapping)
+
+    assert ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    ).startswith("FEHLER")
+
+
+@pytest.mark.parametrize("label", [" Monat", "Monat ", "Monat\u0085X", "x" * 81])
+def test_mapping_schema_matches_runtime_header_bounds(tmp_path, label):
+    schema = json.loads(
+        (Path(__file__).parents[1] / "presets" / "kmu-controlling" / "pilot" / "account-mapping.schema.json").read_text(encoding="utf-8")
+    )
+    mapping = _strict_mapping()
+    mapping["columns"]["month"] = label
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    _write_strict_mapping(tmp_path, **mapping)
+
+    assert list(Draft202012Validator(schema).iter_errors(mapping))
+    assert ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    ).startswith("FEHLER")
+
+
 def test_kmu_report_rejects_duplicate_row_identifiers(tmp_path):
     _write_strict_actuals(
         tmp_path,

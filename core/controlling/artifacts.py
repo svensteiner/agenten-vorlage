@@ -26,6 +26,10 @@ from core.controlling.tools import (
     PNL_METRIC_NAMES,
     REPORT_PERIODS,
     RESERVED_DERIVED_METRIC_NAMES,
+    _SIGN_CONVENTION,
+    _SIGN_CONVENTION_NOTE,
+    is_safe_report_label,
+    labels_are_unique,
 )
 
 if os.name == "nt":
@@ -80,6 +84,9 @@ def persist_report_artifacts(
             "source",
             "method",
             "report_metadata",
+            "period_labels",
+            "sign_convention",
+            "sign_convention_note",
             "metrics",
             "groups",
             "material_deviations",
@@ -90,6 +97,9 @@ def persist_report_artifacts(
     kpi_hash = _json_hash(
         {
             "report_metadata": sanitized_report.get("report_metadata"),
+            "period_labels": sanitized_report.get("period_labels"),
+            "sign_convention": sanitized_report.get("sign_convention"),
+            "sign_convention_note": sanitized_report.get("sign_convention_note"),
             "metrics": sanitized_report.get("metrics"),
             "reconciliation": sanitized_report.get("reconciliation"),
         }
@@ -814,9 +824,25 @@ def _sourced_totals_pass(
         isinstance(metadata.get(key), str) and metadata[key].strip()
         for key in ("period_start", "period_end", "currency", "sign_convention")
     )
+    mapping_columns = mapping.get("columns")
+    expected_labels = (
+        {period: mapping_columns.get(period) for period in REPORT_PERIODS}
+        if isinstance(mapping_columns, dict)
+        else None
+    )
+    semantics_ok = (
+        isinstance(expected_labels, dict)
+        and all(is_safe_report_label(label) for label in expected_labels.values())
+        and labels_are_unique(list(expected_labels.values()))
+        and report.get("period_labels") == expected_labels
+        and report.get("sign_convention") == _SIGN_CONVENTION
+        and report.get("sign_convention_note") == _SIGN_CONVENTION_NOTE
+        and metadata.get("sign_convention") == _SIGN_CONVENTION
+    )
     return bool(
         counts_ok
         and metadata_ok
+        and semantics_ok
         and _reconciled_report_values_pass(report, reconciliation, mapping)
         and report.get("source")
         and report.get("method")
@@ -1444,11 +1470,25 @@ def _markdown(payload: dict[str, Any]) -> str:
     report = payload["report"]
     management = payload["management"]
     metadata = report.get("report_metadata", {})
+    labels = report.get("period_labels", {})
+    def markdown_cell(value: Any) -> str:
+        return (
+            html.escape(str(value), quote=False)
+            .replace("\\", "\\\\")
+            .replace("|", "\\|")
+            .replace("!", "\\!")
+            .replace("[", "\\[")
+            .replace("]", "\\]")
+            .replace("(", "\\(")
+            .replace(")", "\\)")
+        )
     lines = [
         "# KMU-Controlling-Report",
         "",
         f"Zeitraum: {metadata.get('period_start', '–')} bis {metadata.get('period_end', '–')}",
         f"Währung: {metadata.get('currency', '–')}",
+        "",
+        f"Vorzeichenkonvention: {report.get('sign_convention_note', '–')}",
         "",
         "## Management-Fazit",
         "",
@@ -1456,7 +1496,9 @@ def _markdown(payload: dict[str, Any]) -> str:
         "",
         "## Kennzahlen",
         "",
-        "| Kennzahl | Monat | Vergleich | YTD | YTD Vorjahr |",
+        "| Kennzahl | "
+        + " | ".join(markdown_cell(labels.get(period, "–")) for period in REPORT_PERIODS)
+        + " |",
         "|---|---:|---:|---:|---:|",
     ]
     for name, values in report.get("metrics", {}).items():
@@ -1495,6 +1537,7 @@ def _html(payload: dict[str, Any]) -> str:
     report = payload["report"]
     management = payload["management"]
     metadata = report.get("report_metadata", {})
+    labels = report.get("period_labels", {})
     acceptance = payload["acceptance"]
     def esc(value: Any) -> str:
         return html.escape(str(value), quote=True)
@@ -1525,7 +1568,8 @@ table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{padding:11px;bo
 </style></head><body><main><h1>KMU-Controlling-Report</h1>
 <div class="meta">Zeitraum: {esc(metadata.get('period_start', '–'))} bis {esc(metadata.get('period_end', '–'))} · Währung: {esc(metadata.get('currency', '–'))}</div>
 <p class="summary">{esc(management.get('summary', ''))}</p>
-<table><thead><tr><th>Kennzahl</th><th>Monat</th><th>Vergleich</th><th>YTD</th><th>YTD Vorjahr</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
+<p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p>
+<table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
 <div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions}</ol></section></div>
 <h2>Pilot-Abnahme</h2><span class="badge {status_class}">{status}</span> <span>{acceptance['repeatable_run_count']}/3 identische Wiederholungsläufe</span>
 <footer>Quelle: {esc(report.get('source', '–'))}<br>Methode: {esc(report.get('method', '–'))}</footer>

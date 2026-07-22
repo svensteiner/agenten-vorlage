@@ -3,6 +3,15 @@
   "$id": "https://example.invalid/kmu-controlling/account-mapping.schema.json",
   "title": "KMU Report Account Mapping",
   "type": "object",
+  "$defs": {
+    "safe_column_header": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+      "description": "A trimmed, bounded display label without C0/C1 controls. Runtime validation additionally rejects every Unicode C* category and enforces cross-field NFKC-casefold uniqueness."
+    }
+  },
   "additionalProperties": false,
   "required": ["schema_version", "report_metadata", "source_globs", "columns", "sign_semantics", "groups", "metrics", "thresholds"],
   "properties": {
@@ -39,12 +48,12 @@
       "additionalProperties": false,
       "required": ["account_id", "account_name", "month", "prior", "ytd", "ytd_prior"],
       "properties": {
-        "account_id": {"type": "string", "minLength": 1},
-        "account_name": {"type": "string", "minLength": 1},
-        "month": {"type": "string", "minLength": 1},
-        "prior": {"type": "string", "minLength": 1},
-        "ytd": {"type": "string", "minLength": 1},
-        "ytd_prior": {"type": "string", "minLength": 1}
+        "account_id": {"$ref": "#/$defs/safe_column_header"},
+        "account_name": {"$ref": "#/$defs/safe_column_header"},
+        "month": {"$ref": "#/$defs/safe_column_header"},
+        "prior": {"$ref": "#/$defs/safe_column_header"},
+        "ytd": {"$ref": "#/$defs/safe_column_header"},
+        "ytd_prior": {"$ref": "#/$defs/safe_column_header"}
       }
     },
     "sign_semantics": {

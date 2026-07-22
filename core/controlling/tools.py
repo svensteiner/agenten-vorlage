@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import re
 from typing import Any
+import unicodedata
 from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile, LargeZipFile, ZipFile
 
@@ -27,6 +28,10 @@ _MAX_XLSX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
 _MAX_XLSX_MEMBER_BYTES = 32 * 1024 * 1024
 _SIGN_CONVENTION = "source_value_times_group_multiplier"
 _SIGN_FORMULA = "normalized_value = source_value * group.multiplier"
+_SIGN_CONVENTION_NOTE = (
+    "Vorzeichen: Quellwert × Gruppen-Multiplikator; positive Werte erhöhen "
+    "die Kennzahl, negative Werte verringern sie."
+)
 _CALCULATION_VERSION = "kmu-report-v1"
 PNL_METRIC_NAMES = frozenset(
     {
@@ -54,6 +59,27 @@ RESERVED_DERIVED_METRIC_NAMES = frozenset(
     metric_name
     for metric_name, *_groups in (*DERIVED_RATIO_METRICS, *DIRECT_BALANCE_METRICS)
 )
+
+
+def is_safe_report_label(value: Any) -> bool:
+    """Return whether a source header is safe to publish in a report view."""
+    return (
+        isinstance(value, str)
+        and value == value.strip()
+        and 0 < len(value) <= 80
+        and not any(unicodedata.category(char).startswith("C") for char in value)
+    )
+
+
+def labels_are_unique(values: list[Any]) -> bool:
+    """Compare report labels using the same Unicode identity seen by readers."""
+    return len(
+        {
+            unicodedata.normalize("NFKC", value).casefold()
+            for value in values
+            if isinstance(value, str)
+        }
+    ) == len(values)
 
 
 class _InstanceInputCapability:
@@ -250,6 +276,11 @@ class ControllingComputeTool(_InstanceInputCapability):
             "source": self._source_label(path),
             "method": "mapping-defined account groups; month/prior/ytd aggregation",
             "report_metadata": mapping["report_metadata"],
+            "period_labels": {
+                period: mapping["columns"][period] for period in REPORT_PERIODS
+            },
+            "sign_convention": _SIGN_CONVENTION,
+            "sign_convention_note": _SIGN_CONVENTION_NOTE,
             "metrics": {k: self._public(v) for k, v in metrics.items()},
             "groups": {
                 k: self._public(v, include_row_count=True) for k, v in groups.items()
@@ -333,17 +364,9 @@ class ControllingComputeTool(_InstanceInputCapability):
             raw.get(k) for k in ("columns", "groups", "metrics", "thresholds")
         )
         required = {"account_id", "account_name", *_PERIODS, "ytd_prior"}
-        if (
-            not isinstance(columns, dict)
-            or set(columns) != required
-            or not all(
-                isinstance(value, str) and value.strip()
-                for value in columns.values()
-            )
-        ):
+        if not isinstance(columns, dict) or set(columns) != required:
             raise ValueError("Konten-Mapping hat keine vollständige Spaltenzuordnung.")
-        semantic_headers = [columns[name] for name in sorted(required)]
-        if len(set(semantic_headers)) != len(semantic_headers):
+        if not self._valid_column_headers(columns):
             raise ValueError(
                 "Jede semantische Spalte muss eindeutig zugeordnet sein."
             )
@@ -458,6 +481,15 @@ class ControllingComputeTool(_InstanceInputCapability):
             "_mapping_path": mapping_path,
             "_mapping_version": hashlib.sha256(mapping_bytes).hexdigest(),
         }
+
+    @staticmethod
+    def _valid_column_headers(columns: dict[str, Any]) -> bool:
+        """Reject ambiguous or unsafe source headers before they become report labels."""
+        headers = list(columns.values())
+        return (
+            all(is_safe_report_label(value) for value in headers)
+            and labels_are_unique(headers)
+        )
 
     @staticmethod
     def _file_sha256(path: Path, *, max_bytes: int) -> str:
