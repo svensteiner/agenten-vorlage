@@ -10,6 +10,9 @@ import core.scheduling as scheduling
 from core.scheduling import AdaptiveScheduler, run_scheduled_cycle
 
 
+_MISSING_SUCCESS = object()
+
+
 def _write_schedule(root: Path, **overrides) -> Path:
     config = {
         "version": 1,
@@ -146,9 +149,91 @@ def test_parametrized_cycle_uses_instance_root_and_orchestrator(tmp_path: Path):
         tools={"read": object()},
     )
     assert outcome.should_enqueue
+    assert outcome.execution_success is True
     assert calls and "instance-agent" in calls[0][0]
     assert calls[0][2] == outcome.request_id
     assert (tmp_path / "state" / "scheduler-state.json").is_file()
+
+
+def test_failed_due_cycle_records_failed_execution_outcome(tmp_path: Path):
+    (tmp_path / "incoming").mkdir()
+    (tmp_path / "incoming" / "report.csv").write_text("safe", encoding="utf-8")
+    _write_schedule(tmp_path)
+
+    class FailedOrchestrator:
+        def run(self, task, *, tools, request_id):
+            return type("Result", (), {"success": False})()
+
+    outcome = run_scheduled_cycle(
+        root=tmp_path,
+        agent_config={"agent_name": "instance-agent"},
+        orchestrator=FailedOrchestrator(),
+        tools={"read": object()},
+    )
+    state = json.loads(
+        (tmp_path / "state" / "scheduler-state.json").read_text(encoding="utf-8")
+    )
+
+    assert outcome.execution_success is False
+    assert state["last_result"] == "failed"
+
+
+@pytest.mark.parametrize("result_success", (True, False), ids=("success", "failure"))
+def test_cycle_marks_execution_unknown_when_result_recording_fails(
+    tmp_path: Path, monkeypatch, result_success
+):
+    (tmp_path / "incoming").mkdir()
+    (tmp_path / "incoming" / "report.csv").write_text("safe", encoding="utf-8")
+    _write_schedule(tmp_path)
+
+    class Orchestrator:
+        def run(self, task, *, tools, request_id):
+            return type("Result", (), {"success": result_success})()
+
+    monkeypatch.setattr(
+        AdaptiveScheduler, "record_result", lambda _self, **_kwargs: False
+    )
+    outcome = run_scheduled_cycle(
+        root=tmp_path,
+        agent_config={"agent_name": "instance-agent"},
+        orchestrator=Orchestrator(),
+        tools={"read": object()},
+    )
+
+    assert outcome.execution_success is None
+
+
+@pytest.mark.parametrize(
+    "raw_success",
+    ["false", 1, None, _MISSING_SUCCESS],
+    ids=("string", "integer", "none", "missing"),
+)
+def test_cycle_requires_literal_true_or_records_failure(
+    tmp_path: Path, raw_success
+):
+    (tmp_path / "incoming").mkdir()
+    (tmp_path / "incoming" / "report.csv").write_text("safe", encoding="utf-8")
+    _write_schedule(tmp_path)
+
+    class InvalidResultOrchestrator:
+        def run(self, task, *, tools, request_id):
+            result = type("Result", (), {})()
+            if raw_success is not _MISSING_SUCCESS:
+                result.success = raw_success
+            return result
+
+    outcome = run_scheduled_cycle(
+        root=tmp_path,
+        agent_config={"agent_name": "instance-agent"},
+        orchestrator=InvalidResultOrchestrator(),
+        tools={"read": object()},
+    )
+    state = json.loads(
+        (tmp_path / "state" / "scheduler-state.json").read_text(encoding="utf-8")
+    )
+
+    assert outcome.execution_success is False
+    assert state["last_result"] == "failed"
 
 
 def test_prompt_never_exposes_tenant_paths_or_hashes(tmp_path: Path):
@@ -253,8 +338,10 @@ def test_missing_data_cycle_is_successful_toolless_and_not_retried(tmp_path: Pat
     )
 
     assert first.should_enqueue and first.reason == "missing_data"
+    assert first.execution_success is True
     assert repeated.should_enqueue is False
     assert repeated.reason == "already_enqueued"
+    assert repeated.execution_success is None
     assert len(calls) == 1
     assert calls[0][1] == {}
     state = json.loads(

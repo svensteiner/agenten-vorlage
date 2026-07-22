@@ -39,6 +39,7 @@ class ScheduledDecision:
     reason: str
     request_id: str | None = None
     task_text: str | None = None
+    execution_success: bool | None = None
 
 
 class ScheduledOrchestrator(Protocol):
@@ -755,8 +756,16 @@ def run_scheduled_cycle(
     except Exception:
         scheduler.record_result(success=False)
         raise
-    scheduler.record_result(success=bool(result.success))
-    return decision
+    raw_success = getattr(result, "success", None)
+    execution_success = raw_success is True
+    recorded = scheduler.record_result(success=execution_success)
+    return ScheduledDecision(
+        decision.should_enqueue,
+        decision.reason,
+        decision.request_id,
+        decision.task_text,
+        execution_success if recorded else None,
+    )
 
 
 def _renew_lease_until_stopped(scheduler: AdaptiveScheduler, stop: threading.Event) -> None:

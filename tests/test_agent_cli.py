@@ -1378,6 +1378,50 @@ class TestInstanceFactory:
         )
         assert decision.reason == "idle"
 
+    @pytest.mark.parametrize(
+        ("decision", "expected"),
+        [
+            (ScheduledDecision(True, "new_input", execution_success=True), ("running", "success")),
+            (ScheduledDecision(True, "new_input", execution_success=False), ("error", "error")),
+            (ScheduledDecision(True, "new_input"), ("error", "error")),
+            (ScheduledDecision(False, "idle"), ("running", "idle")),
+            (ScheduledDecision(False, "already_enqueued"), ("running", "already_enqueued")),
+        ],
+        ids=("success", "failure", "unknown", "idle", "already-enqueued"),
+    )
+    def test_decision_loop_health_requires_successful_execution(
+        self, decision, expected
+    ):
+        assert agent_cli._decision_loop_health(decision) == expected
+
+    def test_instance_loop_writes_error_for_failed_dispatch(
+        self, tmp_path, monkeypatch
+    ):
+        writes = []
+        monkeypatch.setattr(
+            agent_cli,
+            "_run_instance_schedule_cycle",
+            lambda *_args: ScheduledDecision(
+                True, "new_input", execution_success=False
+            ),
+        )
+        monkeypatch.setattr(
+            agent_cli,
+            "_write_loop_health",
+            lambda _root, status, result: writes.append((status, result)),
+        )
+        monkeypatch.setattr(
+            agent_cli.time,
+            "sleep",
+            lambda _seconds: (_ for _ in ()).throw(KeyboardInterrupt),
+        )
+
+        agent_cli._run_instance_loop(
+            tmp_path, {"loop_interval_minutes": 60}, "acme", object()
+        )
+
+        assert writes == [("error", "error"), ("stopped", "stopped")]
+
     def test_fresh_kmu_missing_data_cycle_records_success_and_waits(
         self, tmp_path, monkeypatch
     ):
@@ -1537,7 +1581,7 @@ class TestInstanceFactory:
     ):
         decisions = iter(
             [
-                ScheduledDecision(True, "missing_data"),
+                ScheduledDecision(True, "missing_data", execution_success=True),
                 ScheduledDecision(False, "already_enqueued"),
                 ScheduledDecision(False, "schedule_disabled"),
                 ScheduledDecision(False, "frozen_after_failures"),

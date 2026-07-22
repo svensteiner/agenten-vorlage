@@ -2133,7 +2133,11 @@ def _write_loop_health(
 
 def _decision_loop_health(decision: ScheduledDecision) -> tuple[str, str]:
     """Map only exhaustive, structurally consistent scheduler outcomes healthy."""
-    if decision.should_enqueue and decision.reason in LOOP_WORK_REASONS:
+    if (
+        decision.should_enqueue
+        and decision.reason in LOOP_WORK_REASONS
+        and decision.execution_success is True
+    ):
         return "running", "success"
     if not decision.should_enqueue and decision.reason in {"idle", "already_enqueued"}:
         return "running", decision.reason
