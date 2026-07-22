@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from multiprocessing import get_context
@@ -763,6 +763,47 @@ def test_report_writes_human_and_machine_artifacts_with_acceptance_evidence(
     assert signed_status["passed"] is True
     assert signed_status["repeatable_run_count"] == 3
     assert signed_status["sequence"] == 3
+
+
+def test_repeatable_runs_require_timely_criteria_for_every_counted_run(tmp_path):
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    management = {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]}
+    now = datetime.now(timezone.utc)
+
+    for offset in (0, 1):
+        persist_report_artifacts(
+            tmp_path, report, management,
+            validated_at=now + timedelta(minutes=offset),
+            draft_created_at=now + timedelta(minutes=offset, seconds=301),
+        )
+    timely = persist_report_artifacts(
+        tmp_path, report, management,
+        validated_at=now + timedelta(minutes=2),
+        draft_created_at=now + timedelta(minutes=2, seconds=1),
+    )
+
+    assert timely["acceptance"]["repeatable_run_count"] == 1
+    assert timely["acceptance"]["passed"] is False
+    status = read_acceptance_status(tmp_path)
+    assert status["repeatable_run_count"] == 1
+    assert status["passed"] is False
+
+    for offset in (3, 4):
+        timely = persist_report_artifacts(
+            tmp_path, report, management,
+            validated_at=now + timedelta(minutes=offset),
+            draft_created_at=now + timedelta(minutes=offset, seconds=1),
+        )
+
+    assert timely["acceptance"]["repeatable_run_count"] == 3
+    assert timely["acceptance"]["passed"] is True
+    status = read_acceptance_status(tmp_path)
+    assert status["repeatable_run_count"] == 3
+    assert status["passed"] is True
 
 
 def test_acceptance_status_is_read_only_before_first_run(tmp_path):

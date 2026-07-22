@@ -50,6 +50,9 @@ _ACCEPTANCE_KEY_BYTES = 32
 _ACCEPTANCE_LOCK_WAIT_SECONDS = 5
 _LOCAL_PILOT_TOOLS = {"read", "compute", "report"}
 _REQUIRED_APPROVAL_TERMS = {"external communication", "send", "publish"}
+_REQUIRED_REPEATABLE_CRITERIA = frozenset(
+    {"sourced_totals", "draft_latency", "approval_safety"}
+)
 _ACCEPTANCE_THREAD_LOCK = threading.Lock()
 
 
@@ -297,14 +300,16 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
 
     signed_criteria = runs[-1].get("acceptance_criteria")
-    required = {"sourced_totals", "draft_latency", "approval_safety"}
     criteria = (
         {
             name: signed_criteria.get(name) is True
-            for name in required
+            for name in _REQUIRED_REPEATABLE_CRITERIA
         }
-        if isinstance(signed_criteria, dict) and set(signed_criteria) == required
-        else {name: False for name in required}
+        if (
+            isinstance(signed_criteria, dict)
+            and set(signed_criteria) == _REQUIRED_REPEATABLE_CRITERIA
+        )
+        else {name: False for name in _REQUIRED_REPEATABLE_CRITERIA}
     )
     repeatable_count = _consecutive_equal_runs(runs)
     return {
@@ -779,7 +784,10 @@ def _consecutive_equal_runs(runs: list[dict[str, Any]]) -> int:
             tuple(run.get(key) for key in keys) != expected
             or not _valid_policy_evidence(run)
             or not isinstance(criteria, dict)
-            or criteria.get("approval_safety") is not True
+            or not all(
+                criteria.get(name) is True
+                for name in _REQUIRED_REPEATABLE_CRITERIA
+            )
         ):
             break
         count += 1
