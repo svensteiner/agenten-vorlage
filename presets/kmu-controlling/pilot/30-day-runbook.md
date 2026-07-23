@@ -42,7 +42,11 @@ einer servicekontrollierten Parentkette neu zu provisionieren.
 ## Tage 15–21: Fachliche Abnahme
 
 - Abweichungen mit Buchhaltung oder Controlling nachvollziehen.
-- Optional Budget und OP-Liste ergänzen; Einschränkungen ohne diese Daten prüfen.
+- Keine Budget- oder OP-Dateien für diesen Pilotlauf bereitstellen oder im
+  Bericht erwarten: Der aktuelle Pilot liest und analysiert sie auch bei
+  Vorliegen nicht. Budgetabweichung und Forderungsalterung müssen sichtbar als
+  nicht verfügbar / nicht verarbeitet erscheinen. Eine zukünftige Aktivierung
+  erfordert einen separat versionierten und fachlich reconcilierten Umfang.
 - Freigabeprozess mit einem nicht versendeten Testentwurf durchführen.
 
 ## Tage 22–27: Betriebsprobe
