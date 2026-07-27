@@ -370,7 +370,7 @@ body {
 }
 .pill:hover { border-color: var(--brand); color: var(--brand-ink); }
 
-/* Handlungs-Abschluss: „An Vorstand senden" / „Als Briefing exportieren" */
+/* Freigabe-sicherer Abschluss: intern vorbereiten oder lokal herunterladen */
 .block.actions { border-top: 1px solid var(--line); margin-top: 4px; }
 .act-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .act {
@@ -761,3 +761,108 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .search-ov, .search-panel { animation: none; }
 }
+
+/* ---------- Responsive laptop and small-screen shell ---------- */
+@media (max-width: 1180px) and (min-width: 821px) {
+  .app { grid-template-columns: 88px minmax(0, 1fr); }
+  .sidebar { padding: 18px 10px; overflow-x: hidden; }
+  .brand { justify-content: center; padding: 4px 0 16px; }
+  .brand > div:last-child,
+  .nav-label,
+  .company-card,
+  .search-trigger .st,
+  .search-trigger .sk,
+  .nav-item > span:last-child { display: none; }
+  .search-trigger { justify-content: center; padding: 9px; }
+  .search-trigger .si { font-size: 16px; }
+  .nav-item { justify-content: center; padding: 9px 0; }
+  .nav-item .ic { width: 34px; height: 34px; }
+  .topbar { padding-inline: 20px; }
+  .topbar-right { gap: 10px; }
+  .wrap { width: 100%; padding-inline: clamp(18px, 3vw, 28px); }
+  .composer { padding-inline: clamp(18px, 3vw, 28px); }
+}
+
+@media (max-width: 960px) {
+  .topbar { padding-inline: 16px; }
+  .topbar-right { gap: 8px; }
+  .topbar .status { width: 10px; gap: 0; overflow: hidden; white-space: nowrap; }
+  .demo-btn .dl,
+  .reset-btn .rl { display: none; }
+  .demo-btn,
+  .reset-btn { min-width: 42px; min-height: 38px; justify-content: center; padding-inline: 12px; }
+  .demo-btn .dprog { margin-left: 0; }
+  .wrap { padding-top: 24px; }
+  .hero { padding-top: 18px; }
+}
+
+@media (max-height: 760px) {
+  .company-card { display: none; }
+  .sidebar { padding-top: 12px; padding-bottom: 12px; }
+  .brand { padding-bottom: 10px; }
+  .nav-label { padding-top: 7px; }
+  .nav-item { padding-block: 7px; }
+  .wrap { padding-top: 20px; padding-bottom: 28px; }
+  .hero { padding-top: 10px; }
+  .composer { padding-top: 10px; padding-bottom: 10px; }
+  .composer .hint { font-size: 10px; line-height: 1.2; margin-top: 4px; }
+  .search-ov { padding-top: 4vh; }
+  .search-panel { max-height: 90vh; }
+  .onboard-card { top: 66px; max-height: calc(100vh - 82px); overflow-y: auto; }
+}
+
+@media (max-width: 820px) {
+  .app { display: block; height: 100vh; }
+  .main { height: calc(100vh - 68px); }
+  .sidebar {
+    display: flex; position: fixed; z-index: 35;
+    left: 0; right: 0; bottom: 0; height: 68px;
+    padding: 6px 8px; overflow-x: auto; overflow-y: hidden;
+    flex-direction: row; align-items: stretch;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+  }
+  .brand,
+  .search-trigger,
+  .company-card,
+  .nav-label { display: none; }
+  .sidebar nav { display: flex; flex: 1; min-width: 520px; gap: 2px; }
+  .nav-item {
+    min-width: 70px; flex: 1; justify-content: center;
+    flex-direction: column; gap: 1px; padding: 3px 5px;
+    font-size: 10px; text-align: center;
+  }
+  .nav-item .ic { width: 28px; height: 28px; font-size: 13px; }
+  .topbar { height: 56px; }
+  .topbar .title { font-size: 14px; }
+  .topbar .title small { display: none; }
+  .wrap { padding: 18px 16px 26px; }
+  .composer { padding: 10px 14px; }
+  .suggestions, .doc-grid, .sources-grid, .agent-grid { grid-template-columns: 1fr; }
+  .viewer { width: 100%; max-width: none; }
+  .viewer .vbody { padding: 12px; }
+  .paper { padding: 22px 18px 26px; }
+  .search-ov { padding: 18px 12px; align-items: center; }
+  .search-panel { max-height: calc(100vh - 104px); }
+  .onboard-card { left: 16px; right: 16px; top: 68px; width: auto; max-width: none; }
+  .onboard-card .ob-arrow { display: none; }
+}
+
+@media (max-width: 560px) {
+  .topbar .title { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-right { gap: 6px; }
+  .demo-btn, .reset-btn { min-width: 38px; min-height: 36px; padding-inline: 10px; }
+  .hero h1 { font-size: 25px; }
+  .hero p { font-size: 14px; }
+  .answer .head { flex-wrap: wrap; padding-inline: 14px; }
+  .answer .head .speed { order: 3; margin-left: 36px; }
+  .msg.user .bubble { max-width: 92%; }
+  .paper .lh { flex-direction: column; }
+  .paper .lh .ref { text-align: left; }
+  .paper .stamp { position: static; display: inline-block; margin: 12px 0 4px; transform: rotate(-4deg); }
+  .paper .li-table { font-size: 11px; }
+  .paper .li-table th, .paper .li-table td { padding-inline: 5px; }
+  .sp-row .sp-side { display: none; }
+  .sp-foot .sp-hint { display: none; }
+}
+
+@media (max-width: 960px) { .topbar .status { display: none; } }

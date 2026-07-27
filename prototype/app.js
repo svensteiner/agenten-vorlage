@@ -153,12 +153,12 @@
       prog.textContent = `${i + 1} / ${list.length}`;
       await typeIntoComposer(list[i].question, token);
       if (token !== demo.token) return;
-      await ask(list[i].question);
+      await ask(list[i].question, () => token !== demo.token);
       if (token !== demo.token) return;
       // Letztes Szenario = Money-Shot: längere Schluss-Pause, damit sich der
       // empfohlene Agent hands-free selbst dazubucht (~1,25 s Wartezeit + ~0,9 s
       // Einrichtung) und die grüne „Aktiviert"-Bestätigung sichtbar stehen bleibt.
-      await sleep(i === list.length - 1 ? 3400 : 2800); // Lesepause
+      await sleep(i === list.length - 1 ? 9500 : 8000); // ruhige Lesepause
     }
     if (token === demo.token) resetDemoUi();
   }
@@ -207,9 +207,9 @@
       ta.value = text.slice(0, i + 1);
       ta.style.height = "auto";
       ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
-      await sleep(28);
+      await sleep(70);
     }
-    await sleep(440);
+    await sleep(1000);
     ta.value = "";
     ta.style.height = "auto";
   }
@@ -277,6 +277,8 @@
     MODULES.forEach((m) => {
       const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>`);
       btn.dataset.key = m.key;
+      btn.setAttribute("aria-label", m.label);
+      btn.title = `${m.label}: ${m.hint}`;
       btn.onclick = () => selectModule(m.key);
       nav.appendChild(btn);
     });
@@ -327,8 +329,8 @@
     const hero = el("div", "hero");
     hero.innerHTML =
       `<div class="spark">✦</div>` +
-      `<h1>Ihr Unternehmenswissen — sofort abrufbar</h1>` +
-      `<p>Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht Verträge, Rechnungen, Berichte und Richtlinien der ${COMPANY.name} und antwortet mit belastbaren Quellen.</p>`;
+      `<h1>Ihre Zahlen — sofort verständlich</h1>` +
+      `<p>Fragen Sie nach Kosten, Projekten oder Rechnungen. AI Studio erklärt die Zusammenhänge und zeigt für jede Kennzahl die verwendeten Belege.</p>`;
     wrap.appendChild(hero);
 
     const grid = el("div", "suggestions");
@@ -345,9 +347,11 @@
   }
 
   // ---------- Frage stellen ----------
-  async function ask(text) {
+  async function ask(text, isCancelled) {
     text = (text || "").trim();
-    if (!text) return;
+    if (!text) return false;
+    const cancelled = typeof isCancelled === "function" ? isCancelled : () => false;
+    if (cancelled()) return false;
 
     // Falls der Hero noch da ist: Chat-Ansicht in „aktiven" Modus versetzen
     if (currentModule !== "wissen") selectModule("wissen");
@@ -372,19 +376,19 @@
       ? ["Durchsuche Wissensbasis…", "Prüfe Zugriffsrechte…", "Werte relevante Dokumente aus…", "Formuliere Antwort mit Quellen…"]
       : ["Durchsuche Wissensbasis…", "Prüfe Zugriffsrechte…", "Werte Treffer aus…"];
     for (const s of steps) {
+      if (cancelled()) { thinking.remove(); return false; }
       $(".steps", t).textContent = s;
       await sleep(360);
+      if (cancelled()) { thinking.remove(); return false; }
     }
     thinking.remove();
+    if (cancelled()) return false;
 
-    if (scenario) {
-      chatState.push({ role: "ai", answer: scenario.answer, question: text });
-      await streamAnswer(wrap, scenario.answer);
-    } else {
-      const fallback = fallbackAnswer(text);
-      chatState.push({ role: "ai", answer: fallback, question: text });
-      await streamAnswer(wrap, fallback);
-    }
+    const answer = scenario ? scenario.answer : fallbackAnswer(text);
+    const completed = await streamAnswer(wrap, answer, cancelled);
+    if (!completed) return false;
+    chatState.push({ role: "ai", answer, question: text });
+    return true;
   }
 
   function userBubble(text) {
@@ -432,7 +436,7 @@
   }
 
   // ---------- Antwort streamen ----------
-  async function streamAnswer(wrap, answer) {
+  async function streamAnswer(wrap, answer, isCancelled) {
     const msg = el("div", "msg");
     const card = el("div", "answer");
     // Konfidenz nur zeigen, wenn die Antwort eine ist (Wissens-Lookup). Der
@@ -476,7 +480,8 @@
     }
 
     // Text zeichenweise „tippen" (HTML-sicher: wir tippen den fertigen HTML-String schrittweise)
-    await typeHtml(textEl, answer.text);
+    const completed = await typeHtml(textEl, answer.text, isCancelled);
+    if (!completed) { msg.remove(); return false; }
     textEl.classList.remove("cursor");
 
     // Kernzahlen in der Antwort dezent hochzählen (18,4 %, 87.584 €, -12,0 % …).
@@ -493,6 +498,7 @@
     appendAgents(card, answer);
     revealBlocks(card);
     scrollBottom();
+    return true;
   }
 
   // Lässt die strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte →
@@ -519,18 +525,22 @@
     return Math.round(s * 10) / 10;
   }
 
-  async function typeHtml(node, html) {
+  async function typeHtml(node, html, isCancelled) {
     // Tippt sichtbaren Text schrittweise; setzt am Ende das volle HTML.
+    const cancelled = typeof isCancelled === "function" ? isCancelled : () => false;
     const plain = html.replace(/<[^>]+>/g, "");
-    const chunk = Math.max(2, Math.round(plain.length / 60));
+    const chunk = Math.max(1, Math.ceil(plain.length / 180));
     let shown = "";
     for (let i = 0; i < plain.length; i += chunk) {
+      if (cancelled()) return false;
       shown = plain.slice(0, i + chunk);
       node.textContent = shown;
       scrollBottom();
-      await sleep(16);
+      await sleep(42);
     }
+    if (cancelled()) return false;
     node.innerHTML = html;
+    return true;
   }
 
   function appendReasoning(card, reasoning) {
@@ -654,30 +664,27 @@
     card.appendChild(b);
   }
 
-  // ---------- Handlungs-Abschluss ("und dann?") ----------
-  // Macht aus der belegten Auskunft ein weiterreichbares Arbeitsergebnis:
-  // ein Klick auf „An Vorstand senden" / „Als Briefing exportieren" zeigt eine
-  // überzeugende Bestätigung. Rein UI — keine echten Mails/Exporte. Erscheint
-  // nur bei belegten Antworten (mind. eine Quelle), nicht bei Leer-Fallbacks.
+  // ---------- Freigabe-sicherer Handlungsabschluss ----------
+  // Aus einer belegten Antwort wird ein lokales Arbeitsergebnis. Die Demo
+  // sendet niemals extern: Sie bereitet eine interne Freigabe vor oder lädt
+  // eine lokale Textdatei herunter.
   function appendActions(card, answer) {
     if (!answer.sources || !answer.sources.length) return;
     const b = el("div", "block actions");
-    b.appendChild(el("div", "block-title", "↗ Ergebnis weiterreichen"));
+    b.appendChild(el("div", "block-title", "✓ Nächster Schritt"));
     const row = el("div", "act-row");
-    const send = el("button", "act primary", `<span class="ai-ic">✉</span>An Vorstand senden`);
-    const exp = el("button", "act", `<span class="ai-ic">⤓</span>Als Briefing exportieren`);
-    row.appendChild(send);
+    const approve = el("button", "act primary", `<span class="ai-ic">✓</span>Freigabe vorbereiten`);
+    const exp = el("button", "act", `<span class="ai-ic">⇩</span>Lokal herunterladen`);
+    row.appendChild(approve);
     row.appendChild(exp);
     b.appendChild(row);
     card.appendChild(b);
 
     const num = briefingNumber(answer);
-    send.onclick = () => runAction(row, "send", num);
-    exp.onclick = () => runAction(row, "export", num);
+    approve.onclick = () => runAction(row, "approval", num, answer);
+    exp.onclick = () => runAction(row, "export", num, answer);
   }
 
-  // Deterministische Briefing-Nummer aus dem Antwortinhalt (im Video reproduzierbar,
-  // keine Zufallszahl — konsistent mit dem Tempo-Signal aus Zyklus 8).
   function briefingNumber(answer) {
     const base = (answer.text || "") + "|" + (answer.confidence || 0);
     let h = 0;
@@ -691,29 +698,63 @@
     } catch (e) { return "8. Juli 2026"; }
   }
 
-  // Spielt die kurze Vorbereitungs-Animation ab und ersetzt die Buttons durch
-  // eine Erfolgs-Bestätigung — der Schlussmoment der Demo-Story.
-  async function runAction(row, kind, num) {
-    const pending = kind === "send" ? "Briefing wird zusammengestellt…" : "PDF wird erzeugt…";
+  function downloadBriefing(answer, num) {
+    const scratch = document.createElement("div");
+    scratch.innerHTML = answer.text || "";
+    const summary = (scratch.textContent || "").replace(/\s+/g, " ").trim();
+    const sources = (answer.sources || [])
+      .map((source) => DOCS[source.docId] && DOCS[source.docId].title)
+      .filter(Boolean)
+      .map((title) => `- ${title}`)
+      .join("\n");
+    const content = [
+      "DEMO — ALLE INHALTE FIKTIV",
+      "",
+      `AI Studio · internes Briefing BRF-2026-${num}`,
+      COMPANY.name,
+      todayGerman(),
+      "",
+      summary,
+      "",
+      "Quellen:",
+      sources,
+      "",
+      "Nur intern · keine externe Aktion ausgeführt."
+    ].join("\n");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aistudio-briefing-2026-${num}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  async function runAction(row, kind, num, answer) {
+    if (kind === "export") downloadBriefing(answer, num);
+    const pending = kind === "approval"
+      ? "Freigabeunterlage wird vorbereitet…"
+      : "Lokale Datei wird erstellt…";
     row.innerHTML = `<span class="act-pending"><span class="spinner"></span>${pending}</span>`;
     await sleep(reducedMotion() ? 0 : 820);
 
     const done = el("div", "act-done");
-    if (kind === "send") {
+    if (kind === "approval") {
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
-        `<span class="ad-txt"><b>Briefing an den Vorstand gesendet</b>` +
-        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(COMPANY.name)} · soeben · Ref. BRF-2026-${num}</span></span>`;
+        `<span class="ad-txt"><b>Zur internen Freigabe vorbereitet</b>` +
+        `<span class="ad-sub">Keine externe Aktion ausgeführt · Ref. BRF-2026-${num}</span></span>`;
     } else {
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
-        `<span class="ad-txt"><b>Briefing als PDF exportiert</b>` +
-        `<span class="ad-sub">meridian-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
+        `<span class="ad-txt"><b>Lokales Briefing heruntergeladen</b>` +
+        `<span class="ad-sub">aistudio-briefing-2026-${num}.txt · ${escapeHtml(todayGerman())}</span></span>`;
     }
     row.replaceWith(done);
     scrollBottom();
   }
-
   // ---------- Money-Shot: „Agenten dazubuchen" ----------
   // Der Abschluss der Story und der Verkaufsmoment des Abos: Die Wissensbasis
   // steht — jetzt mietet der Kunde spezialisierte KI-Agenten obendrauf, wie neue

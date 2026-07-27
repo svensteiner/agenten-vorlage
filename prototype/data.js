@@ -27,7 +27,7 @@ const COMPANY = {
 
 // Module in der Seitenleiste. `key` verbindet Dokumente & Szenarien mit dem Modul.
 const MODULES = [
-  { key: "wissen", label: "Wissen", icon: "◆", hint: "Frag alles über dein Unternehmenswissen" },
+  { key: "wissen", label: "Cockpit", icon: "◆", hint: "Kennzahlen, Fragen und Belege auf einen Blick" },
   { key: "finanzen", label: "Finanzen", icon: "€", hint: "Rechnungen, Kosten, Quartalszahlen" },
   { key: "audit", label: "Audit", icon: "✓", hint: "Belege, Nachweise, Compliance" },
   { key: "hr", label: "HR", icon: "☺", hint: "Richtlinien, Verträge, Personal" },
