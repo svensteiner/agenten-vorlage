@@ -58,9 +58,13 @@ SETTINGS_SPEC: list[dict[str, Any]] = [
         "key": "model_provider",
         "label": "KI-Anbieter",
         "type": "choice",
-        "options": [["openai", "OpenAI"], ["anthropic", "Anthropic (Claude)"]],
-        "help": "Welcher Modell-Anbieter genutzt wird. Für private/regulierte Daten "
-        "einen in-boundary/privaten Endpunkt bevorzugen.",
+        "options": [
+            ["azure", "Azure (Standard)"],
+            ["onprem", "Kunden-LLM / eigener Server"],
+        ],
+        "help": "Azure ist der Standard. Das Kunden-LLM nutzt einen privaten, "
+        "OpenAI-kompatiblen Endpunkt in einer isolierten Kundenumgebung und "
+        "fällt nicht automatisch auf Azure zurück.",
         "group": "Modell",
     },
     {
@@ -154,7 +158,7 @@ def load_settings() -> dict[str, Any]:
         key = field["key"]
         if key == "model_provider":
             # Derived: which provider block is active.
-            values[key] = config.get("model_provider", "openai")
+            values[key] = config.get("model_provider", "azure")
         else:
             values[key] = config.get(key, _default_for(field))
     return values

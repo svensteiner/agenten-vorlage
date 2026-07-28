@@ -19,6 +19,7 @@ system easier to extend.
 - **Deploy:** `scripts/deploy.sh` (Linux/macOS) or `scripts\deploy.ps1` (Windows).
 - Architecture doc: [docs/architecture.md](docs/architecture.md)
 - Onboarding doc: [docs/onboarding.md](docs/onboarding.md)
+- Azure-/Kunden-LLM-Betrieb: [docs/runbooks/AZURE_BETRIEB.md](docs/runbooks/AZURE_BETRIEB.md)
 - Core runtime: [`core/`](core/)
 - Project-specific configuration: [`project/`](project/)
 - Current agent entrypoint: [`agent.py`](agent.py)
