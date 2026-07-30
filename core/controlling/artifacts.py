@@ -49,6 +49,7 @@ _MAX_SOURCE_BYTES = 25 * 1024 * 1024
 _MAX_MAPPING_BYTES = 1024 * 1024
 _MAX_POLICY_BYTES = 1024 * 1024
 _MAX_PUBLISHED_VIEW_BYTES = 50 * 1024 * 1024
+_MAX_OPERATION_ID_CHARS = 128
 _ACCEPTANCE_KEY_BYTES = 32
 _ACCEPTANCE_LOCK_WAIT_SECONDS = 5
 _LOCAL_PILOT_TOOLS = {"read", "compute", "report"}
@@ -66,9 +67,11 @@ def persist_report_artifacts(
     *,
     validated_at: datetime,
     draft_created_at: datetime,
+    operation_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Write latest/history/acceptance artifacts, or skip incomplete legacy tests."""
     root = root.resolve()
+    operation_id = validate_operation_id(operation_id)
     source = _safe_file(root, report.get("source"), allowed_roots={"inbox", "data", "imports"})
     mapping = _safe_file(root, "project/pilot/account-mapping.json", allowed_roots={"project"})
     if source is None or mapping is None:
@@ -137,7 +140,33 @@ def persist_report_artifacts(
         run=run,
         kpi_hash=kpi_hash,
         draft_created_at=draft_created_at,
+        operation_id=operation_id,
     )
+
+
+def validate_operation_id(operation_id: Any) -> str | None:
+    """Validate the optional caller-owned idempotency key.
+
+    The value is persisted in a signed ledger record, never used as a path, and
+    deliberately limited to a portable ASCII subset so callers cannot smuggle
+    control characters or ambiguous Unicode into durable audit evidence.
+    """
+    if operation_id is None:
+        return None
+    if not isinstance(operation_id, str):
+        raise ValueError("muss eine Zeichenkette sein.")
+    if not 1 <= len(operation_id) <= _MAX_OPERATION_ID_CHARS:
+        raise ValueError(f"muss 1 bis {_MAX_OPERATION_ID_CHARS} Zeichen lang sein.")
+    if not operation_id[0].isalnum() or not operation_id[0].isascii():
+        raise ValueError("muss mit einem ASCII-Buchstaben oder einer Ziffer beginnen.")
+    if any(
+        not (character.isascii() and (character.isalnum() or character in ".:_-"))
+        for character in operation_id
+    ):
+        raise ValueError(
+            "darf nur ASCII-Buchstaben, Ziffern, '.', ':', '_' und '-' enthalten."
+        )
+    return operation_id
 
 
 def _persist_report_transaction(
@@ -152,18 +181,63 @@ def _persist_report_transaction(
     run: dict[str, Any],
     kpi_hash: str,
     draft_created_at: datetime,
+    operation_id: str | None,
 ) -> dict[str, Any]:
     """Commit state and every shared report view as one serialized transaction."""
     with _acceptance_write_lock(root):
         # Revalidate after waiting for the lock so a replaced source or mapping
-        # cannot be persisted with stale compute-time provenance.
+        # cannot be replayed or persisted with stale compute-time provenance.
         report_provenance = _validated_report_provenance(report, source, mapping)
         acceptance_mapping = _load_acceptance_mapping(
             mapping, expected_hash=report_provenance["mapping_version"]
         )
+        run = {
+            **run,
+            "input_fingerprint": report_provenance["input_fingerprint"],
+            "mapping_version": report_provenance["mapping_version"],
+            "calculation_version": report_provenance["calculation_version"],
+        }
+        key: bytes | None = None
+        history: dict[str, Any] | None = None
+        if operation_id is not None:
+            key = _acceptance_key(root)
+            history = _load_acceptance_state(root, key)
+            existing = next(
+                (
+                    prior
+                    for prior in history["runs"]
+                    if prior.get("operation_id") == operation_id
+                ),
+                None,
+            )
+            if existing is not None:
+                operation_binding_fields = (
+                    "source_file",
+                    "input_fingerprint",
+                    "mapping_version",
+                    "calculation_version",
+                    "presentation_version",
+                    "kpi_result_hash",
+                )
+                existing_binding = {
+                    field: existing.get(field) for field in operation_binding_fields
+                }
+                current_binding = {
+                    field: run.get(field) for field in operation_binding_fields
+                }
+                if not hmac.compare_digest(
+                    _json_hash(existing_binding), _json_hash(current_binding)
+                ):
+                    raise ValueError(
+                        "Operation-ID wurde bereits fuer eine andere Anfrage verwendet."
+                    )
+                return _replay_committed_operation(root, existing)
         policy_snapshot = _approval_policy_snapshot(root)
         policy_hash = _json_hash(policy_snapshot)
-        key = _acceptance_key(root)
+        if key is None:
+            key = _acceptance_key(root)
+        if history is None:
+            history = _load_acceptance_state(root, key)
         signing_policy_snapshot = _approval_policy_snapshot(root)
         signing_policy_hash = _json_hash(signing_policy_snapshot)
         if not hmac.compare_digest(policy_hash, signing_policy_hash):
@@ -173,6 +247,12 @@ def _persist_report_transaction(
             signing_policy_hash = _json_hash(signing_policy_snapshot)
         policy_snapshot = signing_policy_snapshot
         policy_hash = signing_policy_hash
+        next_sequence = history["runs"][-1]["sequence"] + 1 if history["runs"] else 1
+        stamp = draft_created_at.astimezone(timezone.utc).strftime(
+            "%Y%m%dT%H%M%S%fZ"
+        )
+        history_name = f"controlling-report-{stamp}-s{next_sequence}-{kpi_hash[:8]}.json"
+        historical_html_name = f"controlling-report-{stamp}-s{next_sequence}-{kpi_hash[:8]}.html"
         run = {
             **run,
             "approval_policy_snapshot": policy_snapshot,
@@ -186,7 +266,16 @@ def _persist_report_transaction(
                 "approval_safety": _approval_safety_pass(run, policy_snapshot),
             },
         }
-        history, signed_run = _record_acceptance_run_locked(root, run, key)
+        if operation_id is not None:
+            run = {
+                **run,
+                "operation_id": operation_id,
+                "history_artifact": f"artifacts/{history_name}",
+                "human_artifact": f"artifacts/{historical_html_name}",
+            }
+        history, signed_run = _prepare_acceptance_run_locked(
+            root, run, key, history=history
+        )
         runs = [*history.get("runs", []), signed_run][-_HISTORY_LIMIT:]
         repeatable_count = _consecutive_equal_runs(runs)
         criteria = {
@@ -212,34 +301,162 @@ def _persist_report_transaction(
         payload = json.loads(
             json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         )
-        stamp = draft_created_at.astimezone(timezone.utc).strftime(
-            "%Y%m%dT%H%M%S%fZ"
-        )
-        history_report = artifacts / (
-            f"controlling-report-{stamp}-s{signed_run['sequence']}-{kpi_hash[:8]}.json"
-        )
+        history_report = artifacts / history_name
+        historical_human_report = artifacts / historical_html_name
         latest = artifacts / "latest-controlling-report.json"
         markdown = artifacts / "latest-controlling-report.md"
         human_report = artifacts / "latest-controlling-report.html"
         history_path = artifacts / "acceptance-evidence.json"
+        # Publish immutable operation evidence before committing its signed
+        # ledger record.  A crash here leaves only an unreferenced artifact;
+        # retry may safely allocate and commit the operation again.
+        _atomic_json(history_report, payload)
+        if operation_id is not None:
+            _atomic_text(historical_human_report, render_html(payload))
+        _commit_acceptance_run(root, signed_run, key)
         # The latest JSON is the status authority.  Publish it only after every
         # human-facing shared view is durable, otherwise an interrupted write
         # could make a new report look accepted without a matching review view.
-        _atomic_json(history_report, payload)
         _atomic_json(history_path, {"schema_version": 1, "runs": runs})
         _atomic_text(markdown, _markdown(payload))
         _atomic_text(human_report, render_html(payload))
         _atomic_json(latest, payload)
-        return {
+        result = {
             "artifact": latest.relative_to(root).as_posix(),
             "human_artifact": human_report.relative_to(root).as_posix(),
             "history_artifact": history_report.relative_to(root).as_posix(),
             "acceptance": acceptance,
         }
+        if operation_id is not None:
+            result = {
+                **result,
+                "operation_id": operation_id,
+                "artifact": history_report.relative_to(root).as_posix(),
+                "human_artifact": historical_human_report.relative_to(root).as_posix(),
+            }
+        return result
+
+
+def _replay_committed_operation(root: Path, run: dict[str, Any]) -> dict[str, Any]:
+    """Return the immutable committed result for one already-signed operation."""
+    operation_id = run.get("operation_id")
+    history_artifact = run.get("history_artifact")
+    human_artifact = run.get("human_artifact")
+    if (
+        not isinstance(operation_id, str)
+        or validate_operation_id(operation_id) != operation_id
+        or not isinstance(history_artifact, str)
+        or not isinstance(human_artifact, str)
+    ):
+        raise ValueError("Gespeicherte Operation ist unvollstaendig.")
+    payload = _read_committed_operation_payload(root, history_artifact)
+    if payload.get("provenance") != run:
+        raise ValueError("Gespeicherte Operation wurde veraendert.")
+    management = payload.get("management")
+    acceptance = payload.get("acceptance")
+    if not isinstance(management, dict) or not isinstance(acceptance, dict):
+        raise ValueError("Gespeicherte Operation ist unvollstaendig.")
+    human_bytes = _read_committed_operation_file(root, human_artifact)
+    if human_bytes != render_html(payload).encode("utf-8"):
+        raise ValueError("Gespeicherte Operation wurde veraendert.")
+    # If the latest committed operation crashed after ledger/head commit but
+    # before publishing shared views, rebuild those views from its immutable,
+    # signed operation artifacts.  Replaying an older operation must never
+    # roll the latest report backwards.
+    key = _acceptance_key(root)
+    history = _load_acceptance_state(root, key)
+    latest_run = history["runs"][-1] if history["runs"] else None
+    if (
+        isinstance(latest_run, dict)
+        and latest_run.get("run_signature") == run.get("run_signature")
+    ):
+        artifacts = root / "artifacts"
+        runs = history["runs"][-_HISTORY_LIMIT:]
+        _atomic_json(
+            artifacts / "acceptance-evidence.json",
+            {"schema_version": 1, "runs": runs},
+        )
+        _atomic_text(artifacts / "latest-controlling-report.md", _markdown(payload))
+        _atomic_text(
+            artifacts / "latest-controlling-report.html", render_html(payload)
+        )
+        _atomic_json(artifacts / "latest-controlling-report.json", payload)
+    return {
+        **management,
+        "operation_id": operation_id,
+        "artifact": history_artifact,
+        "human_artifact": human_artifact,
+        "history_artifact": history_artifact,
+        "acceptance": acceptance,
+    }
+
+
+def _read_committed_operation_payload(root: Path, relative: str) -> dict[str, Any]:
+    raw = _read_committed_operation_file(root, relative)
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise ValueError("Gespeicherte Operation ist beschaedigt.") from None
+    if not isinstance(payload, dict):
+        raise ValueError("Gespeicherte Operation ist beschaedigt.")
+    return payload
+
+
+def _read_committed_operation_file(root: Path, relative: str) -> bytes:
+    """Read one fixed operation artifact without accepting arbitrary paths."""
+    relative_path = Path(relative)
+    if (
+        relative_path.is_absolute()
+        or relative_path.parts[:1] != ("artifacts",)
+        or len(relative_path.parts) != 2
+        or relative_path.name.startswith(".")
+    ):
+        raise ValueError("Gespeicherter Operationspfad ist ungueltig.")
+    artifact = root / relative_path
+    try:
+        if artifact.is_symlink() or not artifact.is_file():
+            raise ValueError("Gespeicherter Operationspfad ist ungueltig.")
+        size = artifact.stat().st_size
+        if size < 0 or size > _MAX_PUBLISHED_VIEW_BYTES:
+            raise ValueError("Gespeicherte Operation ist zu gross.")
+        with artifact.open("rb") as handle:
+            raw = handle.read(_MAX_PUBLISHED_VIEW_BYTES + 1)
+        if len(raw) != size or len(raw) > _MAX_PUBLISHED_VIEW_BYTES:
+            raise ValueError("Gespeicherte Operation wurde veraendert.")
+        return raw
+    except OSError:
+        raise ValueError("Gespeicherte Operation konnte nicht sicher gelesen werden.") from None
 
 
 def read_acceptance_status(root: Path) -> dict[str, Any]:
     """Verify signed acceptance state without creating or modifying any file."""
+    return _read_acceptance_status(root)
+
+
+def read_verified_latest_report_html(
+    root: Path, *, require_passed: bool = False
+) -> bytes:
+    """Return the fixed latest HTML bytes only when their signed bundle verifies.
+
+    The acceptance lock serializes this verification with report publication.
+    Crucially, the returned bytes are the already-opened bytes that were
+    verified, rather than a second path-based read after verification.
+    """
+    root = Path(root).resolve()
+    with _acceptance_write_lock(root):
+        bundle = _read_published_view_bundle(root)
+        status = _read_acceptance_status(root, published_bundle=bundle)
+        if not status["valid"]:
+            raise ValueError("Signiertes Berichtsbundle ist ungueltig.")
+        if require_passed and not status["passed"]:
+            raise ValueError("Bericht hat die signierte 3/3-Abnahme nicht bestanden.")
+        return bundle[2]
+
+
+def _read_acceptance_status(
+    root: Path, *, published_bundle: tuple[bytes, bytes, bytes] | None = None
+) -> dict[str, Any]:
+    """Verify signed acceptance state, optionally against already-opened views."""
     empty = {
         "valid": True,
         "passed": False,
@@ -321,7 +538,9 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
         "repeatable_run_count": repeatable_count,
         "criteria": {**criteria, "repeatable_runs": repeatable_count >= 3},
     }
-    if not _published_report_views_match(root, runs[-1], expected_acceptance):
+    if not _published_report_views_match(
+        root, runs[-1], expected_acceptance, bundle=published_bundle
+    ):
         return {**empty, "valid": False, "sequence": sequence, "run_signature": signature}
     return {
         "valid": True,
@@ -336,11 +555,15 @@ def read_acceptance_status(root: Path) -> dict[str, Any]:
 
 
 def _published_report_views_match(
-    root: Path, run: dict[str, Any], expected_acceptance: dict[str, Any]
+    root: Path,
+    run: dict[str, Any],
+    expected_acceptance: dict[str, Any],
+    *,
+    bundle: tuple[bytes, bytes, bytes] | None = None,
 ) -> bool:
     """Bind signed acceptance to the exact latest machine and human views."""
     try:
-        payload_bytes, markdown, html_bytes = _read_published_view_bundle(root)
+        payload_bytes, markdown, html_bytes = bundle or _read_published_view_bundle(root)
         payload = json.loads(payload_bytes.decode("utf-8"))
         provenance = payload.get("provenance") if isinstance(payload, dict) else None
         report = payload.get("report") if isinstance(payload, dict) else None
@@ -860,7 +1083,13 @@ def _load_acceptance_state(root: Path, key: bytes) -> dict[str, Any]:
         _write_acceptance_head(head_path, 0, None, key)
 
     head = _read_acceptance_head(head_path, key)
-    runs = _read_acceptance_ledger(ledger_path, key) if ledger_exists else []
+    if ledger_exists:
+        try:
+            runs = _read_acceptance_ledger(ledger_path, key)
+        except ValueError:
+            runs = _recover_torn_ledger_suffix(ledger_path, key, head)
+    else:
+        runs = []
     ledger_sequence = runs[-1]["sequence"] if runs else 0
     ledger_signature = runs[-1]["run_signature"] if runs else None
     head_sequence = head["sequence"]
@@ -881,11 +1110,15 @@ def _load_acceptance_state(root: Path, key: bytes) -> dict[str, Any]:
     raise ValueError("Abnahme-Ledger und Head widersprechen sich; m\u00f6glicher Rollback.")
 
 
-def _record_acceptance_run_locked(
-    root: Path, run: dict[str, Any], key: bytes
+def _prepare_acceptance_run_locked(
+    root: Path,
+    run: dict[str, Any],
+    key: bytes,
+    *,
+    history: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Allocate, sign and commit while the caller holds the write lock."""
-    history = _load_acceptance_state(root, key)
+    """Allocate and sign while the caller holds the write lock."""
+    history = history if history is not None else _load_acceptance_state(root, key)
     previous = history["runs"][-1] if history["runs"] else None
     signed_run = {
         **run,
@@ -894,7 +1127,6 @@ def _record_acceptance_run_locked(
         "previous_run_signature": previous["run_signature"] if previous else None,
     }
     signed_run["run_signature"] = _run_signature(signed_run, key)
-    _commit_acceptance_run(root, signed_run, key)
     return history, signed_run
 
 
@@ -974,11 +1206,19 @@ def _read_acceptance_ledger(path: Path, key: bytes) -> list[dict[str, Any]]:
     try:
         if path.stat().st_size > _MAX_LEDGER_BYTES:
             raise ValueError("Abnahme-Ledger ist zu gro\u00df.")
-        lines = path.read_text(encoding="utf-8").splitlines()
+        raw = path.read_bytes()
     except FileNotFoundError:
         return []
-    except (OSError, UnicodeDecodeError):
+    except OSError:
         raise ValueError("Abnahme-Ledger konnte nicht sicher gelesen werden.") from None
+    return _decode_acceptance_ledger(raw, key)
+
+
+def _decode_acceptance_ledger(raw: bytes, key: bytes) -> list[dict[str, Any]]:
+    try:
+        lines = raw.decode("utf-8").splitlines()
+    except UnicodeDecodeError:
+        raise ValueError("Abnahme-Ledger ist besch\u00e4digt.") from None
     if len(lines) > _MAX_LEDGER_RUNS:
         raise ValueError("Abnahme-Ledger enth\u00e4lt zu viele L\u00e4ufe.")
 
@@ -1003,6 +1243,34 @@ def _read_acceptance_ledger(path: Path, key: bytes) -> list[dict[str, Any]]:
             raise ValueError("Abnahme-Ledger ist besch\u00e4digt.")
         runs.append(run)
         previous_signature = signature
+    return runs
+
+
+def _recover_torn_ledger_suffix(
+    path: Path, key: bytes, head: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Discard only an uncommitted partial final append beyond the signed head."""
+    try:
+        if path.stat().st_size > _MAX_LEDGER_BYTES:
+            raise ValueError("Abnahme-Ledger ist zu gross.")
+        raw = path.read_bytes()
+    except OSError:
+        raise ValueError("Abnahme-Ledger konnte nicht sicher gelesen werden.") from None
+    if not raw or raw.endswith(b"\n"):
+        raise ValueError("Abnahme-Ledger ist besch\u00e4digt.")
+    boundary = raw.rfind(b"\n")
+    committed = raw[: boundary + 1] if boundary >= 0 else b""
+    runs = _decode_acceptance_ledger(committed, key)
+    sequence = runs[-1]["sequence"] if runs else 0
+    signature = runs[-1]["run_signature"] if runs else None
+    if sequence != head["sequence"] or signature != head["last_run_signature"]:
+        raise ValueError("Abnahme-Ledger ist besch\u00e4digt.")
+    try:
+        with path.open("r+b", buffering=0) as handle:
+            handle.truncate(len(committed))
+            os.fsync(handle.fileno())
+    except OSError:
+        raise ValueError("Abnahme-Ledger konnte nicht repariert werden.") from None
     return runs
 
 

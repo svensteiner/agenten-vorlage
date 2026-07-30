@@ -11,6 +11,13 @@ system easier to extend.
 
 ## Where to start
 
+- **Kostenfreie Controlling-Demo:** double-click `START_CONTROLLING_DEMO.bat`
+  (or run `python order_portal.py`) to test the real order → agent → 3/3 checks
+  → management-report journey with synthetic data and zero external cost.
+  The Windows launcher checks the free XLSX reader and prints the one-time
+  prerequisite command if it is missing; the demo start itself stays offline.
+  See [docs/runbooks/LOKALE_CONTROLLING_DEMO.md](docs/runbooks/LOKALE_CONTROLLING_DEMO.md).
+
 - **Settings UI (for clients):** double-click `EINSTELLUNGEN.bat` (or run
   `python control_panel.py`) — opens a browser page to configure autonomy, models,
   limits, and data-source connectors without editing any JSON/YAML.

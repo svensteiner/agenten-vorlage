@@ -19,7 +19,6 @@ import hmac
 from datetime import datetime, timedelta, timezone
 import json
 import os
-import shutil
 import stat
 import subprocess
 import sys
@@ -33,6 +32,13 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from core.controlling.artifacts import read_acceptance_status, render_html
+from core.instance_factory import (
+    InstanceProvisionError,
+    apply_preset as _factory_apply_preset,
+    instance_identity as _factory_instance_identity,
+    provision_instance,
+    validate_instance as _factory_validate_instance,
+)
 from core.scheduling import ScheduledDecision, run_scheduled_cycle
 
 
@@ -776,17 +782,6 @@ def _write_template_project(
     )
 
 
-def _deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
-    """Merge preset values into a generated document without mutating either input."""
-    merged = dict(base)
-    for key, value in overlay.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = _deep_merge(merged[key], value)
-        else:
-            merged[key] = value
-    return merged
-
-
 def _kmu_controlling_answers() -> OnboardingAnswers:
     """Generic defaults only; customer data remains a later configuration step."""
     return OnboardingAnswers(
@@ -817,34 +812,8 @@ def _kmu_controlling_answers() -> OnboardingAnswers:
 
 
 def _apply_preset(target_dir: Path, preset: str) -> None:
-    """Overlay a packaged preset while preserving the instance identity."""
-    preset_dir = PRESETS_ROOT / preset
-    if not preset_dir.is_dir():
-        raise ValueError(f"Unbekanntes Preset: {preset}")
-    project_dir = target_dir / "project"
-
-    for filename in ("config.json", "manifest.json"):
-        generated = json.loads((project_dir / filename).read_text(encoding="utf-8"))
-        overlay = json.loads((preset_dir / filename).read_text(encoding="utf-8"))
-        identity = generated.get("instance")
-        merged = _deep_merge(generated, overlay)
-        if identity is not None:
-            merged["instance"] = identity
-        (project_dir / filename).write_text(
-            json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-
-    for source in preset_dir.rglob("*"):
-        if not source.is_file() or source.name in {"config.json", "manifest.json"}:
-            continue
-        relative = source.relative_to(preset_dir)
-        destination = project_dir / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, destination)
-
-    if preset == "kmu-controlling":
-        for directory in ("inbox", "data", "imports", "state", "artifacts"):
-            (target_dir / directory).mkdir(exist_ok=True)
+    """Compatibility wrapper for the UI-neutral preset overlay."""
+    _factory_apply_preset(target_dir, preset, PRESETS_ROOT)
 
 
 # ─── Self-test ────────────────────────────────────────────────────────────────
@@ -918,33 +887,13 @@ def _self_test_project(target_dir: Path) -> SelfTestReport:
 
 def _instance_identity(target_dir: Path) -> tuple[str, str]:
     """Return the tenant/agent identity encoded by an instance path."""
-    target_dir = Path(target_dir)
-    if len(target_dir.parts) < 2:
-        raise ValueError("Instanzpfad muss <tenant>/<agent> enthalten")
-    return target_dir.parent.name, target_dir.name
+    return _factory_instance_identity(target_dir)
 
 
 def _validate_instance(target_dir: Path) -> SelfTestReport:
     """Offline validation for an isolated factory instance."""
-    report = _self_test_project(target_dir)
-    passed = list(report.passed)
-    problems = list(report.problems)
-    try:
-        tenant_id, agent_id = _instance_identity(target_dir)
-        config = json.loads(
-            (target_dir / "project" / "config.json").read_text(encoding="utf-8")
-        )
-        identity = config.get("instance") if isinstance(config, dict) else None
-        expected = {"tenant_id": tenant_id, "agent_id": agent_id}
-        if identity == expected:
-            passed.append(f"Instanzidentität bestätigt: {tenant_id}/{agent_id}")
-        else:
-            problems.append(
-                f"Instanzidentität stimmt nicht: erwartet {expected}, erhalten {identity}"
-            )
-    except (OSError, json.JSONDecodeError, ValueError) as exc:
-        problems.append(f"Instanzidentität konnte nicht geprüft werden: {exc}")
-    return SelfTestReport(passed=tuple(passed), problems=tuple(problems))
+    report = _factory_validate_instance(target_dir)
+    return SelfTestReport(passed=report.passed, problems=report.problems)
 
 
 def _print_self_test(report: SelfTestReport) -> None:
@@ -1027,9 +976,23 @@ def cmd_create(args: argparse.Namespace) -> int:
         if preset
         else _collect_answers(mode="full" if args.full else "beginner")
     )
-    _write_template_project(target_dir, answers, tenant_id=tenant_id, agent_id=agent_id)
-    if preset:
-        _apply_preset(target_dir, preset)
+    def write_project(staging: Path, canonical_tenant: str, canonical_agent: str) -> None:
+        _write_template_project(
+            staging, answers, tenant_id=canonical_tenant, agent_id=canonical_agent
+        )
+
+    try:
+        target_dir = provision_instance(
+            output_root,
+            tenant_id,
+            agent_id,
+            preset,
+            _project_writer=write_project,
+            _presets_root=PRESETS_ROOT,
+        )
+    except InstanceProvisionError as exc:
+        print(f"Instanz konnte nicht erstellt werden: {exc}")
+        return 1
     if not args.no_self_test:
         report = _validate_instance(target_dir)
         _print_self_test(report)

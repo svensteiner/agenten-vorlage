@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .artifacts import persist_report_artifacts
+from .artifacts import persist_report_artifacts, validate_operation_id
 from .tools import ControllingComputeTool
 
 
@@ -26,6 +26,10 @@ class ControllingReportTool:
         if not isinstance(request, dict):
             return "FEHLER: Berichtsanfrage muss ein JSON-Objekt sein."
         source = request.get("source", "auto")
+        try:
+            operation_id = validate_operation_id(request.get("operation_id"))
+        except ValueError as exc:
+            return f"FEHLER: operation_id {exc}"
         raw_report = self._compute.safe_run(
             json.dumps({"operation": "kmu_report", "source": source})
         )
@@ -42,6 +46,7 @@ class ControllingReportTool:
                 draft,
                 validated_at=validated_at,
                 draft_created_at=draft_created_at,
+                operation_id=operation_id,
             )
         except (OSError, ValueError) as exc:
             return f"FEHLER: Bericht konnte nicht revisionssicher gespeichert werden: {exc}"

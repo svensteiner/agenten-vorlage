@@ -34,5 +34,32 @@ jobs:
       - name: Validate project pack (check.py)
         run: python tools/check.py
 
+      - name: Lint changed Python surface
+        run: python -m ruff check core/instance_factory.py core/local_kmu_orders.py order_portal.py agent_cli.py tests
+
+      - name: Type-check service boundaries
+        run: python -m mypy --follow-imports=skip core/instance_factory.py core/local_kmu_orders.py order_portal.py
+
+      - name: Install browser for end-to-end tests
+        run: python -m playwright install --with-deps chromium
+
       - name: Run tests with coverage gate (core ≥ 80 %)
         run: python -m pytest
+
+  windows-locking:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Verify Windows provisioning and order locking
+        run: python -m pytest -q tests/test_instance_factory.py tests/test_local_kmu_orders.py --no-cov
