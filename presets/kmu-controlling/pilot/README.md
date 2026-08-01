@@ -25,15 +25,25 @@ zeigen; die Anleitung steht in `demo/README.md`.
 4. Starte die Instanz mit `agent_cli.py run --instance <pfad> --loop`.
 5. Öffne `artifacts/latest-controlling-report.html` und prüfe den Entwurf fachlich. Der Pilot besitzt bewusst keine Funktion zum externen Versenden.
 
-Der aktuelle Pilot liest oder analysiert **keine** Budget- oder
-Offene-Posten-Dateien – auch dann nicht, wenn solche Dateien unter `inbox/`,
-`data/` oder `imports/` abgelegt werden. Budgetabweichung und
-Forderungsalterung bleiben im Management-JSON sowie im Markdown- und
-HTML-Bericht sichtbar als **nicht verfügbar / in diesem Piloten nicht
-verarbeitet** ausgewiesen. Betreiber dürfen diese Kennzahlen deshalb im
-aktuellen Bericht nicht erwarten und sollen keine Budget- oder OP-Dateien für
-diesen Pilotlauf bereitstellen. Eine Aktivierung setzt einen zukünftigen,
-separat versionierten und fachlich reconcilierten Umfang voraus. Maßgeblich
+Der Pilot hat zwei klar getrennte Betriebsarten:
+
+- **Ist-Report (Standard):** genau eine Saldenliste oder BWA. Budgetabweichung
+  und Forderungsalterung bleiben sichtbar als nicht verfügbar.
+- **Ist-vs.-Budget (explizit):** der aufrufende Workflow übergibt genau zwei
+  unterschiedliche Dateien als `actual_source` und `budget_source`. Beide
+  müssen unter `inbox/`, `data/` oder `imports/` liegen und dasselbe freigegebene
+  Mapping, denselben Zeitraum sowie dieselben Konten und Reconciliation-Zahlen
+  ergeben. Die Budgetdatei wird nie automatisch ausgewählt.
+
+Die sichere Schnittstelle dafür erwartet ausschließlich dieses Request-Format:
+
+```json
+{"actual_source":"data/actuals.csv","budget_source":"imports/budget.csv"}
+```
+
+Im Zwei-Quellen-Modus wird der Entwurf mit beiden Fingerprints signiert. Eine
+Änderung an Ist-, Budget- oder Mapping-Datei macht die Abnahme wieder offen.
+Offene Posten bleiben in beiden Betriebsarten nicht verarbeitet. Maßgeblich
 sind `data-contract.json`, `30-day-runbook.md` und `acceptance-criteria.json`.
 
 Vorzeichen sind explizit: `normalisierter Wert = Quellwert × multiplier`. Im Beispiel erhöht Umsatz mit `+1` das Ergebnis; Material, Personal, Abschreibung und Finanzergebnis mindern es mit `-1`. Diese Multiplikatoren sind vor jedem Pilot fachlich gegen die Vorzeichen der Quelldatei zu prüfen. EBITDA schließt die Gruppe `depreciation` aus; EGT schließt `depreciation` und `financial` ein.

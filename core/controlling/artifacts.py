@@ -20,6 +20,7 @@ import time
 from typing import Any
 
 from core.controlling.tools import (
+    ControllingComputeTool,
     DERIVED_RATIO_METRICS,
     DIRECT_BALANCE_METRICS,
     MANDATORY_MAPPING_METRICS,
@@ -32,6 +33,7 @@ from core.controlling.tools import (
     is_safe_report_label,
     labels_are_unique,
 )
+from core.controlling.variance import monthly_variance_brief
 
 if os.name == "nt":
     import msvcrt
@@ -40,7 +42,7 @@ else:
 
 
 CALCULATION_VERSION = "kmu-report-v3"
-PRESENTATION_VERSION = "management-renderer-v2"
+PRESENTATION_VERSION = "management-renderer-v3"
 _HISTORY_LIMIT = 100
 _MAX_HISTORY_BYTES = 1_000_000
 _MAX_LEDGER_BYTES = 50 * 1024 * 1024
@@ -87,6 +89,15 @@ def persist_report_artifacts(
     if (root / "artifacts").is_symlink():
         raise ValueError("Artefaktordner darf kein Symlink sein.")
     artifacts.mkdir(parents=True, exist_ok=True)
+    report_provenance = _validated_report_provenance(report, source, mapping)
+    variance_binding = _validated_management_variance(
+        root, report, management, source, report_provenance
+    )
+    budget_source: Path | None = None
+    budget_provenance: dict[str, str] | None = None
+    if variance_binding is not None:
+        budget_source, budget_provenance = variance_binding
+
     sanitized_report = {
         key: report[key]
         for key in (
@@ -107,7 +118,6 @@ def persist_report_artifacts(
     # Kept as kpi_result_hash for ledger compatibility, but it now binds the
     # complete persisted draft rather than only a KPI subset.
     kpi_hash = _json_hash({"report": sanitized_report, "management": management})
-    report_provenance = _validated_report_provenance(report, source, mapping)
     run = {
         "recorded_at": _iso(draft_created_at),
         "validation_completed_at": _iso(validated_at),
@@ -129,6 +139,8 @@ def persist_report_artifacts(
         "external_action_log": [],
         "external_actions_without_explicit_approval": 0,
     }
+    if budget_provenance is not None:
+        run = {**run, **budget_provenance}
     return _persist_report_transaction(
         root=root,
         artifacts=artifacts,
@@ -141,6 +153,7 @@ def persist_report_artifacts(
         kpi_hash=kpi_hash,
         draft_created_at=draft_created_at,
         operation_id=operation_id,
+        budget_source=budget_source,
     )
 
 
@@ -182,12 +195,23 @@ def _persist_report_transaction(
     kpi_hash: str,
     draft_created_at: datetime,
     operation_id: str | None,
+    budget_source: Path | None,
 ) -> dict[str, Any]:
     """Commit state and every shared report view as one serialized transaction."""
     with _acceptance_write_lock(root):
         # Revalidate after waiting for the lock so a replaced source or mapping
         # cannot be replayed or persisted with stale compute-time provenance.
         report_provenance = _validated_report_provenance(report, source, mapping)
+        locked_variance_binding = _validated_management_variance(
+            root, report, management, source, report_provenance
+        )
+        if (budget_source is None) != (locked_variance_binding is None):
+            raise ValueError("Budget-Provenienz hat sich waehrend der Speicherung geaendert.")
+        budget_provenance: dict[str, str] | None = None
+        if locked_variance_binding is not None:
+            locked_budget_source, budget_provenance = locked_variance_binding
+            if locked_budget_source != budget_source:
+                raise ValueError("Budget-Quelle hat sich waehrend der Speicherung geaendert.")
         acceptance_mapping = _load_acceptance_mapping(
             mapping, expected_hash=report_provenance["mapping_version"]
         )
@@ -197,6 +221,8 @@ def _persist_report_transaction(
             "mapping_version": report_provenance["mapping_version"],
             "calculation_version": report_provenance["calculation_version"],
         }
+        if budget_provenance is not None:
+            run = {**run, **budget_provenance}
         key: bytes | None = None
         history: dict[str, Any] | None = None
         if operation_id is not None:
@@ -218,6 +244,8 @@ def _persist_report_transaction(
                     "calculation_version",
                     "presentation_version",
                     "kpi_result_hash",
+                    "budget_source_file",
+                    "budget_input_fingerprint",
                 )
                 existing_binding = {
                     field: existing.get(field) for field in operation_binding_fields
@@ -261,7 +289,11 @@ def _persist_report_transaction(
                 "enabled_external_capabilities"
             ],
             "acceptance_criteria": {
-                "sourced_totals": _sourced_totals_pass(report, acceptance_mapping),
+                "sourced_totals": _sourced_totals_pass(
+                    report,
+                    acceptance_mapping,
+                    has_budget_variance=budget_provenance is not None,
+                ),
                 "draft_latency": 0 <= run["draft_latency_seconds"] < 300,
                 "approval_safety": _approval_safety_pass(run, policy_snapshot),
             },
@@ -769,8 +801,8 @@ def _safe_file(root: Path, relative: Any, *, allowed_roots: set[str]) -> Path | 
 
 
 def _current_signed_inputs_match(root: Path, run: dict[str, Any]) -> bool:
-    """Verify current safe source and mapping bytes against the latest signature."""
-    return (
+    """Verify current safe source, mapping, and optional budget bytes."""
+    actual_and_mapping_match = (
         _current_signed_input_matches(
             root,
             run.get("source_file"),
@@ -785,6 +817,23 @@ def _current_signed_inputs_match(root: Path, run: dict[str, Any]) -> bool:
             max_bytes=_MAX_MAPPING_BYTES,
             expected_hash=run.get("mapping_version"),
         )
+    )
+    budget_source = run.get("budget_source_file")
+    budget_fingerprint = run.get("budget_input_fingerprint")
+    if budget_source is None and budget_fingerprint is None:
+        return actual_and_mapping_match
+    if (
+        not isinstance(budget_source, str)
+        or not isinstance(budget_fingerprint, str)
+        or not re_full_sha256(budget_fingerprint)
+    ):
+        return False
+    return actual_and_mapping_match and _current_signed_input_matches(
+        root,
+        budget_source,
+        allowed_roots={"inbox", "data", "imports"},
+        max_bytes=_MAX_SOURCE_BYTES,
+        expected_hash=budget_fingerprint,
     )
 
 
@@ -1457,11 +1506,185 @@ def _validated_report_provenance(
     }
 
 
+def _two_source_availability() -> dict[str, dict[str, str]]:
+    """Return the only availability contract permitted for a budget comparison."""
+    return {
+        **pilot_availability(),
+        "budget_variance": {
+            "status": "available",
+            "processing": "two_source_actual_vs_budget",
+        },
+    }
+
+
+def _validated_management_variance(
+    root: Path,
+    report: dict[str, Any],
+    management: dict[str, Any],
+    source: Path,
+    report_provenance: dict[str, str],
+) -> tuple[Path, dict[str, str]] | None:
+    """Validate the compact two-source brief before it becomes signed evidence.
+
+    The management layer carries the comparison so the underlying report remains
+    the actuals-only aggregate.  This validates the exact source bindings and
+    only permits deterministic aggregate values; no source rows are persisted.
+    """
+    if not isinstance(management, dict):
+        raise ValueError("Management-Entwurf ist ungueltig.")
+    variance = management.get("variance")
+    if variance is None:
+        if report.get("availability") != pilot_availability():
+            raise ValueError("Budget-Verfuegbarkeit erfordert einen Zwei-Quellen-Nachweis.")
+        return None
+    if "variance" in report:
+        raise ValueError("Ist-Bericht darf keine Budgetabweichung enthalten.")
+    required = {
+        "kind",
+        "status",
+        "report_metadata",
+        "metrics",
+        "top_group_drivers",
+        "sources",
+        "reconciliation",
+        "limitations",
+    }
+    if not isinstance(variance, dict) or set(variance) != required:
+        raise ValueError("Budgetabweichung ist unvollstaendig.")
+    if (
+        variance.get("kind") != "monthly_actual_vs_budget_brief"
+        or variance.get("status") != "computed_unapproved"
+        or variance.get("report_metadata") != report.get("report_metadata")
+        or variance.get("limitations")
+        != [
+            "computed_from_provided_actual_and_budget_sources",
+            "not_approved",
+        ]
+        or report.get("availability") != _two_source_availability()
+    ):
+        raise ValueError("Budgetabweichung hat einen ungueltigen Vertrag.")
+
+    sources = variance.get("sources")
+    if not isinstance(sources, dict) or set(sources) != {
+        "actual",
+        "budget",
+        "mapping_version",
+    }:
+        raise ValueError("Budgetquellen sind unvollstaendig.")
+    actual = sources.get("actual")
+    budget = sources.get("budget")
+    budget_fingerprint = budget.get("fingerprint") if isinstance(budget, dict) else None
+    if (
+        not isinstance(actual, dict)
+        or set(actual) != {"source", "fingerprint"}
+        or actual.get("source") != report.get("source")
+        or actual.get("fingerprint") != report_provenance["input_fingerprint"]
+        or sources.get("mapping_version") != report_provenance["mapping_version"]
+        or not isinstance(budget, dict)
+        or set(budget) != {"source", "fingerprint"}
+        or not isinstance(budget_fingerprint, str)
+        or not re_full_sha256(budget_fingerprint)
+    ):
+        raise ValueError("Budgetquellen sind ungueltig.")
+    budget_source = _safe_file(
+        root, budget.get("source"), allowed_roots={"inbox", "data", "imports"}
+    )
+    if budget_source is None or budget_source == source:
+        raise ValueError("Budgetquelle ist nicht sicher oder nicht getrennt.")
+    if _sha256(budget_source, max_bytes=_MAX_SOURCE_BYTES) != budget_fingerprint:
+        raise ValueError("Budgetquelle wurde nach der Berechnung veraendert.")
+
+    budget_raw = ControllingComputeTool(root).safe_run(
+        json.dumps({"operation": "kmu_report", "source": budget["source"]})
+    )
+    if budget_raw.startswith("FEHLER"):
+        raise ValueError("Budgetquelle konnte nicht erneut reconciled werden.")
+    try:
+        budget_report = json.loads(budget_raw)
+        expected_variance = monthly_variance_brief(report, budget_report)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("Budgetabweichung konnte nicht erneut reconciled werden.") from exc
+    if variance != expected_variance:
+        raise ValueError("Budgetabweichung stimmt nicht mit den Quellen ueberein.")
+
+    report_reconciliation = report.get("reconciliation")
+    if not isinstance(report_reconciliation, dict):
+        raise ValueError("Ist-Bericht ist nicht reconciled.")
+    expected_counts = {
+        key: report_reconciliation.get(key)
+        for key in (
+            "source_account_count",
+            "mapped_account_count",
+            "ignored_account_count",
+        )
+    }
+    reconciliation = variance.get("reconciliation")
+    if (
+        not isinstance(reconciliation, dict)
+        or set(reconciliation) != {"actual", "budget"}
+        or reconciliation.get("actual") != expected_counts
+        or reconciliation.get("budget") != expected_counts
+    ):
+        raise ValueError("Budgetabweichung ist nicht reconciled.")
+    _validated_variance_values(variance)
+    return budget_source, {
+        "budget_source_file": budget["source"],
+        "budget_input_fingerprint": budget["fingerprint"],
+    }
+
+
+def _validated_variance_values(variance: dict[str, Any]) -> None:
+    """Reject malformed or raw-looking values before rendering a compact table."""
+    metrics = variance.get("metrics")
+    drivers = variance.get("top_group_drivers")
+    if not isinstance(metrics, dict) or not isinstance(drivers, list):
+        raise ValueError("Budgetabweichung enthaelt keine aggregierten Werte.")
+    for name, comparison in metrics.items():
+        if not is_safe_report_label(name) or not isinstance(comparison, dict):
+            raise ValueError("Budgetabweichung enthaelt ungueltige Kennzahlen.")
+        _validated_variance_comparison(comparison)
+    for driver in drivers:
+        if (
+            not isinstance(driver, dict)
+            or set(driver) != {
+                "group",
+                "actual",
+                "budget",
+                "delta",
+                "relative_delta_percent",
+            }
+            or not is_safe_report_label(driver.get("group"))
+        ):
+            raise ValueError("Budgetabweichung enthaelt ungueltige Treiber.")
+        _validated_variance_comparison(
+            {
+                field: driver[field]
+                for field in ("actual", "budget", "delta", "relative_delta_percent")
+            }
+        )
+        if driver.get("delta") is None:
+            raise ValueError("Budgetabweichung enthaelt ungueltige Treiber.")
+
+
+def _validated_variance_comparison(comparison: dict[str, Any]) -> None:
+    required = {"actual", "budget", "delta", "relative_delta_percent"}
+    if set(comparison) != required:
+        raise ValueError("Budgetabweichung enthaelt ungueltige Vergleichswerte.")
+    for field in ("actual", "budget", "delta", "relative_delta_percent"):
+        value = comparison.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str) or _validated_optional_decimal(value)[0] is False:
+            raise ValueError("Budgetabweichung enthaelt ungueltige Vergleichswerte.")
+
+
 def _consecutive_equal_runs(runs: list[dict[str, Any]]) -> int:
     if not runs:
         return 0
     keys = (
         "input_fingerprint",
+        "budget_source_file",
+        "budget_input_fingerprint",
         "mapping_version",
         "calculation_version",
         "presentation_version",
@@ -1503,7 +1726,10 @@ def _load_acceptance_mapping(
 
 
 def _sourced_totals_pass(
-    report: dict[str, Any], mapping: dict[str, Any] | None
+    report: dict[str, Any],
+    mapping: dict[str, Any] | None,
+    *,
+    has_budget_variance: bool = False,
 ) -> bool:
     reconciliation = report.get("reconciliation")
     metadata = report.get("report_metadata")
@@ -1538,7 +1764,8 @@ def _sourced_totals_pass(
         and report.get("sign_convention") == _SIGN_CONVENTION
         and report.get("sign_convention_note") == _SIGN_CONVENTION_NOTE
         and metadata.get("sign_convention") == _SIGN_CONVENTION
-        and report.get("availability") == pilot_availability()
+        and report.get("availability")
+        == (_two_source_availability() if has_budget_variance else pilot_availability())
     )
     return bool(
         counts_ok
@@ -2204,12 +2431,45 @@ def _management_material_deviations(report: dict[str, Any]) -> list[tuple[str, s
 
 
 def _availability_limitations(report: dict[str, Any]) -> list[str]:
+    if report.get("availability") == _two_source_availability():
+        return [
+            "Forderungsalterung: nicht verf\u00fcgbar (in diesem Piloten nicht verarbeitet)."
+        ]
     if report.get("availability") != pilot_availability():
         return []
     return [
         "Budgetabweichung: nicht verfügbar (in diesem Piloten nicht verarbeitet).",
         "Forderungsalterung: nicht verfügbar (in diesem Piloten nicht verarbeitet).",
     ]
+
+
+def _management_variance_drivers(management: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return only the compact, aggregate rows intended for human rendering."""
+    variance = management.get("variance")
+    if not isinstance(variance, dict):
+        return []
+    drivers = variance.get("top_group_drivers")
+    if not isinstance(drivers, list):
+        return []
+    rows = []
+    for driver in drivers:
+        if (
+            isinstance(driver, dict)
+            and isinstance(driver.get("group"), str)
+            and driver["group"].strip()
+        ):
+            rows.append(
+                {
+                    "group": driver["group"],
+                    "actual": driver.get("actual", "-"),
+                    "budget": driver.get("budget", "-"),
+                    "delta": driver.get("delta", "-"),
+                    "relative_delta_percent": driver.get(
+                        "relative_delta_percent", "-"
+                    ),
+                }
+            )
+    return rows
 
 
 def _markdown(payload: dict[str, Any]) -> str:
@@ -2253,6 +2513,31 @@ def _markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {name} | {values.get('month', '–')} | {values.get('prior', '–')} "
             f"| {values.get('ytd', '–')} | {values.get('ytd_prior', '–')} |"
+        )
+    variance_drivers = _management_variance_drivers(management)
+    if variance_drivers:
+        lines.extend(
+            [
+                "",
+                "## Budgetabweichungen",
+                "",
+                "| Bereich | Ist | Budget | Abweichung | Abweichung % |",
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        lines.extend(
+            "| {group} | {actual} | {budget} | {delta} | {relative} |".format(
+                group=markdown_cell(driver["group"]),
+                actual=markdown_cell("-" if driver["actual"] is None else driver["actual"]),
+                budget=markdown_cell("-" if driver["budget"] is None else driver["budget"]),
+                delta=markdown_cell("-" if driver["delta"] is None else driver["delta"]),
+                relative=markdown_cell(
+                    "-"
+                    if driver["relative_delta_percent"] is None
+                    else driver["relative_delta_percent"]
+                ),
+            )
+            for driver in variance_drivers
         )
     deviations = _management_material_deviations(report)
     if deviations:
@@ -2326,6 +2611,28 @@ def _html(payload: dict[str, Any]) -> str:
         if deviation_rows
         else ""
     )
+    variance_rows = "".join(
+        "<tr><th>{group}</th><td>{actual}</td><td>{budget}</td><td>{delta}</td>"
+        "<td>{relative}</td></tr>".format(
+            group=esc(driver["group"]),
+            actual=esc("-" if driver["actual"] is None else driver["actual"]),
+            budget=esc("-" if driver["budget"] is None else driver["budget"]),
+            delta=esc("-" if driver["delta"] is None else driver["delta"]),
+            relative=esc(
+                "-"
+                if driver["relative_delta_percent"] is None
+                else driver["relative_delta_percent"]
+            ),
+        )
+        for driver in _management_variance_drivers(management)
+    )
+    variance_section = (
+        "<h2>Budgetabweichungen</h2><table><thead><tr><th>Bereich</th>"
+        "<th>Ist</th><th>Budget</th><th>Abweichung</th><th>Abweichung %</th>"
+        f"</tr></thead><tbody>{variance_rows}</tbody></table>"
+        if variance_rows
+        else ""
+    )
     availability_section = "".join(
         f"<li>{esc(limitation)}</li>"
         for limitation in _availability_limitations(report)
@@ -2355,6 +2662,7 @@ table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{padding:11px;bo
 <p class="summary">{esc(management.get('summary', ''))}</p>
 <p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p>
 <table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
+{variance_section}
 {deviations_section}
 {availability_section}
 <div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions}</ol></section></div>

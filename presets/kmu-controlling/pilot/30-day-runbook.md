@@ -42,11 +42,14 @@ einer servicekontrollierten Parentkette neu zu provisionieren.
 ## Tage 15–21: Fachliche Abnahme
 
 - Abweichungen mit Buchhaltung oder Controlling nachvollziehen.
-- Keine Budget- oder OP-Dateien für diesen Pilotlauf bereitstellen oder im
-  Bericht erwarten: Der aktuelle Pilot liest und analysiert sie auch bei
-  Vorliegen nicht. Budgetabweichung und Forderungsalterung müssen sichtbar als
-  nicht verfügbar / nicht verarbeitet erscheinen. Eine zukünftige Aktivierung
-  erfordert einen separat versionierten und fachlich reconcilierten Umfang.
+- Für den Standardlauf keine Budget- oder OP-Datei erwarten: Er analysiert nur
+  die eine explizite Ist-Quelle; Budgetabweichung und Forderungsalterung bleiben
+  sichtbar nicht verfügbar.
+- Für den optionalen Ist-vs.-Budget-Lauf zwei explizite, unterschiedliche
+  Dateien verwenden. Zeitraum, Mapping-Version, Kontenidentitäten und
+  Reconciliation-Zahlen müssen identisch sein. Drei Wiederholungsläufe binden
+  beide Fingerprints; jede Änderung an einer der Dateien setzt die Abnahme
+  zurück.
 - Freigabeprozess mit einem nicht versendeten Testentwurf durchführen.
 
 ## Tage 22–27: Betriebsprobe

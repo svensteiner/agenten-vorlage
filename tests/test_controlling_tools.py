@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -1395,6 +1396,73 @@ def test_xlsx_member_count_limit_is_enforced_before_parsing(tmp_path, monkeypatc
     )
 
     assert result.startswith("FEHLER: XLSX enthält zu viele Archivdateien")
+
+
+def test_input_symlink_is_rejected_by_read_and_compute_without_opening_target(
+    tmp_path, monkeypatch
+):
+    """An input symlink must not turn a tenant capability into an external reader."""
+    (tmp_path / "data").mkdir()
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.csv"
+    outside.write_text("value\n999999\n", encoding="utf-8")
+    linked_source = tmp_path / "data" / "linked.csv"
+    try:
+        linked_source.symlink_to(outside)
+    except (NotImplementedError, OSError):
+        pytest.skip("Datei-Symlinks sind in dieser Testumgebung nicht verf\u00fcgbar.")
+
+    original_open = Path.open
+
+    def fail_if_external_target_is_opened(path, *args, **kwargs):
+        if path.resolve(strict=False) == outside.resolve():
+            pytest.fail("Ein externes Symlink-Ziel wurde ge\u00f6ffnet.")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fail_if_external_target_is_opened)
+
+    assert InstanceReadTool(tmp_path).safe_run("read:data/linked.csv").startswith(
+        "FEHLER"
+    )
+    assert ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"sum","source":"data/linked.csv","column":"value"}'
+    ).startswith("FEHLER")
+
+
+def test_kmu_report_fails_closed_when_source_changes_after_snapshot_first_read(
+    tmp_path, monkeypatch
+):
+    """A report cannot combine a fingerprint from one file with rows from another."""
+    _write_strict_actuals(tmp_path, ["r1;4000;Umsatz;10;9;10;9"])
+    _write_strict_mapping(tmp_path)
+    source = tmp_path / "data" / "actuals.csv"
+    replacement = tmp_path / "data" / "replacement.csv"
+    replacement.write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Monat;Vormonat;YTD;YTD Vorjahr\n"
+        "r1;4000;Umsatz;999999;9;999999;9\n",
+        encoding="utf-8",
+    )
+    hook_calls = []
+
+    def replace_source_after_first_snapshot_read(snapshot_source):
+        hook_calls.append(snapshot_source)
+        os.replace(replacement, source)
+
+    # The snapshot boundary is intentional: production code must call this hook
+    # only after its first byte-level read has completed and its handle is closed.
+    monkeypatch.setattr(
+        controlling_tools,
+        "_after_source_snapshot_first_read",
+        replace_source_after_first_snapshot_read,
+        raising=False,
+    )
+
+    result = ControllingComputeTool(tmp_path).safe_run(
+        '{"operation":"kmu_report","source":"data/actuals.csv"}'
+    )
+
+    assert hook_calls == [source]
+    assert result.startswith("FEHLER")
+    assert "999999" not in result
 
 
 def test_xlsx_expansion_limit_is_enforced_before_parsing(tmp_path, monkeypatch):

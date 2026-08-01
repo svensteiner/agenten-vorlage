@@ -1,9 +1,11 @@
 """Fail-closed, source-backed capabilities for a controlling instance."""
 
 import csv
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 import hashlib
+from io import BytesIO, TextIOWrapper
 from itertools import islice
 import json
 from pathlib import Path
@@ -12,6 +14,8 @@ from typing import Any
 import unicodedata
 from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile, LargeZipFile, ZipFile
+
+from .variance import monthly_variance_brief
 
 _INPUT_DIRS = ("inbox", "data", "imports")
 _SUPPORTED_SUFFIXES = {".csv", ".xlsx"}
@@ -37,6 +41,19 @@ _PILOT_AVAILABILITY_TEMPLATE = (
     ("budget_variance", "unavailable", "not_processed_by_this_pilot"),
     ("receivables_aging", "unavailable", "not_processed_by_this_pilot"),
 )
+
+
+@dataclass(frozen=True)
+class _SourceSnapshot:
+    """One immutable, validated source payload used for an entire operation."""
+
+    path: Path
+    raw: bytes
+    fingerprint: str
+
+
+def _after_source_snapshot_first_read(path: Path) -> None:
+    """No-op seam used only to exercise source-replacement races in tests."""
 PNL_METRIC_NAMES = frozenset(
     {
         "ebitda",
@@ -101,25 +118,54 @@ class _InstanceInputCapability:
     def _resolve_source(self, source: str) -> tuple[Path | None, str | None]:
         if not isinstance(source, str) or not source.strip():
             return None, "Quelle fehlt."
-        path = (self._root / source).resolve()
+        relative = Path(source.replace("\\", "/"))
+        if (
+            relative.is_absolute()
+            or not relative.parts
+            or any(part in {"", ".", ".."} for part in relative.parts)
+        ):
+            return None, "Quelle liegt außerhalb der Instanz."
+        if relative.parts[0] not in _INPUT_DIRS:
+            return None, "Quelle liegt nicht in einem freigegebenen Eingabeordner."
+        if relative.suffix.lower() not in _SUPPORTED_SUFFIXES:
+            return None, "Nur CSV oder XLSX sind erlaubt."
+        return self._root.joinpath(*relative.parts), None
+
+    def _source_snapshot(self, path: Path) -> _SourceSnapshot:
+        """Pin, verify and read an approved input before parsing its bytes."""
         try:
             relative = path.relative_to(self._root)
         except ValueError:
-            return None, "Quelle liegt außerhalb der Instanz."
-        if not relative.parts or relative.parts[0] not in _INPUT_DIRS:
-            return None, "Quelle liegt nicht in einem freigegebenen Eingabeordner."
-        if path.suffix.lower() not in _SUPPORTED_SUFFIXES:
-            return None, "Nur CSV oder XLSX sind erlaubt."
+            raise ValueError("Quelle liegt außerhalb der Instanz.") from None
+        # Import lazily: artifacts imports this module, while its pinned reader
+        # is the shared source of truth for compute and acceptance paths.
+        from .artifacts import _read_current_signed_input
+
         try:
-            is_file = path.is_file()
-            size = path.stat().st_size if is_file else 0
+            first = _read_current_signed_input(
+                self._root, relative, max_bytes=_MAX_SOURCE_BYTES
+            )
+            _after_source_snapshot_first_read(path)
+            second = _read_current_signed_input(
+                self._root, relative, max_bytes=_MAX_SOURCE_BYTES
+            )
+        except ValueError as exc:
+            if "zu groß" in str(exc):
+                raise ValueError("Eingabedatei ist zu groß.") from None
+            raise ValueError(
+                "Quelle existiert nicht, ist unsicher oder wurde verändert."
+            ) from None
         except OSError:
-            return None, "Quelle existiert nicht oder ist keine Datei."
-        if not is_file:
-            return None, "Quelle existiert nicht oder ist keine Datei."
-        if size > _MAX_SOURCE_BYTES:
-            return None, "Eingabedatei ist zu groß."
-        return path, None
+            raise ValueError(
+                "Quelle existiert nicht, ist unsicher oder wurde verändert."
+            ) from None
+        if first != second:
+            raise ValueError("Eingabedatei wurde während der Berechnung verändert.")
+        return _SourceSnapshot(
+            path=path,
+            raw=first,
+            fingerprint=hashlib.sha256(first).hexdigest(),
+        )
 
     def _source_label(self, path: Path) -> str:
         return path.relative_to(self._root).as_posix()
@@ -152,7 +198,12 @@ class InstanceReadTool(_InstanceInputCapability):
         if error:
             return f"FEHLER: {error}"
         try:
-            rows, columns, sheets = ControllingComputeTool._metadata(path)
+            if path is None:
+                return "FEHLER: Quelle konnte nicht aufgelöst werden."
+            snapshot = self._source_snapshot(path)
+            rows, columns, sheets = ControllingComputeTool._metadata(
+                path, raw=snapshot.raw
+            )
         except ValueError as exc:
             return f"FEHLER: {exc}"
         return "\n".join(
@@ -178,6 +229,8 @@ class ControllingComputeTool(_InstanceInputCapability):
             return "FEHLER: Berechnung muss ein JSON-Objekt sein."
         if not isinstance(request, dict):
             return "FEHLER: Berechnung muss ein JSON-Objekt sein."
+        if request.get("operation") == "monthly_variance_brief":
+            return self._monthly_variance_brief(request)
         operation, source = request.get("operation"), request.get("source", "")
         mapping = None
         try:
@@ -193,9 +246,12 @@ class ControllingComputeTool(_InstanceInputCapability):
         if error:
             return f"FEHLER: {error}"
         try:
+            if path is None:
+                return "FEHLER: Quelle konnte nicht aufgelöst werden."
             if operation == "kmu_report":
                 return self._kmu_report(path, mapping)
-            rows = self._rows(path)
+            snapshot = self._source_snapshot(path)
+            rows = self._rows(path, raw=snapshot.raw)
             if operation == "sum":
                 column = self._column(request, "column")
                 result = self._sum(rows, column)
@@ -212,6 +268,43 @@ class ControllingComputeTool(_InstanceInputCapability):
         except ValueError as exc:
             return f"FEHLER: {exc}"
         return f"RESULT: {self._format(result)}\nSOURCE: {self._source_label(path)}\nMETHOD: {method}\nROWS: {len(rows)}"
+
+    def _monthly_variance_brief(self, request: dict[str, Any]) -> str:
+        """Run two explicit sources through one mapping snapshot and compare them."""
+        expected = {"operation", "actual_source", "budget_source"}
+        if set(request) != expected:
+            return "FEHLER: Monatsabweichung benötigt genau operation, actual_source und budget_source."
+        actual_source, budget_source = request["actual_source"], request["budget_source"]
+        if (
+            not isinstance(actual_source, str)
+            or not actual_source.strip()
+            or actual_source.strip() == "auto"
+            or not isinstance(budget_source, str)
+            or not budget_source.strip()
+            or budget_source.strip() == "auto"
+        ):
+            return "FEHLER: Ist- und Budget-Quelle müssen explizite, nichtleere Zeichenketten sein."
+        try:
+            mapping = self._mapping()
+            actual_path, actual_error = self._resolve_source(actual_source)
+            budget_path, budget_error = self._resolve_source(budget_source)
+            if actual_error:
+                return f"FEHLER: {actual_error}"
+            if budget_error:
+                return f"FEHLER: {budget_error}"
+            if actual_path is None or budget_path is None:
+                return "FEHLER: Ist- oder Budget-Quelle konnte nicht aufgeloest werden."
+            if actual_path == budget_path:
+                return "FEHLER: Ist- und Budget-Quelle müssen unterschiedliche Dateien sein."
+            actual_report = json.loads(self._kmu_report(actual_path, mapping))
+            budget_report = json.loads(self._kmu_report(budget_path, mapping))
+            return json.dumps(
+                monthly_variance_brief(actual_report, budget_report),
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+        except ValueError as exc:
+            return f"FEHLER: {exc}"
 
     def _single_source(
         self, mapping: dict[str, Any] | None = None
@@ -257,7 +350,7 @@ class ControllingComputeTool(_InstanceInputCapability):
         self, path: Path, mapping: dict[str, Any] | None = None
     ) -> str:
         mapping = mapping or self._mapping()
-        source_fingerprint = self._file_sha256(path, max_bytes=_MAX_SOURCE_BYTES)
+        snapshot = self._source_snapshot(path)
         required_headers = list(
             dict.fromkeys(
                 [
@@ -266,7 +359,7 @@ class ControllingComputeTool(_InstanceInputCapability):
                 ]
             )
         )
-        rows = self._rows(path, required_headers)
+        rows = self._rows(path, required_headers, raw=snapshot.raw)
         groups, reconciliation = self._groups(rows, mapping)
         metrics = {
             name: self._metric(groups, refs)
@@ -301,19 +394,22 @@ class ControllingComputeTool(_InstanceInputCapability):
             "reconciliation": reconciliation,
             "availability": pilot_availability(),
             "provenance": {
-                "input_fingerprint": source_fingerprint,
+                "input_fingerprint": snapshot.fingerprint,
                 "mapping_version": mapping["_mapping_version"],
                 "calculation_version": _CALCULATION_VERSION,
             },
         }
-        if self._file_sha256(path, max_bytes=_MAX_SOURCE_BYTES) != source_fingerprint:
-            raise ValueError("Eingabedatei wurde während der Berechnung verändert.")
-        if (
-            self._file_sha256(
-                mapping["_mapping_path"], max_bytes=_MAX_MAPPING_BYTES
+        from .artifacts import _read_current_signed_input
+
+        try:
+            current_mapping = _read_current_signed_input(
+                self._root,
+                Path("project/pilot/account-mapping.json"),
+                max_bytes=_MAX_MAPPING_BYTES,
             )
-            != mapping["_mapping_version"]
-        ):
+        except (OSError, ValueError):
+            raise ValueError("Konten-Mapping wurde während der Berechnung verändert.") from None
+        if hashlib.sha256(current_mapping).hexdigest() != mapping["_mapping_version"]:
             raise ValueError("Konten-Mapping wurde während der Berechnung verändert.")
         return json.dumps(
             report,
@@ -322,26 +418,19 @@ class ControllingComputeTool(_InstanceInputCapability):
         )
 
     def _mapping(self) -> dict[str, Any]:
-        declared_mapping_path = (
-            self._root / "project" / "pilot" / "account-mapping.json"
-        )
+        from .artifacts import _read_current_signed_input
+
         try:
-            mapping_path = declared_mapping_path.resolve(strict=True)
-            mapping_path.relative_to(self._root)
-            mapping_size = mapping_path.stat().st_size
-        except ValueError:
-            raise ValueError("Konten-Mapping liegt außerhalb der Instanz.") from None
-        except OSError:
-            raise ValueError(
-                "Gültiges project/pilot/account-mapping.json fehlt."
-            ) from None
-        if mapping_size > _MAX_MAPPING_BYTES:
-            raise ValueError("Konten-Mapping ist zu groß.")
-        try:
-            mapping_bytes = mapping_path.read_bytes()
-            if len(mapping_bytes) > _MAX_MAPPING_BYTES:
-                raise ValueError("Konten-Mapping ist zu groß.")
+            mapping_bytes = _read_current_signed_input(
+                self._root,
+                Path("project/pilot/account-mapping.json"),
+                max_bytes=_MAX_MAPPING_BYTES,
+            )
             mapping_text = mapping_bytes.decode("utf-8")
+        except ValueError as exc:
+            if "zu groß" in str(exc):
+                raise ValueError("Konten-Mapping ist zu groß.") from None
+            raise ValueError("Konten-Mapping liegt außerhalb der Instanz oder fehlt.") from None
         except (OSError, UnicodeError):
             raise ValueError(
                 "Gültiges project/pilot/account-mapping.json fehlt."
@@ -393,6 +482,13 @@ class ControllingComputeTool(_InstanceInputCapability):
             raise ValueError(
                 "Konten-Mapping benötigt Gruppen, Kennzahlen und Schwellenwerte."
             )
+        if (
+            not all(is_safe_report_label(name) for name in groups)
+            or not labels_are_unique(list(groups))
+            or not all(is_safe_report_label(name) for name in metrics)
+            or not labels_are_unique(list(metrics))
+        ):
+            raise ValueError("Gruppen und Kennzahlen müssen sichere, eindeutige Namen haben.")
         for rule in groups.values():
             if not isinstance(rule, dict):
                 raise ValueError(
@@ -507,7 +603,6 @@ class ControllingComputeTool(_InstanceInputCapability):
             "metrics": metrics,
             "thresholds": thresholds,
             "source_globs": source_globs,
-            "_mapping_path": mapping_path,
             "_mapping_version": hashlib.sha256(mapping_bytes).hexdigest(),
         }
 
@@ -519,21 +614,6 @@ class ControllingComputeTool(_InstanceInputCapability):
             all(is_safe_report_label(value) for value in headers)
             and labels_are_unique(headers)
         )
-
-    @staticmethod
-    def _file_sha256(path: Path, *, max_bytes: int) -> str:
-        digest = hashlib.sha256()
-        total = 0
-        try:
-            with path.open("rb") as handle:
-                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                    total += len(chunk)
-                    if total > max_bytes:
-                        raise ValueError("Quelldatei wurde während des Lesens zu groß.")
-                    digest.update(chunk)
-        except OSError:
-            raise ValueError("Quelldatei konnte nicht stabil gelesen werden.") from None
-        return digest.hexdigest()
 
     @staticmethod
     def _validated_report_metadata(raw: dict[str, Any]) -> dict[str, str]:
@@ -905,11 +985,15 @@ class ControllingComputeTool(_InstanceInputCapability):
 
     @classmethod
     def _rows(
-        cls, path: Path, required: list[str] | None = None
+        cls, path: Path, required: list[str] | None = None, *, raw: bytes | None = None
     ) -> list[dict[str, str]]:
         if path.suffix.lower() == ".csv":
             try:
-                with path.open(encoding="utf-8-sig", newline="") as h:
+                with TextIOWrapper(
+                    BytesIO(raw) if raw is not None else path.open("rb"),
+                    encoding="utf-8-sig",
+                    newline="",
+                ) as h:
                     sample = h.read(4096)
                     h.seek(0)
                     try:
@@ -923,14 +1007,18 @@ class ControllingComputeTool(_InstanceInputCapability):
             except (UnicodeDecodeError, csv.Error, OSError):
                 raise ValueError("CSV muss UTF-8-kodiert sein.") from None
         else:
-            cls._validate_xlsx_archive(path)
+            cls._validate_xlsx_archive(path, raw=raw)
             try:
                 from openpyxl import load_workbook
                 from openpyxl.utils.exceptions import InvalidFileException
             except ImportError:
                 raise ValueError("XLSX-Unterstützung ist nicht verfügbar.") from None
             try:
-                wb = load_workbook(path, read_only=True, data_only=True)
+                wb = load_workbook(
+                    BytesIO(raw) if raw is not None else path,
+                    read_only=True,
+                    data_only=True,
+                )
             except (
                 BadZipFile,
                 EOFError,
@@ -996,9 +1084,9 @@ class ControllingComputeTool(_InstanceInputCapability):
         return rows
 
     @staticmethod
-    def _validate_xlsx_archive(path: Path) -> None:
+    def _validate_xlsx_archive(path: Path, *, raw: bytes | None = None) -> None:
         try:
-            with ZipFile(path) as archive:
+            with ZipFile(BytesIO(raw) if raw is not None else path) as archive:
                 members = archive.infolist()
                 if len(members) > _MAX_XLSX_MEMBERS:
                     raise ValueError("XLSX enthält zu viele Archivdateien.")
@@ -1013,18 +1101,24 @@ class ControllingComputeTool(_InstanceInputCapability):
             raise ValueError("XLSX konnte nicht gelesen werden.") from None
 
     @classmethod
-    def _metadata(cls, path: Path) -> tuple[int, list[str], list[str]]:
-        rows = cls._rows(path)
+    def _metadata(
+        cls, path: Path, *, raw: bytes | None = None
+    ) -> tuple[int, list[str], list[str]]:
+        rows = cls._rows(path, raw=raw)
         sheets = ["CSV"]
         if path.suffix.lower() == ".xlsx":
-            cls._validate_xlsx_archive(path)
+            cls._validate_xlsx_archive(path, raw=raw)
             try:
                 from openpyxl import load_workbook
                 from openpyxl.utils.exceptions import InvalidFileException
             except ImportError:
                 raise ValueError("XLSX-Unterstützung ist nicht verfügbar.") from None
             try:
-                workbook = load_workbook(path, read_only=True, data_only=True)
+                workbook = load_workbook(
+                    BytesIO(raw) if raw is not None else path,
+                    read_only=True,
+                    data_only=True,
+                )
             except (
                 BadZipFile,
                 EOFError,

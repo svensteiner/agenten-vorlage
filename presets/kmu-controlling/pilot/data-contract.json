@@ -50,7 +50,7 @@
     "An XLSX is malformed or exceeds archive member or uncompressed-size limits."
   ],
   "optional_inputs": {
-    "budget": "Budget variance is unavailable and not processed by this pilot, even when optional-looking files exist.",
+    "budget": "Optional only in explicit two-source mode: actual_source and budget_source must be two distinct CSV/XLSX files under inbox/, data/ or imports/, with identical report metadata, mapping version, account identities and reconciliation counts. A one-source run never selects or analyses a budget file automatically.",
     "open_items": "Receivables aging is unavailable and not processed by this pilot, even when optional-looking files exist."
   }
 }
