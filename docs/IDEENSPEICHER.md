@@ -29,6 +29,7 @@ bis dahin bleibt der dokumentierte Entscheidungsstand maßgeblich.
 | [Cindy](https://github.com/makecindy/cindy) | Beobachten | Kein Fork. |
 | [AgentENV](https://github.com/kvcache-ai/AgentENV) | Später prüfen | Keine heutige Produktabhängigkeit. |
 | [Harness Engineering](https://github.com/lopopolo/harness-engineering) | Selektiv anwenden | Read-only-Referenz, kein Fork. |
+| [Thinking Orbs](https://github.com/Jakubantalik/thinking-orbs) | Später prüfen | UI-Politur erst im React-Frontend. |
 
 ## Einträge
 
@@ -117,3 +118,18 @@ bis dahin bleibt der dokumentierte Entscheidungsstand maßgeblich.
   einmal als Baseline ausführen, nur die früheste belegte Lücke schließen und
   frisch wiederholen. Im generischen Kern zuerst strukturierte Evidence Records,
   Tool Contracts und native Abnahmetests je Agentenpaket bewerten.
+
+### Thinking Orbs
+
+- **Aktuelle Entscheidung:** Nicht in den heutigen HTML-/JavaScript-Prototyp
+  einbauen; als UI-Kandidat für ein späteres React-Frontend vormerken.
+- **Nützliche Ideen:** Sechs klar unterscheidbare Agentenzustände, automatische
+  Hell-/Dunkel-Anpassung, reduzierte Bewegung und ressourcenschonendes Pausieren
+  außerhalb des sichtbaren Bereichs.
+- **Nicht übernehmen:** Kein React nur für eine kosmetische Ladeanimation
+  einführen und keine Aktivität vortäuschen, die das Backend nicht meldet.
+- **Kosten/Risiken:** MIT-lizenziert und ohne API-Kosten; zusätzlicher
+  Frontend-Pflegeaufwand sowie Ablenkung bei zu häufigem Einsatz.
+- **Erneut prüfen, wenn:** Das Produktions-Frontend React nutzt und ein
+  Usability-Test zeigt, dass Nutzer bei realen Wartephasen den Agentenstatus
+  nicht verstehen. Dann zuerst genau einen echten Statuspfad testen.
