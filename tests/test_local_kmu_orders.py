@@ -161,6 +161,48 @@ def test_create_order_recovers_a_zero_byte_stable_lock(tmp_path):
     assert lock.read_bytes() == b"0"
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("schema_version", 2),
+        ("status", "unknown"),
+        ("status_history", None),
+        ("cost", {"budget_eur": "1", "spent_eur": "0"}),
+        ("acceptance", None),
+        ("verification", {"idempotency_key": "verify-001"}),
+    ),
+)
+def test_malformed_durable_order_state_fails_closed(
+    tmp_path, field, value
+):
+    service = _service(tmp_path)
+    order = service.create_order(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        idempotency_key="checkout-001",
+        display_name="Muster KMU",
+        budget_eur=Decimal("0"),
+    )
+    state_path = (
+        tmp_path
+        / "instances"
+        / "muster-kmu"
+        / "controlling"
+        / "state"
+        / "local-demo-order.json"
+    )
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state[field] = value
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+
+    with pytest.raises(OrderConflict, match="ung.*ltig"):
+        service.get_order(
+            tenant_id="muster-kmu",
+            agent_id="controlling",
+            order_id=order["order_id"],
+        )
+
+
 def test_service_rejects_redirected_internal_storage(tmp_path):
     output_root = tmp_path / "instances"
     output_root.mkdir()

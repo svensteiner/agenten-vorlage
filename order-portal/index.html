@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>KMU Controlling-Agent · Lokale Demo</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="AIStudioXYZ Startseite">
+          <span class="brand-mark">A</span>
+          <span>AIStudioXYZ</span>
+        </a>
+        <span class="local-pill"><i></i> Lokale Demo · 0 €</span>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Live Controlling statt zwei Monate Blindflug</p>
+          <h1>Controlling-Agent kostenlos testen.</h1>
+          <p class="lead">
+            Ein echter Auftrag-zu-Bericht-Ablauf mit fiktiven Rechnungs- und
+            Buchungsdaten. Ohne Anmeldung, ohne LLM-Kosten, ohne Cloud.
+          </p>
+          <ul class="benefits" aria-label="Vorteile der Demo">
+            <li><b>01</b><span>Agent wird automatisch angelegt</span></li>
+            <li><b>02</b><span>Daten und Kennzahlen werden abgestimmt</span></li>
+            <li><b>03</b><span>Managementbericht nach drei Kontrollläufen</span></li>
+          </ul>
+        </div>
+
+        <section class="order-card" aria-labelledby="order-title">
+          <div class="card-head">
+            <span class="step-label">DEMO-AUFTRAG</span>
+            <span class="price">0 €</span>
+          </div>
+          <h2 id="order-title">In einer Minute zum Bericht</h2>
+          <p class="card-subtitle">Es werden ausschließlich mitgelieferte Musterdaten verarbeitet.</p>
+          <form id="order-form">
+            <label for="company-name">Firmenname der Demo</label>
+            <input
+              id="company-name"
+              name="company_name"
+              maxlength="80"
+              autocomplete="organization"
+              placeholder="z. B. Muster Demo GmbH"
+              required
+            >
+            <label class="check-row" for="synthetic-only">
+              <input id="synthetic-only" type="checkbox" required>
+              <span>
+                <b>Nur fiktive Beispieldaten verwenden</b>
+                <small>Keine Kundendaten, kein Vertrag, keine Zahlung.</small>
+              </span>
+            </label>
+            <button class="primary" id="order-button" type="submit">
+              <span>Kostenlose Demo bestellen</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+        </section>
+      </section>
+
+      <section id="customer-area" class="customer-area" hidden>
+        <div class="area-heading">
+          <div>
+            <p class="eyebrow">IHR DEMO-AGENT</p>
+            <h2>Kundenbereich bereit</h2>
+          </div>
+          <span id="agent-state" class="state ready">Bereit zur Prüfung</span>
+        </div>
+
+        <div class="journey-grid">
+          <article class="journey-card done">
+            <span class="journey-number">1</span>
+            <div><b>Agent angelegt</b><small>Eigene lokale Instanz</small></div>
+            <span class="tick">✓</span>
+          </article>
+          <article class="journey-card done">
+            <span class="journey-number">2</span>
+            <div><b>Musterdaten geladen</b><small>Hash-geprüfte Saldenliste</small></div>
+            <span class="tick">✓</span>
+          </article>
+          <article id="verification-card" class="journey-card">
+            <span class="journey-number">3</span>
+            <div><b>Dreifach prüfen</b><small id="verification-detail">Noch nicht gestartet</small></div>
+            <span class="tick">3×</span>
+          </article>
+          <article id="report-card" class="journey-card">
+            <span class="journey-number">4</span>
+            <div><b>Bericht freigeben</b><small>Nur nach 3/3 identischen Läufen</small></div>
+            <span class="tick">—</span>
+          </article>
+        </div>
+
+        <div class="area-actions">
+          <button id="verify-button" class="primary" type="button">Agent vollständig prüfen</button>
+          <button id="report-button" class="secondary" type="button" disabled>Managementbericht öffnen</button>
+          <p id="verification-message" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <footer>
+        <span>Deterministischer lokaler Pilot</span>
+        <span>Keine externe Aktion ohne Freigabe</span>
+        <span>Für Azure-Betrieb vorbereitet</span>
+      </footer>
+    </main>
+  </body>
+</html>

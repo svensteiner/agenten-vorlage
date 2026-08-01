@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "profile": "deterministic_local_demo",
+  "files": [
+    {
+      "source": "Saldenliste_Muster_Juni2026.xlsx",
+      "destination": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+      "bytes": 8109,
+      "sha256": "094946de002992e59c7217dcfe47f7de805c4da880f2e332346c8dfafd2a9ccc"
+    },
+    {
+      "source": "account-mapping.json",
+      "destination": "project/pilot/account-mapping.json",
+      "bytes": 1685,
+      "sha256": "8888449eb443cc723d08be2ba20db1e6bf11485ea5ccb33450d8d39cee1145a5"
+    },
+    {
+      "source": "expected-results.json",
+      "destination": null,
+      "bytes": 814,
+      "sha256": "50378c332bd233e88f5a403dbdec2404d6ec6d1e960a25a87541f1d1dbe98131"
+    }
+  ]
+}
