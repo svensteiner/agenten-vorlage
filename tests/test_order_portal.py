@@ -101,7 +101,7 @@ def test_portal_uses_restrictive_headers_and_no_cors(portal):
     status, headers, body = _request(portal, "GET", "/")
 
     assert status == 200
-    assert b"Controlling-Agent kostenlos testen" in body
+    assert b"Sehen Sie heute, wo Ihr Unternehmen steht." in body
     assert headers["x-content-type-options"] == "nosniff"
     assert headers["cache-control"] == "no-store"
     assert "frame-ancestors 'none'" in headers["content-security-policy"]

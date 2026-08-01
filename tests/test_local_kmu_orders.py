@@ -12,6 +12,7 @@ import socket
 import pytest
 
 from core import local_kmu_orders as orders_module
+from core.controlling import artifacts as artifacts_module
 from core.local_kmu_orders import (
     LocalKmuOrderService,
     OrderConflict,
@@ -427,6 +428,46 @@ def test_verification_replay_does_not_add_acceptance_runs(tmp_path):
     assert len(json.loads(evidence_path.read_text(encoding="utf-8"))["runs"]) == 3
     with pytest.raises(OrderConflict):
         service.verify_order(**{**request, "idempotency_key": "verify-002"})
+
+
+def test_renderer_upgrade_resets_an_accepted_order_for_a_fresh_verified_report(
+    tmp_path, monkeypatch
+):
+    """An old presentation can never look accepted while its report is invalid."""
+    service = _service(tmp_path)
+    order = service.create_order(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        idempotency_key="checkout-001",
+        display_name="Muster KMU",
+        budget_eur=Decimal("0"),
+    )
+    request = {
+        "tenant_id": "muster-kmu",
+        "agent_id": "controlling",
+        "order_id": order["order_id"],
+        "idempotency_key": "verify-001",
+    }
+    assert service.verify_order(**request)["status"] == "accepted"
+
+    monkeypatch.setattr(
+        artifacts_module, "PRESENTATION_VERSION", "management-renderer-upgrade-test"
+    )
+
+    stale = service.get_order(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        order_id=order["order_id"],
+    )
+    assert stale["status"] == "ready"
+    assert stale["acceptance"] == {"passed": False, "repeatable_run_count": 0}
+    assert stale["status_history"][-1] == "ready"
+
+    refreshed = service.verify_order(**request)
+    assert refreshed["status"] == "accepted"
+    assert refreshed["acceptance"] == {"passed": True, "repeatable_run_count": 3}
+    assert refreshed["status_history"][-3:] == ["ready", "verifying", "accepted"]
+    assert service.read_report_html(**{key: request[key] for key in ("tenant_id", "agent_id", "order_id")})
 
 
 def test_order_access_is_tenant_and_agent_scoped(tmp_path):

@@ -394,6 +394,28 @@ def _public_order(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _acceptance_is_current(instance: Path) -> bool:
+    """Treat an unreadable or superseded report as not accepted, never as current."""
+    try:
+        acceptance = read_acceptance_status(instance)
+    except (OSError, ValueError):
+        return False
+    return (
+        acceptance.get("valid") is True
+        and acceptance.get("passed") is True
+        and acceptance.get("repeatable_run_count") == 3
+    )
+
+
+def _reset_stale_accepted_order(state: dict[str, Any]) -> None:
+    """Require a fresh three-run verification after an accepted view goes stale."""
+    state.pop("verification", None)
+    state.pop("verification_operation_id", None)
+    state["acceptance"] = {"passed": False, "repeatable_run_count": 0}
+    state["status"] = "ready"
+    state["status_history"].append("ready")
+
+
 class LocalKmuOrderService:
     """Persistent local order-to-report service for the synthetic demo."""
 
@@ -618,14 +640,20 @@ class LocalKmuOrderService:
         tenant_id = _validate_identity("tenant_id", tenant_id)
         agent_id = _validate_identity("agent_id", agent_id)
         order_id = _validate_order_id(order_id)
-        state = _read_order_state(self._state_path(tenant_id, agent_id))
-        if (
-            state.get("tenant_id") != tenant_id
-            or state.get("agent_id") != agent_id
-            or state.get("order_id") != order_id
-        ):
-            raise OrderNotFound("Bestellung nicht gefunden.")
-        return _public_order(state)
+        with _file_lock(self._scope_lock(tenant_id, agent_id)):
+            state = _read_order_state(self._state_path(tenant_id, agent_id))
+            if (
+                state.get("tenant_id") != tenant_id
+                or state.get("agent_id") != agent_id
+                or state.get("order_id") != order_id
+            ):
+                raise OrderNotFound("Bestellung nicht gefunden.")
+            if state.get("status") == "accepted" and not _acceptance_is_current(
+                self._instance(tenant_id, agent_id)
+            ):
+                _reset_stale_accepted_order(state)
+                _atomic_json(self._state_path(tenant_id, agent_id), state)
+            return _public_order(state)
 
     def _scope_for_order(self, order_id: str) -> tuple[str, str]:
         order_id = _validate_order_id(order_id)
@@ -668,6 +696,11 @@ class LocalKmuOrderService:
             ):
                 raise OrderNotFound("Bestellung nicht gefunden.")
             self._seed_demo(self._instance(tenant_id, agent_id))
+            if state.get("status") == "accepted" and not _acceptance_is_current(
+                self._instance(tenant_id, agent_id)
+            ):
+                _reset_stale_accepted_order(state)
+                _atomic_json(state_path, state)
 
             verification = state.get("verification")
             if verification is not None:

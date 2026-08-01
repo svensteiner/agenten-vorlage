@@ -71,7 +71,7 @@ function showAccepted() {
   verificationCard.classList.add("done");
   reportCard.classList.add("done");
   reportCard.querySelector(".tick").textContent = "✓";
-  verificationMessage.textContent = "Bericht bereit · 3/3 geprüft";
+  verificationMessage.textContent = "Cockpit bereit · 3/3 geprüft";
   verifyButton.disabled = true;
   reportButton.disabled = false;
 }

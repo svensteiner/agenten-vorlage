@@ -51,23 +51,23 @@ def test_customer_orders_runs_and_opens_real_controlling_report(tmp_path: Path):
             page.get_by_text("Kundenbereich bereit").wait_for(timeout=30_000)
 
             page.get_by_role("button", name="Agent vollständig prüfen").click()
-            page.get_by_text("Bericht bereit · 3/3 geprüft").wait_for(
+            page.get_by_text("Cockpit bereit · 3/3 geprüft").wait_for(
                 timeout=90_000
             )
 
             page.reload(wait_until="networkidle")
             page.get_by_text("Kundenbereich bereit").wait_for(timeout=30_000)
-            page.get_by_text("Bericht bereit · 3/3 geprüft").wait_for(
+            page.get_by_text("Cockpit bereit · 3/3 geprüft").wait_for(
                 timeout=30_000
             )
 
             with page.expect_popup() as popup:
-                page.get_by_role("button", name="Managementbericht öffnen").click()
+                page.get_by_role("button", name="Controlling-Cockpit öffnen").click()
             report = popup.value
             report.wait_for_load_state("domcontentloaded")
             assert report.title() == "KMU-Controlling-Report"
             assert report.get_by_role(
-                "heading", name="KMU-Controlling-Report"
+                "heading", name="Managementbriefing"
             ).is_visible()
             assert report.get_by_text(
                 "Saldenliste_Muster_Juni2026.xlsx", exact=False

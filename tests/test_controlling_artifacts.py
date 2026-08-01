@@ -374,6 +374,97 @@ def test_management_views_use_escaped_mapping_period_labels_and_sign_note(tmp_pa
     assert report["sign_convention_note"] in markdown
 
 
+def test_management_html_renders_an_executive_cockpit_from_verified_metrics():
+    """The first visible report screen must be useful to a nontechnical owner."""
+    report = {
+        "source": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "report_metadata": {
+            "period_start": "2026-06-01",
+            "period_end": "2026-06-30",
+            "currency": "EUR",
+        },
+        "period_labels": {
+            "month": "Juni 2026",
+            "prior": "Juni 2025",
+            "ytd": "YTD 2026",
+            "ytd_prior": "YTD 2025",
+        },
+        "sign_convention_note": "synthetisch",
+        "metrics": {
+            "liquidity": {"month": "66150", "prior": "100300"},
+            "egt": {"month": "-2250", "prior": "21780"},
+            "receivables": {"month": "238500"},
+            "payables": {"month": "-147400"},
+        },
+        "reconciliation": {
+            "source_account_count": 20,
+            "mapped_account_count": 20,
+            "ignored_account_count": 0,
+        },
+        "availability": {
+            "budget_variance": {
+                "status": "unavailable",
+                "reason": "in diesem Piloten nicht verarbeitet",
+            },
+            "receivables_aging": {
+                "status": "unavailable",
+                "reason": "in diesem Piloten nicht verarbeitet",
+            },
+        },
+    }
+    payload = {
+        "report": report,
+        "management": {
+            "summary": "Management-Fazit: Liquidität weiter beobachten.",
+            "alarms": [],
+            "actions": [],
+        },
+        "acceptance": {"passed": True, "repeatable_run_count": 3},
+    }
+
+    html = artifacts_module.render_html(payload)
+
+    assert 'class="executive-summary"' in html
+    assert "Datenstand: Monatsabschluss" in html
+    assert "werden nicht geschätzt" in html
+    assert "Management-Fazit: Liquidität weiter beobachten." in html
+    assert "EBITDA im Monat: 2800" not in html
+    assert "Liquidität" in html
+    assert "66.150 €" in html
+    assert "EGT im Monat" in html
+    assert "-2.250 €" in html
+    assert "Forderungen" in html
+    assert "238.500 €" in html
+    assert "Verbindlichkeiten" in html
+    assert "147.400 €" in html
+    assert "20 / 20 Konten zugeordnet" in html
+    assert "3 / 3 identische Läufe" in html
+
+
+def test_management_html_marks_negative_liquidity_as_alert():
+    """A negative cash position must never receive the reassuring green style."""
+    payload = {
+        "report": {
+            "source": "synthetic.csv",
+            "report_metadata": {"currency": "EUR"},
+            "period_labels": {},
+            "metrics": {
+                "liquidity": {"month": "-1250"},
+                "egt": {"month": "1250"},
+            },
+            "reconciliation": {},
+            "availability": {},
+        },
+        "management": {"summary": "Fazit", "alarms": [], "actions": []},
+        "acceptance": {"passed": False, "repeatable_run_count": 0},
+    }
+
+    html = artifacts_module.render_html(payload)
+
+    assert '<article class="metric-card alert"><span>Liquidität</span>' in html
+    assert '<article class="metric-card positive"><span>EGT im Monat</span>' in html
+
+
 def test_management_views_show_deterministic_top_material_deviations():
     report = {
         "report_metadata": {},

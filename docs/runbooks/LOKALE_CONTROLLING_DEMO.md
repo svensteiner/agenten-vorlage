@@ -7,7 +7,7 @@ Die Demo zeigt den vollständigen Weg aus Kundensicht:
 3. Die fest mitgelieferte Saldenliste und das Konten-Mapping werden anhand
    ihrer Prüfsummen kontrolliert.
 4. Der Controlling-Bericht wird dreimal deterministisch erzeugt.
-5. Nur bei drei übereinstimmenden, belegten Läufen wird der Managementbericht
+5. Nur bei drei übereinstimmenden, belegten Läufen wird das Management-Cockpit
    freigegeben.
 
 ## Start für eine Vorführung

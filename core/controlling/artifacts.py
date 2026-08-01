@@ -42,7 +42,7 @@ else:
 
 
 CALCULATION_VERSION = "kmu-report-v3"
-PRESENTATION_VERSION = "management-renderer-v3"
+PRESENTATION_VERSION = "management-renderer-v4"
 _HISTORY_LIMIT = 100
 _MAX_HISTORY_BYTES = 1_000_000
 _MAX_LEDGER_BYTES = 50 * 1024 * 1024
@@ -2582,6 +2582,31 @@ def render_html(payload: dict[str, Any]) -> str:
     return _html(payload)
 
 
+def _dashboard_decimal(value: Any, *, absolute: bool = False) -> Decimal | None:
+    """Return a finite number for a human summary without trusting input types."""
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    if not parsed.is_finite():
+        return None
+    return abs(parsed) if absolute else parsed
+
+
+def _dashboard_money(value: Any, currency: Any, *, absolute: bool = False) -> str:
+    """Format a reported value for a manager while preserving raw report data below."""
+    parsed = _dashboard_decimal(value, absolute=absolute)
+    if parsed is None:
+        return "–"
+    sign = "-" if parsed < 0 else ""
+    rendered = format(abs(parsed), ",.2f").rstrip("0").rstrip(".")
+    german = rendered.replace(",", " ").replace(".", ",").replace(" ", ".")
+    unit = "€" if currency == "EUR" else str(currency or "")
+    return f"{sign}{german} {unit}".rstrip()
+
+
 def _html(payload: dict[str, Any]) -> str:
     """Render a dependency-free management report that is safe to open locally."""
     report = payload["report"]
@@ -2589,27 +2614,111 @@ def _html(payload: dict[str, Any]) -> str:
     metadata = report.get("report_metadata", {})
     labels = report.get("period_labels", {})
     acceptance = payload["acceptance"]
+
     def esc(value: Any) -> str:
         return html.escape(str(value), quote=True)
+
+    def table_value(values: dict[str, Any], period: str) -> Any:
+        value = values.get(period)
+        return "–" if value is None else value
+
+    currency = metadata.get("currency", "EUR")
+    metrics = report.get("metrics", {})
+
+    def metric_card(
+        key: str,
+        label: str,
+        supporting_label: str,
+        *,
+        absolute: bool = False,
+        tone: str = "neutral",
+    ) -> str:
+        values = metrics.get(key)
+        if not isinstance(values, dict):
+            return ""
+        current = _dashboard_money(values.get("month"), currency, absolute=absolute)
+        if current == "–":
+            return ""
+        prior = _dashboard_money(values.get("prior"), currency, absolute=absolute)
+        comparison_label = labels.get("prior", "Vergleich")
+        supporting = supporting_label
+        if prior != "–":
+            supporting = f"{supporting_label} · {comparison_label}: {prior}"
+        return (
+            f'<article class="metric-card {tone}"><span>{esc(label)}</span>'
+            f"<strong>{esc(current)}</strong><small>{esc(supporting)}</small></article>"
+        )
+
+    liquidity_tone = "neutral"
+    liquidity_values = metrics.get("liquidity")
+    if isinstance(liquidity_values, dict):
+        liquidity_month = _dashboard_decimal(liquidity_values.get("month"))
+        if liquidity_month is not None:
+            liquidity_tone = "alert" if liquidity_month < 0 else "positive"
+
+    egt_tone = "neutral"
+    egt_values = metrics.get("egt")
+    if isinstance(egt_values, dict):
+        egt_month = _dashboard_decimal(egt_values.get("month"))
+        if egt_month is not None:
+            egt_tone = "alert" if egt_month < 0 else "positive"
+    executive_cards = "".join(
+        (
+            metric_card(
+                "liquidity",
+                "Liquidität",
+                "laut Saldenliste",
+                tone=liquidity_tone,
+            ),
+            metric_card("egt", "EGT im Monat", "Ergebnis vor Steuern", tone=egt_tone),
+            metric_card("receivables", "Forderungen", "offene Kundenforderungen"),
+            metric_card(
+                "payables",
+                "Verbindlichkeiten",
+                "offene Lieferantenverbindlichkeiten",
+                absolute=True,
+            ),
+        )
+    )
+    management_summary = management.get("summary", "")
+    executive_summary = (
+        "Geprüfter Monatsabschluss: Alle gezeigten Kennzahlen stammen aus der "
+        "benannten Quelle. Daten, die im Pilot nicht vorliegen, werden nicht geschätzt."
+        if executive_cards
+        else management_summary
+    )
+    management_conclusion = (
+        f'<section class="details-section"><h2>Management-Fazit</h2><p class="meta">{esc(management_summary)}</p></section>'
+        if executive_cards and management_summary
+        else ""
+    )
+
+    reconciliation = report.get("reconciliation", {})
+    source_accounts = reconciliation.get("source_account_count", "–")
+    mapped_accounts = reconciliation.get("mapped_account_count", "–")
+    ignored_accounts = reconciliation.get("ignored_account_count", "–")
+    source = report.get("source", "–")
+    source_name = str(source).replace("\\", "/").rsplit("/", 1)[-1]
+    repeat_count = acceptance.get("repeatable_run_count", "–")
+    evidence_strip = f"""
+<section class="evidence-strip" aria-label="Prüfnachweis">
+  <div><span>Abgleich</span><strong>{esc(mapped_accounts)} / {esc(source_accounts)} Konten zugeordnet</strong><small>{esc(ignored_accounts)} ignoriert</small></div>
+  <div><span>Wiederholbarkeit</span><strong>{esc(repeat_count)} / 3 identische Läufe</strong><small>gleiche Daten, gleiche Kennzahlen</small></div>
+  <div><span>Geprüfte Quelle</span><strong>{esc(source_name)}</strong><small>Zeitraum und Zuordnung im Bericht belegt</small></div>
+</section>"""
+
     metric_rows = []
     for name, values in report.get("metrics", {}).items():
         if not isinstance(values, dict):
             continue
         cells = "".join(
-            f"<td>{esc(values.get(period, '–'))}</td>"
+            f"<td>{esc(table_value(values, period))}</td>"
             for period in ("month", "prior", "ytd", "ytd_prior")
         )
         metric_rows.append(f"<tr><th>{esc(name.upper())}</th>{cells}</tr>")
     deviation_rows = "".join(
         f"<tr><th>{esc(account_id)}</th><td>{esc(amount)}</td></tr>"
         for account_id, amount in _management_material_deviations(report)
-    )
-    deviations_section = (
-        "<h2>Wesentliche Abweichungen</h2>"
-        "<table><thead><tr><th>Konto</th><th>Monat ggü. Vormonat</th>"
-        f"</tr></thead><tbody>{deviation_rows}</tbody></table>"
-        if deviation_rows
-        else ""
     )
     variance_rows = "".join(
         "<tr><th>{group}</th><td>{actual}</td><td>{budget}</td><td>{delta}</td>"
@@ -2626,20 +2735,14 @@ def _html(payload: dict[str, Any]) -> str:
         )
         for driver in _management_variance_drivers(management)
     )
-    variance_section = (
-        "<h2>Budgetabweichungen</h2><table><thead><tr><th>Bereich</th>"
-        "<th>Ist</th><th>Budget</th><th>Abweichung</th><th>Abweichung %</th>"
-        f"</tr></thead><tbody>{variance_rows}</tbody></table>"
-        if variance_rows
-        else ""
-    )
     availability_section = "".join(
         f"<li>{esc(limitation)}</li>"
         for limitation in _availability_limitations(report)
     )
     if availability_section:
         availability_section = (
-            "<section><h2>Verfügbarkeitsgrenzen</h2><ul>"
+            "<section class=\"limitations\"><h2>Grenzen dieses Piloten</h2><p>"
+            "Diese Informationen werden nicht geschätzt oder erfunden.</p><ul>"
             f"{availability_section}</ul></section>"
         )
     alarms = "".join(
@@ -2653,21 +2756,19 @@ def _html(payload: dict[str, Any]) -> str:
     return f"""<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KMU-Controlling-Report</title><style>
-body{{font-family:Arial,sans-serif;background:#f3f6fa;color:#142033;margin:0}}main{{max-width:1050px;margin:32px auto;background:#fff;padding:40px;border-radius:14px;box-shadow:0 8px 30px #1d35571a}}
-h1{{margin:0 0 8px;color:#102a43}}.meta{{color:#52677d;margin-bottom:28px}}.summary{{font-size:1.15rem;line-height:1.6;background:#edf4fb;padding:18px;border-left:5px solid #2463a9}}
-table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{padding:11px;border-bottom:1px solid #dce5ee;text-align:right}}th:first-child{{text-align:left}}thead th{{background:#102a43;color:#fff}}
-.grid{{display:grid;grid-template-columns:1fr 1fr;gap:24px}}li{{margin:9px 0}}.badge{{display:inline-block;padding:7px 12px;border-radius:999px;font-weight:bold}}.passed{{background:#d8f3dc;color:#1b5e20}}.open{{background:#fff1cc;color:#7a5200}}footer{{margin-top:30px;color:#60758a;font-size:.9rem}}@media(max-width:700px){{main{{margin:0;padding:22px;border-radius:0}}.grid{{grid-template-columns:1fr}}}}
-</style></head><body><main><h1>KMU-Controlling-Report</h1>
-<div class="meta">Zeitraum: {esc(metadata.get('period_start', '–'))} bis {esc(metadata.get('period_end', '–'))} · Währung: {esc(metadata.get('currency', '–'))}</div>
-<p class="summary">{esc(management.get('summary', ''))}</p>
-<p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p>
-<table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
-{variance_section}
-{deviations_section}
+:root{{color-scheme:light;--ink:#10231b;--muted:#627169;--line:#d8e2dc;--paper:#f7faf8;--panel:#ffffff;--green:#087a57;--mint:#dff7ec;--blue:#e6f0ff;--amber:#fff3d6;--red:#ffe5e4}}*{{box-sizing:border-box}}body{{margin:0;background:linear-gradient(135deg,#e9f4ee 0%,#f7faf8 46%,#e8f0fb 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}}main{{max-width:1180px;margin:32px auto 48px;padding:clamp(22px,4vw,54px);background:rgba(255,255,255,.89);border:1px solid rgba(16,35,27,.09);border-radius:28px;box-shadow:0 24px 68px rgba(20,52,39,.12)}}.report-header{{display:flex;justify-content:space-between;gap:28px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:28px}}.eyebrow{{margin:0 0 10px;color:var(--green);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}}h1{{margin:0;font-size:clamp(32px,5vw,58px);letter-spacing:-.055em;line-height:.98}}h2{{margin:0 0 14px;font-size:clamp(21px,2.2vw,28px);letter-spacing:-.035em}}.meta{{margin:13px 0 0;color:var(--muted);font-size:14px}}.badge{{display:inline-flex;align-items:center;white-space:nowrap;padding:9px 13px;border-radius:999px;font-size:13px;font-weight:800}}.passed{{background:var(--mint);color:#07573f}}.open{{background:var(--amber);color:#795600}}.executive-summary{{margin:26px 0 18px;padding:22px 24px;border-radius:18px;background:linear-gradient(115deg,#0d2e22,#15513a);color:#fff}}.executive-summary .label{{display:block;margin-bottom:7px;color:#9ee6c7;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}}.executive-summary p{{margin:0;max-width:920px;font-size:clamp(17px,1.6vw,21px);line-height:1.48}}.kpi-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:18px 0}}.metric-card{{min-height:150px;padding:19px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 8px 22px rgba(16,35,27,.04)}}.metric-card>span{{display:block;color:var(--muted);font-size:13px;font-weight:760}}.metric-card strong{{display:block;margin:10px 0 8px;font-size:clamp(25px,3vw,37px);letter-spacing:-.055em;line-height:1.02;font-variant-numeric:tabular-nums}}.metric-card small{{display:block;color:var(--muted);font-size:12px;line-height:1.35}}.metric-card.positive{{border-color:#a9dfc5;background:linear-gradient(155deg,#fff,#f0fbf5)}}.metric-card.alert{{border-color:#f3b1ad;background:linear-gradient(155deg,#fff,#fff4f3)}}.evidence-strip{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;overflow:hidden;margin:20px 0 34px;border:1px solid var(--line);border-radius:17px;background:var(--line)}}.evidence-strip div{{padding:16px 18px;background:var(--paper)}}.evidence-strip span,.evidence-strip small{{display:block;color:var(--muted);font-size:12px}}.evidence-strip span{{margin-bottom:5px;font-weight:760;text-transform:uppercase;letter-spacing:.08em}}.evidence-strip strong{{display:block;font-size:15px;overflow-wrap:anywhere}}.evidence-strip small{{margin-top:4px;line-height:1.35}}.details-section{{margin-top:34px}}.table-wrap{{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel)}}table{{width:100%;min-width:670px;border-collapse:collapse;font-size:14px}}th,td{{padding:12px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}}th:first-child{{text-align:left}}thead th{{position:sticky;top:0;background:#123b2c;color:#fff;font-size:12px;letter-spacing:.03em}}tbody tr:last-child th,tbody tr:last-child td{{border-bottom:0}}.section-table{{margin-top:32px}}.section-table h2{{margin-bottom:12px}}.grid{{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px}}.grid section,.limitations{{padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}}.grid section:first-child{{background:linear-gradient(155deg,#fff,#fff9eb);border-color:#f1d69b}}.grid section:nth-child(2){{background:linear-gradient(155deg,#fff,#f0fbf5);border-color:#b8e3ce}}.limitations{{margin-top:30px;background:#f7f9fb}}.limitations p{{margin:-5px 0 12px;color:var(--muted);font-size:14px}}li{{margin:9px 0;padding-left:2px}}.acceptance{{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:32px;padding-top:28px;border-top:1px solid var(--line)}}.acceptance h2{{width:100%;margin-bottom:0}}footer{{margin-top:30px;color:var(--muted);font-size:12px;line-height:1.55;overflow-wrap:anywhere}}@media(max-width:850px){{main{{margin:0;padding:24px 18px;border:0;border-radius:0}}.report-header{{display:grid;gap:16px}}.kpi-grid{{grid-template-columns:1fr 1fr}}.evidence-strip{{grid-template-columns:1fr}}.grid{{grid-template-columns:1fr}}}}@media(max-width:520px){{.kpi-grid{{grid-template-columns:1fr}}.executive-summary{{padding:19px}}}}
+</style></head><body><main><header class="report-header"><div><p class="eyebrow">AIStudioXYZ · Controlling-Pilot</p><h1>Managementbriefing</h1><p class="meta">Datenstand: Monatsabschluss · Zeitraum: {esc(metadata.get('period_start', '–'))} bis {esc(metadata.get('period_end', '–'))} · Währung: {esc(currency)}</p></div><span class="badge {status_class}">{status} · {esc(repeat_count)}/3 geprüft</span></header>
+<section class="executive-summary"><span class="label">Faktenstand</span><p>{esc(executive_summary)}</p></section>
+<section class="kpi-grid" aria-label="Wichtigste Kennzahlen">{executive_cards}</section>
+{evidence_strip}
+{management_conclusion}
+<section class="details-section"><h2>Alle berechneten Kennzahlen</h2><p class="meta">Vorzeichenkonvention: {esc(report.get('sign_convention_note', '–'))}</p><div class="table-wrap"><table><thead><tr><th>Kennzahl</th>{''.join(f'<th>{esc(labels.get(period, "–"))}</th>' for period in REPORT_PERIODS)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table></div></section>
+{f'<section class="section-table"><h2>Budgetabweichungen</h2><div class="table-wrap"><table><thead><tr><th>Bereich</th><th>Ist</th><th>Budget</th><th>Abweichung</th><th>Abweichung %</th></tr></thead><tbody>{variance_rows}</tbody></table></div></section>' if variance_rows else ''}
+{f'<section class="section-table"><h2>Wesentliche Abweichungen</h2><div class="table-wrap"><table><thead><tr><th>Konto</th><th>Monat ggü. Vormonat</th></tr></thead><tbody>{deviation_rows}</tbody></table></div></section>' if deviation_rows else ''}
 {availability_section}
-<div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions}</ol></section></div>
-<h2>Pilot-Abnahme</h2><span class="badge {status_class}">{status}</span> <span>{acceptance['repeatable_run_count']}/3 identische Wiederholungsläufe</span>
-<footer>Quelle: {esc(report.get('source', '–'))}<br>Methode: {esc(report.get('method', '–'))}</footer>
+<div class="grid"><section><h2>Alarme</h2><ul>{alarms or '<li>Keine.</li>'}</ul></section><section><h2>Nächste Schritte</h2><ol>{actions or '<li>Keine.</li>'}</ol></section></div>
+<section class="acceptance"><h2>Pilot-Abnahme</h2><span class="badge {status_class}">{status}</span><span>{esc(repeat_count)}/3 identische Wiederholungsläufe</span></section>
+<footer>Quelle: {esc(source)}<br>Methode: {esc(report.get('method', '–'))}</footer>
 </main></body></html>"""
 
 
