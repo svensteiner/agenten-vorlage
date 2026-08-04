@@ -43,7 +43,14 @@
   function demoScenarios() {
     const seen = new Set();
     const list = [];
-    DEMO_ORDER.forEach((id) => {
+    // Pilot-Szenarien (genau 3) haben Vorrang vor der kuratierten Meridian-Reihenfolge.
+    // Der Money-Shot wird unten IMMER angehängt — auch ein Pilot endet mit dem Abo-Finale.
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    const order =
+      cfg && cfg.active && Array.isArray(cfg.scenarios) && cfg.scenarios.length
+        ? cfg.scenarios
+        : DEMO_ORDER;
+    order.forEach((id) => {
       if (id === MONEY_SHOT_ID || seen.has(id)) return;
       const s = SCENARIOS.find((x) => x.id === id);
       if (s) { list.push(s); seen.add(id); }
@@ -76,6 +83,7 @@
 
   // ---------- Bootstrapping ----------
   function init() {
+    applyPilotChrome();
     renderSidebar();
     renderCompanyCard();
     selectModule("wissen");
@@ -85,6 +93,40 @@
     wireReset();
     wireSearch();
     wireOnboarding();
+  }
+
+  // ---------- Pilot-Umbranding (Schicht A) ----------
+  // Setzt die wenigen Stellen, die NICHT aus COMPANY lesen: den hartkodierten <title>
+  // und den Logo-Glyph. COMPANY selbst hat der Guard in data.js bereits überschrieben.
+  // Ohne aktive pilot.config.js passiert hier nichts (bit-identische Meridian-Demo).
+  // Der Marken-Glyph der Kunden-Shell. Ohne Pilot bleibt es ✦.
+  // BEWUSST NICHT ersetzt: der Glyph neben dem Wort „AI Studio" (Assistenten-Avatar)
+  // und die Frage-Chips — das ist UNSER Produktzeichen, nicht das des Kunden.
+  function brandGlyph() {
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    const g = cfg && cfg.active && cfg.company && cfg.company.logoGlyph;
+    return g || "✦";
+  }
+
+  function applyPilotChrome() {
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    if (!cfg || !cfg.active) return;
+
+    // Tab-Titel: Produktname bleibt „AI Studio" (unser Produkt), Kunde dahinter.
+    document.title = "AI Studio — " + COMPANY.name;
+
+    // Logo-Glyph im Kopf und im Onboarding-Overlay.
+    const glyph = cfg.company && cfg.company.logoGlyph;
+    if (glyph) {
+      const logo = $(".logo");
+      if (logo) logo.textContent = glyph;
+      const spark = $(".ob-spark");
+      if (spark) spark.textContent = glyph;
+    }
+
+    // Akzentfarbe optional; weglassen = Marken-Indigo behalten.
+    const accent = cfg.company && cfg.company.accent;
+    if (accent) document.documentElement.style.setProperty("--accent", accent);
   }
 
   // ---------- Onboarding-Coachmark (nur beim ersten Start) ----------
@@ -328,7 +370,7 @@
   function renderHero(wrap) {
     const hero = el("div", "hero");
     hero.innerHTML =
-      `<div class="spark">✦</div>` +
+      `<div class="spark">${escapeHtml(brandGlyph())}</div>` +
       `<h1>Ihre Zahlen — sofort verständlich</h1>` +
       `<p>Fragen Sie nach Kosten, Projekten oder Rechnungen. AI Studio erklärt die Zusammenhänge und zeigt für jede Kennzahl die verwendeten Belege.</p>`;
     wrap.appendChild(hero);

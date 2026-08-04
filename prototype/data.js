@@ -25,6 +25,17 @@ const COMPANY = {
   },
 };
 
+// Pilot-Umbranding (Schicht A, PILOT_CONFIG_SPEC.md §5.2): überschreibt die Shell-Werte
+// mit denen des Pilotkunden. Fehlt pilot.config.js oder ist active:false, bleibt COMPANY
+// unverändert — die Meridian-Demo ist dann bit-identisch (Regressionsschutz).
+// Alle Renderer lesen COMPANY.name/.tagline/.facts, daher schlägt das automatisch durch.
+if (typeof window !== "undefined" && window.PILOT_CONFIG && window.PILOT_CONFIG.active) {
+  Object.assign(COMPANY, window.PILOT_CONFIG.company);
+}
+
+// Schicht B (Korpus-Ersetzung) wird ans DATEIENDE gestellt — dort sind DOCS, SCENARIOS
+// und DECISION_CHAIN bereits definiert. Siehe `applyCorpusReplace()` unten.
+
 // Module in der Seitenleiste. `key` verbindet Dokumente & Szenarien mit dem Modul.
 const MODULES = [
   { key: "wissen", label: "Cockpit", icon: "◆", hint: "Kennzahlen, Fragen und Belege auf einen Blick" },
@@ -1096,3 +1107,52 @@ const MODULE_SUGGESTIONS = {
   berichte: ["projekt-portfolio", "projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick", "agent-dazubuchen"],
   einstellungen: [],
 };
+
+// --- Schicht B: Korpus-Ersetzung (PILOT_CONFIG_SPEC.md §2, Schicht B) --------
+// Ersetzt Firma, Personen, Orte und Domains in ALLEN Textfeldern von DOCS,
+// SCENARIOS und DECISION_CHAIN durch die synthetischen Pendants des Pilotkunden.
+// Ohne aktive pilot.config.js passiert nichts — die Meridian-Demo bleibt bit-identisch.
+//
+// Warum Ersetzung statt zweitem Korpus: die 12 verifizierten Zwillinge in
+// pilot-assets/muster-bau-gmbh/ sind absatzgleich mit den Meridian-Dokumenten und
+// unterscheiden sich ausschliesslich in diesen Bezeichnern. Ein duplizierter Korpus
+// waere eine zweite Wahrheit, die auseinanderlaeuft.
+(function applyCorpusReplace() {
+  if (typeof window === "undefined") return;
+  const cfg = window.PILOT_CONFIG;
+  if (!cfg || !cfg.active || !cfg.corpusReplace) return;
+
+  // Laengster Schluessel zuerst: so gewinnt "Dr. Katharina Vogel" gegen "Vogel", und
+  // ein EINZIGER Durchgang verhindert, dass ein Ergebnis erneut ersetzt wird
+  // (relevant bei "Wagner" -> "Reinhardt" neben der bestehenden "Sabine Reinhardt").
+  const keys = Object.keys(cfg.corpusReplace).sort((a, b) => b.length - a.length);
+  if (!keys.length) return;
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(keys.map(escape).join("|"), "g");
+  const swap = (s) => s.replace(re, (m) => cfg.corpusReplace[m]);
+
+  // Rekursiv ueber Objekte/Arrays; ersetzt nur Strings, laesst Zahlen/Booleans intakt.
+  // `id`/`key`-Felder bleiben unangetastet — sie sind Referenzen, kein Anzeigetext.
+  const REF_KEYS = new Set(["id", "key", "module", "doc", "docId", "scenario"]);
+  const walk = (node) => {
+    if (Array.isArray(node)) {
+      // Strings, die DIREKT im Array liegen (z. B. Aufzaehlungen), muessen hier
+      // ersetzt werden — ein reines forEach(walk) wuerde sie ueberspringen.
+      node.forEach((v, i) => {
+        if (typeof v === "string") node[i] = swap(v);
+        else walk(v);
+      });
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    Object.keys(node).forEach((k) => {
+      const v = node[k];
+      if (typeof v === "string") { if (!REF_KEYS.has(k)) node[k] = swap(v); }
+      else walk(v);
+    });
+  };
+
+  walk(DOCS);
+  walk(SCENARIOS);
+  walk(DECISION_CHAIN);
+})();

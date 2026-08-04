@@ -11,7 +11,105 @@
 > [FUTURE_BACKLOG.md](FUTURE_BACKLOG.md). Wir sind in **Phase A**. (Die alte „PROTOTYPE
 > DEVELOPMENT MODE"-Zeile oben ist historisch; die Zyklus-Historie unten bleibt gültig.)
 
-## ► Nächster Zyklus (Phase B — Videoproduktion: **Kern-Deliverables fertig, wartet auf Sven**)
+## ► GATE B→C AUFGEHOBEN (2026-08-05, Anweisung Sven)
+
+> **Sven wörtlich: „ich mache keine video aufnahme die machst du."** Damit ist der Wartepunkt,
+> der diesen Track ~10 Zyklen blockiert hat, **erledigt** — nicht durch eine Aufnahme, sondern
+> durch eine Entscheidung. **Der Feature-Freeze auf `prototype/` ist damit aufgehoben**;
+> die gated Phase-C-Arbeit läuft. Ziel laut Sven: **ein vorführbarer Prototyp für die
+> Agentenplattform**.
+>
+> **Offen zur Aufnahme:** In geplanten/headless Läufen ist **keine Bild- oder Videoaufnahme
+> möglich** — die Browser-Pane rendert dann keine Frames („Screenshot timed out … pane is not
+> displayed"). Automatisierte Aufnahme braucht eine Sitzung mit sichtbarer Pane. Die Demo läuft
+> und ist verifiziert; nur das *Abfilmen* ist offen.
+>
+> **Arbeitsteilung (Sven, 2026-08-05):** Optik/Design → **Codex**. Mechanik/Logik → dieser Track.
+
+### Diesen Zyklus gebaut (2026-08-05): PILOT_CONFIG verdrahtet — Schritt 1 der gated Arbeit
+
+Der Umbranding-Mechanismus aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §5 ist **implementiert
+und live verifiziert** (erstmals Eingriff in `prototype/`, jetzt erlaubt):
+
+- **neu [`prototype/pilot.config.js`](prototype/pilot.config.js)** — Schicht A, Werte aus dem
+  verifizierten Draft übernommen (Muster Bau GmbH, 3 Szenarien, `projectLeads`).
+  **Abweichung von der Spec (bewusst):** die Datei ist **immer vorhanden** statt zu fehlen —
+  eine fehlende Datei erzeugt einen 404 in der Konsole, und die Aufnahme-Bereitschaft verlangt
+  **0 Konsolenfehler**. Der Schalter ist `active`.
+- **`index.html`** — `<script src="pilot.config.js">` vor `data.js`.
+- **`data.js`** — `Object.assign(COMPANY, PILOT_CONFIG.company)` hinter der `COMPANY`-Definition.
+- **`app.js`** — `applyPilotChrome()` im `init()` (Titel · Logo-Glyph · Akzentfarbe) +
+  `brandGlyph()`-Helfer + Pilot-Szenarien in `demoScenarios()`.
+
+**Neu-Fund beim Verifizieren (wäre im Video sichtbar gewesen):** Der Spec-Wiring-Plan ersetzt nur
+`.logo` und `.ob-spark`. Der **Hero-Block hat einen dritten ✦** (`app.js` `renderHero`), der dabei
+stehen bleibt → Seitenleiste ▲, Hero ✦ auf **demselben Bildschirm**. Behoben über `brandGlyph()`.
+**Bewusst NICHT ersetzt:** der Glyph neben dem Wort „AI Studio" (Assistenten-Avatar) und die
+Frage-Chips — das ist **unser** Produktzeichen, nicht das des Kunden.
+
+**Verifiziert (live, Port 8790, cache-frei):**
+
+| Prüfung | Ergebnis |
+|---|---|
+| `active:false` (Auslieferungszustand) | Titel/Karte/Suche = Meridian, Glyphen ✦, **0** „Muster Bau", kein `--accent` |
+| `active:true` | Titel · Firmenkarte (inkl. Fakten Augsburg/180/48 Mio.) · Suchfußzeile · Glyph ▲ · Akzent `#1f6feb` — **0 „Meridian" im gesamten DOM** |
+| Konsolenfehler | **0** in beiden Zuständen (auch kein 404) |
+| `node --check` | grün für `app.js`, `data.js`, `pilot.config.js` |
+| Invarianten (Node-VM) | **29 Docs · 17 Szenarien** unverändert |
+| Geführte Demo mit Pilot | `materialkosten → projekt-beta → vorstand-summary → agent-dazubuchen`, **Money-Shot als Finale bestätigt** |
+
+**⚠ Deshalb steht `active` auf `false` ausgeliefert:** Schicht A ist fertig, **Schicht B nicht** —
+`data.js` trägt weiterhin **38** „Meridian"-Vorkommen in den Dokumentkörpern. Mit `active:true`
+sagt die Hülle „Muster Bau", die Belege sagen „Meridian". Das sieht ein Kunde sofort. Der Schalter
+darf erst dauerhaft auf `true`, wenn der Korpus getauscht ist.
+
+### Ebenfalls diesen Zyklus: Schicht B (Korpus) — Schritt 2 ausgeführt, Probelauf bestanden
+
+**Zentrale Beobachtung, die den Plan vereinfacht hat:** Die 12 Zwillinge sind **absatzgleich**
+mit den Meridian-Dokumenten — sie unterscheiden sich **ausschließlich** in Firma, Personen und
+Domains. Ein Korpus-*Austausch* (wie in der Spec skizziert) hätte eine **zweite Wahrheit**
+erzeugt, die auseinanderläuft. Stattdessen: **Ersetzung beim Laden**.
+
+- **`pilot.config.js`** trägt jetzt `corpusReplace` — die vollständige, aus den Zwillingen
+  **abgeleitete** (nicht geratene) Zuordnung: Firma · 4 Domains/Mail-Adressen · 9 Personen
+  (Vollname **und** Nachname für Fließtext-Anreden) · Standorte.
+- **`data.js`** wendet sie am Dateiende auf `DOCS`, `SCENARIOS` und `DECISION_CHAIN` an —
+  **ein** Durchgang, längster Treffer zuerst. Das ist zwingend: „Wagner → Reinhardt" würde
+  sonst mit der bereits existierenden „Sabine Reinhardt" kollidieren.
+- `id`/`key`/`module` sind ausgenommen — das sind Referenzen, kein Anzeigetext.
+
+**Eigener Fehler, gefunden und behoben:** Die erste Fassung der rekursiven Ersetzung ließ
+Strings **direkt in Arrays** aus (`forEach(walk)` steigt in Strings nicht ein). Ergebnis waren
+**3 übersehene Namensreste** (2× Krüger, 1× Feldmann) — im Kundentermin wäre das der Moment
+gewesen, in dem jemand fragt, wer Krüger ist. Nach dem Fix: **0**.
+
+**⚠ Standorte — eigene Entscheidung, NICHT durch die Zwillinge gedeckt:** Die Zwillinge haben
+Ortsnamen **gar nicht** umbenannt (`projekt-alpha`/`projekt-beta` nennen weiter Ingolstadt und
+München). Die Firmenkarte der Muster Bau GmbH kennt aber nur **Augsburg · Werkhof Kempten**.
+Ohne Zuordnung nennt ein Beleg einen eigenen Standort, den die Firmenkarte nicht führt →
+München→Augsburg, Ingolstadt/Nürnberg→Kempten ergänzt. **Zu bestätigen**, oder alternativ ein
+dritter Standort in `facts`.
+
+**Verifiziert:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Leak-Scan über DOCS+SCENARIOS+DECISION_CHAIN+COMPANY (`active:true`) | **0** Treffer für Meridian · Vogel · Krüger · Brandt · Reuter · Wagner · Hoffmann · Feldmann · München · Ingolstadt · Nürnberg · Domains |
+| Absatz-Treue gegen die 12 Zwillinge | deckungsgleich (Restdifferenzen = Umlaut-Artefakte des Prüfskripts) |
+| **Regression `active:false` gegen `git HEAD`** | **bit-identisch** (JSON-Vergleich DOCS+SCENARIOS+COMPANY+DECISION_CHAIN) |
+| Live-Browser, beide Zustände | 0 Konsolenfehler; Viewer-Briefkopf zeigt „Muster Bau GmbH" + Tagline + synth. Autor |
+| Suche über den gesamten Wissensspeicher (`active:true`) | 0 Meridian-Merkmale in den Treffern |
+
+**Auslieferungszustand: `active: false`** — die eingespielte Meridian-Demo bleibt der Standard.
+Für einen Piloten ist **ein Wort** zu ändern.
+
+**► Nächster Schritt:** **(a)** Aufnahme in einer Sitzung mit sichtbarer Browser-Pane (headless
+geht nicht, s. o.). **(b)** Standort-Entscheidung oben bestätigen. **(c)** Optik/Design → Codex
+(Ansatzpunkt `prototype/styles.css` + die jetzt aus der Config gespeiste `--accent`-Variable).
+
+---
+
+## ► Historisch: Phase B — Videoproduktion (Wartepunkt, am 2026-08-05 aufgelöst)
 
 > ✅ **PHASE A ABGESCHLOSSEN (Gate A→B bestanden, 2026-07-08).** Alle 6 Checklisten-Kästchen erfüllt.
 > **Feature-Freeze bleibt in Kraft** — keine neuen Prototyp-Features, nur noch das Verkaufsvideo
