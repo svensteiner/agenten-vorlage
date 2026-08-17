@@ -110,10 +110,15 @@
 
   function applyPilotChrome() {
     const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
-    if (!cfg || !cfg.active) return;
 
-    // Tab-Titel: Produktname bleibt „AI Studio" (unser Produkt), Kunde dahinter.
+    // Tab-Titel IMMER aus COMPANY setzen — auch ohne Pilot. Grund (2026-08-17):
+    // Der <title> in index.html ist hartkodiert. Stand dort der vorige Kunde, blitzte
+    // sein Name beim Laden im Browser-Tab auf, bevor dieses Skript lief. Deshalb ist
+    // der statische Titel jetzt neutral („AI Studio"), und der Kundenname kommt
+    // ausschließlich von hier. Produktname vorn (unser Produkt), Kunde dahinter.
     document.title = "AI Studio — " + COMPANY.name;
+
+    if (!cfg || !cfg.active) return;
 
     // Logo-Glyph im Kopf und im Onboarding-Overlay.
     const glyph = cfg.company && cfg.company.logoGlyph;

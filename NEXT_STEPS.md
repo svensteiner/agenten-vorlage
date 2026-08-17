@@ -26,7 +26,75 @@
 >
 > **Arbeitsteilung (Sven, 2026-08-05):** Optik/Design → **Codex**. Mechanik/Logik → dieser Track.
 
-### Diesen Zyklus gebaut (2026-08-05): PILOT_CONFIG verdrahtet — Schritt 1 der gated Arbeit
+### Diesen Zyklus gebaut (2026-08-17): Pilot scharfgeschaltet und vorführbar gemacht
+
+> **Anweisung Sven (2026-08-17): „wir brauchen jedenfalls einen fertigen Piloten den ich
+> herzeigen kann."** Damit ist der Auslieferungszustand entschieden — der Schalter steht
+> ab jetzt auf **`active: true`**.
+
+**Was fehlte, war nicht die Demo, sondern der Weg zu ihr.** Die Pilot-Demo war seit dem
+2026-08-05 gebaut und verifiziert, stand aber auf `active: false`, und es gab **kein
+Startskript für `prototype/`** — sie ließ sich nur über einen manuell gestarteten Server
+öffnen. Für „Sven zeigt es einem Kunden" reicht das nicht.
+
+**Gebaut:**
+
+- **`prototype/pilot.config.js` → `active: true`** (mit begründetem Kommentar, wie man zurückschaltet).
+- **neu [`PILOT_ZEIGEN.bat`](PILOT_ZEIGEN.bat)** — Doppelklick startet die Demo, Browser öffnet
+  sich von selbst. **CRLF-Zeilenenden und reines ASCII** (mit LF zerfällt eine `.bat` mit
+  mehrzeiligen `if`-Blöcken in Einzelbefehle — genau das passierte im ersten Versuch).
+- **neu [`scripts/serve_pilot.py`](scripts/serve_pilot.py)** — Starter ohne Abhängigkeiten:
+  bindet auf **127.0.0.1** (das Datenschutz-Versprechen wird im schwarzen Fenster sichtbar),
+  öffnet den Browser **erst wenn der Server antwortet**, weicht bei belegtem Port auf den
+  nächsten freien aus, unterdrückt Zugriffs-Logzeilen (Bildschirmfreigabe) und setzt
+  `Cache-Control: no-store` — sonst zeigt ein zweiter Start die vorige Umbrandung.
+- **neu [`scripts/verify_pilot.js`](scripts/verify_pilot.js)** — **20 Abnahmeprüfungen** ohne
+  Browser, beide Schalterstellungen. Beantwortet die eine Frage, die vor jedem Termin zählt:
+  *steht irgendwo noch der Name des Vorkunden?*
+- **neu [`PILOT_VORFUEHRUNG.md`](PILOT_VORFUEHRUNG.md)** — Startanleitung, 20-Minuten-Ablauf mit
+  dem Satz zu jedem Schritt, die vier Einwände mit *worauf man zeigt*, und die Umbau-Anleitung
+  auf einen echten Interessenten.
+
+**Zwei echte Fehler gefunden und behoben — beide wären im Kundentermin sichtbar gewesen:**
+
+1. **Namensrest in einem Belegpfad:** `corpusReplace` ersetzte `Nürnberg`, aber der Pfad
+   `SharePoint › Recht › Verträge › MV-2024-003_Logistik_Nuernberg.pdf` schreibt den Ort
+   **umlautlos**. Dateipfade sind ASCII — der Treffer stand ausgerechnet in dem Feld, das der
+   Kunde anklickt, wenn er die Belegkette prüft. Behoben durch ASCII-Varianten
+   (`Nuernberg`/`Muenchen`/`Krueger`); die Regel steht jetzt in der Config und in der Prüfung.
+2. **Fremder Kundenname im Browser-Tab:** Der `<title>` in `index.html` war hartkodiert auf
+   „Meridian Industrie GmbH". `applyPilotChrome()` überschrieb ihn erst nach dem Laden —
+   davor blitzte er im Tab auf. Jetzt ist der statische Titel neutral (**„AI Studio"**) und der
+   Kundenname kommt **immer** aus `COMPANY` (die Titel-Zeile wurde vor den `active`-Guard gezogen,
+   also auch ohne Pilot korrekt).
+
+**Verifiziert:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| `node scripts/verify_pilot.js` | **20/20 — vorführbereit** |
+| Namensreste des Vorkunden (inkl. ASCII-Varianten) in DOCS+SCENARIOS+COMPANY+DECISION_CHAIN | **0** |
+| Regression `active:false` | COMPANY wieder „Meridian Industrie GmbH", **0** Pilotname im Korpus |
+| Invarianten | **29 Docs · 17 Szenarien** unverändert |
+| Startkette `PILOT_ZEIGEN.bat` → Server (real gestartet, Port 8777) | Server lauscht; `/`, `pilot.config.js`, `data.js`, `app.js`, `styles.css` je **HTTP 200**; ausgelieferte Config trägt `active: true` |
+| Script-Reihenfolge in `index.html` | `pilot.config.js` → `data.js` → `app.js` (Config zuerst, wie erforderlich) |
+| `node --check` | grün für `app.js`, `data.js`, `pilot.config.js` |
+
+**⚠ Was NICHT verifiziert ist — ehrlich:** Diese Sitzung hatte **keine Browser-Pane**
+(unbeaufsichtigter Lauf). Geprüft sind Daten, Auslieferung und Startkette; **nicht gesehen**
+sind Layout, Konsolenfehler im Browser, das Abspielen der geführten Demo und die Wirkung der
+Akzentfarbe. Die beiden Änderungen an `app.js`/`index.html` sind syntaktisch grün und logisch
+belegt, aber nicht im Browser betrachtet. **Vor dem ersten Kundentermin gehört ein Probelauf
+am Bildschirm** — er steht als Schritt in [PILOT_VORFUEHRUNG.md](PILOT_VORFUEHRUNG.md) §1.
+
+**► Nächster Schritt:** **(a)** Probelauf im Browser (Punkt oben) — der einzige offene
+Prüfschritt. **(b)** Standort-Entscheidung aus dem 2026-08-05-Eintrag bestätigen
+(Ingolstadt/Nürnberg → beide Kempten). **(c)** Aufnahme weiterhin offen: sie braucht eine
+Sitzung mit sichtbarer Pane. **(d)** Optik/Design → Codex (`prototype/styles.css` + `--accent`).
+
+---
+
+### Zyklus davor gebaut (2026-08-05): PILOT_CONFIG verdrahtet — Schritt 1 der gated Arbeit
 
 Der Umbranding-Mechanismus aus [PILOT_CONFIG_SPEC.md](PILOT_CONFIG_SPEC.md) §5 ist **implementiert
 und live verifiziert** (erstmals Eingriff in `prototype/`, jetzt erlaubt):
