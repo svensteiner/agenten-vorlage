@@ -20,7 +20,7 @@ def _node(script: str) -> str:
 
 
 def test_js_syntax():
-        for rel in ("prototype/app.js", "prototype/data.js", "prototype/product-client.js"):
+    for rel in ("prototype/app.js", "prototype/data.js", "prototype/product-client.js"):
         r = subprocess.run(["node", "--check", str(ROOT / rel)], capture_output=True, text=True)
         assert r.returncode == 0, r.stderr
 
