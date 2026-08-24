@@ -248,7 +248,8 @@ function renderCatalog() {
     button.className = "primary";
     button.type = "button";
     button.dataset.agentId = agent.agent_id;
-    button.innerHTML = "<span>Mieten</span><span aria-hidden=\"true\">→</span>";
+    const rentLabel = agent.provisionable ? "Mieten" : "Mieten — Pack folgt";
+    button.innerHTML = "<span>" + rentLabel + "</span><span aria-hidden=\"true\">→</span>";
     button.addEventListener("click", () => rentAgent(agent.agent_id, button));
     card.append(title, description, meta, button);
     catalogGrid.append(card);

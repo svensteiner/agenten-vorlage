@@ -379,6 +379,25 @@
   }
 
   function renderHero(wrap) {
+    const rental = rentalConfig();
+    if (rental) {
+      const hero = el("div", "hero");
+      const files = rentalFilePaths(rental);
+      const fileLine = files.length
+        ? "Dateien in der Instanz: " + files.join(", ") + "."
+        : "Noch keine Quellen oder Berichte in der Instanz. Im Portal: Excel hochladen oder mit Muster starten.";
+      const onboard = rental.onboarding || {};
+      const onboardLine = onboard.supported && onboard.status !== "ready"
+        ? " Onboarding ist noch offen."
+        : "";
+      hero.innerHTML =
+        `<div class="spark">${escapeHtml(brandGlyph())}</div>` +
+        `<h1>Ihre gemietete Instanz</h1>` +
+        `<p>Live-Fragen an ein Sprachmodell sind hier nicht verbunden. Dieser Chat durchsucht keine Demo-Wissensbasis.</p>` +
+        `<p>${escapeHtml(fileLine + onboardLine)}</p>`;
+      wrap.appendChild(hero);
+      return;
+    }
     const hero = el("div", "hero");
     hero.innerHTML =
       `<div class="spark">${escapeHtml(brandGlyph())}</div>` +
@@ -415,6 +434,32 @@
     chatState.push({ role: "user", text });
     wrap.appendChild(userBubble(text));
     scrollBottom();
+
+    const rental = rentalConfig();
+    if (rental) {
+      const files = rentalFilePaths(rental);
+      const fileLine = files.length
+        ? " Vorhandene Dateien: " + files.join(", ") + "."
+        : " Es liegen noch keine Quellen in der Instanz.";
+      const answer = {
+        text:
+          "In dieser gemieteten Instanz ist kein Live-LLM verbunden. Es wird nicht in einer Demo-Wissensbasis gesucht." +
+          fileLine +
+          " Zahlen und Berichte liegen in den Instanzdateien, nicht in diesem Chat.",
+        reasoning: [
+          "Gemietete Instanz erkannt.",
+          "Kein Live-LLM angebunden.",
+          "Keine Demo-Dokumente als Mandantenwissen ausgegeben.",
+        ],
+        sources: [],
+        related: [],
+        followups: [],
+      };
+      const completed = await streamAnswer(wrap, answer, cancelled);
+      if (!completed) return false;
+      chatState.push({ role: "ai", answer, question: text });
+      return true;
+    }
 
     const scenario = matchScenario(text);
 
@@ -1565,9 +1610,29 @@
   }
 
 
+  function rentalConfig() {
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    return cfg && cfg.active && cfg.rental ? cfg.rental : null;
+  }
+
+  function rentalFilePaths(rental) {
+    const files = [];
+    (rental.inputs || []).forEach((item) => { if (item && item.path) files.push(item.path); });
+    (rental.artifacts || []).forEach((item) => { if (item && item.path) files.push(item.path); });
+    return files;
+  }
+
   function wireRentalInstance() {
     const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
     if (!cfg || !cfg.rental) return;
+    const demoBtn = $("#demoBtn");
+    if (demoBtn) demoBtn.hidden = true;
+    const resetBtn = $("#resetBtn");
+    if (resetBtn) resetBtn.hidden = true;
+    const status = $(".status");
+    if (status) status.innerHTML = '<span class="dot"></span> Lokale Instanz - kein Live-LLM';
+    const hint = $(".composer .hint");
+    if (hint) hint.textContent = "Gemietete lokale Instanz - kein Live-LLM, keine Cloud-Fragen";
     const rental = cfg.rental;
     const card = $("#companyCard");
     if (card) {
