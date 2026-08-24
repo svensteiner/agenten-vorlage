@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from .budget import evaluate_run_budget
 from .context import ProjectContext
+from .guardrails import check_input_guardrail
 
 if TYPE_CHECKING:
     from .subagents import SubagentSpec
@@ -34,6 +37,8 @@ class GovernancePolicy:
         context: ProjectContext | None = None,
         tool: str | None = None,
         text: str = "",
+        spent_usd: Decimal | int | float | str | None = None,
+        spent_tokens: int | None = None,
     ) -> GovernanceDecision:
         combined = " ".join(part for part in [action, tool or "", text] if part).lower()
         approval_terms = self._approval_terms(context)
@@ -62,6 +67,38 @@ class GovernancePolicy:
                     "risk": risk,
                     "tool": tool,
                     "hard_block_terms": hard_block_terms,
+                },
+            )
+
+        input_gate = check_input_guardrail(" ".join(part for part in [action, tool or "", text] if part))
+        if input_gate.tripwire:
+            return GovernanceDecision(
+                allowed=False,
+                reason=input_gate.reason,
+                requires_approval=True,
+                metadata={
+                    "gate": "input_guardrail",
+                    "risk": risk,
+                    "tool": tool,
+                },
+            )
+
+        budget = evaluate_run_budget(
+            context.config if context is not None else None,
+            spent_usd=spent_usd,
+            spent_tokens=spent_tokens,
+        )
+        if budget is not None and not budget.allowed:
+            return GovernanceDecision(
+                allowed=False,
+                reason=budget.reason,
+                requires_approval=True,
+                metadata={
+                    "gate": "run_budget",
+                    "risk": risk,
+                    "tool": tool,
+                    "spent_usd": None if spent_usd is None else str(spent_usd),
+                    "spent_tokens": spent_tokens,
                 },
             )
 

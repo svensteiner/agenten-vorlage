@@ -1,11 +1,13 @@
 """High-level orchestration for the reusable automation template."""
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 import json
 from pathlib import Path
 from typing import Any
 import uuid
 
+from .budget import RunBudget, plan_spend, spent_from_metadata
 from .context import ContextBuilder, ProjectContext
 from .dispatcher import Dispatcher, DispatchResult
 from .execution import (
@@ -107,8 +109,20 @@ class AgentOrchestrator:
         context = self.context_builder.build()
         tools = tools or {}
         plan = self.planner.draft(task, context=task, project=context, tools=tools)
-        governance = self.governance.allow(task, context=context, text=task)
+        try:
+            run_budget = RunBudget.from_config(context.config)
+        except ValueError:
+            run_budget = None
+        projected_usd, projected_tokens = plan_spend(plan)
+        governance = self.governance.allow(
+            task,
+            context=context,
+            text=task,
+            spent_usd=projected_usd,
+            spent_tokens=projected_tokens,
+        )
         if not governance.allowed:
+            status = "budget_exceeded" if "budget_exceeded" in (governance.reason or "") else "blocked"
             return RunResult(
                 task=task,
                 success=False,
@@ -116,7 +130,7 @@ class AgentOrchestrator:
                 governance=governance,
                 context=context,
                 run_spec=run_spec,
-                metadata={"status": "blocked"},
+                metadata={"status": status, "reason": governance.reason},
             )
 
         dispatch_results: list[DispatchResult] = []
@@ -127,16 +141,50 @@ class AgentOrchestrator:
         handoffs_made: list[dict[str, Any]] = []
         success = True
         dispatch_seq = 0  # unique per scheduled step → distinct backend cache key
+        spent_usd = Decimal("0")
+        spent_tokens = 0
 
         for step in plan.steps:
+            step_usd, step_tokens = spent_from_metadata(getattr(step, "metadata", None))
+            pending_usd = spent_usd + step_usd
+            pending_tokens = spent_tokens + step_tokens
+            if run_budget is not None:
+                probe = RunBudget(max_usd=run_budget.max_usd, max_tokens=run_budget.max_tokens)
+                probe.charge(tokens=pending_tokens, usd=pending_usd)
+                if probe.exceeded:
+                    step_gov = self.governance.allow(
+                        step.action,
+                        risk="high" if step.requires_human else "low",
+                        context=context,
+                        tool=step.tool,
+                        text=" ".join(part for part in [step.description, step.input or ""] if part),
+                        spent_usd=pending_usd,
+                        spent_tokens=pending_tokens,
+                    )
+                    return RunResult(
+                        task=task,
+                        success=False,
+                        plan=plan,
+                        governance=step_gov,
+                        context=context,
+                        run_spec=run_spec,
+                        metadata={
+                            "status": "budget_exceeded",
+                            "step": step.id,
+                            "reason": step_gov.reason or probe.deny_reason,
+                        },
+                    )
             step_gov = self.governance.allow(
                 step.action,
                 risk="high" if step.requires_human else "low",
                 context=context,
                 tool=step.tool,
                 text=" ".join(part for part in [step.description, step.input or ""] if part),
+                spent_usd=pending_usd,
+                spent_tokens=pending_tokens,
             )
             if not step_gov.allowed:
+                status = "budget_exceeded" if "budget_exceeded" in (step_gov.reason or "") else "step_blocked"
                 return RunResult(
                     task=task,
                     success=False,
@@ -144,8 +192,10 @@ class AgentOrchestrator:
                     governance=step_gov,
                     context=context,
                     run_spec=run_spec,
-                    metadata={"status": "step_blocked", "step": step.id},
+                    metadata={"status": status, "step": step.id, "reason": step_gov.reason},
                 )
+            spent_usd = pending_usd
+            spent_tokens = pending_tokens
 
             selected_subagent = self.subagents.select(
                 task,

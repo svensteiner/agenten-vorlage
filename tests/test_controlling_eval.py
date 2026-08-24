@@ -179,11 +179,14 @@ def test_eval_set_is_grounded_in_packaged_demo_results():
     ids = [case["id"] for case in payload["cases"]]
     assert len(ids) == len(set(ids))
     negatives = [case for case in payload["cases"] if case["expected"].get("fail_closed")]
-    assert 1 <= len(negatives) <= 2
+    assert len(negatives) >= 2
     for case in payload["cases"]:
         assert case["tool"] in {"ControllingReportTool", "ControllingComputeTool"}
+        assert case.get("description")
         assert "payload" in case
         assert case["setup"] in {"demo", "empty_inbox"}
+        assert "pass" in case["expected"]
+        assert case["expected"]["pass"] is (not case["expected"].get("fail_closed"))
         if not case["expected"].get("fail_closed"):
             assert case["expected"].get("metrics_from_golden") is True
             if case["expected"].get("source_file"):

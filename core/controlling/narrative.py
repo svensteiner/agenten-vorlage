@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .artifacts import persist_report_artifacts, validate_operation_id
+from .report_schema import validate_controlling_report
 from .tools import ControllingComputeTool, pilot_availability
 from .variance import monthly_variance_brief
 
@@ -44,6 +45,9 @@ class ControllingReportTool:
             return "FEHLER: Rechenbericht ist nicht lesbar."
         if not isinstance(report, dict):
             return "FEHLER: Rechenbericht ist unvollstaendig."
+        schema = validate_controlling_report(report)
+        if not schema.ok:
+            return "FEHLER: Berichtsschema ungueltig: " + "; ".join(schema.errors)
         return self._draft_and_persist(report, operation_id)
 
     def _two_source_safe_run(self, request: dict[str, Any]) -> str:
@@ -86,6 +90,10 @@ class ControllingReportTool:
                 raise ValueError("Rechenberichte sind unvollstaendig.")
             if actual_report.get("source") == budget_report.get("source"):
                 raise ValueError("Ist- und Budget-Quelle muessen unterschiedliche Dateien sein.")
+            for candidate in (actual_report, budget_report):
+                schema = validate_controlling_report(candidate)
+                if not schema.ok:
+                    return "FEHLER: Berichtsschema ungueltig: " + "; ".join(schema.errors)
             variance = monthly_variance_brief(actual_report, budget_report)
             report = self._with_budget_variance_availability(actual_report)
         except (json.JSONDecodeError, ValueError) as exc:

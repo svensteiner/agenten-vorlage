@@ -8,7 +8,9 @@ from typing import Any
 
 import brain
 
+from core.controlling.report_schema import validate_controlling_report
 from core.controlling.tools import pilot_availability
+from core.guardrails import check_output_guardrail
 from .context import ProjectContext
 
 
@@ -38,6 +40,14 @@ class Verifier:
                 passed=False,
                 score=0,
                 feedback=["Empty output"],
+            )
+        output_gate = check_output_guardrail(output)
+        if output_gate.tripwire:
+            return VerificationResult(
+                passed=False,
+                score=0,
+                feedback=[output_gate.reason],
+                metadata={"mode": "output_guardrail"},
             )
         if self._looks_like_error(output):
             return VerificationResult(
@@ -213,7 +223,24 @@ class Verifier:
             for value in objects
             if value.get("mode") in {"deterministic_fallback", "model_draft"}
         ]
+        _compute_allow = {
+            "source", "method", "metrics", "reconciliation", "report_metadata",
+            "period_labels", "sign_convention", "sign_convention_note", "groups",
+            "material_deviations", "availability", "provenance", "schema_version",
+            "currency", "period", "raw_rows",
+        }
         for computation in computations:
+            schema = validate_controlling_report(computation)
+            unknown = sorted(set(computation) - _compute_allow)
+            if not schema.ok or unknown:
+                errors = list(schema.errors)
+                errors.extend(f"unknown field: {key}" for key in unknown)
+                return VerificationResult(
+                    passed=False,
+                    score=0,
+                    feedback=["Controlling report failed schema lock: " + "; ".join(errors)],
+                    metadata={"mode": "report_schema"},
+                )
             if not self._valid_controlling_computation(computation):
                 continue
             for draft in drafts:

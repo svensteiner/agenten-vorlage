@@ -34,8 +34,19 @@
           "input_fingerprint",
           "mapping_version",
           "kpi_result_hash"
+        ],
+        "pass": true,
+        "required_keys_from_expected_results": [
+          "source",
+          "report_metadata",
+          "metrics",
+          "reconciliation"
+        ],
+        "required_keys_from_acceptance_criteria": [
+          "sourced_totals"
         ]
-      }
+      },
+      "description": "Demo xlsx + mapping; auto source; report must match expected-results.json metrics and sourced_totals from acceptance-criteria."
     },
     {
       "id": "kmu-explicit-source-report",
@@ -67,8 +78,19 @@
           "input_fingerprint",
           "mapping_version",
           "kpi_result_hash"
+        ],
+        "pass": true,
+        "required_keys_from_expected_results": [
+          "source",
+          "report_metadata",
+          "metrics",
+          "reconciliation"
+        ],
+        "required_keys_from_acceptance_criteria": [
+          "sourced_totals"
         ]
-      }
+      },
+      "description": "Demo xlsx + mapping; explicit source path; same golden metrics and acceptance sourced_totals keys."
     },
     {
       "id": "kmu-auto-compute-kmu-report",
@@ -83,8 +105,16 @@
         "fail_closed": false,
         "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
         "metrics_from_golden": true,
-        "sourced_totals": true
-      }
+        "sourced_totals": true,
+        "pass": true,
+        "required_keys_from_expected_results": [
+          "source",
+          "report_metadata",
+          "metrics",
+          "reconciliation"
+        ]
+      },
+      "description": "Demo setup; ControllingComputeTool kmu_report auto; golden KPI strings and reconciliation counts only from expected-results.json."
     },
     {
       "id": "kmu-explicit-compute-kmu-report",
@@ -99,8 +129,16 @@
         "fail_closed": false,
         "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
         "metrics_from_golden": true,
-        "sourced_totals": true
-      }
+        "sourced_totals": true,
+        "pass": true,
+        "required_keys_from_expected_results": [
+          "source",
+          "report_metadata",
+          "metrics",
+          "reconciliation"
+        ]
+      },
+      "description": "Demo setup; explicit Saldenliste path; compute report must equal golden metrics."
     },
     {
       "id": "kmu-repeatable-kpi-hash",
@@ -134,8 +172,19 @@
           "mapping_version",
           "kpi_result_hash"
         ],
-        "repeatable": true
-      }
+        "repeatable": true,
+        "pass": true,
+        "required_keys_from_expected_results": [
+          "source",
+          "report_metadata",
+          "metrics",
+          "reconciliation"
+        ],
+        "required_keys_from_acceptance_criteria": [
+          "sourced_totals"
+        ]
+      },
+      "description": "Two identical demo runs; kpi_result_hash and input_fingerprint stay stable (repeatable_runs evidence keys)."
     },
     {
       "id": "kmu-empty-inbox-fail-closed",
@@ -149,8 +198,10 @@
         "fail_closed": true,
         "error_prefix": "FEHLER",
         "error_contains": "Automatische Quelle erfordert genau eine CSV/XLSX-Eingabe.",
-        "no_fabricated_totals": true
-      }
+        "no_fabricated_totals": true,
+        "pass": false
+      },
+      "description": "Empty inbox, mapping present; fail closed. No fabricated totals from expected-results.json."
     },
     {
       "id": "kmu-missing-source-fail-closed",
@@ -164,8 +215,10 @@
         "fail_closed": true,
         "error_prefix": "FEHLER",
         "error_contains": "Quelle existiert nicht, ist unsicher",
-        "no_fabricated_totals": true
-      }
+        "no_fabricated_totals": true,
+        "pass": false
+      },
+      "description": "Explicit missing xlsx; fail closed. No fabricated totals, no latest artifact."
     }
   ]
 }
