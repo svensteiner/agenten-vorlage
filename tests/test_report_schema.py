@@ -89,10 +89,18 @@ def test_number_as_string_where_number_required_fails():
     assert "int" in joined
 
 
-def test_verifier_rejects_schema_invalid_controlling_report():
+def test_verifier_rejects_schema_invalid_controlling_report(monkeypatch):
     from core.context import ProjectContext
+    from core.controlling.tools import pilot_availability
     from core.verifier import Verifier
+    import brain
     import json
+
+    monkeypatch.setattr(
+        brain,
+        "evaluate",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("schema lock must short-circuit")),
+    )
 
     computation = {
         "source": "inbox/actuals/demo.xlsx",
@@ -106,6 +114,12 @@ def test_verifier_rejects_schema_invalid_controlling_report():
             "source_account_count": 20,
             "mapped_account_count": 20,
             "ignored_account_count": 0,
+        },
+        "availability": pilot_availability(),
+        "provenance": {
+            "input_fingerprint": "a" * 64,
+            "mapping_version": "b" * 64,
+            "calculation_version": "kmu-report-v3",
         },
         "mystery_field": "nope",
     }
