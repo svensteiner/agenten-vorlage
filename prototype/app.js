@@ -548,6 +548,45 @@
     return true;
   }
 
+  // Nicht-streamende Variante von streamAnswer: nach einem Modulwechsel den
+  // Chatverlauf sofort wiederherstellen (kein Typewriter, keine Count-up-Animation).
+  // `question` bleibt in der Signatur, weil renderChatView den gespeicherten
+  // Fragetext mitgibt — die Karte selbst liest ihn nicht.
+  function answerCard(answer, question) {
+    const msg = el("div", "msg");
+    const card = el("div", "answer");
+    const hasConf = typeof answer.confidence === "number";
+    const confCls = answer.confidence >= 90 ? "" : "mid";
+    const secs = answerSeconds(answer);
+    const pop = hasConf ? buildConfPop(answer) : "";
+    const confHtml = hasConf
+      ? `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
+        `<span class="conf-meter">Konfidenz` +
+        `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
+        `<b>${answer.confidence}%</b>` +
+        (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
+        `</span>${pop}</span>`
+      : "";
+    card.appendChild(el("div", "head",
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">${fmtGerman(secs, 1)} s</b></span>` +
+      confHtml));
+    const textEl = el("div", "text");
+    textEl.innerHTML = answer.text || "";
+    card.appendChild(textEl);
+    msg.appendChild(card);
+    appendChain(card, answer.chain);
+    appendReasoning(card, answer.reasoning);
+    appendSources(card, answer.sources);
+    appendWithheld(card, answer.withheld);
+    appendRelated(card, answer.related);
+    appendFollowups(card, answer.followups);
+    appendActions(card, answer);
+    appendAgents(card, answer);
+    if (pop) wireConfPopBars(card);
+    return msg;
+  }
+
   // Lässt die strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte →
   // Folgefragen → Aktionen) gestaffelt einblenden statt hart zu springen — die
   // Antwort baut sich souverän auf. Rein visuell: jeder Block bekommt eine kleine,

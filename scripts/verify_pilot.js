@@ -120,6 +120,17 @@ ok("pilot.config.js wird vor data.js geladen",
      tagOrder.indexOf("pilot.config.js") < tagOrder.indexOf("data.js"),
    tagOrder.join(" → "));
 
+// --- Replay-Pfad: answerCard muss existieren, sonst stirbt der Chat nach Modulwechsel ----
+const APP_SRC = fs.readFileSync(P("app.js"), "utf8");
+ok("function answerCard ist definiert",
+   /function\s+answerCard\s*\(/.test(APP_SRC),
+   /function\s+answerCard\s*\(/.test(APP_SRC) ? "ok" : "FEHLT in prototype/app.js");
+ok("renderChatView ruft answerCard auf",
+   /function\s+renderChatView\s*\(\s*\)[\s\S]*?answerCard\s*\(\s*m\.answer/.test(APP_SRC),
+   /function\s+renderChatView\s*\(\s*\)[\s\S]*?answerCard\s*\(\s*m\.answer/.test(APP_SRC)
+     ? "Call-Site in renderChatView"
+     : "Call-Site in renderChatView fehlt");
+
 // --- Zustand 2: Regressionsschutz (Schalter zurück auf die Standarddemo) ----
 // Nur die Schalterzeile umlegen — nicht die Kommentare, die "active: true" erklären.
 const OFF_SRC = CONFIG_SRC.replace("  active: true,", "  active: false,");

@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "preset": "kmu-controlling",
+  "description": "ADK-inspired golden set: questions/tool payloads map to expected artifact keys, sourced totals, and evidence hashes. KPI numbers are taken only from the packaged demo expected-results.json.",
+  "golden_source": "presets/kmu-controlling/pilot/demo/expected-results.json",
+  "cases": [
+    {
+      "id": "kmu-auto-report-sourced-totals",
+      "question": "Erstelle den belegten Monatsreport",
+      "tool": "ControllingReportTool",
+      "payload": {
+        "source": "auto"
+      },
+      "setup": "demo",
+      "expected": {
+        "fail_closed": false,
+        "mode": "deterministic_fallback",
+        "required_artifact_keys": [
+          "artifact",
+          "human_artifact",
+          "history_artifact",
+          "acceptance"
+        ],
+        "required_files": [
+          "artifacts/latest-controlling-report.json",
+          "artifacts/latest-controlling-report.md",
+          "artifacts/latest-controlling-report.html",
+          "artifacts/acceptance-evidence.json"
+        ],
+        "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "metrics_from_golden": true,
+        "sourced_totals": true,
+        "evidence_hashes": [
+          "input_fingerprint",
+          "mapping_version",
+          "kpi_result_hash"
+        ]
+      }
+    },
+    {
+      "id": "kmu-explicit-source-report",
+      "question": "Bericht aus der Juni-Saldenliste",
+      "tool": "ControllingReportTool",
+      "payload": {
+        "source": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx"
+      },
+      "setup": "demo",
+      "expected": {
+        "fail_closed": false,
+        "mode": "deterministic_fallback",
+        "required_artifact_keys": [
+          "artifact",
+          "human_artifact",
+          "history_artifact",
+          "acceptance"
+        ],
+        "required_files": [
+          "artifacts/latest-controlling-report.json",
+          "artifacts/latest-controlling-report.md",
+          "artifacts/latest-controlling-report.html",
+          "artifacts/acceptance-evidence.json"
+        ],
+        "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "metrics_from_golden": true,
+        "sourced_totals": true,
+        "evidence_hashes": [
+          "input_fingerprint",
+          "mapping_version",
+          "kpi_result_hash"
+        ]
+      }
+    },
+    {
+      "id": "kmu-auto-compute-kmu-report",
+      "question": "Rechne den KMU-Report aus der Saldenliste",
+      "tool": "ControllingComputeTool",
+      "payload": {
+        "operation": "kmu_report",
+        "source": "auto"
+      },
+      "setup": "demo",
+      "expected": {
+        "fail_closed": false,
+        "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "metrics_from_golden": true,
+        "sourced_totals": true
+      }
+    },
+    {
+      "id": "kmu-explicit-compute-kmu-report",
+      "question": "KMU-Report mit expliziter Quelldatei",
+      "tool": "ControllingComputeTool",
+      "payload": {
+        "operation": "kmu_report",
+        "source": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx"
+      },
+      "setup": "demo",
+      "expected": {
+        "fail_closed": false,
+        "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "metrics_from_golden": true,
+        "sourced_totals": true
+      }
+    },
+    {
+      "id": "kmu-repeatable-kpi-hash",
+      "question": "Zweiter identischer Lauf muss dieselben Kennzahlen liefern",
+      "tool": "ControllingReportTool",
+      "payload": {
+        "source": "auto"
+      },
+      "setup": "demo",
+      "runs": 2,
+      "expected": {
+        "fail_closed": false,
+        "mode": "deterministic_fallback",
+        "required_artifact_keys": [
+          "artifact",
+          "human_artifact",
+          "history_artifact",
+          "acceptance"
+        ],
+        "required_files": [
+          "artifacts/latest-controlling-report.json",
+          "artifacts/latest-controlling-report.md",
+          "artifacts/latest-controlling-report.html",
+          "artifacts/acceptance-evidence.json"
+        ],
+        "source_file": "inbox/actuals/Saldenliste_Muster_Juni2026.xlsx",
+        "metrics_from_golden": true,
+        "sourced_totals": true,
+        "evidence_hashes": [
+          "input_fingerprint",
+          "mapping_version",
+          "kpi_result_hash"
+        ],
+        "repeatable": true
+      }
+    },
+    {
+      "id": "kmu-empty-inbox-fail-closed",
+      "question": "Monatsreport ohne Ist-Daten",
+      "tool": "ControllingReportTool",
+      "payload": {
+        "source": "auto"
+      },
+      "setup": "empty_inbox",
+      "expected": {
+        "fail_closed": true,
+        "error_prefix": "FEHLER",
+        "error_contains": "Automatische Quelle erfordert genau eine CSV/XLSX-Eingabe.",
+        "no_fabricated_totals": true
+      }
+    },
+    {
+      "id": "kmu-missing-source-fail-closed",
+      "question": "Bericht aus fehlender Datei",
+      "tool": "ControllingReportTool",
+      "payload": {
+        "source": "inbox/actuals/fehlt.xlsx"
+      },
+      "setup": "demo",
+      "expected": {
+        "fail_closed": true,
+        "error_prefix": "FEHLER",
+        "error_contains": "Quelle existiert nicht, ist unsicher",
+        "no_fabricated_totals": true
+      }
+    }
+  ]
+}
