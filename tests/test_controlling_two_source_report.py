@@ -2,6 +2,7 @@ import hashlib
 import json
 
 import pytest
+from openpyxl import Workbook
 
 import core.controlling.narrative as narrative_module
 from core.controlling.artifacts import read_acceptance_status
@@ -248,3 +249,102 @@ def test_operation_id_rejects_budget_change_instead_of_replaying_old_two_source_
     assert not first.startswith("FEHLER")
     assert changed.startswith("FEHLER")
     assert "Operation-ID" in changed
+
+XLSX_ACTUAL_SOURCE = "data/actuals.xlsx"
+XLSX_BUDGET_SOURCE = "imports/budget.xlsx"
+XLSX_TWO_SOURCE_REQUEST = {
+    "actual_source": XLSX_ACTUAL_SOURCE,
+    "budget_source": XLSX_BUDGET_SOURCE,
+}
+_XLSX_ACTUAL_ROWS = [
+    ["actual-revenue", "4000", "Umsatz", 1000, 900, 6000, 5000],
+    ["actual-cost", "5000", "Material", 300, 250, 1800, 1500],
+]
+_XLSX_BUDGET_ROWS = [
+    ["budget-revenue", "4000", "Umsatz", 800, 750, 4800, 4200],
+    ["budget-cost", "5000", "Material", 250, 200, 1500, 1200],
+]
+
+
+def _write_xlsx(path, rows):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(
+        ["Zeilen-ID", "Konto", "Bezeichnung", "Monat", "Vormonat", "YTD", "YTD Vorjahr"]
+    )
+    for row in rows:
+        sheet.append(row)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(path)
+
+
+def _write_two_source_xlsx_instance(tmp_path, *, actual_rows, budget_rows):
+    _write_two_source_instance(tmp_path)
+    (tmp_path / ACTUAL_SOURCE).unlink()
+    (tmp_path / BUDGET_SOURCE).unlink()
+    _write_xlsx(tmp_path / XLSX_ACTUAL_SOURCE, actual_rows)
+    _write_xlsx(tmp_path / XLSX_BUDGET_SOURCE, budget_rows)
+
+
+def _assert_no_published_artifacts(tmp_path):
+    artifacts = tmp_path / "artifacts"
+    assert not artifacts.exists() or not any(artifacts.iterdir())
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [ACTUAL_SOURCE, BUDGET_SOURCE],
+    ids=("actual", "budget"),
+)
+def test_two_source_report_fails_closed_when_source_missing(tmp_path, missing):
+    _write_two_source_instance(tmp_path)
+    (tmp_path / missing).unlink()
+    result = _run(ControllingReportTool(tmp_path), TWO_SOURCE_REQUEST)
+    assert result.startswith("FEHLER")
+    _assert_no_published_artifacts(tmp_path)
+
+
+def test_two_source_xlsx_literal_values_match_csv_fixture_variance(tmp_path):
+    _write_two_source_xlsx_instance(
+        tmp_path,
+        actual_rows=_XLSX_ACTUAL_ROWS,
+        budget_rows=_XLSX_BUDGET_ROWS,
+    )
+    result = json.loads(
+        _run(ControllingReportTool(tmp_path), XLSX_TWO_SOURCE_REQUEST)
+    )
+    latest = json.loads((tmp_path / result["artifact"]).read_text(encoding="utf-8"))
+    markdown = (tmp_path / "artifacts" / "latest-controlling-report.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert result["mode"] == "deterministic_fallback"
+    assert result["variance"]["metrics"]["ebitda"] == {
+        "actual": "700",
+        "budget": "550",
+        "delta": "150",
+        "relative_delta_percent": "27.27272727272727272727272727",
+    }
+    assert latest["management"]["variance"] == result["variance"]
+    assert latest["report"]["availability"]["budget_variance"] == {
+        "status": "available",
+        "processing": "two_source_actual_vs_budget",
+    }
+    for value in ("revenue", "1000", "800", "200"):
+        assert value in markdown
+
+
+def test_two_source_xlsx_formulas_fail_closed_without_inventing_kpis(tmp_path):
+    actual_rows = [
+        ["actual-revenue", "4000", "Umsatz", "=1000*999", 900, 6000, 5000],
+        ["actual-cost", "5000", "Material", 300, 250, 1800, 1500],
+    ]
+    _write_two_source_xlsx_instance(
+        tmp_path,
+        actual_rows=actual_rows,
+        budget_rows=_XLSX_BUDGET_ROWS,
+    )
+    result = _run(ControllingReportTool(tmp_path), XLSX_TWO_SOURCE_REQUEST)
+    assert result.startswith("FEHLER")
+    assert "999000" not in result
+    _assert_no_published_artifacts(tmp_path)

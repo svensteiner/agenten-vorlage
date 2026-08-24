@@ -5,6 +5,7 @@ import json
 from multiprocessing import get_context
 import os
 from pathlib import Path
+import shutil
 import threading
 import time
 
@@ -2162,3 +2163,325 @@ def test_instance_result_prints_summary_artifact_and_acceptance(
     assert "A. B. C." in output
     assert "artifacts" in output
     assert "1/3" in output
+
+
+DEMO_ROOT = Path(__file__).resolve().parents[1] / "presets" / "kmu-controlling" / "pilot" / "demo"
+EXPECTED_RESULTS = json.loads(
+    (DEMO_ROOT / "expected-results.json").read_text(encoding="utf-8")
+)
+
+
+def _write_demo_xlsx_instance(tmp_path: Path) -> Path:
+    """Install the Muster Bau Saldenliste overlay + mapping into a temp instance."""
+    actuals = tmp_path / "inbox" / "actuals"
+    pilot = tmp_path / "project" / "pilot"
+    actuals.mkdir(parents=True)
+    pilot.mkdir(parents=True)
+    source = actuals / "Saldenliste_Muster_Juni2026.xlsx"
+    shutil.copyfile(DEMO_ROOT / "Saldenliste_Muster_Juni2026.xlsx", source)
+    shutil.copyfile(DEMO_ROOT / "account-mapping.json", pilot / "account-mapping.json")
+    (tmp_path / "project" / "config.json").write_text(
+        json.dumps({"autonomy_level": "standard", "require_human_approval": True}),
+        encoding="utf-8",
+    )
+    (tmp_path / "project" / "manifest.json").write_text(
+        json.dumps(
+            {
+                "autonomy_level": "standard",
+                "approval_required_for": [
+                    "external communication",
+                    "send",
+                    "publish",
+                ],
+                "tool_permissions": {
+                    "default": "disabled",
+                    "enabled": ["read", "compute", "report"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return source
+
+
+def _xlsx_sum_formulas(path: Path) -> dict[str, str]:
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(path, data_only=False)
+    try:
+        sheet = workbook.active
+        return {
+            cell.coordinate: cell.value
+            for row in sheet.iter_rows()
+            for cell in row
+            if isinstance(cell.value, str) and cell.value.startswith("=")
+        }
+    finally:
+        workbook.close()
+
+
+def test_excel_overlay_persist_preserves_formulas_and_expected_results(tmp_path):
+    """CFO-facing xlsx overlay: formulas stay clickable; artifacts lock fixture KPIs."""
+    source = _write_demo_xlsx_instance(tmp_path)
+    formulas_before = _xlsx_sum_formulas(source)
+    assert formulas_before == {
+        "C19": "=SUM(C5:C18)",
+        "D19": "=SUM(D5:D18)",
+        "E19": "=SUM(E5:E18)",
+        "F19": "=SUM(F5:F18)",
+    }
+
+    tool = ControllingReportTool(tmp_path)
+    draft = json.loads(tool.safe_run('{"source":"auto"}'))
+    latest = json.loads(
+        (tmp_path / draft["artifact"]).read_text(encoding="utf-8")
+    )
+    html = (tmp_path / draft["human_artifact"]).read_text(encoding="utf-8")
+    markdown = (tmp_path / "artifacts" / "latest-controlling-report.md").read_text(
+        encoding="utf-8"
+    )
+    evidence = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    report = latest["report"]
+    expected = EXPECTED_RESULTS
+    assert report["source"] == expected["source"]
+    assert report["report_metadata"] == expected["report_metadata"]
+    assert report["groups"]["revenue"]["month"] == expected["metrics"]["revenue_month"]
+    assert report["groups"]["material"]["month"] == expected["metrics"]["material_month"]
+    assert report["groups"]["personnel"]["month"] == expected["metrics"][
+        "personnel_month"
+    ]
+    assert report["metrics"]["ebitda"]["month"] == expected["metrics"]["ebitda_month"]
+    assert report["metrics"]["egt"]["month"] == expected["metrics"]["egt_month"]
+    assert report["metrics"]["egt"]["prior"] == expected["metrics"]["egt_prior"]
+    assert report["metrics"]["egt"]["ytd"] == expected["metrics"]["egt_ytd"]
+    assert report["metrics"]["egt"]["ytd_prior"] == expected["metrics"]["egt_ytd_prior"]
+    assert report["metrics"]["receivables"]["month"] == expected["metrics"][
+        "receivables_month"
+    ]
+    assert report["metrics"]["liquidity"]["month"] == expected["metrics"][
+        "liquidity_month"
+    ]
+    assert report["metrics"]["payables"]["month"] == expected["metrics"][
+        "payables_month"
+    ]
+    for name, value in expected["reconciliation"].items():
+        assert report["reconciliation"][name] == value
+
+    # Method/formula provenance must survive the signed artifact write.
+    assert evidence["runs"][-1]["formula"] == report["method"]
+    assert report["method"]
+    assert "mapping-defined account groups" in report["method"]
+    assert "66.150" in html
+    assert "-2.250" in html
+    assert expected["metrics"]["liquidity_month"] in html
+    assert expected["metrics"]["egt_month"] in html
+    assert expected["metrics"]["ebitda_month"] in html
+    assert expected["metrics"]["liquidity_month"] in markdown
+    assert expected["metrics"]["egt_month"] in markdown
+    assert expected["metrics"]["ebitda_month"] in markdown
+
+    # Pipeline is read-only on the overlay: SUM formulas stay for a CFO click-through.
+    assert _xlsx_sum_formulas(source) == formulas_before
+    assert source.read_bytes() == (
+        DEMO_ROOT / "Saldenliste_Muster_Juni2026.xlsx"
+    ).read_bytes()
+
+
+def test_persist_fails_closed_when_source_file_is_missing(tmp_path):
+    """Provenanced drafts must not silently publish without a readable source."""
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    source.unlink()
+    now = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="Quelle oder Mapping"):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+            validated_at=now,
+            draft_created_at=now,
+        )
+    assert not (tmp_path / "artifacts" / "latest-controlling-report.json").exists()
+
+
+def test_persist_fails_closed_when_mapping_file_is_missing(tmp_path):
+    (tmp_path / "inbox" / "actuals").mkdir(parents=True)
+    source = tmp_path / "inbox" / "actuals" / "demo.csv"
+    source.write_text("Konto;Monat\n4000;1\n", encoding="utf-8")
+    _write_acceptance_mapping(tmp_path)
+    report = _aggregate_report(tmp_path)
+    (tmp_path / "project" / "pilot" / "account-mapping.json").unlink()
+    now = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="Quelle oder Mapping"):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            {"summary": "A. B. C.", "alarms": [], "actions": ["A", "B", "C"]},
+            validated_at=now,
+            draft_created_at=now,
+        )
+
+
+def _write_two_source_artifacts_instance(tmp_path: Path, *, budget_revenue: str = "800"):
+    (tmp_path / "data").mkdir(exist_ok=True)
+    (tmp_path / "imports").mkdir(exist_ok=True)
+    (tmp_path / "project" / "pilot").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "actuals.csv").write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Monat;Vormonat;YTD;YTD Vorjahr\n"
+        "actual-revenue;4000;Umsatz;1000;900;6000;5000\n"
+        "actual-cost;5000;Material;300;250;1800;1500\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "imports" / "budget.csv").write_text(
+        "Zeilen-ID;Konto;Bezeichnung;Monat;Vormonat;YTD;YTD Vorjahr\n"
+        f"budget-revenue;4000;Umsatz;{budget_revenue};750;4800;4200\n"
+        "budget-cost;5000;Material;250;200;1500;1200\n",
+        encoding="utf-8",
+    )
+    mapping = {
+        "schema_version": 1,
+        "report_metadata": {
+            "period_start": "2026-06-01",
+            "period_end": "2026-06-30",
+            "currency": "EUR",
+            "sign_convention": "source_value_times_group_multiplier",
+            "row_identifier": "Zeilen-ID",
+        },
+        "columns": {
+            "account_id": "Konto",
+            "account_name": "Bezeichnung",
+            "month": "Monat",
+            "prior": "Vormonat",
+            "ytd": "YTD",
+            "ytd_prior": "YTD Vorjahr",
+        },
+        "sign_semantics": {
+            "formula": "normalized_value = source_value * group.multiplier",
+            "positive_contribution": "Positive increases KPI.",
+            "negative_contribution": "Negative decreases KPI.",
+        },
+        "source_globs": ["data/*.csv", "imports/*.csv"],
+        "groups": {
+            "revenue": {"prefixes": ["4"], "multiplier": 1},
+            "costs": {"prefixes": ["5"], "multiplier": -1},
+        },
+        "metrics": {
+            "ebitda": ["revenue", "costs"],
+            "depreciation": ["costs"],
+            "egt": ["revenue", "costs"],
+        },
+        "thresholds": {"material_deviation_abs": 1},
+    }
+    (tmp_path / "project" / "pilot" / "account-mapping.json").write_text(
+        json.dumps(mapping), encoding="utf-8"
+    )
+    (tmp_path / "project" / "config.json").write_text(
+        json.dumps({"autonomy_level": "standard", "require_human_approval": True}),
+        encoding="utf-8",
+    )
+    (tmp_path / "project" / "manifest.json").write_text(
+        json.dumps(
+            {
+                "autonomy_level": "standard",
+                "approval_required_for": [
+                    "external communication",
+                    "send",
+                    "publish",
+                ],
+                "tool_permissions": {
+                    "default": "disabled",
+                    "enabled": ["read", "compute", "report"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_two_source_artifacts_lock_budget_provenance_and_variance_views(tmp_path):
+    """Artifacts path must bind both sources and render grounded Ist-vs-Budget numbers."""
+    _write_two_source_artifacts_instance(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    request = {
+        "actual_source": "data/actuals.csv",
+        "budget_source": "imports/budget.csv",
+    }
+    draft = json.loads(
+        tool.safe_run(json.dumps(request, ensure_ascii=False, separators=(",", ":")))
+    )
+    latest = json.loads((tmp_path / draft["artifact"]).read_text(encoding="utf-8"))
+    html = (tmp_path / draft["human_artifact"]).read_text(encoding="utf-8")
+    markdown = (tmp_path / "artifacts" / "latest-controlling-report.md").read_text(
+        encoding="utf-8"
+    )
+    evidence = json.loads(
+        (tmp_path / "artifacts" / "acceptance-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    run = evidence["runs"][-1]
+
+    assert draft["variance"]["metrics"]["ebitda"] == {
+        "actual": "700",
+        "budget": "550",
+        "delta": "150",
+        "relative_delta_percent": "27.27272727272727272727272727",
+    }
+    assert latest["management"]["variance"] == draft["variance"]
+    assert "variance" not in latest["report"]
+    assert latest["report"]["availability"]["budget_variance"] == {
+        "status": "available",
+        "processing": "two_source_actual_vs_budget",
+    }
+    assert run["source_file"] == "data/actuals.csv"
+    assert run["budget_source_file"] == "imports/budget.csv"
+    assert run["budget_input_fingerprint"] == hashlib.sha256(
+        (tmp_path / "imports" / "budget.csv").read_bytes()
+    ).hexdigest()
+    assert run["formula"] == latest["report"]["method"]
+    assert "Budgetabweichungen" in html
+    assert "Budgetabweichungen" in markdown
+    for value in ("revenue", "1000", "800", "200", "700", "550", "150"):
+        assert value in html
+        assert value in markdown
+
+
+def test_two_source_persist_fails_closed_when_budget_source_missing(tmp_path):
+    _write_two_source_artifacts_instance(tmp_path)
+    tool = ControllingReportTool(tmp_path)
+    request = {
+        "actual_source": "data/actuals.csv",
+        "budget_source": "imports/budget.csv",
+    }
+    draft = json.loads(
+        tool.safe_run(json.dumps(request, ensure_ascii=False, separators=(",", ":")))
+    )
+    latest = json.loads((tmp_path / draft["artifact"]).read_text(encoding="utf-8"))
+    report = dict(latest["report"])
+    report["provenance"] = {
+        "input_fingerprint": latest["provenance"]["input_fingerprint"],
+        "mapping_version": latest["provenance"]["mapping_version"],
+        "calculation_version": latest["provenance"]["calculation_version"],
+    }
+    management = latest["management"]
+    (tmp_path / "imports" / "budget.csv").unlink()
+    now = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="Budgetquelle"):
+        persist_report_artifacts(
+            tmp_path,
+            report,
+            management,
+            validated_at=now,
+            draft_created_at=now,
+        )
