@@ -65,6 +65,10 @@ def test_describe_reporting_instance_is_minimal_pack(tmp_path):
     assert snapshot["soul_title"]
     assert snapshot["onboarding"]["supported"] is False
     assert snapshot["onboarding"]["status"] == "unsupported"
+    report = next(item for item in snapshot["artifacts"] if item["path"] == "artifacts/starter-bericht.md")
+    assert "Reporting-Musterbericht" in report["preview"]
+    instance = tmp_path / "rentals" / "muster-kmu" / "reporting" / "artifacts" / "starter-bericht.md"
+    assert instance.is_file()
 
 
 def test_describe_rejects_ledger_only_and_cancelled(tmp_path):
@@ -138,6 +142,8 @@ def test_starter_onboarding_writes_mapping_accounts_report_forecast(tmp_path):
     assert snapshot["onboarding"]["has_actuals"] is True
     assert snapshot["onboarding"]["has_forecast"] is True
     assert any(item["path"] == "artifacts/starter-bericht.md" for item in snapshot["artifacts"])
+    report = next(item for item in snapshot["artifacts"] if item["path"] == "artifacts/starter-bericht.md")
+    assert report["preview"].startswith("# Starter-Bericht")
     replay = service.onboard(
         tenant_id="muster-kmu",
         rental_id=rental["rental_id"],

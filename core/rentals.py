@@ -27,6 +27,7 @@ from core.rental_onboarding import (
     OnboardingConflict,
     OnboardingValidationError,
     apply_excel,
+    apply_reporting_starter,
     apply_starter,
     snapshot_instance,
 )
@@ -504,6 +505,13 @@ class RentalService:
                     raise RentalConflict(
                         "Agenten-Instanz liegt ausserhalb des Mietbereichs."
                     ) from exc
+                if agent_id == "reporting":
+                    try:
+                        apply_reporting_starter(instance)
+                    except (OnboardingValidationError, OnboardingConflict) as exc:
+                        raise RentalConflict(
+                            "Reporting-Musterbericht konnte nicht angelegt werden."
+                        ) from exc
 
             rental_id = f"rnt_{secrets.token_hex(16)}"
             state: dict[str, Any] = {

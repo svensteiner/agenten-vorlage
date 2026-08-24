@@ -324,6 +324,45 @@
   function renderSidebar() {
     const nav = $("#nav");
     nav.innerHTML = "";
+    const rental = rentalConfig();
+    if (rental) {
+      nav.appendChild(el("div", "nav-label", "Instanz"));
+      const cockpit = el("button", "nav-item");
+      cockpit.dataset.key = "wissen";
+      cockpit.setAttribute("aria-label", "Cockpit");
+      cockpit.title = "Cockpit der gemieteten Instanz";
+      cockpit.innerHTML = `<span class="ic">◈</span><span>Cockpit</span>`;
+      cockpit.onclick = () => selectModule("wissen");
+      nav.appendChild(cockpit);
+      const files = [];
+      (rental.artifacts || []).forEach((item) => {
+        if (item && item.path) files.push(item);
+      });
+      (rental.inputs || []).forEach((item) => {
+        if (item && item.path) files.push(item);
+      });
+      if (!files.length) {
+        const empty = el("div", "nav-empty");
+        empty.textContent = "Noch kein Bericht";
+        nav.appendChild(empty);
+        return;
+      }
+      files.forEach((item) => {
+        const btn = el("button", "nav-item");
+        const name = String(item.path).split("/").pop();
+        btn.dataset.key = "instanz:" + item.path;
+        btn.setAttribute("aria-label", name);
+        btn.title = item.path;
+        const ic = el("span", "ic");
+        ic.textContent = "≡";
+        const lab = el("span");
+        lab.textContent = name;
+        btn.append(ic, lab);
+        btn.onclick = () => selectModule("instanz:" + item.path);
+        nav.appendChild(btn);
+      });
+      return;
+    }
     nav.appendChild(el("div", "nav-label", "Module"));
     MODULES.forEach((m) => {
       const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>`);
@@ -350,6 +389,14 @@
   function selectModule(key) {
     currentModule = key;
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
+    const rental = rentalConfig();
+    if (rental) {
+      if (typeof key === "string" && key.startsWith("instanz:")) {
+        return renderInstanceFile(rental, key.slice("instanz:".length));
+      }
+      $("#topTitle").innerHTML = `Cockpit<small>Ihre gemietete Instanz</small>`;
+      return renderChatView();
+    }
     const mod = MODULES.find((m) => m.key === key);
     $("#topTitle").innerHTML = `${mod.label}<small>${mod.hint}</small>`;
 
@@ -385,7 +432,7 @@
       const files = rentalFilePaths(rental);
       const fileLine = files.length
         ? "Dateien in der Instanz: " + files.join(", ") + "."
-        : "Noch keine Quellen oder Berichte in der Instanz. Im Portal: Excel hochladen oder mit Muster starten.";
+        : "Noch kein Bericht — Muster starten.";
       const onboard = rental.onboarding || {};
       const onboardLine = onboard.supported && onboard.status !== "ready"
         ? " Onboarding ist noch offen."
@@ -396,6 +443,16 @@
         `<p>Live-Fragen an ein Sprachmodell sind hier nicht verbunden. Dieser Chat durchsucht keine Demo-Wissensbasis.</p>` +
         `<p>${escapeHtml(fileLine + onboardLine)}</p>`;
       wrap.appendChild(hero);
+      const reports = (rental.artifacts || []).filter((item) => item && item.preview);
+      if (reports.length) {
+        reports.forEach((item) => wrap.appendChild(instanceDocCard(item)));
+      } else if (!files.length) {
+        const empty = el("div", "answer");
+        empty.textContent = onboard.supported
+          ? "Noch kein Bericht — Muster starten"
+          : "Noch kein Bericht in dieser Instanz.";
+        wrap.appendChild(empty);
+      }
       return;
     }
     const hero = el("div", "hero");
@@ -1620,6 +1677,42 @@
     (rental.inputs || []).forEach((item) => { if (item && item.path) files.push(item.path); });
     (rental.artifacts || []).forEach((item) => { if (item && item.path) files.push(item.path); });
     return files;
+  }
+
+  function instanceDocCard(item) {
+    const card = el("div", "answer");
+    const heading = el("h3");
+    heading.textContent = item.path;
+    const pre = document.createElement("pre");
+    pre.className = "instance-doc";
+    pre.textContent = item.preview;
+    card.append(heading, pre);
+    return card;
+  }
+
+  function renderInstanceFile(rental, relative) {
+    $("#topTitle").innerHTML = `${escapeHtml(String(relative).split("/").pop())}<small>${escapeHtml(relative)}</small>`;
+    const composer = $("#composer");
+    if (composer) composer.style.display = "none";
+    const scroll = $("#scroll");
+    scroll.innerHTML = "";
+    const wrap = el("div", "wrap");
+    const files = [];
+    (rental.artifacts || []).forEach((item) => files.push(item));
+    (rental.inputs || []).forEach((item) => files.push(item));
+    const item = files.find((entry) => entry && entry.path === relative);
+    if (!item) {
+      const empty = el("div", "answer");
+      empty.textContent = "Datei nicht in der Instanz.";
+      wrap.appendChild(empty);
+    } else if (item.preview) {
+      wrap.appendChild(instanceDocCard(item));
+    } else {
+      const empty = el("div", "answer");
+      empty.textContent = "Kein Textvorschau — Datei liegt in der Instanz: " + relative;
+      wrap.appendChild(empty);
+    }
+    scroll.appendChild(wrap);
   }
 
   function wireRentalInstance() {

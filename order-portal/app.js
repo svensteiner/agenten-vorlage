@@ -58,6 +58,8 @@ function showReady(order, scroll = false) {
   orderButton.disabled = true;
   formMessage.textContent = "Bestellung erfolgreich · Gesamtkosten 0 €";
   customerArea.hidden = false;
+  const demoFold = document.querySelector("#zero-demo");
+  if (demoFold) demoFold.open = true;
   persistJourney(companyInput.value);
   if (scroll) {
     customerArea.scrollIntoView({behavior: "smooth", block: "start"});
@@ -228,7 +230,7 @@ function renderCatalog() {
   catalogGrid.innerHTML = "";
   for (const agent of catalogAgents) {
     const card = document.createElement("article");
-    card.className = "catalog-card";
+    card.className = agent.provisionable ? "catalog-card" : "catalog-card pending";
     const title = document.createElement("h3");
     title.textContent = agent.label;
     const description = document.createElement("p");
@@ -241,14 +243,14 @@ function renderCatalog() {
     const tag = document.createElement("span");
     tag.className = "provision-tag";
     tag.textContent = agent.provisionable
-      ? "Wird lokal provisioniert"
-      : "Katalog — Pack folgt";
+      ? "Wird lokal angelegt und lässt sich öffnen"
+      : "Pack folgt — noch nicht öffenbar";
     meta.append(price, tag);
     const button = document.createElement("button");
-    button.className = "primary";
+    button.className = agent.provisionable ? "primary" : "secondary";
     button.type = "button";
     button.dataset.agentId = agent.agent_id;
-    const rentLabel = agent.provisionable ? "Mieten" : "Mieten — Pack folgt";
+    const rentLabel = agent.cta_label || (agent.provisionable ? "Mieten" : "Vormerken — Pack folgt");
     button.innerHTML = "<span>" + rentLabel + "</span><span aria-hidden=\"true\">→</span>";
     button.addEventListener("click", () => rentAgent(agent.agent_id, button));
     card.append(title, description, meta, button);
@@ -262,7 +264,7 @@ function renderRentals(rentals, snapshots) {
   if (!active.length) {
     const empty = document.createElement("p");
     empty.className = "rental-empty";
-    empty.textContent = "Noch keine aktive Miete fuer diesen Mandanten.";
+    empty.textContent = "Noch keine aktive Miete für diesen Mandanten.";
     rentalList.append(empty);
     return;
   }
@@ -275,7 +277,7 @@ function renderRentals(rentals, snapshots) {
     title.textContent = agent ? agent.label : rental.agent_id;
     const detail = document.createElement("small");
     const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only - Pack folgt";
-    detail.textContent = rental.monthly_price_eur + " EUR - " + provision + " - kuendbar";
+    detail.textContent = rental.monthly_price_eur + " € · " + provision + " · kündbar";
     copy.append(title, detail);
     const snapshot = snapshots && snapshots[rental.rental_id];
     if (snapshot && snapshot.onboarding && snapshot.onboarding.supported) {
@@ -298,7 +300,7 @@ function renderRentals(rentals, snapshots) {
       const openButton = document.createElement("button");
       openButton.className = "primary";
       openButton.type = "button";
-      openButton.textContent = "Oeffnen";
+      openButton.textContent = "Öffnen";
       openButton.addEventListener("click", () => openRental(rental));
       actions.append(openButton);
       if (snapshot && snapshot.onboarding && snapshot.onboarding.supported) {
@@ -326,7 +328,7 @@ function renderRentals(rentals, snapshots) {
     const button = document.createElement("button");
     button.className = "secondary";
     button.type = "button";
-    button.textContent = "Kuendigen";
+    button.textContent = "Kündigen";
     button.addEventListener("click", () => cancelRental(rental, button));
     actions.append(button);
     row.append(copy, state, actions);
@@ -358,7 +360,7 @@ async function loadRentals() {
         `/api/rentals/${rental.rental_id}/instance?${instanceQuery.toString()}`
       );
     } catch {
-      // Snapshot is optional; Oeffnen remains available.
+      // Snapshot is optional; Öffnen bleibt erreichbar.
     }
   }
   renderRentals(rentals, snapshots);
@@ -391,7 +393,7 @@ async function startStarter(rental, button) {
         idempotency_key: operationKey("onboard-starter")
       })
     });
-    rentalMessage.textContent = "Muster liegt in der Instanz - Oeffnen.";
+    rentalMessage.textContent = "Muster liegt in der Instanz — Öffnen.";
     await loadRentals();
   } catch (error) {
     rentalMessage.textContent = error.message;
@@ -405,7 +407,7 @@ function pickExcel(rental) {
   excelTarget = rental;
   const input = document.querySelector("#rental-excel");
   if (!input) {
-    rentalMessage.textContent = "Excel-Auswahl ist nicht verfuegbar.";
+    rentalMessage.textContent = "Excel-Auswahl ist nicht verfügbar.";
     return;
   }
   input.value = "";
@@ -421,10 +423,10 @@ async function uploadExcelFile(file) {
     return;
   }
   if (!file || !/\.xlsx$/i.test(file.name)) {
-    rentalMessage.textContent = "Bitte eine XLSX-Datei waehlen.";
+    rentalMessage.textContent = "Bitte eine XLSX-Datei wählen.";
     return;
   }
-  rentalMessage.textContent = "Excel wird unveraendert in die Instanz kopiert.";
+  rentalMessage.textContent = "Excel wird unverändert in die Instanz kopiert.";
   const buffer = new Uint8Array(await file.arrayBuffer());
   await api(`/api/rentals/${rental.rental_id}/onboard`, {
     method: "POST",
@@ -478,9 +480,9 @@ async function rentAgent(agentId, button) {
       })
     });
     if (rental && rental.provisioned) {
-      rentalMessage.textContent = "Instanz bereit — öffnen";
+      rentalMessage.textContent = "Instanz bereit — Öffnen";
     } else {
-      rentalMessage.textContent = "Miete aktiv — Listenpreis, keine Zahlung. Pack folgt.";
+      rentalMessage.textContent = "Vorgemerkt — Pack folgt, noch nicht öffenbar. Listenpreis, keine Zahlung.";
     }
     await loadRentals();
   } catch (error) {

@@ -61,6 +61,23 @@ STARTER_REPORT_MD = (
     "`inbox/actuals/` oder `imports/actuals/` legen.\n"
 )
 
+REPORTING_STARTER_REL = "artifacts/starter-bericht.md"
+REPORTING_STARTER_MD = (
+    "# Reporting-Musterbericht\n"
+    "\n"
+    "Lokaler Mini-Bericht der gemieteten Reporting-Instanz.\n"
+    "Kein Live-LLM, keine Cloud, keine Meridian-Demodaten.\n"
+    "\n"
+    "## Stand\n"
+    "\n"
+    "- Instanz ist angelegt und oeffenbar.\n"
+    "- Eigene Berichte spaeter unter `artifacts/` ablegen.\n"
+    "- Dieser Text ist ein Artefakt der Instanz, kein Demo-Chrome.\n"
+)
+
+_PREVIEW_SUFFIXES = {".md", ".txt", ".csv"}
+_MAX_PREVIEW_BYTES = 16 * 1024
+
 
 class OnboardingError(RuntimeError):
     """Base class for rental onboarding errors."""
@@ -307,9 +324,13 @@ def snapshot_instance(
     if isinstance(catalog, dict):
         preset_id = catalog.get("preset_id")
         label = catalog.get("label") or agent_id
-    artifacts = [item for item in files if item["path"].startswith("artifacts/")]
+    artifacts = [
+        _with_preview(instance, item)
+        for item in files
+        if item["path"].startswith("artifacts/")
+    ]
     inputs = [
-        item
+        _with_preview(instance, item)
         for item in files
         if item["path"].startswith(("inbox/", "data/", "imports/"))
     ]
@@ -357,6 +378,41 @@ def _write_if_absent_or_same(path: Path, raw: bytes) -> None:
             return
         raise OnboardingConflict("Zieldatei existiert bereits mit anderem Inhalt.")
     _atomic_write(path, raw)
+
+
+def _text_preview(instance: Path, relative: str) -> str | None:
+    suffix = PurePosixPath(relative).suffix.lower()
+    if suffix not in _PREVIEW_SUFFIXES:
+        return None
+    try:
+        path = _safe_child(instance, relative)
+    except OnboardingError:
+        return None
+    try:
+        raw = _read_limited(path, max_bytes=_MAX_PREVIEW_BYTES)
+    except OnboardingError:
+        return None
+    if b"\x00" in raw:
+        return None
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def _with_preview(instance: Path, item: dict[str, Any]) -> dict[str, Any]:
+    preview = _text_preview(instance, item["path"])
+    if preview is None:
+        return item
+    return {**item, "preview": preview}
+
+
+def apply_reporting_starter(instance: Path) -> None:
+    """Seed a small honest report into a reporting instance."""
+    _write_if_absent_or_same(
+        _safe_child(instance, REPORTING_STARTER_REL),
+        REPORTING_STARTER_MD.encode("utf-8"),
+    )
 
 
 def apply_starter(instance: Path) -> None:

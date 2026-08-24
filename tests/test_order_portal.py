@@ -316,6 +316,10 @@ def test_agents_catalog_endpoint_is_local_json(portal):
     controlling = payload["agents"][0]
     assert controlling["monthly_price_eur"] == "400"
     assert controlling["provisionable"] is True
+    assert controlling["cta_label"] == "Mieten"
+    invoices = next(item for item in payload["agents"] if item["agent_id"] == "rechnungen")
+    assert invoices["provisionable"] is False
+    assert invoices["cta_label"] == "Vormerken — Pack folgt"
 
 
 def test_rental_mutation_requires_same_origin_csrf(portal):
@@ -798,3 +802,67 @@ def test_onboard_does_not_break_zero_euro_demo(portal):
     assert order["cost"]["budget_eur"] == "0"
     assert order["profile"] == "deterministic_local_demo"
 
+
+
+def test_homepage_puts_rent_before_zero_euro_demo(portal):
+    status, _, body = _request(portal, "GET", "/")
+    assert status == 200
+    html = body.decode("utf-8")
+    rent_at = html.find("Agenten mieten")
+    hero_at = html.find("Sehen Sie heute, wo Ihr Unternehmen steht.")
+    fold_at = html.find("Kostenlose Demo (0 €)")
+    assert rent_at != -1 and hero_at != -1 and fold_at != -1
+    assert rent_at < hero_at
+    assert rent_at < fold_at
+    assert html.find("<details id=\"zero-demo\"") != -1
+    js_status, _, js_body = _request(portal, "GET", "/app.js")
+    assert js_status == 200
+    js = js_body.decode("utf-8")
+    assert "Vormerken — Pack folgt" in js
+    assert 'textContent = "Öffnen"' in js
+    assert 'textContent = "Kündigen"' in js
+    assert 'textContent = "Oeffnen"' not in js
+    assert 'textContent = "Kuendigen"' not in js
+
+
+def test_rental_cockpit_script_hides_meridian_modules():
+    source = (
+        Path(__file__).resolve().parents[1] / "prototype" / "app.js"
+    ).read_text(encoding="utf-8")
+    assert 'nav-label", "Instanz"' in source
+    assert "function renderInstanceFile" in source
+    assert "Noch kein Bericht — Muster starten" in source
+    demo_modules = source.find('nav-label", "Module"')
+    rental_branch = source.find('nav-label", "Instanz"')
+    assert rental_branch != -1 and demo_modules != -1
+
+
+def test_reporting_cockpit_includes_starter_report(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "reporting", "rent-open-reporting-report-001")
+    location = (
+        f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/"
+    )
+    status, _, config = _request(portal, "GET", f"{location}pilot.config.js")
+    assert status == 200
+    body = config.decode("utf-8")
+    assert "starter-bericht.md" in body
+    assert "Reporting-Musterbericht" in body
+    assert "Meridian Industrie" not in body
+    assert '"rental"' in body
+
+
+def test_invoice_vormerken_stays_ledger_only(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "rechnungen", "rent-vormerken-invoices-001")
+    assert rental["provisioned"] is False
+    assert rental["provisionable"] is False
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{rental['rental_id']}/open?tenant_id={rental['tenant_id']}",
+    )
+    assert status == 409
+    error = json.loads(raw)["error"]
+    assert "Pack folgt" in error
+    assert "nicht oeffenbar" in error

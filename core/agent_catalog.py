@@ -40,7 +40,7 @@ _CATALOG: tuple[dict[str, Any], ...] = (
         "label": "Rechnungs-Agent",
         "description": (
             "Prüft Belege, Drei-Wege-Abgleich und Abweichungen. "
-            "Katalog-Eintrag — Provisionierung folgt mit eigenem Pack."
+            "Nur vormerken: Pack folgt, noch nicht öffenbar, keine Instanz."
         ),
         "monthly_price_eur": "600",
         "preset_id": None,
@@ -51,7 +51,7 @@ _CATALOG: tuple[dict[str, Any], ...] = (
         "label": "Vertrags-Agent",
         "description": (
             "Überwacht Fristen, Verlängerungen und Klauseln. "
-            "Katalog-Eintrag — Provisionierung folgt mit eigenem Pack."
+            "Nur vormerken: Pack folgt, noch nicht öffenbar, keine Instanz."
         ),
         "monthly_price_eur": "500",
         "preset_id": None,
@@ -66,13 +66,15 @@ def _public_entry(entry: dict[str, Any]) -> dict[str, Any]:
     normalized = format(Decimal(price), "f")
     if "." in normalized:
         normalized = normalized.rstrip("0").rstrip(".")
+    provisionable = bool(entry["provisionable"])
     return {
         "agent_id": entry["agent_id"],
         "label": entry["label"],
         "description": entry["description"],
         "monthly_price_eur": normalized,
         "preset_id": entry["preset_id"],
-        "provisionable": bool(entry["provisionable"]),
+        "provisionable": provisionable,
+        "cta_label": "Mieten" if provisionable else "Vormerken — Pack folgt",
     }
 
 

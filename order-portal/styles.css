@@ -436,3 +436,34 @@ footer span + span::before { margin-right: 24px; color: var(--green); content: "
   color: var(--muted);
   font-size: 12px;
 }
+
+.demo-fold {
+  margin: 0 0 50px;
+  padding: 4px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 254, 250, .72);
+}
+.demo-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 8px 18px;
+  color: var(--navy);
+  font-size: 16px;
+  font-weight: 760;
+}
+.demo-summary::-webkit-details-marker { display: none; }
+.demo-fold[open] > .demo-summary {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+.demo-fold .hero {
+  margin: 0;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
+}
+.catalog-card.pending .provision-tag {
+  color: var(--muted);
+  font-weight: 600;
+}

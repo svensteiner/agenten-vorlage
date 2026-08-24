@@ -43,6 +43,7 @@ def test_customer_orders_runs_and_opens_real_controlling_report(tmp_path: Path):
 
             context.route("**/*", block_external)
             page.goto(origin, wait_until="networkidle")
+            page.get_by_text("Kostenlose Demo (0 €)").click()
             page.get_by_label("Firmenname der Demo").fill("Muster Demo GmbH")
             page.get_by_label("Nur fiktive Beispieldaten verwenden").check()
             page.get_by_role(

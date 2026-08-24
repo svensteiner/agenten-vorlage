@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>KMU Controlling-Agent · Lokale Demo</title>
+    <title>Agenten mieten · AI_Studioxyz</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" defer></script>
@@ -18,9 +18,39 @@
           <span class="brand-mark">A</span>
           <span>AI_Studioxyz</span>
         </a>
-        <span class="local-pill"><i></i> Lokale Demo · 0 €</span>
+        <span class="local-pill"><i></i> Lokal · ohne Cloud</span>
       </header>
 
+      <section id="rental-area" class="rental-area" aria-labelledby="rental-title">
+        <div class="area-heading">
+          <div>
+            <p class="eyebrow">DIGITALE MITARBEITER</p>
+            <h2 id="rental-title">Agenten mieten</h2>
+          </div>
+          <span class="local-pill"><i></i> Listenpreis · kündbar</span>
+        </div>
+        <p class="rental-lead">
+          Monatlich mieten wie Personal — lokal, Listenpreis, keine Abbuchung.
+          Controlling und Reporting: Mieten legt eine echte Instanz an, die sich öffnen lässt.
+          Rechnungen und Verträge: nur vormerken. Pack folgt, noch nicht öffenbar, keine Instanz.
+        </p>
+        <label class="rental-label" for="rental-company">Firma / Mandant</label>
+        <input
+          id="rental-company"
+          name="rental_company"
+          maxlength="80"
+          autocomplete="organization"
+          placeholder="z. B. Muster Demo GmbH"
+        >
+        <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
+        <h3 class="rental-subtitle">Aktive Mieten</h3>
+        <div id="rental-list" class="rental-list" aria-live="polite"></div>
+        <input id="rental-excel" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+        <p id="rental-message" class="form-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <details id="zero-demo" class="demo-fold">
+        <summary class="demo-summary">Kostenlose Demo (0 €)</summary>
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Live Controlling statt zwei Monate Blindflug</p>
@@ -68,6 +98,7 @@
           <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
         </section>
       </section>
+      </details>
 
       <section id="customer-area" class="customer-area" hidden>
         <div class="area-heading">
@@ -106,35 +137,6 @@
           <button id="report-button" class="secondary" type="button" disabled>Controlling-Cockpit öffnen</button>
           <p id="verification-message" role="status" aria-live="polite"></p>
         </div>
-      </section>
-
-
-      <section id="rental-area" class="rental-area" aria-labelledby="rental-title">
-        <div class="area-heading">
-          <div>
-            <p class="eyebrow">DIGITALE MITARBEITER</p>
-            <h2 id="rental-title">Agenten mieten</h2>
-          </div>
-          <span class="local-pill"><i></i> Listenpreis · kündbar</span>
-        </div>
-        <p class="rental-lead">
-          Monatlich mieten wie Personal — lokal ohne Zahlung (Listenpreis, keine Abbuchung).
-          Controlling und Reporting werden wirklich angelegt und lassen sich öffnen.
-          Rechnungs- und Vertrags-Agent stehen nur im Katalog: Pack folgt, noch nicht öffenbar.
-        </p>
-        <label class="rental-label" for="rental-company">Firma / Mandant</label>
-        <input
-          id="rental-company"
-          name="rental_company"
-          maxlength="80"
-          autocomplete="organization"
-          placeholder="z. B. Muster Demo GmbH"
-        >
-        <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
-        <h3 class="rental-subtitle">Aktive Mieten</h3>
-        <div id="rental-list" class="rental-list" aria-live="polite"></div>
-        <input id="rental-excel" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-        <p id="rental-message" class="form-message" role="status" aria-live="polite"></p>
       </section>
 
       <footer>

@@ -28,8 +28,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo  KMU-Controlling-Demo startet lokal.
-echo  Es entstehen keine LLM-, Azure- oder Zahlungskosten.
+echo  KMU-Mietportal startet lokal. Oben: Agenten mieten.
+echo  Darunter: kostenlose 0-Euro-Demo. Keine LLM-, Azure- oder Zahlungskosten.
 echo  Zum Beenden dieses Fenster schliessen oder Strg+C druecken.
 echo.
 %PYCMD% order_portal.py

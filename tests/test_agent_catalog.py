@@ -46,6 +46,11 @@ def test_invoice_and_contract_agents_are_catalog_only():
     assert contracts["provisionable"] is False
     assert invoices["preset_id"] is None
     assert contracts["preset_id"] is None
+    assert invoices["cta_label"] == "Vormerken — Pack folgt"
+    assert contracts["cta_label"] == "Vormerken — Pack folgt"
+    assert "noch nicht öffenbar" in invoices["description"]
+    assert get_agent("controlling")["cta_label"] == "Mieten"
+    assert get_agent("reporting")["cta_label"] == "Mieten"
 
 
 def test_unknown_and_non_string_agent_ids_return_none():
