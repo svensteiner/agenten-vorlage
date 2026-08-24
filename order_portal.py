@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import base64
+import binascii
 import hashlib
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -40,6 +42,12 @@ _RENTAL_CANCEL_ROUTE = re.compile(
 _RENTAL_OPEN_ROUTE = re.compile(
     r"^/api/rentals/(rnt_[0-9a-f]{32})/open$"
 )
+_RENTAL_INSTANCE_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/instance$"
+)
+_RENTAL_ONBOARD_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/onboard$"
+)
 _COCKPIT_INDEX_ROUTE = re.compile(
     r"^/api/rentals/(rnt_[0-9a-f]{32})/cockpit/([a-z][a-z0-9-]{0,62})/?$"
 )
@@ -54,6 +62,7 @@ _COCKPIT_ASSETS = {
     "styles.css": ("styles.css", "text/css; charset=utf-8"),
 }
 _MAX_REQUEST_BYTES = 16 * 1024
+_MAX_ONBOARD_BYTES = 512 * 1024
 _STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -206,7 +215,7 @@ class _PortalHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.BAD_REQUEST, "Ungültiger Pfad.")
         return path
 
-    def _read_mutation_json(self) -> dict[str, object] | None:
+    def _read_mutation_json(self, *, max_bytes: int | None = None) -> dict[str, object] | None:
         if self.headers.get("Origin") != self._expected_origin():
             self._error(HTTPStatus.FORBIDDEN, "Lokale Herkunft fehlt.")
             return None
@@ -226,7 +235,8 @@ class _PortalHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.LENGTH_REQUIRED, "Content-Length fehlt.")
             return None
         length = int(lengths[0])
-        if length < 2 or length > _MAX_REQUEST_BYTES:
+        limit = _MAX_REQUEST_BYTES if max_bytes is None else max_bytes
+        if length < 2 or length > limit:
             self._error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Anfrage ist zu groß.")
             return None
         media_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip()
@@ -291,6 +301,10 @@ class _PortalHandler(BaseHTTPRequestHandler):
         if open_match:
             self._open_rental(open_match.group(1))
             return
+        instance_match = _RENTAL_INSTANCE_ROUTE.fullmatch(path)
+        if instance_match:
+            self._serve_instance(instance_match.group(1))
+            return
         asset_match = _COCKPIT_ASSET_ROUTE.fullmatch(path)
         if asset_match:
             self._serve_cockpit(
@@ -316,8 +330,14 @@ class _PortalHandler(BaseHTTPRequestHandler):
         path = self._preflight()
         if path is None:
             return
-        payload = self._read_mutation_json()
+        onboard_match = _RENTAL_ONBOARD_ROUTE.fullmatch(path)
+        payload = self._read_mutation_json(
+            max_bytes=_MAX_ONBOARD_BYTES if onboard_match else None
+        )
         if payload is None:
+            return
+        if onboard_match:
+            self._onboard_rental(onboard_match.group(1), payload)
             return
         if path == "/api/demo-orders":
             self._create_order(payload)
@@ -542,23 +562,32 @@ class _PortalHandler(BaseHTTPRequestHandler):
             f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/"
         )
 
+    def _rental_lookup_error(self, exc: BaseException) -> bool:
+        if isinstance(exc, RentalValidationError):
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return True
+        if isinstance(exc, RentalNotFound):
+            self._error(HTTPStatus.NOT_FOUND, "Miete nicht gefunden.")
+            return True
+        if isinstance(exc, RentalNotOpenable):
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return True
+        if isinstance(exc, RentalConflict):
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return True
+        return False
+
     def _serve_cockpit(
         self, rental_id: str, tenant_id: str, filename: str
     ) -> None:
         try:
-            rental = self.server.rental_service.open_rental(tenant_id, rental_id)
-        except RentalValidationError as exc:
-            self._error(HTTPStatus.BAD_REQUEST, str(exc))
-            return
-        except RentalNotFound:
-            self._error(HTTPStatus.NOT_FOUND, "Miete nicht gefunden.")
-            return
-        except RentalNotOpenable as exc:
-            self._error(HTTPStatus.CONFLICT, str(exc))
-            return
-        except RentalConflict as exc:
-            self._error(HTTPStatus.CONFLICT, str(exc))
-            return
+            snapshot = self.server.rental_service.describe_instance(
+                tenant_id, rental_id
+            )
+        except (RentalValidationError, RentalNotFound, RentalNotOpenable, RentalConflict) as exc:
+            if self._rental_lookup_error(exc):
+                return
+            raise
         except OSError:
             self._error(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -566,11 +595,41 @@ class _PortalHandler(BaseHTTPRequestHandler):
             )
             return
         if filename == "pilot.config.js":
+            facts = [
+                {
+                    "label": "Agent",
+                    "value": snapshot.get("label") or snapshot["agent_id"],
+                },
+                {
+                    "label": "Preset",
+                    "value": snapshot.get("preset_id") or "minimales Pack",
+                },
+            ]
+            soul = snapshot.get("soul_title")
+            if soul:
+                facts.append({"label": "SOUL", "value": soul})
+            facts.append({"label": "Instanz", "value": snapshot["instance_path"]})
+            for item in snapshot.get("artifacts") or []:
+                facts.append({"label": "Bericht", "value": item["path"]})
+                if len(facts) >= 8:
+                    break
             config = {
                 "active": True,
                 "company": {
-                    "name": rental["display_name"],
+                    "name": snapshot["display_name"],
                     "tagline": "Lokale gemietete Instanz",
+                    "facts": facts,
+                },
+                "rental": {
+                    "rental_id": snapshot["rental_id"],
+                    "tenant_id": snapshot["tenant_id"],
+                    "agent_id": snapshot["agent_id"],
+                    "preset_id": snapshot.get("preset_id"),
+                    "soul_title": snapshot.get("soul_title"),
+                    "instance_path": snapshot["instance_path"],
+                    "onboarding": snapshot.get("onboarding"),
+                    "artifacts": snapshot.get("artifacts") or [],
+                    "inputs": snapshot.get("inputs") or [],
                 },
             }
             body = (
@@ -601,6 +660,72 @@ class _PortalHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "Cockpit fehlt.")
             return
         self._send(HTTPStatus.OK, body, media_type)
+
+    def _serve_instance(self, rental_id: str) -> None:
+        tenant_id = self._tenant_from_query()
+        if tenant_id is None:
+            return
+        try:
+            snapshot = self.server.rental_service.describe_instance(
+                tenant_id, rental_id
+            )
+        except (RentalValidationError, RentalNotFound, RentalNotOpenable, RentalConflict) as exc:
+            if self._rental_lookup_error(exc):
+                return
+            raise
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Instanz konnte nicht gelesen werden.",
+            )
+            return
+        self._json(HTTPStatus.OK, snapshot)
+
+    def _onboard_rental(self, rental_id: str, payload: dict[str, object]) -> None:
+        resolved = self._tenant_from_payload(payload)
+        if resolved is None:
+            return
+        tenant_id, _display_name = resolved
+        mode = payload.get("mode")
+        idempotency_key = payload.get("idempotency_key")
+        if not isinstance(mode, str) or not isinstance(idempotency_key, str):
+            self._error(HTTPStatus.BAD_REQUEST, "Modus und Schluessel fehlen.")
+            return
+        filename = payload.get("filename")
+        file_bytes: bytes | None = None
+        if mode == "excel":
+            encoded = payload.get("content_base64")
+            if not isinstance(filename, str) or not isinstance(encoded, str):
+                self._error(HTTPStatus.BAD_REQUEST, "Excel-Datei fehlt.")
+                return
+            if len(encoded) > _MAX_ONBOARD_BYTES:
+                self._error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Anfrage ist zu gross.")
+                return
+            try:
+                file_bytes = base64.b64decode(encoded, validate=True)
+            except (binascii.Error, ValueError):
+                self._error(HTTPStatus.BAD_REQUEST, "Excel-Datei ist ungueltig.")
+                return
+        try:
+            snapshot = self.server.rental_service.onboard(
+                tenant_id=tenant_id,
+                rental_id=rental_id,
+                mode=mode,
+                idempotency_key=idempotency_key,
+                filename=filename if isinstance(filename, str) else None,
+                file_bytes=file_bytes,
+            )
+        except (RentalValidationError, RentalNotFound, RentalNotOpenable, RentalConflict) as exc:
+            if self._rental_lookup_error(exc):
+                return
+            raise
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Onboarding konnte nicht gespeichert werden.",
+            )
+            return
+        self._json(HTTPStatus.OK, snapshot)
 
     def _serve_rentals(self) -> None:
         tenant_id = self._tenant_from_query()

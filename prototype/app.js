@@ -93,6 +93,7 @@
     wireReset();
     wireSearch();
     wireOnboarding();
+    wireRentalInstance();
   }
 
   // ---------- Pilot-Umbranding (Schicht A) ----------
@@ -139,6 +140,9 @@
   // „Geführte Demo" zeigt. localStorage-Flag → erscheint nur einmal.
   const ONBOARD_KEY = "aistudio.onboarded.v1";
   function wireOnboarding() {
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    if (cfg && cfg.rental) return;
+
     const ob = $("#onboard");
     if (!ob) return;
 
@@ -333,12 +337,14 @@
 
   function renderCompanyCard() {
     const c = $("#companyCard");
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
     const rows = COMPANY.facts
-      .map((f) => `<div class="row"><span>${f.label}</span><span>${f.value}</span></div>`)
+      .map((f) => `<div class="row"><span>${escapeHtml(f.label)}</span><span>${escapeHtml(f.value)}</span></div>`)
       .join("");
-    c.innerHTML =
-      `<h4>${COMPANY.name}</h4>${rows}` +
-      `<div class="demo-badge">● Demo-Daten · rein fiktiv</div>`;
+    const badge = cfg && cfg.rental
+      ? `<div class="demo-badge">Lokale gemietete Instanz</div>`
+      : `<div class="demo-badge">Demo-Daten - rein fiktiv</div>`;
+    c.innerHTML = `<h4>${escapeHtml(COMPANY.name)}</h4>${rows}` + badge;
   }
 
   function selectModule(key) {
@@ -1556,6 +1562,146 @@
   function scrollBottom() { const s = $("#scroll"); s.scrollTop = s.scrollHeight; }
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+
+  function wireRentalInstance() {
+    const cfg = (typeof window !== "undefined" && window.PILOT_CONFIG) || null;
+    if (!cfg || !cfg.rental) return;
+    const rental = cfg.rental;
+    const card = $("#companyCard");
+    if (card) {
+      const extra = document.createElement("div");
+      extra.className = "rental-files";
+      const inputs = Array.isArray(rental.inputs) ? rental.inputs : [];
+      const artifacts = Array.isArray(rental.artifacts) ? rental.artifacts : [];
+      const lines = [];
+      if (inputs.length) {
+        lines.push("Quellen: " + inputs.map((item) => item.path).join(", "));
+      }
+      if (artifacts.length) {
+        lines.push("Berichte: " + artifacts.map((item) => item.path).join(", "));
+      }
+      extra.textContent = lines.join(" | ") || "Noch keine Quellen in der Instanz.";
+      card.append(extra);
+    }
+    const onboard = rental.onboarding || {};
+    if (!onboard.supported || onboard.status === "ready") return;
+    showRentalOnboarding(rental);
+  }
+
+  function showRentalOnboarding(rental) {
+    const host = document.createElement("div");
+    host.className = "onboard";
+    host.id = "rentalOnboard";
+    const inner = document.createElement("div");
+    inner.className = "onboard-card";
+    inner.setAttribute("role", "dialog");
+    inner.setAttribute("aria-label", "Instanz starten");
+    const title = document.createElement("h2");
+    title.textContent = "Instanz starten";
+    const copy = document.createElement("p");
+    copy.textContent = "Excel hochladen (Formeln bleiben unangetastet) oder mit Musterkonten, Bericht und Forecast starten.";
+    const actions = document.createElement("div");
+    actions.className = "ob-actions";
+    const excelBtn = document.createElement("button");
+    excelBtn.className = "ob-primary";
+    excelBtn.type = "button";
+    excelBtn.textContent = "Excel hochladen";
+    const starterBtn = document.createElement("button");
+    starterBtn.className = "ob-skip";
+    starterBtn.type = "button";
+    starterBtn.textContent = "Mit Muster starten";
+    const skipBtn = document.createElement("button");
+    skipBtn.className = "ob-skip";
+    skipBtn.type = "button";
+    skipBtn.textContent = "Spaeter";
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    input.hidden = true;
+    actions.append(excelBtn, starterBtn, skipBtn);
+    inner.append(title, copy, actions, input);
+    host.append(inner);
+    document.body.append(host);
+
+    const dismiss = () => { host.remove(); };
+    skipBtn.addEventListener("click", dismiss);
+    host.addEventListener("click", (event) => { if (event.target === host) dismiss(); });
+
+    async function csrf() {
+      const response = await fetch("/api/session");
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Sitzung fehlt.");
+      return payload.csrf_token;
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    starterBtn.addEventListener("click", async () => {
+      starterBtn.disabled = true;
+      try {
+        const token = await csrf();
+        const response = await fetch("/api/rentals/" + rental.rental_id + "/onboard", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": token
+          },
+          body: JSON.stringify({
+            tenant_id: rental.tenant_id,
+            mode: "starter",
+            idempotency_key: "cockpit-starter-" + Date.now()
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Muster konnte nicht gelegt werden.");
+        dismiss();
+        window.location.reload();
+      } catch (error) {
+        copy.textContent = error.message;
+        starterBtn.disabled = false;
+      }
+    });
+
+    excelBtn.addEventListener("click", () => input.click());
+    input.addEventListener("change", async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      excelBtn.disabled = true;
+      try {
+        const token = await csrf();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const response = await fetch("/api/rentals/" + rental.rental_id + "/onboard", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": token
+          },
+          body: JSON.stringify({
+            tenant_id: rental.tenant_id,
+            mode: "excel",
+            filename: file.name.replace(/^.*[\\/]/, ""),
+            content_base64: bytesToBase64(bytes),
+            idempotency_key: "cockpit-excel-" + Date.now()
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Excel konnte nicht gespeichert werden.");
+        dismiss();
+        window.location.reload();
+      } catch (error) {
+        copy.textContent = error.message;
+        excelBtn.disabled = false;
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);

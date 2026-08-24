@@ -417,3 +417,22 @@ footer span + span::before { margin-right: 24px; color: var(--green); content: "
   .catalog-grid { grid-template-columns: 1fr; }
   .rental-row { grid-template-columns: 1fr; }
 }
+
+.onboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.onboard-actions .secondary,
+.onboard-actions .primary {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.onboard-status {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}

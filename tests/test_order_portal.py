@@ -610,3 +610,191 @@ def test_open_route_requires_tenant(portal):
         portal, "GET", f"/api/rentals/{rental['rental_id']}/open"
     )
     assert status == 400
+
+def test_open_cockpit_config_includes_instance_identity(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-open-identity-001")
+    location = (
+        f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/"
+    )
+    status, _, config = _request(portal, "GET", f"{location}pilot.config.js")
+    assert status == 200
+    body = config.decode("utf-8")
+    assert "kmu-controlling" in body
+    assert rental["display_name"] in body
+    assert "rental" in body
+    assert rental["rental_id"] in body
+
+
+def test_instance_endpoint_returns_controlling_snapshot(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-instance-001")
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{rental['rental_id']}/instance?tenant_id={rental['tenant_id']}",
+    )
+    assert status == 200
+    snapshot = json.loads(raw)
+    assert snapshot["preset_id"] == "kmu-controlling"
+    assert snapshot["display_name"] == rental["display_name"]
+    assert snapshot["onboarding"]["status"] == "empty"
+    assert snapshot["soul_title"]
+
+
+def test_instance_endpoint_rejects_wrong_tenant_and_ledger_only(portal):
+    csrf = _session(portal)
+    controlling = _rent(portal, csrf, "controlling", "rent-instance-wrong-001")
+    status, _, _ = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{controlling['rental_id']}/instance?tenant_id=other-kmu",
+    )
+    assert status == 404
+    invoices = _rent(portal, csrf, "rechnungen", "rent-instance-invoices-001")
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{invoices['rental_id']}/instance?tenant_id={invoices['tenant_id']}",
+    )
+    assert status == 409
+    assert "Pack folgt" in json.loads(raw)["error"]
+
+
+def test_onboard_starter_via_portal(portal, tmp_path):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-onboard-starter-001")
+    status, _, raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "starter",
+            "idempotency_key": "portal-starter-001",
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert status == 200
+    snapshot = json.loads(raw)
+    assert snapshot["onboarding"]["status"] == "ready"
+    assert snapshot["onboarding"]["mode"] == "starter"
+    replay_status, _, replay_raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "starter",
+            "idempotency_key": "portal-starter-001",
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert replay_status == 200
+    assert json.loads(replay_raw)["onboarding"]["status"] == "ready"
+
+
+def test_onboard_excel_via_portal_keeps_bytes(portal):
+    import base64
+
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-onboard-excel-001")
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "presets"
+        / "kmu-controlling"
+        / "pilot"
+        / "demo"
+        / "Saldenliste_Muster_Juni2026.xlsx"
+    )
+    raw_xlsx = source.read_bytes()
+    status, _, raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "excel",
+            "filename": "Saldenliste.xlsx",
+            "content_base64": base64.b64encode(raw_xlsx).decode("ascii"),
+            "idempotency_key": "portal-excel-001",
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert status == 200
+    snapshot = json.loads(raw)
+    assert snapshot["onboarding"]["status"] == "ready"
+    assert any(
+        item["path"] == "inbox/actuals/Saldenliste.xlsx" for item in snapshot["inputs"]
+    )
+
+
+def test_onboard_rejects_path_escape_filename(portal):
+    import base64
+
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-onboard-escape-001")
+    status, _, raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "excel",
+            "filename": "../secret.xlsx",
+            "content_base64": base64.b64encode(b"PK fake").decode("ascii"),
+            "idempotency_key": "portal-excel-escape",
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert status == 400
+
+
+def test_onboard_requires_csrf(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-onboard-csrf-001")
+    status, _, _ = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "starter",
+            "idempotency_key": "portal-starter-csrf",
+        },
+    )
+    assert status == 403
+
+
+def test_onboard_does_not_break_zero_euro_demo(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-onboard-demo-001")
+    onboard_status, _, _ = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/onboard",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "mode": "starter",
+            "idempotency_key": "portal-starter-demo",
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert onboard_status == 200
+    create_status, _, raw_order = _request(
+        portal,
+        "POST",
+        "/api/demo-orders",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "idempotency_key": "checkout-after-onboard",
+            "synthetic_only": True,
+            "confirmed_zero_cost": True,
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert create_status == 201
+    order = json.loads(raw_order)
+    assert order["cost"]["budget_eur"] == "0"
+    assert order["profile"] == "deterministic_local_demo"
+

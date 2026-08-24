@@ -255,13 +255,13 @@ function renderCatalog() {
   }
 }
 
-function renderRentals(rentals) {
+function renderRentals(rentals, snapshots) {
   rentalList.innerHTML = "";
   const active = (rentals || []).filter((item) => item.status === "active");
   if (!active.length) {
     const empty = document.createElement("p");
     empty.className = "rental-empty";
-    empty.textContent = "Noch keine aktive Miete für diesen Mandanten.";
+    empty.textContent = "Noch keine aktive Miete fuer diesen Mandanten.";
     rentalList.append(empty);
     return;
   }
@@ -273,21 +273,49 @@ function renderRentals(rentals) {
     const agent = catalogAgents.find((item) => item.agent_id === rental.agent_id);
     title.textContent = agent ? agent.label : rental.agent_id;
     const detail = document.createElement("small");
-    const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only · Pack folgt";
-    detail.textContent = `${rental.monthly_price_eur} € · ${provision} · kündbar`;
+    const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only - Pack folgt";
+    detail.textContent = rental.monthly_price_eur + " EUR - " + provision + " - kuendbar";
     copy.append(title, detail);
-    const status = document.createElement("span");
-    status.className = "state ready";
-    status.textContent = "Aktiv";
+    const snapshot = snapshots && snapshots[rental.rental_id];
+    if (snapshot && snapshot.onboarding && snapshot.onboarding.supported) {
+      const status = document.createElement("span");
+      status.className = "onboard-status";
+      if (snapshot.onboarding.status === "ready") {
+        const mode = snapshot.onboarding.mode === "starter" ? "Musterdaten" : "Excel";
+        status.textContent = "Onboarding: " + mode;
+      } else {
+        status.textContent = "Onboarding: Excel hochladen oder mit Muster starten";
+      }
+      copy.append(status);
+    }
+    const state = document.createElement("span");
+    state.className = "state ready";
+    state.textContent = "Aktiv";
     const actions = document.createElement("div");
     actions.className = "rental-actions";
     if (rental.provisioned) {
       const openButton = document.createElement("button");
       openButton.className = "primary";
       openButton.type = "button";
-      openButton.textContent = "Öffnen";
+      openButton.textContent = "Oeffnen";
       openButton.addEventListener("click", () => openRental(rental));
       actions.append(openButton);
+      if (snapshot && snapshot.onboarding && snapshot.onboarding.supported) {
+        const onboardWrap = document.createElement("div");
+        onboardWrap.className = "onboard-actions";
+        const excelButton = document.createElement("button");
+        excelButton.className = "secondary";
+        excelButton.type = "button";
+        excelButton.textContent = "Excel hochladen";
+        excelButton.addEventListener("click", () => pickExcel(rental));
+        const starterButton = document.createElement("button");
+        starterButton.className = "secondary";
+        starterButton.type = "button";
+        starterButton.textContent = "Mit Muster starten";
+        starterButton.addEventListener("click", () => startStarter(rental, starterButton));
+        onboardWrap.append(excelButton, starterButton);
+        actions.append(onboardWrap);
+      }
     } else {
       const hint = document.createElement("span");
       hint.className = "pack-hint";
@@ -297,10 +325,10 @@ function renderRentals(rentals) {
     const button = document.createElement("button");
     button.className = "secondary";
     button.type = "button";
-    button.textContent = "Kündigen";
+    button.textContent = "Kuendigen";
     button.addEventListener("click", () => cancelRental(rental, button));
     actions.append(button);
-    row.append(copy, status, actions);
+    row.append(copy, state, actions);
     rentalList.append(row);
   }
 }
@@ -319,8 +347,111 @@ async function loadRentals() {
   }
   const query = new URLSearchParams({company_name: company});
   const payload = await api(`/api/rentals?${query.toString()}`);
-  renderRentals(payload.rentals || []);
+  const rentals = payload.rentals || [];
+  const snapshots = {};
+  for (const rental of rentals) {
+    if (rental.status !== "active" || !rental.provisioned) continue;
+    try {
+      const instanceQuery = new URLSearchParams({tenant_id: rental.tenant_id});
+      snapshots[rental.rental_id] = await api(
+        `/api/rentals/${rental.rental_id}/instance?${instanceQuery.toString()}`
+      );
+    } catch {
+      // Snapshot is optional; Oeffnen remains available.
+    }
+  }
+  renderRentals(rentals, snapshots);
 }
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function startStarter(rental, button) {
+  const company = currentRentalCompany();
+  if (!company) {
+    rentalMessage.textContent = "Bitte zuerst einen Firmennamen angeben.";
+    return;
+  }
+  button.disabled = true;
+  rentalMessage.textContent = "Musterdaten werden in die Instanz gelegt.";
+  try {
+    await api(`/api/rentals/${rental.rental_id}/onboard`, {
+      method: "POST",
+      body: JSON.stringify({
+        company_name: company,
+        tenant_id: rental.tenant_id,
+        mode: "starter",
+        idempotency_key: operationKey("onboard-starter")
+      })
+    });
+    rentalMessage.textContent = "Muster liegt in der Instanz - Oeffnen.";
+    await loadRentals();
+  } catch (error) {
+    rentalMessage.textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+let excelTarget = null;
+
+function pickExcel(rental) {
+  excelTarget = rental;
+  const input = document.querySelector("#rental-excel");
+  if (!input) {
+    rentalMessage.textContent = "Excel-Auswahl ist nicht verfuegbar.";
+    return;
+  }
+  input.value = "";
+  input.click();
+}
+
+async function uploadExcelFile(file) {
+  const rental = excelTarget;
+  excelTarget = null;
+  const company = currentRentalCompany();
+  if (!rental || !company) {
+    rentalMessage.textContent = "Miete oder Firmenname fehlt.";
+    return;
+  }
+  if (!file || !/\.xlsx$/i.test(file.name)) {
+    rentalMessage.textContent = "Bitte eine XLSX-Datei waehlen.";
+    return;
+  }
+  rentalMessage.textContent = "Excel wird unveraendert in die Instanz kopiert.";
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  await api(`/api/rentals/${rental.rental_id}/onboard`, {
+    method: "POST",
+    body: JSON.stringify({
+      company_name: company,
+      tenant_id: rental.tenant_id,
+      mode: "excel",
+      filename: file.name.replace(/^.*[\\/]/, ""),
+      content_base64: bytesToBase64(buffer),
+      idempotency_key: operationKey("onboard-excel")
+    })
+  });
+  rentalMessage.textContent = "Excel liegt in der Instanz - Formeln unangetastet.";
+  await loadRentals();
+}
+
+const excelInput = document.querySelector("#rental-excel");
+if (excelInput) {
+  excelInput.addEventListener("change", async (event) => {
+    const file = event.target.files && event.target.files[0];
+    try {
+      await uploadExcelFile(file);
+    } catch (error) {
+      rentalMessage.textContent = error.message;
+    }
+  });
+}
+
 
 async function rentAgent(agentId, button) {
   const company = currentRentalCompany();

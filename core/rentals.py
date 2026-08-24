@@ -23,6 +23,13 @@ import unicodedata
 
 from core.agent_catalog import get_agent, list_agents
 from core.instance_factory import InstanceProvisionError, provision_instance
+from core.rental_onboarding import (
+    OnboardingConflict,
+    OnboardingValidationError,
+    apply_excel,
+    apply_starter,
+    snapshot_instance,
+)
 
 
 _IDENTITY = re.compile(r"^[a-z][a-z0-9-]{0,62}$")
@@ -672,3 +679,79 @@ class RentalService:
                 tenant_id, state["agent_id"], instance_path
             )
             return _public_rental(state)
+
+    def describe_instance(self, tenant_id: str, rental_id: str) -> dict[str, Any]:
+        """Return identity, SOUL/preset, and listed instance files."""
+        tenant_id = _validate_identity("tenant_id", tenant_id)
+        rental_id = _validate_rental_id(rental_id)
+        with _file_lock(self._tenant_lock(tenant_id)):
+            state = _read_rental_state(self._record_path(tenant_id, rental_id))
+            if state["tenant_id"] != tenant_id or state["rental_id"] != rental_id:
+                raise RentalNotFound("Miete nicht gefunden.")
+            if state["status"] != "active":
+                raise RentalNotOpenable("Miete ist gekuendigt.")
+            if not state["provisionable"] or not state["provisioned"]:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            instance_path = state["instance_path"]
+            if not isinstance(instance_path, str) or not instance_path:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            instance = self._assert_openable_instance(
+                tenant_id, state["agent_id"], instance_path
+            )
+            catalog = get_agent(state["agent_id"])
+            return snapshot_instance(instance, _public_rental(state), catalog)
+
+    def onboard(
+        self,
+        tenant_id: str,
+        rental_id: str,
+        *,
+        mode: str,
+        idempotency_key: str,
+        filename: str | None = None,
+        file_bytes: bytes | None = None,
+    ) -> dict[str, Any]:
+        """Seed starter files or copy an Excel workbook into the instance."""
+        tenant_id = _validate_identity("tenant_id", tenant_id)
+        rental_id = _validate_rental_id(rental_id)
+        idempotency_key = _validate_key(idempotency_key)
+        if mode not in {"starter", "excel"}:
+            raise RentalValidationError("Onboarding-Modus ist ungueltig.")
+        with _file_lock(self._tenant_lock(tenant_id)):
+            state = _read_rental_state(self._record_path(tenant_id, rental_id))
+            if state["tenant_id"] != tenant_id or state["rental_id"] != rental_id:
+                raise RentalNotFound("Miete nicht gefunden.")
+            if state["status"] != "active":
+                raise RentalNotOpenable("Miete ist gekuendigt.")
+            if not state["provisionable"] or not state["provisioned"]:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            if state["agent_id"] != "controlling":
+                raise RentalValidationError(
+                    "Onboarding gilt nur fuer den Controlling-Agenten."
+                )
+            instance_path = state["instance_path"]
+            if not isinstance(instance_path, str) or not instance_path:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            instance = self._assert_openable_instance(
+                tenant_id, state["agent_id"], instance_path
+            )
+            try:
+                if mode == "starter":
+                    apply_starter(instance)
+                else:
+                    apply_excel(instance, filename or "", file_bytes or b"")
+            except OnboardingValidationError as exc:
+                raise RentalValidationError(str(exc)) from exc
+            except OnboardingConflict as exc:
+                raise RentalConflict(str(exc)) from exc
+            catalog = get_agent(state["agent_id"])
+            return snapshot_instance(instance, _public_rental(state), catalog)
+
