@@ -308,3 +308,99 @@ footer span + span::before { margin-right: 24px; color: var(--green); content: "
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+.rental-area {
+  scroll-margin-top: 28px;
+  margin: 0 0 50px;
+  padding: clamp(24px, 4vw, 46px);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 254, 250, .94);
+  box-shadow: 0 22px 50px rgba(25, 59, 97, .09);
+}
+.rental-lead {
+  max-width: 720px;
+  margin: 0 0 22px;
+  color: #4d5154;
+  line-height: 1.55;
+}
+.rental-label {
+  display: block;
+  margin: 0 0 8px;
+  color: #383b3d;
+  font-size: 13px;
+  font-weight: 720;
+}
+.rental-area input {
+  max-width: 420px;
+  margin-bottom: 22px;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.catalog-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #fbfcfb;
+}
+.catalog-card h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 16px;
+}
+.catalog-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.catalog-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.catalog-meta .price { font-size: 12px; }
+.provision-tag {
+  color: var(--navy);
+  font-weight: 720;
+}
+.catalog-card .primary {
+  width: auto;
+  min-height: 42px;
+  justify-content: center;
+}
+.rental-subtitle {
+  margin: 28px 0 12px;
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 760;
+}
+.rental-list {
+  display: grid;
+  gap: 10px;
+}
+.rental-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: #fff;
+}
+.rental-row b { color: var(--navy); }
+.rental-row small { display: block; color: var(--muted); margin-top: 4px; }
+.rental-row .secondary { min-height: 40px; padding: 0 14px; }
+.rental-empty { color: var(--muted); font-size: 14px; }
+@media (max-width: 900px) {
+  .catalog-grid { grid-template-columns: 1fr; }
+  .rental-row { grid-template-columns: 1fr; }
+}

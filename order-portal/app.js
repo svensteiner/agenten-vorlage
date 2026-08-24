@@ -172,3 +172,229 @@ prepareSession().catch(() => {
   formMessage.textContent = "Das lokale Demo-Portal konnte nicht initialisiert werden.";
   orderButton.disabled = true;
 });
+
+const rentalCompany = document.querySelector("#rental-company");
+const catalogGrid = document.querySelector("#catalog-grid");
+const rentalList = document.querySelector("#rental-list");
+const rentalMessage = document.querySelector("#rental-message");
+const RENTAL_STORAGE_KEY = "aistudioxyz-kmu-rentals-v1";
+
+let catalogAgents = [];
+let rentalKeys = loadRentalKeys();
+
+function loadRentalKeys() {
+  try {
+    const value = JSON.parse(localStorage.getItem(RENTAL_STORAGE_KEY) || "{}");
+    return value && typeof value === "object" ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistRentalKeys() {
+  try {
+    localStorage.setItem(RENTAL_STORAGE_KEY, JSON.stringify(rentalKeys));
+  } catch {
+    // Rental actions still work for the current page if storage is disabled.
+  }
+}
+
+function rentKeyFor(agentId) {
+  if (!rentalKeys[`rent:${agentId}`]) {
+    rentalKeys[`rent:${agentId}`] = operationKey(`rent-${agentId}`);
+    persistRentalKeys();
+  }
+  return rentalKeys[`rent:${agentId}`];
+}
+
+function cancelKeyFor(rentalId) {
+  if (!rentalKeys[`cancel:${rentalId}`]) {
+    rentalKeys[`cancel:${rentalId}`] = operationKey(`cancel-${rentalId}`);
+    persistRentalKeys();
+  }
+  return rentalKeys[`cancel:${rentalId}`];
+}
+
+function resetRentKey(agentId) {
+  rentalKeys[`rent:${agentId}`] = operationKey(`rent-${agentId}`);
+  persistRentalKeys();
+}
+
+function currentRentalCompany() {
+  return (rentalCompany.value || companyInput.value || "").trim();
+}
+
+function renderCatalog() {
+  catalogGrid.innerHTML = "";
+  for (const agent of catalogAgents) {
+    const card = document.createElement("article");
+    card.className = "catalog-card";
+    const title = document.createElement("h3");
+    title.textContent = agent.label;
+    const description = document.createElement("p");
+    description.textContent = agent.description;
+    const meta = document.createElement("div");
+    meta.className = "catalog-meta";
+    const price = document.createElement("span");
+    price.className = "price";
+    price.textContent = `${agent.monthly_price_eur} € / Monat`;
+    const tag = document.createElement("span");
+    tag.className = "provision-tag";
+    tag.textContent = agent.provisionable
+      ? "Wird lokal provisioniert"
+      : "Katalog — Pack folgt";
+    meta.append(price, tag);
+    const button = document.createElement("button");
+    button.className = "primary";
+    button.type = "button";
+    button.dataset.agentId = agent.agent_id;
+    button.innerHTML = "<span>Mieten</span><span aria-hidden=\"true\">→</span>";
+    button.addEventListener("click", () => rentAgent(agent.agent_id, button));
+    card.append(title, description, meta, button);
+    catalogGrid.append(card);
+  }
+}
+
+function renderRentals(rentals) {
+  rentalList.innerHTML = "";
+  const active = (rentals || []).filter((item) => item.status === "active");
+  if (!active.length) {
+    const empty = document.createElement("p");
+    empty.className = "rental-empty";
+    empty.textContent = "Noch keine aktive Miete für diesen Mandanten.";
+    rentalList.append(empty);
+    return;
+  }
+  for (const rental of active) {
+    const row = document.createElement("article");
+    row.className = "rental-row";
+    const copy = document.createElement("div");
+    const title = document.createElement("b");
+    const agent = catalogAgents.find((item) => item.agent_id === rental.agent_id);
+    title.textContent = agent ? agent.label : rental.agent_id;
+    const detail = document.createElement("small");
+    const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only";
+    detail.textContent = `${rental.monthly_price_eur} € · ${provision} · kündbar`;
+    copy.append(title, detail);
+    const status = document.createElement("span");
+    status.className = "state ready";
+    status.textContent = "Aktiv";
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.type = "button";
+    button.textContent = "Kündigen";
+    button.addEventListener("click", () => cancelRental(rental, button));
+    row.append(copy, status, button);
+    rentalList.append(row);
+  }
+}
+
+async function loadCatalog() {
+  const payload = await api("/api/agents");
+  catalogAgents = payload.agents || [];
+  renderCatalog();
+}
+
+async function loadRentals() {
+  const company = currentRentalCompany();
+  if (!company) {
+    renderRentals([]);
+    return;
+  }
+  const query = new URLSearchParams({company_name: company});
+  const payload = await api(`/api/rentals?${query.toString()}`);
+  renderRentals(payload.rentals || []);
+}
+
+async function rentAgent(agentId, button) {
+  const company = currentRentalCompany();
+  if (!company) {
+    rentalMessage.textContent = "Bitte zuerst einen Firmennamen angeben.";
+    rentalCompany.focus();
+    return;
+  }
+  if (!csrfToken) {
+    rentalMessage.textContent = "Lokale Sitzung ist noch nicht bereit.";
+    return;
+  }
+  button.disabled = true;
+  rentalMessage.textContent = "Miete wird eingetragen …";
+  try {
+    await api("/api/rentals", {
+      method: "POST",
+      body: JSON.stringify({
+        company_name: company,
+        agent_id: agentId,
+        display_name: company,
+        idempotency_key: rentKeyFor(agentId)
+      })
+    });
+    rentalMessage.textContent = "Miete aktiv — Listenpreis, keine Zahlung.";
+    await loadRentals();
+  } catch (error) {
+    rentalMessage.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function cancelRental(rental, button) {
+  const company = currentRentalCompany();
+  if (!company) {
+    rentalMessage.textContent = "Firmenname fehlt für die Kündigung.";
+    return;
+  }
+  button.disabled = true;
+  rentalMessage.textContent = "Kündigung wird gespeichert …";
+  try {
+    await api(`/api/rentals/${rental.rental_id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({
+        company_name: company,
+        tenant_id: rental.tenant_id,
+        idempotency_key: cancelKeyFor(rental.rental_id)
+      })
+    });
+    resetRentKey(rental.agent_id);
+    rentalMessage.textContent = "Miete gekündigt.";
+    await loadRentals();
+  } catch (error) {
+    rentalMessage.textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+rentalCompany.addEventListener("change", () => {
+  loadRentals().catch(() => {
+    rentalMessage.textContent = "Mieten konnten nicht geladen werden.";
+  });
+});
+
+const originalPrepare = prepareSession;
+prepareSession = async function patchedPrepare() {
+  await originalPrepare();
+  if (stored.companyName && !rentalCompany.value) {
+    rentalCompany.value = stored.companyName;
+  }
+  await loadCatalog();
+  await loadRentals();
+};
+
+
+const previousShowReady = showReady;
+showReady = function wrappedShowReady(order, scroll = false) {
+  previousShowReady(order, scroll);
+  if (!rentalCompany.value) {
+    rentalCompany.value = companyInput.value;
+  }
+  loadRentals().catch(() => {});
+};
+
+if (stored.companyName && !rentalCompany.value) {
+  rentalCompany.value = stored.companyName;
+}
+loadCatalog()
+  .then(() => loadRentals())
+  .catch(() => {
+    rentalMessage.textContent = "Agentenkatalog konnte nicht geladen werden.";
+  });

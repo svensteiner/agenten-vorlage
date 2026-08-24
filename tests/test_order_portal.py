@@ -304,3 +304,157 @@ def test_api_completes_real_order_to_accepted_report_journey(portal):
 def test_portal_rejects_traversal_and_unknown_routes(portal, path):
     status, _, _ = _request(portal, "GET", path)
     assert status in {400, 404}
+
+
+def test_agents_catalog_endpoint_is_local_json(portal):
+    status, headers, raw = _request(portal, "GET", "/api/agents")
+    payload = json.loads(raw)
+    assert status == 200
+    assert headers["x-content-type-options"] == "nosniff"
+    ids = [item["agent_id"] for item in payload["agents"]]
+    assert ids == ["controlling", "reporting", "rechnungen", "vertraege"]
+    controlling = payload["agents"][0]
+    assert controlling["monthly_price_eur"] == "400"
+    assert controlling["provisionable"] is True
+
+
+def test_rental_mutation_requires_same_origin_csrf(portal):
+    payload = {
+        "company_name": "Muster Demo GmbH",
+        "agent_id": "controlling",
+        "idempotency_key": "rent-portal-001",
+    }
+    status, _, _ = _request(portal, "POST", "/api/rentals", payload=payload)
+    assert status == 403
+
+    csrf = _session(portal)
+    status, _, raw = _request(
+        portal,
+        "POST",
+        "/api/rentals",
+        payload=payload,
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert status == 201
+    rental = json.loads(raw)
+    assert rental["status"] == "active"
+    assert rental["agent_id"] == "controlling"
+    assert rental["spent_eur"] == "0"
+
+
+def test_rental_api_rent_list_cancel_flow(portal):
+    csrf = _session(portal)
+    headers = _mutation_headers(portal, csrf)
+    create_status, _, raw = _request(
+        portal,
+        "POST",
+        "/api/rentals",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "agent_id": "reporting",
+            "idempotency_key": "rent-portal-reporting-001",
+        },
+        headers=headers,
+    )
+    rental = json.loads(raw)
+    assert create_status == 201
+    tenant_id = rental["tenant_id"]
+
+    list_status, _, listed_raw = _request(
+        portal, "GET", f"/api/rentals?tenant_id={tenant_id}"
+    )
+    listed = json.loads(listed_raw)
+    assert list_status == 200
+    assert listed["tenant_id"] == tenant_id
+    assert listed["rentals"][0]["rental_id"] == rental["rental_id"]
+    assert listed["rentals"][0]["status"] == "active"
+
+    by_company_status, _, by_company_raw = _request(
+        portal,
+        "GET",
+        "/api/rentals?company_name=Muster%20Demo%20GmbH",
+    )
+    assert by_company_status == 200
+    assert json.loads(by_company_raw)["rentals"][0]["rental_id"] == rental["rental_id"]
+
+    cancel_status, _, cancelled_raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/cancel",
+        payload={
+            "tenant_id": tenant_id,
+            "idempotency_key": "cancel-portal-001",
+        },
+        headers=headers,
+    )
+    cancelled = json.loads(cancelled_raw)
+    assert cancel_status == 200
+    assert cancelled["status"] == "cancelled"
+
+    replay_status, _, replay_raw = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/cancel",
+        payload={
+            "tenant_id": tenant_id,
+            "idempotency_key": "cancel-portal-001",
+        },
+        headers=headers,
+    )
+    assert replay_status == 200
+    assert json.loads(replay_raw)["cancelled_at"] == cancelled["cancelled_at"]
+
+
+def test_rental_api_rejects_unknown_agent_and_missing_tenant(portal):
+    csrf = _session(portal)
+    headers = _mutation_headers(portal, csrf)
+    status, _, raw = _request(
+        portal,
+        "POST",
+        "/api/rentals",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "agent_id": "payroll",
+            "idempotency_key": "rent-portal-unknown",
+        },
+        headers=headers,
+    )
+    assert status == 400
+    assert "Unbekannter Agent" in json.loads(raw)["error"]
+
+    status, _, _ = _request(portal, "GET", "/api/rentals")
+    assert status == 400
+
+
+def test_demo_order_journey_still_works_alongside_rentals(portal):
+    csrf = _session(portal)
+    headers = _mutation_headers(portal, csrf)
+    rent_status, _, _ = _request(
+        portal,
+        "POST",
+        "/api/rentals",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "agent_id": "rechnungen",
+            "idempotency_key": "rent-portal-invoices",
+        },
+        headers=headers,
+    )
+    assert rent_status == 201
+
+    create_status, _, raw_order = _request(
+        portal,
+        "POST",
+        "/api/demo-orders",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "idempotency_key": "checkout-portal-with-rentals",
+            "synthetic_only": True,
+            "confirmed_zero_cost": True,
+        },
+        headers=headers,
+    )
+    order = json.loads(raw_order)
+    assert create_status == 201
+    assert order["cost"]["budget_eur"] == "0"
+    assert order["profile"] == "deterministic_local_demo"

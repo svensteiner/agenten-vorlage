@@ -17,6 +17,7 @@ system easier to extend.
   The Windows launcher checks the free XLSX reader and prints the one-time
   prerequisite command if it is missing; the demo start itself stays offline.
   See [docs/runbooks/LOKALE_CONTROLLING_DEMO.md](docs/runbooks/LOKALE_CONTROLLING_DEMO.md).
+  **Agenten mieten (lokal, ohne Zahlung):** same portal — catalog, rent, list, cancel. Durable ledger under work/order-portal/rentals/. See [docs/runbooks/LOKALE_AGENTENMIETE.md](docs/runbooks/LOKALE_AGENTENMIETE.md).
   For the slow, laptop-first product video use
   [CONTROLLING_VIDEO_SCRIPT.md](CONTROLLING_VIDEO_SCRIPT.md) and
   [CONTROLLING_RECORDING_GUIDE.md](CONTROLLING_RECORDING_GUIDE.md).

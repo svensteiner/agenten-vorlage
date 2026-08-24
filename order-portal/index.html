@@ -108,6 +108,34 @@
         </div>
       </section>
 
+
+      <section id="rental-area" class="rental-area" aria-labelledby="rental-title">
+        <div class="area-heading">
+          <div>
+            <p class="eyebrow">DIGITALE MITARBEITER</p>
+            <h2 id="rental-title">Agenten mieten</h2>
+          </div>
+          <span class="local-pill"><i></i> Listenpreis · kündbar</span>
+        </div>
+        <p class="rental-lead">
+          Monatlich mieten wie Personal — lokal ohne Zahlung. Listenpreise
+          ab 400 €. Der Controlling-Agent wird wirklich provisioniert;
+          Rechnungs- und Vertrags-Agent stehen im Katalog bereit.
+        </p>
+        <label class="rental-label" for="rental-company">Firma / Mandant</label>
+        <input
+          id="rental-company"
+          name="rental_company"
+          maxlength="80"
+          autocomplete="organization"
+          placeholder="z. B. Muster Demo GmbH"
+        >
+        <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
+        <h3 class="rental-subtitle">Aktive Mieten</h3>
+        <div id="rental-list" class="rental-list" aria-live="polite"></div>
+        <p id="rental-message" class="form-message" role="status" aria-live="polite"></p>
+      </section>
+
       <footer>
         <span>Deterministischer lokaler Pilot</span>
         <span>Keine externe Aktion ohne Freigabe</span>

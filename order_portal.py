@@ -20,12 +20,21 @@ from core.local_kmu_orders import (
     OrderNotFound,
     OrderValidationError,
 )
+from core.rentals import (
+    RentalConflict,
+    RentalNotFound,
+    RentalService,
+    RentalValidationError,
+)
 
 
 _PORTAL_ROOT = Path(__file__).resolve().parent / "order-portal"
 _ORDER_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})$")
 _VERIFY_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})/verify$")
 _REPORT_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})/report$")
+_RENTAL_CANCEL_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/cancel$"
+)
 _MAX_REQUEST_BYTES = 16 * 1024
 _STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
@@ -68,8 +77,10 @@ class _PortalServer(ThreadingHTTPServer):
         self,
         server_address: tuple[str, int],
         service: LocalKmuOrderService,
+        rental_service: RentalService,
     ):
         self.order_service = service
+        self.rental_service = rental_service
         self.csrf_token = secrets.token_urlsafe(32)
         super().__init__(server_address, _PortalHandler)
 
@@ -252,6 +263,12 @@ class _PortalHandler(BaseHTTPRequestHandler):
         if report_match:
             self._serve_report(report_match.group(1))
             return
+        if path == "/api/agents":
+            self._serve_agents()
+            return
+        if path == "/api/rentals":
+            self._serve_rentals()
+            return
         self._error(HTTPStatus.NOT_FOUND, "Route nicht gefunden.")
 
     def do_POST(self) -> None:  # noqa: N802
@@ -264,9 +281,16 @@ class _PortalHandler(BaseHTTPRequestHandler):
         if path == "/api/demo-orders":
             self._create_order(payload)
             return
+        if path == "/api/rentals":
+            self._create_rental(payload)
+            return
         match = _VERIFY_ROUTE.fullmatch(path)
         if match:
             self._verify_order(match.group(1), payload)
+            return
+        cancel_match = _RENTAL_CANCEL_ROUTE.fullmatch(path)
+        if cancel_match:
+            self._cancel_rental(cancel_match.group(1), payload)
             return
         self._error(HTTPStatus.NOT_FOUND, "Route nicht gefunden.")
 
@@ -377,6 +401,149 @@ class _PortalHandler(BaseHTTPRequestHandler):
         )
 
 
+
+    def _tenant_from_payload(
+        self, payload: dict[str, object]
+    ) -> tuple[str, str] | None:
+        company_name = payload.get("company_name")
+        tenant_id = payload.get("tenant_id")
+        display_name = payload.get("display_name")
+        if tenant_id is not None and not isinstance(tenant_id, str):
+            self._error(HTTPStatus.BAD_REQUEST, "tenant_id ist ungueltig.")
+            return None
+        if company_name is not None and not isinstance(company_name, str):
+            self._error(HTTPStatus.BAD_REQUEST, "Firmenname ist ungueltig.")
+            return None
+        if display_name is not None and not isinstance(display_name, str):
+            self._error(HTTPStatus.BAD_REQUEST, "Anzeigename ist ungueltig.")
+            return None
+        if not tenant_id:
+            if not company_name:
+                self._error(
+                    HTTPStatus.BAD_REQUEST,
+                    "tenant_id oder Firmenname fehlt.",
+                )
+                return None
+            try:
+                tenant_id = _technical_tenant_id(company_name)
+            except OrderValidationError as exc:
+                self._error(HTTPStatus.BAD_REQUEST, str(exc))
+                return None
+        resolved_name = display_name or company_name or tenant_id
+        return tenant_id, resolved_name
+
+    def _serve_agents(self) -> None:
+        self._json(
+            HTTPStatus.OK,
+            {"agents": self.server.rental_service.list_catalog()},
+        )
+
+    def _serve_rentals(self) -> None:
+        from urllib.parse import parse_qs
+
+        query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+        tenant_values = query.get("tenant_id", [])
+        company_values = query.get("company_name", [])
+        tenant_id = tenant_values[0] if len(tenant_values) == 1 else ""
+        company_name = company_values[0] if len(company_values) == 1 else ""
+        if not tenant_id:
+            if not company_name:
+                self._error(HTTPStatus.BAD_REQUEST, "tenant_id fehlt.")
+                return
+            try:
+                tenant_id = _technical_tenant_id(company_name)
+            except OrderValidationError as exc:
+                self._error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
+        try:
+            rentals = self.server.rental_service.list_rentals(tenant_id)
+        except RentalValidationError as exc:
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except RentalConflict as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Mieten konnten nicht gelesen werden.",
+            )
+            return
+        self._json(HTTPStatus.OK, {"tenant_id": tenant_id, "rentals": rentals})
+
+    def _create_rental(self, payload: dict[str, object]) -> None:
+        resolved = self._tenant_from_payload(payload)
+        if resolved is None:
+            return
+        tenant_id, display_name = resolved
+        agent_id = payload.get("agent_id")
+        idempotency_key = payload.get("idempotency_key")
+        if not isinstance(agent_id, str) or not isinstance(idempotency_key, str):
+            self._error(HTTPStatus.BAD_REQUEST, "agent_id und Schluessel fehlen.")
+            return
+        try:
+            rental = self.server.rental_service.rent(
+                tenant_id=tenant_id,
+                agent_id=agent_id,
+                display_name=display_name,
+                idempotency_key=idempotency_key,
+            )
+        except RentalValidationError as exc:
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except RentalConflict as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Miete konnte nicht gespeichert werden.",
+            )
+            return
+        self._json(HTTPStatus.CREATED, rental)
+
+    def _cancel_rental(
+        self, rental_id: str, payload: dict[str, object]
+    ) -> None:
+        idempotency_key = payload.get("idempotency_key")
+        if not isinstance(idempotency_key, str):
+            self._error(HTTPStatus.BAD_REQUEST, "Kuendigungsschluessel fehlt.")
+            return
+        tenant_id = payload.get("tenant_id")
+        company_name = payload.get("company_name")
+        if not isinstance(tenant_id, str) or not tenant_id:
+            if not isinstance(company_name, str) or not company_name:
+                self._error(HTTPStatus.BAD_REQUEST, "tenant_id fehlt.")
+                return
+            try:
+                tenant_id = _technical_tenant_id(company_name)
+            except OrderValidationError as exc:
+                self._error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
+        try:
+            rental = self.server.rental_service.cancel(
+                tenant_id=tenant_id,
+                rental_id=rental_id,
+                idempotency_key=idempotency_key,
+            )
+        except RentalValidationError as exc:
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except RentalNotFound:
+            self._error(HTTPStatus.NOT_FOUND, "Miete nicht gefunden.")
+            return
+        except RentalConflict as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Kuendigung konnte nicht gespeichert werden.",
+            )
+            return
+        self._json(HTTPStatus.OK, rental)
+
+
 def create_server(
     *, data_root: Path, host: str = "127.0.0.1", port: int = 0
 ) -> _PortalServer:
@@ -384,7 +551,8 @@ def create_server(
     if host != "127.0.0.1":
         raise ValueError("Das Demo-Portal darf nur auf 127.0.0.1 laufen.")
     service = LocalKmuOrderService(Path(data_root) / "instances")
-    return _PortalServer((host, port), service)
+    rental_service = RentalService(Path(data_root) / "rentals")
+    return _PortalServer((host, port), service, rental_service)
 
 
 def main() -> int:
