@@ -23,18 +23,36 @@ from core.local_kmu_orders import (
 from core.rentals import (
     RentalConflict,
     RentalNotFound,
+    RentalNotOpenable,
     RentalService,
     RentalValidationError,
 )
 
 
 _PORTAL_ROOT = Path(__file__).resolve().parent / "order-portal"
+_PROTOTYPE_ROOT = Path(__file__).resolve().parent / "prototype"
 _ORDER_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})$")
 _VERIFY_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})/verify$")
 _REPORT_ROUTE = re.compile(r"^/api/demo-orders/(ord_[0-9a-f]{32})/report$")
 _RENTAL_CANCEL_ROUTE = re.compile(
     r"^/api/rentals/(rnt_[0-9a-f]{32})/cancel$"
 )
+_RENTAL_OPEN_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/open$"
+)
+_COCKPIT_INDEX_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/cockpit/([a-z][a-z0-9-]{0,62})/?$"
+)
+_COCKPIT_ASSET_ROUTE = re.compile(
+    r"^/api/rentals/(rnt_[0-9a-f]{32})/cockpit/"
+    r"([a-z][a-z0-9-]{0,62})/([A-Za-z0-9._-]+)$"
+)
+_COCKPIT_ASSETS = {
+    "index.html": ("index.html", "text/html; charset=utf-8"),
+    "app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "data.js": ("data.js", "text/javascript; charset=utf-8"),
+    "styles.css": ("styles.css", "text/css; charset=utf-8"),
+}
 _MAX_REQUEST_BYTES = 16 * 1024
 _STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
@@ -269,6 +287,29 @@ class _PortalHandler(BaseHTTPRequestHandler):
         if path == "/api/rentals":
             self._serve_rentals()
             return
+        open_match = _RENTAL_OPEN_ROUTE.fullmatch(path)
+        if open_match:
+            self._open_rental(open_match.group(1))
+            return
+        asset_match = _COCKPIT_ASSET_ROUTE.fullmatch(path)
+        if asset_match:
+            self._serve_cockpit(
+                asset_match.group(1),
+                asset_match.group(2),
+                asset_match.group(3),
+            )
+            return
+        cockpit_match = _COCKPIT_INDEX_ROUTE.fullmatch(path)
+        if cockpit_match:
+            if not path.endswith("/"):
+                self._redirect(f"{path}/")
+                return
+            self._serve_cockpit(
+                cockpit_match.group(1),
+                cockpit_match.group(2),
+                "index.html",
+            )
+            return
         self._error(HTTPStatus.NOT_FOUND, "Route nicht gefunden.")
 
     def do_POST(self) -> None:  # noqa: N802
@@ -438,7 +479,7 @@ class _PortalHandler(BaseHTTPRequestHandler):
             {"agents": self.server.rental_service.list_catalog()},
         )
 
-    def _serve_rentals(self) -> None:
+    def _tenant_from_query(self) -> str | None:
         from urllib.parse import parse_qs
 
         query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
@@ -449,12 +490,122 @@ class _PortalHandler(BaseHTTPRequestHandler):
         if not tenant_id:
             if not company_name:
                 self._error(HTTPStatus.BAD_REQUEST, "tenant_id fehlt.")
-                return
+                return None
             try:
                 tenant_id = _technical_tenant_id(company_name)
             except OrderValidationError as exc:
                 self._error(HTTPStatus.BAD_REQUEST, str(exc))
-                return
+                return None
+        return tenant_id
+
+    def _redirect(self, location: str) -> None:
+        if not location.startswith("/api/rentals/"):
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Weiterleitung ist ungueltig.",
+            )
+            return
+        self.send_response(HTTPStatus.FOUND)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        if self.close_connection:
+            self.send_header("Connection", "close")
+        for name, value in self._security_headers().items():
+            self.send_header(name, value)
+        self.end_headers()
+
+    def _open_rental(self, rental_id: str) -> None:
+        tenant_id = self._tenant_from_query()
+        if tenant_id is None:
+            return
+        try:
+            rental = self.server.rental_service.open_rental(tenant_id, rental_id)
+        except RentalValidationError as exc:
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except RentalNotFound:
+            self._error(HTTPStatus.NOT_FOUND, "Miete nicht gefunden.")
+            return
+        except RentalNotOpenable as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except RentalConflict as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Miete konnte nicht geoeffnet werden.",
+            )
+            return
+        self._redirect(
+            f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/"
+        )
+
+    def _serve_cockpit(
+        self, rental_id: str, tenant_id: str, filename: str
+    ) -> None:
+        try:
+            rental = self.server.rental_service.open_rental(tenant_id, rental_id)
+        except RentalValidationError as exc:
+            self._error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except RentalNotFound:
+            self._error(HTTPStatus.NOT_FOUND, "Miete nicht gefunden.")
+            return
+        except RentalNotOpenable as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except RentalConflict as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
+            return
+        except OSError:
+            self._error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Cockpit konnte nicht gelesen werden.",
+            )
+            return
+        if filename == "pilot.config.js":
+            config = {
+                "active": True,
+                "company": {
+                    "name": rental["display_name"],
+                    "tagline": "Lokale gemietete Instanz",
+                },
+            }
+            body = (
+                "window.PILOT_CONFIG = "
+                + json.dumps(config, ensure_ascii=False, separators=(",", ":"))
+                + ";\n"
+            ).encode("utf-8")
+            self._send(HTTPStatus.OK, body, "text/javascript; charset=utf-8")
+            return
+        spec = _COCKPIT_ASSETS.get(filename)
+        if spec is None:
+            self._error(HTTPStatus.NOT_FOUND, "Route nicht gefunden.")
+            return
+        disk_name, media_type = spec
+        target = _PROTOTYPE_ROOT / disk_name
+        try:
+            resolved = target.resolve(strict=True)
+            resolved.relative_to(_PROTOTYPE_ROOT.resolve(strict=True))
+        except (OSError, ValueError):
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "Cockpit fehlt.")
+            return
+        if resolved.parent != _PROTOTYPE_ROOT.resolve(strict=True):
+            self._error(HTTPStatus.NOT_FOUND, "Route nicht gefunden.")
+            return
+        try:
+            body = resolved.read_bytes()
+        except OSError:
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "Cockpit fehlt.")
+            return
+        self._send(HTTPStatus.OK, body, media_type)
+
+    def _serve_rentals(self) -> None:
+        tenant_id = self._tenant_from_query()
+        if tenant_id is None:
+            return
         try:
             rentals = self.server.rental_service.list_rentals(tenant_id)
         except RentalValidationError as exc:

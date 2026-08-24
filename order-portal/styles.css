@@ -398,7 +398,20 @@ footer span + span::before { margin-right: 24px; color: var(--green); content: "
 }
 .rental-row b { color: var(--navy); }
 .rental-row small { display: block; color: var(--muted); margin-top: 4px; }
+.rental-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+.rental-row .primary,
 .rental-row .secondary { min-height: 40px; padding: 0 14px; }
+.pack-hint {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
 .rental-empty { color: var(--muted); font-size: 14px; }
 @media (max-width: 900px) {
   .catalog-grid { grid-template-columns: 1fr; }

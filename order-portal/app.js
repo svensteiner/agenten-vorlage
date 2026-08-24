@@ -273,18 +273,34 @@ function renderRentals(rentals) {
     const agent = catalogAgents.find((item) => item.agent_id === rental.agent_id);
     title.textContent = agent ? agent.label : rental.agent_id;
     const detail = document.createElement("small");
-    const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only";
+    const provision = rental.provisioned ? "Instanz aktiv" : "Ledger-only · Pack folgt";
     detail.textContent = `${rental.monthly_price_eur} € · ${provision} · kündbar`;
     copy.append(title, detail);
     const status = document.createElement("span");
     status.className = "state ready";
     status.textContent = "Aktiv";
+    const actions = document.createElement("div");
+    actions.className = "rental-actions";
+    if (rental.provisioned) {
+      const openButton = document.createElement("button");
+      openButton.className = "primary";
+      openButton.type = "button";
+      openButton.textContent = "Öffnen";
+      openButton.addEventListener("click", () => openRental(rental));
+      actions.append(openButton);
+    } else {
+      const hint = document.createElement("span");
+      hint.className = "pack-hint";
+      hint.textContent = "Pack folgt";
+      actions.append(hint);
+    }
     const button = document.createElement("button");
     button.className = "secondary";
     button.type = "button";
     button.textContent = "Kündigen";
     button.addEventListener("click", () => cancelRental(rental, button));
-    row.append(copy, status, button);
+    actions.append(button);
+    row.append(copy, status, actions);
     rentalList.append(row);
   }
 }
@@ -320,7 +336,7 @@ async function rentAgent(agentId, button) {
   button.disabled = true;
   rentalMessage.textContent = "Miete wird eingetragen …";
   try {
-    await api("/api/rentals", {
+    const rental = await api("/api/rentals", {
       method: "POST",
       body: JSON.stringify({
         company_name: company,
@@ -329,13 +345,33 @@ async function rentAgent(agentId, button) {
         idempotency_key: rentKeyFor(agentId)
       })
     });
-    rentalMessage.textContent = "Miete aktiv — Listenpreis, keine Zahlung.";
+    if (rental && rental.provisioned) {
+      rentalMessage.textContent = "Instanz bereit — öffnen";
+    } else {
+      rentalMessage.textContent = "Miete aktiv — Listenpreis, keine Zahlung. Pack folgt.";
+    }
     await loadRentals();
   } catch (error) {
     rentalMessage.textContent = error.message;
   } finally {
     button.disabled = false;
   }
+}
+
+
+function openRental(rental) {
+  const tenantId = rental && rental.tenant_id;
+  const rentalId = rental && rental.rental_id;
+  if (!tenantId || !rentalId) {
+    rentalMessage.textContent = "Miete kann nicht geöffnet werden.";
+    return;
+  }
+  const query = new URLSearchParams({tenant_id: tenantId});
+  window.open(
+    `/api/rentals/${rentalId}/open?${query.toString()}`,
+    "_blank",
+    "noopener"
+  );
 }
 
 async function cancelRental(rental, button) {

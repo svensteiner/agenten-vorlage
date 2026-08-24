@@ -9,6 +9,7 @@ import pytest
 from core.rentals import (
     RentalConflict,
     RentalNotFound,
+    RentalNotOpenable,
     RentalService,
     RentalValidationError,
 )
@@ -267,3 +268,92 @@ def test_rentals_do_not_touch_demo_order_root(tmp_path):
     )
     assert not (tmp_path / "instances").exists()
     assert not list(tmp_path.rglob("local-demo-order.json"))
+
+
+def test_open_rental_returns_active_provisioned_instance(tmp_path):
+    service = _service(tmp_path)
+    rental = service.rent(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        display_name="Muster KMU",
+        idempotency_key="rent-controlling-001",
+    )
+    opened = service.open_rental("muster-kmu", rental["rental_id"])
+    assert opened["rental_id"] == rental["rental_id"]
+    assert opened["provisioned"] is True
+    assert opened["status"] == "active"
+    assert opened["instance_path"] == "muster-kmu/controlling"
+
+
+def test_open_rental_rejects_cancelled_and_ledger_only(tmp_path):
+    service = _service(tmp_path)
+    controlling = service.rent(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        display_name="Muster KMU",
+        idempotency_key="rent-controlling-001",
+    )
+    service.cancel(
+        tenant_id="muster-kmu",
+        rental_id=controlling["rental_id"],
+        idempotency_key="cancel-001",
+    )
+    with pytest.raises(RentalNotOpenable, match="gekuendigt"):
+        service.open_rental("muster-kmu", controlling["rental_id"])
+
+    invoices = service.rent(
+        tenant_id="muster-kmu",
+        agent_id="rechnungen",
+        display_name="Muster KMU",
+        idempotency_key="rent-invoices-001",
+    )
+    with pytest.raises(RentalNotOpenable, match="Pack folgt"):
+        service.open_rental("muster-kmu", invoices["rental_id"])
+
+
+def test_open_rental_rejects_wrong_tenant(tmp_path):
+    service = _service(tmp_path)
+    rental = service.rent(
+        tenant_id="muster-kmu",
+        agent_id="reporting",
+        display_name="Muster KMU",
+        idempotency_key="rent-reporting-001",
+    )
+    with pytest.raises(RentalNotFound):
+        service.open_rental("other-kmu", rental["rental_id"])
+
+
+def test_open_rental_rejects_path_escape(tmp_path):
+    import json
+
+    service = _service(tmp_path)
+    rental = service.rent(
+        tenant_id="muster-kmu",
+        agent_id="controlling",
+        display_name="Muster KMU",
+        idempotency_key="rent-controlling-001",
+    )
+    record = (
+        tmp_path
+        / "rentals"
+        / ".ledger"
+        / "rentals"
+        / "muster-kmu"
+        / f"{rental['rental_id']}.json"
+    )
+    state = json.loads(record.read_text(encoding="utf-8"))
+    state["instance_path"] = "../escape"
+    record.write_text(
+        json.dumps(state, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RentalConflict, match="Instanzpfad"):
+        service.open_rental("muster-kmu", rental["rental_id"])
+
+    state["instance_path"] = "muster-kmu/controlling/../../secret"
+    record.write_text(
+        json.dumps(state, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RentalConflict, match="Instanzpfad"):
+        service.open_rental("muster-kmu", rental["rental_id"])

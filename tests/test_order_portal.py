@@ -458,3 +458,155 @@ def test_demo_order_journey_still_works_alongside_rentals(portal):
     assert create_status == 201
     assert order["cost"]["budget_eur"] == "0"
     assert order["profile"] == "deterministic_local_demo"
+
+
+def _rent(portal, csrf, agent_id, key):
+    status, _, raw = _request(
+        portal,
+        "POST",
+        "/api/rentals",
+        payload={
+            "company_name": "Muster Demo GmbH",
+            "agent_id": agent_id,
+            "idempotency_key": key,
+        },
+        headers=_mutation_headers(portal, csrf),
+    )
+    assert status == 201
+    return json.loads(raw)
+
+
+def test_open_route_serves_cockpit_for_provisioned_rental(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-open-controlling-001")
+    open_path = (
+        f"/api/rentals/{rental['rental_id']}/open?tenant_id={rental['tenant_id']}"
+    )
+    status, headers, _ = _request(portal, "GET", open_path)
+    assert status == 302
+    location = headers["location"]
+    assert location == (
+        f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/"
+    )
+
+    page_status, page_headers, page = _request(portal, "GET", location)
+    assert page_status == 200
+    assert "text/html" in page_headers["content-type"]
+    assert b"AI Studio" in page
+    assert b"app.js" in page
+    assert "script-src 'self'" in page_headers["content-security-policy"]
+
+    asset_status, asset_headers, asset = _request(
+        portal, "GET", f"{location}app.js"
+    )
+    assert asset_status == 200
+    assert "javascript" in asset_headers["content-type"]
+    assert asset
+
+    config_status, _, config = _request(
+        portal, "GET", f"{location}pilot.config.js"
+    )
+    assert config_status == 200
+    assert b"window.PILOT_CONFIG" in config
+    assert rental["display_name"].encode("utf-8") in config
+
+
+def test_open_route_rejects_cancelled_rental(portal):
+    csrf = _session(portal)
+    headers = _mutation_headers(portal, csrf)
+    rental = _rent(portal, csrf, "reporting", "rent-open-reporting-001")
+    cancel_status, _, _ = _request(
+        portal,
+        "POST",
+        f"/api/rentals/{rental['rental_id']}/cancel",
+        payload={
+            "tenant_id": rental["tenant_id"],
+            "idempotency_key": "cancel-open-001",
+        },
+        headers=headers,
+    )
+    assert cancel_status == 200
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{rental['rental_id']}/open?tenant_id={rental['tenant_id']}",
+    )
+    assert status == 409
+    assert "gekuendigt" in json.loads(raw)["error"]
+
+
+def test_open_route_rejects_ledger_only_rental(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "rechnungen", "rent-open-invoices-001")
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{rental['rental_id']}/open?tenant_id={rental['tenant_id']}",
+    )
+    assert status == 409
+    assert "Pack folgt" in json.loads(raw)["error"]
+
+
+def test_open_route_rejects_wrong_tenant(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-open-wrong-tenant-001")
+    status, _, raw = _request(
+        portal,
+        "GET",
+        f"/api/rentals/{rental['rental_id']}/open?tenant_id=other-kmu",
+    )
+    assert status == 404
+    assert json.loads(raw)["error"] == "Miete nicht gefunden."
+
+
+def test_open_route_rejects_path_escape(tmp_path):
+    server = create_server(data_root=tmp_path / "portal-data", port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    host, port = server.server_address
+    origin = f"http://{host}:{port}"
+    try:
+        csrf = _session(origin)
+        rental = _rent(origin, csrf, "controlling", "rent-open-escape-001")
+        record = (
+            tmp_path
+            / "portal-data"
+            / "rentals"
+            / ".ledger"
+            / "rentals"
+            / rental["tenant_id"]
+            / f"{rental['rental_id']}.json"
+        )
+        state = json.loads(record.read_text(encoding="utf-8"))
+        state["instance_path"] = "../escape"
+        record.write_text(
+            json.dumps(state, ensure_ascii=False, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+        status, _, raw = _request(
+            origin,
+            "GET",
+            f"/api/rentals/{rental['rental_id']}/open?tenant_id={rental['tenant_id']}",
+        )
+        assert status == 409
+        assert "Instanzpfad" in json.loads(raw)["error"]
+
+        forbidden_status, _, _ = _request(
+            origin,
+            "GET",
+            f"/api/rentals/{rental['rental_id']}/cockpit/{rental['tenant_id']}/../app.js",
+        )
+        assert forbidden_status in {400, 404}
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_open_route_requires_tenant(portal):
+    csrf = _session(portal)
+    rental = _rent(portal, csrf, "controlling", "rent-open-missing-tenant-001")
+    status, _, _ = _request(
+        portal, "GET", f"/api/rentals/{rental['rental_id']}/open"
+    )
+    assert status == 400

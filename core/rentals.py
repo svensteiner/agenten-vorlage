@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import secrets
 import tempfile
@@ -50,6 +50,10 @@ class RentalConflict(RentalError):
 
 class RentalNotFound(RentalError):
     """No rental exists in the requested namespace."""
+
+
+class RentalNotOpenable(RentalError):
+    """The rental exists but must not be opened."""
 
 
 def _thread_lock(key: str) -> threading.RLock:
@@ -611,4 +615,60 @@ class RentalService:
                 if pointer.get("rental_id") == rental_id:
                     with contextlib.suppress(FileNotFoundError):
                         active_path.unlink()
+            return _public_rental(state)
+
+    def _assert_openable_instance(
+        self, tenant_id: str, agent_id: str, instance_path: str
+    ) -> Path:
+        if "\\" in instance_path or ":" in instance_path:
+            raise RentalConflict("Instanzpfad ist ungueltig.")
+        relative = PurePosixPath(instance_path)
+        if (
+            relative.is_absolute()
+            or len(relative.parts) != 2
+            or any(part in {"", ".", ".."} for part in relative.parts)
+        ):
+            raise RentalConflict("Instanzpfad ist ungueltig.")
+        if relative.parts[0] != tenant_id or relative.parts[1] != agent_id:
+            raise RentalConflict("Instanzpfad ist ungueltig.")
+        candidate = self.output_root.joinpath(*relative.parts)
+        if candidate.is_symlink() or _is_reparse_point(candidate):
+            raise RentalConflict("Links sind in Mietpfaden nicht erlaubt.")
+        _assert_no_redirected_component(candidate, self.output_root)
+        try:
+            candidate.resolve(strict=False).relative_to(
+                self.output_root.resolve(strict=True)
+            )
+        except ValueError as exc:
+            raise RentalConflict("Instanzpfad ist ungueltig.") from exc
+        if not candidate.is_dir():
+            raise RentalConflict("Instanz nicht gefunden.")
+        return candidate
+
+    def open_rental(self, tenant_id: str, rental_id: str) -> dict[str, Any]:
+        """Return the public rental only if it may be opened.
+
+        Fail closed: matching tenant, active, provisioned, instance path
+        inside the rental root. Links and ``..`` segments are rejected.
+        """
+        tenant_id = _validate_identity("tenant_id", tenant_id)
+        rental_id = _validate_rental_id(rental_id)
+        with _file_lock(self._tenant_lock(tenant_id)):
+            state = _read_rental_state(self._record_path(tenant_id, rental_id))
+            if state["tenant_id"] != tenant_id or state["rental_id"] != rental_id:
+                raise RentalNotFound("Miete nicht gefunden.")
+            if state["status"] != "active":
+                raise RentalNotOpenable("Miete ist gekuendigt.")
+            if not state["provisionable"] or not state["provisioned"]:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            instance_path = state["instance_path"]
+            if not isinstance(instance_path, str) or not instance_path:
+                raise RentalNotOpenable(
+                    "Pack folgt - dieser Agent ist noch nicht oeffenbar."
+                )
+            self._assert_openable_instance(
+                tenant_id, state["agent_id"], instance_path
+            )
             return _public_rental(state)
