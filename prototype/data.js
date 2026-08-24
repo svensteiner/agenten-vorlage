@@ -2,8 +2,8 @@
  * Meridian Industrie GmbH — fiktive Demo-Firma für den AI-Studio-Prototyp.
  * ALLE Daten sind erfunden. Keine echten Kundendaten.
  *
- * Diese Datei ist die einzige Quelle der Wahrheit für Dokumente und Szenarien.
- * app.js rendert nur, was hier steht. Neue Dokumente/Szenarien = nur hier ergänzen.
+ * Diese Datei ist die einzige Quelle der Wahrheit für Dokumente, Szenarien
+ * und den Agenten-Marktplatz (AGENT_CATALOG). app.js rendert nur, was hier steht.
  */
 
 const COMPANY = {
@@ -33,7 +33,325 @@ const MODULES = [
   { key: "hr", label: "HR", icon: "☺", hint: "Richtlinien, Verträge, Personal" },
   { key: "vertraege", label: "Verträge", icon: "§", hint: "Laufzeiten, Verlängerungen, Klauseln" },
   { key: "berichte", label: "Berichte", icon: "▤", hint: "Projekte, Vorstand, ESG" },
+  { key: "team", label: "Team", icon: "🤝", hint: "Digitale Mitarbeiter mieten, steuern, abrechnen" },
   { key: "einstellungen", label: "Einstellungen", icon: "⚙", hint: "Datenquellen & Konfiguration" },
+];
+
+// Gruppen für die Seitenleiste: Fachmodule oben, Betrieb (Miete + Config) darunter.
+const MODULE_GROUPS = [
+  { label: "Module", keys: ["wissen", "finanzen", "audit", "hr", "vertraege", "berichte"] },
+  { label: "Betrieb", keys: ["team", "einstellungen"] },
+];
+
+// --- Agenten-Marktplatz (Mietplattform) ------------------------------------
+// Einzige Quelle der Wahrheit für digitale Mitarbeiter: Katalog, Preise, SLA,
+// Fähigkeiten, Beispiel-Lieferungen. Die Money-Shot-Karten im Chat und das
+// Modul „Team" lesen dieselbe Liste. Preise = Startpunkte (netto / Monat),
+// monatlich kündbar, keine Mindestlaufzeit. Der Auskunfts-Agent ist inklusive.
+const AGENT_CATEGORIES = [
+  { id: "alle", label: "Alle" },
+  { id: "wissen", label: "Wissen" },
+  { id: "finanzen", label: "Finanzen" },
+  { id: "vertraege", label: "Verträge" },
+  { id: "berichte", label: "Berichte" },
+  { id: "audit", label: "Compliance" },
+];
+
+const AGENT_CATALOG = [
+  {
+    id: "auskunft",
+    icon: "✦",
+    name: "Auskunfts-Agent",
+    role: "Ihre Wissensbasis",
+    category: "wissen",
+    price: 0,
+    included: true,
+    recommended: false,
+    desc: "Beantwortet Fragen aus Ihrem gesamten Firmenwissen — mit Belegen und Quellenangabe. Der Agent, der Ihnen gerade geantwortet hat.",
+    long: "Der Auskunfts-Agent ist das Fundament: Er durchsucht Verträge, Rechnungen, Berichte und E-Mails, prüft Zugriffsrechte und antwortet nur mit dem, wofür Sie berechtigt sind. Jede Aussage trägt Quelle, Zitat und Konfidenz. Inklusive in der Wissensbasis — keine Extra-Miete.",
+    skills: ["Belegte Antworten", "Quellen & Zitate", "Nur freigegebene Treffer"],
+    sla: "Antwort in 1,2–2,6 s",
+    hours: "24/7",
+    owner: "Wissen",
+    firstDeliverable: "Bereits aktiv — beantwortet Fragen aus Ihrem Wissensspeicher.",
+    nextRun: "sofort bei jeder Frage",
+    tools: ["Wissensspeicher", "Dokumentenviewer", "Berechtigungsprüfung"],
+    tasks: [
+      {
+        id: "wissen-frage",
+        label: "Eine belegte Frage beantworten",
+        hint: "Wechselt ins Modul Wissen — der Auskunfts-Agent arbeitet dort im Chat.",
+        jump: "wissen",
+      },
+    ],
+    sampleWork: {
+      title: "Letzte Auskunft",
+      when: "soeben",
+      kicker: "Live im Chat",
+      html: "<p>Der Auskunfts-Agent arbeitet im Modul <b>Wissen</b>. Jede Antwort trägt Belege, Konfidenz und — wo vorhanden — die Entscheidungskette.</p>",
+    },
+  },
+  {
+    id: "reporting",
+    icon: "📊",
+    name: "Reporting-Agent",
+    role: "Berichte & Vorstandsvorlagen",
+    category: "berichte",
+    price: 400,
+    included: false,
+    recommended: true,
+    desc: "Erstellt Monatsabschluss-Kommentare, Soll-Ist-Vergleiche und fertige Vorstandsvorlagen automatisch aus Ihren freigegebenen Zahlen.",
+    long: "Der Reporting-Agent liest Controlling-Zahlen, Projektstatus und Vorstandsprotokolle und liefert kommentierte Vorlagen statt Rohtabellen. Er kennzeichnet Risiken offen (kein Schönfärben) und legt jede Zahl auf ein Originaldokument. Typische Lieferung: Monatsabschluss-Kommentar bis 18:40 am Abschlusstag.",
+    skills: ["Monatsabschluss-Kommentar", "Soll-Ist-Vergleich", "Vorstandsvorlage"],
+    sla: "Erste Auswertung am Abend der Buchung",
+    hours: "Werktags 07–19 Uhr",
+    owner: "Controlling",
+    firstDeliverable: "Monatsabschluss-Kommentar (Entwurf) heute Abend.",
+    nextRun: "nächster Monatsultimo 18:40",
+    tools: ["Quartalsberichte", "Projektstatus", "Vorstandsprotokolle"],
+    tasks: [
+      {
+        id: "mai-kommentar",
+        label: "Monatsabschluss-Kommentar Mai 2026",
+        output: {
+          title: "Monatsabschluss-Kommentar Mai 2026",
+          kicker: "Entwurf · wartet auf Freigabe durch die CFO",
+          html: "<p>Materialkosten liegen <b>18,4 %</b> über Vorjahr, getrieben durch Baustahl S355 (<b>920 €/t</b>, +17,9 %). Rohertragsmarge 31,6 % (Vj. 34,1 %). Umsatz stabil bei 158 Mio. €.</p><table><tr><th>Position</th><th>Ist</th><th>Vj.</th><th>Delta</th></tr><tr><td>Materialkosten</td><td>48,8 Mio. €</td><td>41,2 Mio. €</td><td><b>+18,4 %</b></td></tr><tr><td>Rohertragsmarge</td><td>31,6 %</td><td>34,1 %</td><td>−2,5 PP</td></tr><tr><td>Umsatz</td><td>158 Mio. €</td><td>158 Mio. €</td><td>0 %</td></tr></table><ul><li><b>Empfehlung:</b> Ferro-Nord-Quote auf 30 % heben, sobald Qualifikation abgeschlossen.</li><li>Projekt Beta bleibt termingefährdet (3 Wo.) — Pönale-Deckel 0,43 Mio. € im Blick behalten.</li></ul>",
+        },
+      },
+      {
+        id: "portfolio-vorlage",
+        label: "Vorstandsvorlage Projektportfolio",
+        output: {
+          title: "Vorstandsvorlage — Projektportfolio Q1 2026",
+          kicker: "bereit zur Sitzung",
+          html: "<p>Portfolio-Volumen <b>32,6 Mio. €</b>, davon 18,8 Mio. € verausgabt. <b>1 von 2</b> Vorhaben termingefährdet — offen gekennzeichnet.</p><table><tr><th>Projekt</th><th>Fortschritt</th><th>Budget</th><th>Status</th></tr><tr><td>Alpha</td><td>62 %</td><td>24,0 Mio. €</td><td>✓ im Zeitplan</td></tr><tr><td>Beta</td><td>48 %</td><td>8,6 Mio. €</td><td>⚠ 3 Wo. Verzug</td></tr></table>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "Monatsabschluss-Kommentar Mai 2026",
+      when: "heute 18:40",
+      kicker: "Entwurf · Freigabe CFO",
+      html: "<p>Material +18,4 % vs. Vj. — Stahl 920 €/t. Empfehlung: Ferro-Nord-Quote auf 30 % heben.</p>",
+    },
+  },
+  {
+    id: "rechnung",
+    icon: "🧾",
+    name: "Rechnungs-Agent",
+    role: "Eingangsrechnungen prüfen",
+    category: "finanzen",
+    price: 600,
+    included: false,
+    recommended: false,
+    desc: "Prüft jede Eingangsrechnung im Drei-Wege-Abgleich gegen Bestellung und Wareneingang und meldet Abweichungen, bevor gezahlt wird.",
+    long: "Der Rechnungs-Agent legt jede neue Eingangsrechnung auf Bestellung und Wareneingang. Menge, Preis und Konto müssen zusammenpassen — Abweichungen gehen als Ampel an den Einkauf, nicht als stille Buchung. Er kennt den Donau-Drei-Wege-Abgleich und den Reklamationspfad (Mängelrüge → Gutschrift).",
+    skills: ["Drei-Wege-Abgleich", "Abweichungs-Ampel", "Gutschriften erkennen"],
+    sla: "Prüfung jeder neuen Rechnung in < 4 Min",
+    hours: "Werktags 06–20 Uhr",
+    owner: "Kreditorenbuchhaltung",
+    firstDeliverable: "Offene Eingangsrechnungen geprüft, Abweichungen markiert.",
+    nextRun: "bei jedem neuen Beleg",
+    tools: ["SAP-Belege", "Bestellungen", "Wareneingänge"],
+    tasks: [
+      {
+        id: "offene-rechnungen",
+        label: "Offene Eingangsrechnungen prüfen",
+        output: {
+          title: "Prüflauf Eingangsrechnungen — 24.08.2026",
+          kicker: "3 Belege · 1 Abweichung",
+          html: "<table><tr><th>Beleg</th><th>Lieferant</th><th>Betrag</th><th>Abgleich</th></tr><tr><td>RE-2026-1843</td><td>Stahlwerk Donau AG</td><td>87.584 €</td><td>✓ PO + WE identisch</td></tr><tr><td>RE-2026-1902</td><td>ElektroSys GmbH</td><td>12.400 €</td><td>⚠ Bestellung weicht um 400 € ab</td></tr><tr><td>RE-2026-1888</td><td>Siemens AG</td><td>4.180 €</td><td>✓ ok</td></tr></table><ul><li><b>Freigabe empfohlen</b> für Donau und Siemens.</li><li>ElektroSys: Rückfrage Einkauf, Zahlung zurückhalten.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "Prüflauf Eingangsrechnungen",
+      when: "heute 09:12",
+      kicker: "1 Abweichung offen",
+      html: "<p>3 Belege geprüft — Donau 87.584 € sauber, ElektroSys ⚠ 400 € Abweichung.</p>",
+    },
+  },
+  {
+    id: "vertrag",
+    icon: "📑",
+    name: "Vertrags-Agent",
+    role: "Fristen & Kündigungen",
+    category: "vertraege",
+    price: 500,
+    included: false,
+    recommended: false,
+    desc: "Überwacht Laufzeiten und Kündigungsfristen aller Verträge und warnt rechtzeitig vor jeder automatischen Verlängerung.",
+    long: "Der Vertrags-Agent liest Klauseln, nicht nur Deckblätter. Automatische Verlängerung, Preisgleitklausel, Pönale — jede Frist landet in einer Ampel, 90 / 30 / 7 Tage vorher. Zwei Meridian-Verträge enden am 28.02.2026: Donau-Rahmen und Siemens-Wartung.",
+    skills: ["Kündigungsfristen", "Auto-Verlängerung", "Klausel-Radar"],
+    sla: "Warnung 90 / 30 / 7 Tage vor Frist",
+    hours: "24/7 Überwachung",
+    owner: "Recht / Einkauf",
+    firstDeliverable: "Fristenradar der nächsten 90 Tage.",
+    nextRun: "täglich 07:00",
+    tools: ["Vertragsarchiv", "Klausel-Index", "Kalender"],
+    tasks: [
+      {
+        id: "fristen-90",
+        label: "Kündigungsfristen der nächsten 90 Tage",
+        output: {
+          title: "Fristenradar — nächste 90 Tage",
+          kicker: "2 dringend · 1 im Blick",
+          html: "<table><tr><th>Vertrag</th><th>Verlängerung</th><th>Kündigung bis</th></tr><tr><td>Rahmenvertrag Stahlwerk Donau</td><td>+12 Monate</td><td><b>28.02.2026 ⚠</b></td></tr><tr><td>Wartungsvertrag Siemens</td><td>+24 Monate</td><td><b>28.02.2026 ⚠</b></td></tr><tr><td>Lizenzvertrag SAP</td><td>+12 Monate</td><td>31.07.2026</td></tr></table><ul><li>Mietvertrag Logistikzentrum Nürnberg: feste Laufzeit bis 2029, <b>keine</b> Auto-Verlängerung.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "Fristenradar 90 Tage",
+      when: "heute 07:00",
+      kicker: "2 Fristen in 6 Tagen",
+      html: "<p>Donau-Rahmen und Siemens-Wartung: Kündigung bis <b>28.02.2026</b>.</p>",
+    },
+  },
+  {
+    id: "liquiditaet",
+    icon: "💧",
+    name: "Liquiditäts-Agent",
+    role: "Cash & 90-Tage-Risiko",
+    category: "finanzen",
+    price: 450,
+    included: false,
+    recommended: false,
+    desc: "Projiziert Zahlungseingänge und -ausgänge auf 90 Tage und markiert Engpässe, bevor sie in der Linie ankommen.",
+    long: "Der Liquiditäts-Agent verdichtet offene Posten, fällige Kreditoren und Projektabrufe zu einer 90-Tage-Sicht. Engpässe werden als Ampel gemeldet — mit dem Beleg, der sie verursacht, nicht als abstrakte Prognose.",
+    skills: ["90-Tage-Forecast", "Offene Posten", "Engpass-Ampel"],
+    sla: "Aktualisierung werktäglich 08:00",
+    hours: "Werktags 07–18 Uhr",
+    owner: "Treasury",
+    firstDeliverable: "90-Tage-Liquiditätsband mit Engpassmarkierung.",
+    nextRun: "morgen 08:00",
+    tools: ["Offene Posten", "Kreditoren", "Projektabrufe"],
+    tasks: [
+      {
+        id: "cash-90",
+        label: "90-Tage-Liquidität rechnen",
+        output: {
+          title: "Liquiditätsband — 90 Tage ab 24.08.2026",
+          kicker: "kein Engpass in 30 Tagen · ⚠ KW 41 eng",
+          html: "<table><tr><th>Fenster</th><th>Zufluss</th><th>Abfluss</th><th>Saldo</th></tr><tr><td>30 Tage</td><td>18,4 Mio. €</td><td>16,1 Mio. €</td><td>✓ +2,3 Mio. €</td></tr><tr><td>60 Tage</td><td>31,0 Mio. €</td><td>29,8 Mio. €</td><td>✓ +1,2 Mio. €</td></tr><tr><td>90 Tage</td><td>44,2 Mio. €</td><td>45,1 Mio. €</td><td>⚠ −0,9 Mio. €</td></tr></table><ul><li>KW 41: Beta-Nachtrag 476.000 € brutto plus Donau-Stahlabruf — Verschiebung des Abrufs um 10 Tage schließt die Lücke.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "90-Tage-Liquiditätsband",
+      when: "heute 08:00",
+      kicker: "⚠ KW 41 eng",
+      html: "<p>30/60 Tage solide, 90 Tage −0,9 Mio. € — Beta-Nachtrag und Stahlabruf treffen sich.</p>",
+    },
+  },
+  {
+    id: "compliance",
+    icon: "⚖",
+    name: "Compliance-Agent",
+    role: "DSGVO, Audit, Fristen",
+    category: "audit",
+    price: 550,
+    included: false,
+    recommended: false,
+    desc: "Überwacht offene Auflagen aus Datenschutz-Audit und interner Revision und eskaliert Fristen, bevor sie verfallen.",
+    long: "Der Compliance-Agent hält das Verzeichnis von Verarbeitungstätigkeiten und die offenen Audit-Auflagen aktuell. Zwei DSGVO-Auflagen laufen am 31.03.2026 ab (AV-Vertrag Cloud-Backup, Löschkonzept Bewerberdaten). Er erfindet keine Entwarnung — offene Punkte bleiben offen.",
+    skills: ["Auflagen-Radar", "VVT-Wächter", "Frist-Eskalation"],
+    sla: "Eskalation 14 Tage vor Frist",
+    hours: "24/7 Überwachung",
+    owner: "Datenschutz / Revision",
+    firstDeliverable: "Offene Auflagen mit Halter und Frist.",
+    nextRun: "täglich 07:30",
+    tools: ["Audit-Berichte", "VVT Art. 30", "Maßnahmenliste"],
+    tasks: [
+      {
+        id: "auflagen",
+        label: "Offene Compliance-Auflagen listen",
+        output: {
+          title: "Offene Auflagen — Stand 24.08.2026",
+          kicker: "2 offen · Frist 31.03.2026",
+          html: "<table><tr><th>Auflage</th><th>Rechtsgrund</th><th>Halter</th><th>Frist</th></tr><tr><td>AV-Vertrag Cloud-Backup</td><td>Art. 28 DSGVO</td><td>IT</td><td>⚠ 31.03.2026</td></tr><tr><td>Löschkonzept Bewerberdaten</td><td>Art. 17 DSGVO</td><td>HR</td><td>⚠ 31.03.2026</td></tr></table><ul><li>Letztes Datenschutz-Audit 20.11.2025: <b>bestanden</b>, 0 meldepflichtige Vorfälle 2025.</li><li>Kein akutes Bußgeldrisiko — aber die Frist ist hart.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "Auflagen-Radar",
+      when: "heute 07:30",
+      kicker: "2 Fristen 31.03.2026",
+      html: "<p>AV-Vertrag Cloud-Backup und Löschkonzept Bewerberdaten noch offen.</p>",
+    },
+  },
+  {
+    id: "einkauf",
+    icon: "🏭",
+    name: "Einkaufs-Agent",
+    role: "Lieferanten & Klumpenrisiko",
+    category: "finanzen",
+    price: 500,
+    included: false,
+    recommended: false,
+    desc: "Überwacht Konzentration, Single-Source und Preisgleitklauseln — und schlägt Zweitquellen vor, bevor der Einkauf eng wird.",
+    long: "Der Einkaufs-Agent hält das Klumpenrisiko im Blick: Stahlwerk Donau 23,9 % vom Einkaufsvolumen, Baustahl S355 als Single-Source. Er kennt den Vorstandsbeschluss Ferro Nord und rechnet Preisgleitklauseln (§6) in Mehrbedarf um, bevor sie im Monatsabschluss überraschen.",
+    skills: ["Konzentrations-Ampel", "Single-Source", "Preisgleit-Radar"],
+    sla: "Wochenreport montags 08:30",
+    hours: "Werktags 07–18 Uhr",
+    owner: "Einkauf",
+    firstDeliverable: "Konzentrations- und Single-Source-Radar.",
+    nextRun: "nächster Montag 08:30",
+    tools: ["Lieferantenanalyse", "Rahmenverträge", "Preislisten"],
+    tasks: [
+      {
+        id: "klumpen",
+        label: "Klumpenrisiko und Zweitquellen",
+        output: {
+          title: "Lieferantenradar — KW 35 / 2026",
+          kicker: "Donau 23,9 % · Single-Source S355",
+          html: "<table><tr><th>Lieferant</th><th>Volumen 2025</th><th>Anteil</th></tr><tr><td>Stahlwerk Donau AG</td><td>64 Mio. €</td><td><b>23,9 % ⚠</b></td></tr><tr><td>Siemens AG</td><td>31 Mio. €</td><td>11,6 %</td></tr><tr><td>Robotik Bayern GmbH</td><td>22 Mio. €</td><td>8,2 %</td></tr></table><ul><li>Baustahl S355 bleibt Single-Source Donau — Ferro Nord ist qualifiziert, Quote noch 0 %.</li><li>Ziel laut Vorstand: Donau-Anteil bis Ende 2027 unter 15 %.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "Lieferantenradar KW 35",
+      when: "Mo 08:30",
+      kicker: "Single-Source S355",
+      html: "<p>Donau 23,9 % — Ferro-Nord-Qualifikation steht, Abrufquote noch 0 %.</p>",
+    },
+  },
+  {
+    id: "esg",
+    icon: "🌱",
+    name: "ESG-Agent",
+    role: "CO₂, CSRD, Zielpfad",
+    category: "berichte",
+    price: 450,
+    included: false,
+    recommended: false,
+    desc: "Hält den CO₂-Zielpfad und die CSRD-Kennzahlen aktuell und sagt ehrlich, wo die Lücke zum 2030-Ziel liegt.",
+    long: "Der ESG-Agent liest Energie- und Emissionskennzahlen, rechnet den linearen Zielpfad und legt die Lücke offen: 2025 stehen 41.200 t (−12 % vs. 2020), der lineare Pfad läge bei −15 %. Kein Greenwashing — die Zahl und die Lücke stehen nebeneinander.",
+    skills: ["CO₂-Zielpfad", "CSRD-Kennzahlen", "Lücken-Offenlegung"],
+    sla: "Quartals-Update plus Ad-hoc bei neuen Messwerten",
+    hours: "Werktags 08–17 Uhr",
+    owner: "Nachhaltigkeit",
+    firstDeliverable: "CO₂-Zielpfad mit ehrlicher Lücke.",
+    nextRun: "nächster Quartalsstichtag",
+    tools: ["Emissionsbericht", "ESG-Bericht", "Energiekennzahlen"],
+    tasks: [
+      {
+        id: "co2-pfad",
+        label: "CO₂-Zielpfad 2030 aktualisieren",
+        output: {
+          title: "CO₂-Zielpfad — Stand 2025",
+          kicker: "Lücke zum linearen Pfad offen ausgewiesen",
+          html: "<table><tr><th>Jahr</th><th>t CO₂</th><th>vs. 2020</th></tr><tr><td>2020</td><td>46.800</td><td>—</td></tr><tr><td>2025</td><td>41.200</td><td>−12 %</td></tr><tr><td>2030 Ziel</td><td>32.760</td><td>−30 %</td></tr></table><ul><li>Linearer Pfad 2025 wäre −15 % — wir liegen <b>3 Prozentpunkte</b> dahinter.</li><li>Hebel: Grünstrom 68 %, Scope-1-Reduktion Werk 2, Ferro-Nord-Logistik kürzer.</li></ul>",
+        },
+      },
+    ],
+    sampleWork: {
+      title: "CO₂-Zielpfad 2025",
+      when: "Q1-Update",
+      kicker: "−12 % vs. Zielpfad −15 %",
+      html: "<p>41.200 t CO₂ — Lücke zum linearen 2030-Pfad ehrlich ausgewiesen.</p>",
+    },
+  },
 ];
 
 // --- Dokumentenbibliothek --------------------------------------------------
@@ -1070,15 +1388,15 @@ const SCENARIOS = [
     question: "Kann ich einen weiteren Agenten dazubuchen?",
     keywords: ["agent", "agenten", "dazubuchen", "dazu buchen", "buchen", "mieten", "digitale mitarbeiter", "digitaler mitarbeiter", "reporting-agent", "rechnungs-agent", "vertrags-agent", "abo", "abonnement", "weiteren agenten", "neuer agent", "team erweitern"],
     answer: {
-      text: "Ihre Wissensbasis steht: Verträge, Rechnungen, Berichte und E-Mails aus dem ganzen Haus sind erschlossen und liegen <b>auf Ihrer eigenen Infrastruktur</b> — nichts verlässt das Unternehmen. Darauf mieten Sie jetzt <b>digitale Mitarbeiter</b>: spezialisierte KI-Agenten, monatlich kündbar, <b>ab 400 €/Monat</b> — wie eine Neueinstellung, nur ohne Recruiting und ohne Einarbeitung. Jeder neue Agent arbeitet sofort mit demselben Firmenwissen.",
+      text: "Ihre Wissensbasis steht: Verträge, Rechnungen, Berichte und E-Mails aus dem ganzen Haus sind erschlossen und liegen <b>auf Ihrer eigenen Infrastruktur</b> — nichts verlässt das Unternehmen. Darauf mieten Sie jetzt <b>digitale Mitarbeiter</b>: spezialisierte KI-Agenten, monatlich kündbar, <b>ab 400 €/Monat</b> — wie eine Neueinstellung, nur ohne Recruiting und ohne Einarbeitung. Jeder neue Agent arbeitet sofort mit demselben Firmenwissen. Das Modul <b>Team</b> ist Ihre Mietplattform: Marktplatz, Abrechnung, Aufträge.",
       agents: [
-        { icon: "✦", name: "Auskunfts-Agent", role: "Ihre Wissensbasis", price: "inklusive", active: true,
+        { id: "auskunft", icon: "✦", name: "Auskunfts-Agent", role: "Ihre Wissensbasis", price: "inklusive", active: true,
           desc: "Beantwortet Fragen aus Ihrem gesamten Firmenwissen — mit Belegen und Quellenangabe. Der Agent, der Ihnen gerade geantwortet hat." },
-        { icon: "📊", name: "Reporting-Agent", role: "Berichte & Vorstandsvorlagen", price: "400 €", recommended: true,
+        { id: "reporting", icon: "📊", name: "Reporting-Agent", role: "Berichte & Vorstandsvorlagen", price: "400 €", recommended: true,
           desc: "Erstellt Monatsabschluss-Kommentare, Soll-Ist-Vergleiche und fertige Vorstandsvorlagen automatisch aus Ihren freigegebenen Zahlen." },
-        { icon: "🧾", name: "Rechnungs-Agent", role: "Eingangsrechnungen prüfen", price: "600 €",
+        { id: "rechnung", icon: "🧾", name: "Rechnungs-Agent", role: "Eingangsrechnungen prüfen", price: "600 €",
           desc: "Prüft jede Eingangsrechnung im Drei-Wege-Abgleich gegen Bestellung und Wareneingang und meldet Abweichungen, bevor gezahlt wird." },
-        { icon: "📑", name: "Vertrags-Agent", role: "Fristen & Kündigungen", price: "500 €",
+        { id: "vertrag", icon: "📑", name: "Vertrags-Agent", role: "Fristen & Kündigungen", price: "500 €",
           desc: "Überwacht Laufzeiten und Kündigungsfristen aller Verträge und warnt rechtzeitig vor jeder automatischen Verlängerung." },
       ],
       priceNote: "Einstieg: Daten-Audit 149 € → Wissensbasis ab 5.000 € → jeder Agent ab 400 €/Monat, monatlich kündbar.",
@@ -1095,4 +1413,5 @@ const MODULE_SUGGESTIONS = {
   vertraege: ["vertraege-verlaengerung"],
   berichte: ["projekt-portfolio", "projekt-alpha", "projekt-beta", "budget-herkunft", "vorstand-summary", "esg-co2", "strategie-ausblick", "agent-dazubuchen"],
   einstellungen: [],
+  team: ["agent-dazubuchen"],
 };

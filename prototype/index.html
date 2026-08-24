@@ -14,7 +14,7 @@
         <div class="logo">✦</div>
         <div>
           <div class="name">AI Studio</div>
-          <div class="sub">Wissensplattform</div>
+          <div class="sub">Wissen &amp; digitale Mitarbeiter</div>
         </div>
       </div>
       <button class="search-trigger" id="searchTrigger" title="Alle Dokumente durchsuchen (Strg + K)">
@@ -90,6 +90,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Miet-Bestätigung (Marktplatz) -->
+    <div class="rent-ov" id="rentOverlay" hidden>
+      <div class="rent-panel" role="dialog" aria-modal="true" aria-labelledby="rentTitle">
+        <div class="rp-head">
+          <h2 id="rentTitle">Agent mieten</h2>
+          <button class="sp-close" id="rentClose" type="button" title="Schließen (Esc)">Esc</button>
+        </div>
+        <div class="rp-body" id="rentBody"></div>
+        <div class="rp-foot" id="rentFoot"></div>
+      </div>
+    </div>
+    <div class="toast" id="fleetToast" hidden></div>
 
     <!-- Onboarding-Coachmark (nur beim ersten Start) -->
     <div class="onboard" id="onboard" hidden>

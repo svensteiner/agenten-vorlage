@@ -2,7 +2,7 @@
  * AI Studio Demo — Interaktionslogik.
  * Reines Vanilla-JS, keine Abhängigkeiten, läuft per Doppelklick (file://).
  * Rendert Chat, gestreamte Antworten, Quellen und den Dokumentenviewer.
- * Datenquelle: data.js (COMPANY, MODULES, DOCS, SCENARIOS, MODULE_SUGGESTIONS).
+ * Datenquelle: data.js (COMPANY, MODULES, DOCS, SCENARIOS, AGENT_CATALOG).
  */
 (function () {
   "use strict";
@@ -53,7 +53,134 @@
     return list.length ? list : SCENARIOS.slice();
   }
 
-  // Dokument-Skins: geben jedem Dokumenttyp im Viewer eine realistische
+  // ---------- Mietflotte (digitale Mitarbeiter) ----------
+  // Persistente Miete: der Money-Shot und das Modul „Team" teilen denselben Stand.
+  // Reset setzt auf den Auskunfts-Agenten (inklusive) zurück.
+  const FLEET_KEY = "aistudio.fleet.v1";
+  const teamUi = { tab: "fleet", filter: "alle", detailId: null, workId: null, workOut: null };
+  let fleet = { leases: {} };
+
+  function defaultFleet() {
+    const leases = {};
+    (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).forEach((a) => {
+      if (a.included) leases[a.id] = { status: "active", since: "inklusive", included: true };
+    });
+    return { leases };
+  }
+
+  function loadFleet() {
+    let f = defaultFleet();
+    try {
+      const raw = localStorage.getItem(FLEET_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.leases && typeof parsed.leases === "object") f = parsed;
+      }
+    } catch (e) { /* file:// ohne Storage */ }
+    const known = new Set((typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).map((a) => a.id));
+    Object.keys(f.leases || {}).forEach((id) => { if (!known.has(id)) delete f.leases[id]; });
+    (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).forEach((a) => {
+      if (a.included && !(f.leases && f.leases[a.id])) {
+        f.leases = f.leases || {};
+        f.leases[a.id] = { status: "active", since: "inklusive", included: true };
+      }
+    });
+    return f;
+  }
+
+  function saveFleet() {
+    try { localStorage.setItem(FLEET_KEY, JSON.stringify(fleet)); } catch (e) { /* ignore */ }
+  }
+
+  function resetFleet() {
+    fleet = defaultFleet();
+    saveFleet();
+    teamUi.tab = "fleet";
+    teamUi.filter = "alle";
+    teamUi.detailId = null;
+    teamUi.workId = null;
+    teamUi.workOut = null;
+  }
+
+  function catalogById(id) {
+    return (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).find((a) => a.id === id) || null;
+  }
+
+  function leaseOf(id) { return (fleet.leases || {})[id] || null; }
+
+  function isActive(id) {
+    const a = catalogById(id);
+    if (a && a.included) return true;
+    const l = leaseOf(id);
+    return !!(l && l.status === "active");
+  }
+
+  function isRented(id) {
+    const a = catalogById(id);
+    if (a && a.included) return true;
+    const l = leaseOf(id);
+    return !!(l && (l.status === "active" || l.status === "paused"));
+  }
+
+  function activeAgents() {
+    return (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).filter((a) => isActive(a.id));
+  }
+
+  function monthlyTotal() {
+    return activeAgents().reduce((s, a) => s + (a.included ? 0 : (Number(a.price) || 0)), 0);
+  }
+
+  function formatEur(n) { return Number(n).toLocaleString("de-DE") + " €"; }
+
+  function agentPriceLabel(a) {
+    if (!a) return "";
+    if (a.included || a.price === 0 || a.price === "inklusive") return "inklusive";
+    if (typeof a.price === "string") return a.price;
+    return formatEur(a.price);
+  }
+
+  function todayGermanShort() {
+    try { return new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
+    catch (e) { return "24.08.2026"; }
+  }
+
+  function nextInvoiceGerman() {
+    try {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth() + 1, 1)
+        .toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch (e) { return "01.09.2026"; }
+  }
+
+  function rentAgent(id) {
+    const a = catalogById(id);
+    if (!a || a.included) return a;
+    fleet.leases = fleet.leases || {};
+    fleet.leases[id] = { status: "active", since: todayGermanShort(), included: false };
+    saveFleet();
+    return a;
+  }
+
+  function togglePause(id) {
+    const l = leaseOf(id);
+    if (!l || l.included) return;
+    l.status = l.status === "paused" ? "active" : "paused";
+    saveFleet();
+  }
+
+  function cancelAgent(id) {
+    const l = leaseOf(id);
+    if (!l || l.included) return;
+    delete fleet.leases[id];
+    saveFleet();
+    if (teamUi.workId === id) { teamUi.workId = null; teamUi.workOut = null; }
+  }
+
+  function paidCount() {
+    return activeAgents().filter((a) => !a.included).length;
+  }
+
+  // ---------- Dokument-Skins ----------
   // Papier-Anmutung (Briefkopf, Beleg-Stempel, Unterschriftszeile).
   const DOC_SKINS = {
     "Eingangsrechnung":     { cat: "beleg", extIssuer: true, stamp: { text: "EINGANG", tone: "ink" } },
@@ -76,6 +203,7 @@
 
   // ---------- Bootstrapping ----------
   function init() {
+    fleet = loadFleet();
     renderSidebar();
     renderCompanyCard();
     selectModule("wissen");
@@ -85,6 +213,7 @@
     wireReset();
     wireSearch();
     wireOnboarding();
+    wireRentOverlay();
   }
 
   // ---------- Onboarding-Coachmark (nur beim ersten Start) ----------
@@ -181,6 +310,9 @@
     chatState.length = 0;
     closeViewer();
     closeSearch();
+    closeRent();
+    resetFleet();
+    hideFleetToast();
     selectModule("wissen");
   }
 
@@ -273,13 +405,28 @@
   function renderSidebar() {
     const nav = $("#nav");
     nav.innerHTML = "";
-    nav.appendChild(el("div", "nav-label", "Module"));
-    MODULES.forEach((m) => {
-      const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>`);
-      btn.dataset.key = m.key;
-      btn.onclick = () => selectModule(m.key);
-      nav.appendChild(btn);
+    const groups = (typeof MODULE_GROUPS !== "undefined" && MODULE_GROUPS.length)
+      ? MODULE_GROUPS
+      : [{ label: "Module", keys: MODULES.map((m) => m.key) }];
+    groups.forEach((g) => {
+      nav.appendChild(el("div", "nav-label", g.label));
+      g.keys.forEach((key) => {
+        const m = MODULES.find((x) => x.key === key);
+        if (!m) return;
+        const count = m.key === "team" ? paidCount() : 0;
+        const badge = count ? `<span class="nav-count">${count}</span>` : "";
+        const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>${badge}`);
+        btn.dataset.key = m.key;
+        btn.onclick = () => selectModule(m.key);
+        nav.appendChild(btn);
+      });
     });
+  }
+
+  function refreshNavCounts() {
+    const key = currentModule;
+    renderSidebar();
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
   }
 
   function renderCompanyCard() {
@@ -299,6 +446,7 @@
     $("#topTitle").innerHTML = `${mod.label}<small>${mod.hint}</small>`;
 
     if (key === "wissen") return renderChatView();
+    if (key === "team") return renderTeamView();
     if (key === "einstellungen") return renderSettingsView();
     return renderLibraryView(key);
   }
@@ -348,6 +496,17 @@
   async function ask(text) {
     text = (text || "").trim();
     if (!text) return;
+
+    // Direkte Sprünge in die Mietplattform (nicht der Money-Shot-Chat).
+    if (isTeamJump(text)) {
+      const q = text.toLowerCase();
+      teamUi.tab = /marktplatz|agenten mieten|mieten/.test(q) ? "market"
+        : /abrechnung|rechnung/.test(q) ? "billing"
+        : /auftrag/.test(q) ? "work"
+        : "fleet";
+      selectModule("team");
+      return;
+    }
 
     // Falls der Hero noch da ist: Chat-Ansicht in „aktiven" Modus versetzen
     if (currentModule !== "wissen") selectModule("wissen");
@@ -493,6 +652,44 @@
     appendAgents(card, answer);
     revealBlocks(card);
     scrollBottom();
+  }
+
+  // Replay vorhandener Chat-Antworten nach Modulwechsel (ohne Tipp-/Zähl-Animation).
+  // Schließt den latenten Bug: renderChatView() rief answerCard(), die nicht existierte.
+  function answerCard(answer) {
+    const msg = el("div", "msg");
+    const card = el("div", "answer");
+    const hasConf = typeof answer.confidence === "number";
+    const confCls = answer.confidence >= 90 ? "" : "mid";
+    const secs = answerSeconds(answer);
+    const pop = hasConf ? buildConfPop(answer) : "";
+    const confHtml = hasConf
+      ? `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
+        `<span class="conf-meter">Konfidenz` +
+        `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
+        `<b>${answer.confidence}%</b>` +
+        (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
+        `</span>${pop}</span>`
+      : "";
+    const secStr = String(secs).replace(".", ",");
+    card.appendChild(el("div", "head",
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">${secStr} s</b></span>` +
+      confHtml));
+    const textEl = el("div", "text");
+    textEl.innerHTML = answer.text || "";
+    card.appendChild(textEl);
+    msg.appendChild(card);
+    appendChain(card, answer.chain);
+    appendReasoning(card, answer.reasoning);
+    appendSources(card, answer.sources);
+    appendWithheld(card, answer.withheld);
+    appendRelated(card, answer.related);
+    appendFollowups(card, answer.followups);
+    appendActions(card, answer);
+    appendAgents(card, answer);
+    if (pop) wireConfPopBars(card);
+    return msg;
   }
 
   // Lässt die strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte →
@@ -726,22 +923,26 @@
     b.appendChild(el("div", "block-title", "🤝 Agenten dazubuchen — wie neue Mitarbeiter"));
     const grid = el("div", "agent-grid");
     answer.agents.forEach((a) => {
-      const item = el("div", "agent-card" + (a.recommended ? " rec" : "") + (a.active ? " on" : ""));
-      const badge = a.active
+      const cat = a.id ? catalogById(a.id) : null;
+      const live = cat ? isActive(cat.id) : !!a.active;
+      const rec = !!(a.recommended || (cat && cat.recommended));
+      const item = el("div", "agent-card" + (rec && !live ? " rec" : "") + (live ? " on" : ""));
+      const badge = live
         ? `<span class="ag-badge active">● Aktiv</span>`
-        : (a.recommended ? `<span class="ag-badge rec">Empfohlen</span>` : "");
+        : (rec ? `<span class="ag-badge rec">Empfohlen</span>` : "");
+      const price = cat ? agentPriceLabel(cat) : (a.price || "");
       item.innerHTML =
         `<div class="ag-top">` +
-        `<span class="ag-ic">${a.icon}</span>` +
+        `<span class="ag-ic">${a.icon || (cat && cat.icon) || "✦"}</span>` +
         `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
         `<span class="ag-role">${escapeHtml(a.role)}</span></span>` +
         badge +
         `</div>` +
         `<div class="ag-desc">${escapeHtml(a.desc)}</div>` +
-        `<div class="ag-foot"><span class="ag-price">${escapeHtml(a.price)}` +
-        (a.active ? `` : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
+        `<div class="ag-foot"><span class="ag-price">${escapeHtml(price)}` +
+        (live || price === "inklusive" ? `` : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
       const foot = $(".ag-foot", item);
-      if (!a.active) {
+      if (!live) {
         const btn = el("button", "ag-book", `<span class="ag-plus">＋</span>Dazubuchen`);
         btn.onclick = () => bookAgent(item, a);
         foot.appendChild(btn);
@@ -752,6 +953,14 @@
     });
     b.appendChild(grid);
     if (answer.priceNote) b.appendChild(el("div", "ag-note", escapeHtml(answer.priceNote)));
+    if (!demo.running) {
+      const more = el("button", "btn ghost");
+      more.style.margin = "12px auto 0";
+      more.style.display = "flex";
+      more.textContent = "Alle Agenten im Modul Team →";
+      more.onclick = () => { teamUi.tab = "market"; selectModule("team"); };
+      b.appendChild(more);
+    }
     card.appendChild(b);
 
     // Hands-free-Payoff: In der Geführten Demo bucht sich der empfohlene Agent
@@ -759,7 +968,11 @@
     // ohne dass jemand klicken muss. Außerhalb der Demo bleibt es interaktiv.
     if (demo.running) {
       const recCard = $(".agent-card.rec", b);
-      const rec = answer.agents.find((a) => a.recommended && !a.active);
+      const rec = answer.agents.find((a) => {
+        const cat = a.id ? catalogById(a.id) : null;
+        const live = cat ? isActive(cat.id) : !!a.active;
+        return (a.recommended || (cat && cat.recommended)) && !live;
+      });
       if (recCard && rec) scheduleAutoBook(recCard, rec);
     }
   }
@@ -778,6 +991,9 @@
     const done = el("span", "ag-live",
       `✓ Aktiviert · ab sofort Teil Ihres Teams · erste Auswertung heute Abend`);
     if (pend) pend.replaceWith(done); else foot.appendChild(done);
+    if (agent && agent.id) rentAgent(agent.id);
+    refreshNavCounts();
+    if (!demo.running) showFleetToast(agent);
     scrollBottom();
   }
 
@@ -1423,6 +1639,395 @@
     };
     conf.addEventListener("mouseenter", run);
     conf.addEventListener("focus", run, true);
+  }
+
+  function isTeamJump(text) {
+    const q = (text || "").toLowerCase();
+    if (/dazubuchen|dazu buchen|weiteren agenten/.test(q)) return false;
+    return /mietplattform|digitales team|mein team|modul team|agenten mieten|marktplatz|abrechnung der agenten/.test(q);
+  }
+
+  // ---------- Modul Team: Mietplattform ----------
+  function renderTeamView() {
+    const scroll = $("#scroll");
+    scroll.innerHTML = "";
+    $("#composer").style.display = "none";
+    const wrap = el("div", "wrap wide");
+    wrap.appendChild(el("div", "lib-head",
+      `<h2>Digitale Mitarbeiter mieten</h2>` +
+      `<p>Wie eine Neueinstellung — monatlich kündbar, ab 400 €, sofort im selben Firmenwissen zu Hause.</p>`));
+
+    const tabs = el("div", "team-tabs");
+    [
+      { id: "fleet", label: "Ihr Team" },
+      { id: "market", label: "Marktplatz" },
+      { id: "billing", label: "Abrechnung" },
+      { id: "work", label: "Aufträge" },
+    ].forEach((t) => {
+      const b = el("button", "team-tab" + (teamUi.tab === t.id ? " on" : ""), t.label);
+      b.onclick = () => { teamUi.tab = t.id; if (t.id !== "market") teamUi.detailId = null; renderTeamView(); };
+      tabs.appendChild(b);
+    });
+    wrap.appendChild(tabs);
+
+    if (teamUi.tab === "fleet") wrap.appendChild(renderFleetPane());
+    else if (teamUi.tab === "market") wrap.appendChild(teamUi.detailId ? renderDetailPane(teamUi.detailId) : renderMarketPane());
+    else if (teamUi.tab === "billing") wrap.appendChild(renderBillingPane());
+    else wrap.appendChild(renderWorkPane());
+
+    scroll.appendChild(wrap);
+    refreshNavCounts();
+  }
+
+  function renderFleetPane() {
+    const box = el("div");
+    const active = activeAgents();
+    const paid = paidCount();
+    const kpis = el("div", "kpi-row");
+    [
+      { k: "Aktive Agenten", v: String(active.length), s: paid ? (paid + " gemietet") : "Auskunft inklusive" },
+      { k: "Monatliche Miete", v: formatEur(monthlyTotal()), s: "netto · monatlich kündbar" },
+      { k: "Nächste Rechnung", v: nextInvoiceGerman(), s: "SEPA-Lastschrift" },
+      { k: "vs. 1 FTE Controlling", v: "400 €", s: "statt ~6.500 € Personalkosten" },
+    ].forEach((x) => {
+      kpis.appendChild(el("div", "kpi", `<div class="k">${x.k}</div><div class="v">${x.v}</div><div class="s">${x.s}</div>`));
+    });
+    box.appendChild(kpis);
+
+    const roster = el("div", "roster");
+    const catalog = typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [];
+    const shown = catalog.filter((a) => isRented(a.id));
+    shown.forEach((a) => roster.appendChild(rosterCard(a)));
+    box.appendChild(roster);
+
+    const cta = el("div", "team-cta");
+    cta.innerHTML = `<p><b>Team erweitern.</b> Reporting, Rechnungen, Verträge und vier weitere Spezialisten stehen bereit.</p>`;
+    const go = el("button", "btn primary", "Marktplatz öffnen →");
+    go.onclick = () => { teamUi.tab = "market"; teamUi.detailId = null; renderTeamView(); };
+    cta.appendChild(go);
+    box.appendChild(cta);
+    return box;
+  }
+
+  function rosterCard(a) {
+    const l = leaseOf(a.id) || { status: "active", since: a.included ? "inklusive" : "—" };
+    const paused = l.status === "paused";
+    const card = el("div", "roster-card" + (paused ? " paused" : ""));
+    const badge = paused
+      ? `<span class="ag-badge">Pausiert</span>`
+      : `<span class="ag-badge active">● Aktiv</span>`;
+    const left = el("div");
+    left.innerHTML =
+      `<div class="rc-top">` +
+      `<span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span>${badge}</div>` +
+      `<div class="ag-desc" style="margin:8px 0 10px">${escapeHtml(a.desc)}</div>` +
+      `<div class="rc-meta">` +
+      `<span>Miete <b>${escapeHtml(agentPriceLabel(a))}${a.included ? "" : " / Monat"}</b></span>` +
+      `<span>Seit <b>${escapeHtml(l.since)}</b></span>` +
+      `<span>Nächster Lauf <b>${escapeHtml(a.nextRun || "—")}</b></span>` +
+      `</div>`;
+    const actions = el("div", "rc-actions");
+    if (!a.included) {
+      const work = el("button", "btn primary", "Auftrag geben");
+      work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
+      const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
+      pause.onclick = () => { togglePause(a.id); renderTeamView(); };
+      const cancel = el("button", "btn warn", "Kündigen");
+      cancel.onclick = () => {
+        if (cancel.dataset.arm === "1") { cancelAgent(a.id); renderTeamView(); return; }
+        cancel.dataset.arm = "1";
+        cancel.textContent = "Wirklich kündigen?";
+        setTimeout(() => {
+          if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
+        }, 4000);
+      };
+      actions.append(work, pause, cancel);
+    } else {
+      const go = el("button", "btn", "Im Chat fragen");
+      go.onclick = () => selectModule("wissen");
+      actions.appendChild(go);
+    }
+    card.append(left, actions);
+    return card;
+  }
+
+  function renderMarketPane() {
+    const box = el("div");
+    const filters = el("div", "mkt-filters");
+    const cats = typeof AGENT_CATEGORIES !== "undefined" ? AGENT_CATEGORIES : [{ id: "alle", label: "Alle" }];
+    cats.forEach((c) => {
+      const b = el("button", "chip-f" + (teamUi.filter === c.id ? " on" : ""), c.label);
+      b.onclick = () => { teamUi.filter = c.id; renderTeamView(); };
+      filters.appendChild(b);
+    });
+    box.appendChild(filters);
+
+    const grid = el("div", "mkt-grid");
+    const list = (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [])
+      .filter((a) => teamUi.filter === "alle" || a.category === teamUi.filter);
+    list.forEach((a) => {
+      const live = isActive(a.id);
+      const rec = a.recommended && !live;
+      const card = el("button", "mkt-card" + (rec ? " rec" : "") + (live ? " on" : ""));
+      const skills = (a.skills || []).slice(0, 3).map((s) => `<span class="sk-chip">${escapeHtml(s)}</span>`).join("");
+      const badge = live
+        ? `<span class="ag-badge active">● Im Team</span>`
+        : (rec ? `<span class="ag-badge rec">Empfohlen</span>` : `<span class="ag-badge" style="background:var(--bg);color:var(--ink-soft)">${escapeHtml(catLabel(a.category))}</span>`);
+      card.innerHTML =
+        `<div class="ag-top"><span class="ag-ic">${a.icon}</span>` +
+        `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+        `<span class="ag-role">${escapeHtml(a.role)}</span></span>${badge}</div>` +
+        `<div class="ag-desc">${escapeHtml(a.desc)}</div>` +
+        `<div class="mkt-skills">${skills}</div>` +
+        `<div class="mkt-sla">${escapeHtml(a.sla || "")}</div>` +
+        `<div class="mkt-foot"><span class="ag-price">${escapeHtml(agentPriceLabel(a))}` +
+        (a.included ? "" : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
+      card.onclick = () => { teamUi.detailId = a.id; renderTeamView(); };
+      grid.appendChild(card);
+    });
+    box.appendChild(grid);
+    return box;
+  }
+
+  function catLabel(id) {
+    const c = (typeof AGENT_CATEGORIES !== "undefined" ? AGENT_CATEGORIES : []).find((x) => x.id === id);
+    return c ? c.label : id;
+  }
+
+  function renderDetailPane(id) {
+    const a = catalogById(id);
+    const box = el("div");
+    if (!a) return el("p", null, "Agent nicht gefunden.");
+    const back = el("button", "btn ghost detail-back", "← Marktplatz");
+    back.onclick = () => { teamUi.detailId = null; renderTeamView(); };
+    box.appendChild(back);
+
+    const grid = el("div", "detail-grid");
+    const main = el("div", "detail-main");
+    main.innerHTML =
+      `<div class="ag-top" style="margin-bottom:12px"><span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name" style="font-size:20px">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span></div>` +
+      `<p>${escapeHtml(a.long || a.desc)}</p>` +
+      `<h3>Kann ausliefern</h3><ul class="skill-list">${(a.skills || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` +
+      `<h3 style="margin-top:16px">Werkzeuge</h3><ul class="skill-list">${(a.tools || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`;
+    if (a.sampleWork) {
+      const sm = el("div", "sample-box");
+      sm.innerHTML = `<div class="when">${escapeHtml(a.sampleWork.when || "")} · ${escapeHtml(a.sampleWork.kicker || "")}</div>` +
+        `<b>${escapeHtml(a.sampleWork.title || "")}</b>${a.sampleWork.html || ""}`;
+      main.appendChild(sm);
+    }
+
+    const side = el("div", "detail-side");
+    side.innerHTML =
+      `<div class="side-price">${escapeHtml(agentPriceLabel(a))}${a.included ? "" : "<span class='ag-per'> / Monat</span>"}</div>` +
+      `<div class="side-row"><span>SLA</span><span>${escapeHtml(a.sla || "—")}</span></div>` +
+      `<div class="side-row"><span>Einsatz</span><span>${escapeHtml(a.hours || "—")}</span></div>` +
+      `<div class="side-row"><span>Verantwortlich</span><span>${escapeHtml(a.owner || "—")}</span></div>` +
+      `<div class="side-row"><span>Erste Lieferung</span><span>${escapeHtml(a.firstDeliverable || "—")}</span></div>` +
+      `<div class="side-row"><span>Kündigung</span><span>monatlich, ohne Frist</span></div>`;
+    const act = el("div");
+    act.style.marginTop = "16px";
+    if (isActive(id)) {
+      act.appendChild(el("div", "ag-live", "✓ Bereits Teil Ihres Teams"));
+      const work = el("button", "btn primary");
+      work.style.marginTop = "10px";
+      work.style.width = "100%";
+      work.textContent = a.included ? "Im Chat fragen" : "Auftrag geben";
+      work.onclick = () => {
+        if (a.included) selectModule("wissen");
+        else { teamUi.tab = "work"; teamUi.workId = id; teamUi.workOut = null; renderTeamView(); }
+      };
+      act.appendChild(work);
+    } else if (leaseOf(id) && leaseOf(id).status === "paused") {
+      const resume = el("button", "btn primary", "Miete fortsetzen");
+      resume.style.width = "100%";
+      resume.onclick = () => { togglePause(id); renderTeamView(); };
+      act.appendChild(resume);
+    } else {
+      const rent = el("button", "btn primary", "Jetzt mieten · " + agentPriceLabel(a) + " / Monat");
+      rent.style.width = "100%";
+      rent.onclick = () => openRent(id);
+      act.appendChild(rent);
+    }
+    side.appendChild(act);
+    grid.append(main, side);
+    box.appendChild(grid);
+    return box;
+  }
+
+  function renderBillingPane() {
+    const box = el("div");
+    const catalog = typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [];
+    const rows = catalog.filter((a) => isRented(a.id));
+    const table = el("table", "bill-table");
+    let body = `<tr><th>Agent</th><th>Status</th><th class="num">Preis / Monat</th></tr>`;
+    rows.forEach((a) => {
+      const l = leaseOf(a.id) || { status: "active" };
+      const billed = l.status === "active" && !a.included;
+      const status = a.included ? "Inklusive" : (l.status === "paused" ? "Pausiert — nicht berechnet" : "Aktiv");
+      const price = billed ? formatEur(a.price) : (a.included ? "0 €" : "0 €");
+      body += `<tr><td><b>${escapeHtml(a.name)}</b><div style="font-size:12px;color:var(--ink-faint)">${escapeHtml(a.role)}</div></td>` +
+        `<td>${status}</td><td class="num">${price}</td></tr>`;
+    });
+    body += `<tr><td class="sum" colspan="2">Summe netto</td><td class="num sum">${formatEur(monthlyTotal())}</td></tr>`;
+    table.innerHTML = body;
+    box.appendChild(table);
+
+    const pay = el("div", "pay-row");
+    pay.appendChild(el("div", "pay-tile",
+      `<div class="k">Nächste Lastschrift</div><div class="v">${nextInvoiceGerman()} · ${formatEur(monthlyTotal())}</div>` +
+      `<div class="k" style="margin-top:8px">Mandat SEPA (Demo)</div><div class="v">DE12 1001 0000 0123 4567 89 · Meridian Industrie GmbH</div>`));
+    pay.appendChild(el("div", "pay-tile",
+      `<div class="k">Preis-Pfad</div><div class="v">Audit 149 € → Wissensbasis ab 5.000 € → Agent ab 400 €/Monat</div>` +
+      `<div class="k" style="margin-top:8px">Ersparnis-Hinweis</div><div class="v">Ein Reporting-Agent ersetzt keine Abteilung — er liefert die Vorlage, die ein Controller sonst 2 Tage schreibt.</div>`));
+    box.appendChild(pay);
+    box.appendChild(el("p", "bill-note",
+      "Demo-Abrechnung: keine echte Lastschrift. Monatlich kündbar, keine Mindestlaufzeit. Pausierte Agenten erscheinen in der nächsten Periode nicht auf der Rechnung."));
+    return box;
+  }
+
+  function renderWorkPane() {
+    const box = el("div");
+    const specialists = (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).filter((a) => isActive(a.id));
+    if (!specialists.length) {
+      box.appendChild(el("p", "work-empty", "Noch kein Agent aktiv. Mieten Sie einen Spezialisten im Marktplatz."));
+      return box;
+    }
+    if (!teamUi.workId || !specialists.some((a) => a.id === teamUi.workId)) {
+      teamUi.workId = (specialists.find((a) => !a.included) || specialists[0]).id;
+    }
+    const pick = el("div", "work-pick");
+    specialists.forEach((a) => {
+      const b = el("button", "work-agent" + (teamUi.workId === a.id ? " on" : ""),
+        `<span>${a.icon}</span>${escapeHtml(a.name)}`);
+      b.onclick = () => { teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
+      pick.appendChild(b);
+    });
+    box.appendChild(pick);
+
+    const agent = catalogById(teamUi.workId);
+    const tasks = (agent && agent.tasks) || [];
+    const chips = el("div", "chips");
+    chips.style.marginBottom = "16px";
+    tasks.forEach((t) => {
+      const b = el("button", "chip", "▶ " + t.label);
+      b.onclick = () => runAgentTask(agent, t);
+      chips.appendChild(b);
+    });
+    box.appendChild(chips);
+
+    const out = el("div", "work-out");
+    out.id = "workOut";
+    if (teamUi.workOut) {
+      out.innerHTML = teamUi.workOut;
+    } else {
+      out.appendChild(el("p", "work-empty",
+        agent && agent.included
+          ? "Der Auskunfts-Agent arbeitet im Modul Wissen. Stellen Sie dort eine Frage — oder mieten Sie einen Spezialisten für wiederkehrende Lieferungen."
+          : "Wählen Sie einen Auftrag. Der Agent liefert aus Ihrem Firmenwissen, mit derselben Beleg-Disziplin wie der Chat."));
+    }
+    box.appendChild(out);
+    return box;
+  }
+
+  async function runAgentTask(agent, task) {
+    if (task.jump === "wissen") { selectModule("wissen"); return; }
+    const host = $("#workOut");
+    if (!host) return;
+    host.innerHTML = `<div class="thinking"><span class="spinner"></span><span class="steps">${escapeHtml(agent.name)} arbeitet…</span></div>`;
+    await sleep(reducedMotion() ? 0 : 720);
+    const o = task.output || {};
+    const html =
+      `<div class="wo-kicker">${escapeHtml(agent.name)} · ${escapeHtml(o.kicker || "Lieferung")}</div>` +
+      `<h3>${escapeHtml(o.title || task.label)}</h3>` +
+      (o.html || "<p>Keine Lieferung hinterlegt.</p>");
+    teamUi.workOut = html;
+    host.innerHTML = html;
+    const actions = el("div", "block actions");
+    actions.style.borderTop = "1px solid var(--line)";
+    actions.style.marginTop = "12px";
+    actions.appendChild(el("div", "block-title", "↗ Ergebnis weiterreichen"));
+    const row = el("div", "act-row");
+    const send = el("button", "act primary", "✉ An Vorstand senden");
+    send.onclick = () => runAction(row, "send", briefingNumber({ text: o.title || task.label, confidence: 90 }));
+    row.appendChild(send);
+    actions.appendChild(row);
+    host.appendChild(actions);
+  }
+
+  function wireRentOverlay() {
+    const ov = $("#rentOverlay");
+    if (!ov) return;
+    const closeBtn = $("#rentClose");
+    if (closeBtn) closeBtn.onclick = closeRent;
+    ov.addEventListener("click", (e) => { if (e.target === ov) closeRent(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && ov && !ov.hidden) closeRent();
+    });
+  }
+
+  function closeRent() {
+    const ov = $("#rentOverlay");
+    if (ov) ov.hidden = true;
+  }
+
+  function openRent(id) {
+    const a = catalogById(id);
+    const ov = $("#rentOverlay");
+    if (!a || !ov) return;
+    $("#rentTitle").textContent = a.name + " mieten";
+    $("#rentBody").innerHTML =
+      `<div class="rp-agent"><span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span></div>` +
+      `<p>Sie mieten <b>${escapeHtml(a.name)}</b> für <b>${escapeHtml(agentPriceLabel(a))} / Monat</b>, kündbar zum Monatsende, ohne Mindestlaufzeit.</p>` +
+      `<ul class="rp-list">` +
+      `<li>Start: <b>heute</b> — ${escapeHtml(a.firstDeliverable || "erste Lieferung folgt.")}</li>` +
+      `<li>Arbeitet mit demselben Firmenwissen wie der Auskunfts-Agent.</li>` +
+      `<li>Nächste Lastschrift: <b>${nextInvoiceGerman()}</b> (Demo, keine echte Zahlung).</li>` +
+      `</ul>`;
+    const foot = $("#rentFoot");
+    foot.innerHTML = "";
+    const cancel = el("button", "btn", "Abbrechen");
+    cancel.onclick = closeRent;
+    const ok = el("button", "btn primary", "Bestätigen · " + agentPriceLabel(a) + " / Monat");
+    ok.onclick = async () => {
+      ok.disabled = true;
+      ok.textContent = "Wird eingerichtet…";
+      await sleep(reducedMotion() ? 0 : 900);
+      rentAgent(id);
+      closeRent();
+      showFleetToast(a);
+      teamUi.tab = "fleet";
+      teamUi.detailId = null;
+      if (currentModule === "team") renderTeamView();
+      else refreshNavCounts();
+    };
+    foot.append(cancel, ok);
+    ov.hidden = false;
+  }
+
+  let toastTimer = 0;
+  function hideFleetToast() {
+    const t = $("#fleetToast");
+    if (t) t.hidden = true;
+    if (toastTimer) clearTimeout(toastTimer);
+  }
+
+  function showFleetToast(agent) {
+    const t = $("#fleetToast");
+    if (!t || !agent) return;
+    t.innerHTML = "";
+    t.appendChild(el("span", null, "✓ " + agent.name + " ist Teil Ihres Teams"));
+    const go = el("button", null, "Im Team ansehen");
+    go.onclick = () => { hideFleetToast(); teamUi.tab = "fleet"; selectModule("team"); };
+    t.appendChild(go);
+    t.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideFleetToast, 5200);
   }
 
   // ---------- Helfer ----------

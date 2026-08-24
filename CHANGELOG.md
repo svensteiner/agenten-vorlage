@@ -2,6 +2,24 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Mietplattform „Team" — 2026-08-24 — Digitale Mitarbeiter mieten, steuern, abrechnen
+
+**Die Agenten-Miete ist jetzt eine eigene Plattform**, nicht nur der Money-Shot am Demo-Ende.
+Additiv in `prototype/` (bestehende Demo, Guided-Tour und Money-Shot bleiben):
+- **Neues Modul `Team`** in der Seitenleiste (Gruppe Betrieb, neben Einstellungen): vier Karten
+  **Ihr Team · Marktplatz · Abrechnung · Aufträge**.
+- **`AGENT_CATALOG` in `data.js`** — 8 digitale Mitarbeiter (Auskunft inklusive, Reporting 400 €
+  empfohlen, Rechnung 600 €, Vertrag 500 €, plus Liquidität 450 €, Compliance 550 €, Einkauf 500 €,
+  ESG 450 €), mit SLA, Skills, Werkzeugen und Demo-Lieferungen. Money-Shot-Karten tragen dieselben `id`s.
+- **Flotte:** mieten (Bestätigungsdialog), pausieren, kündigen (Zwei-Klick), persistiert in
+  `localStorage` (`aistudio.fleet.v1`). Reset setzt auf den Auskunfts-Agenten zurück.
+- **Abrechnung:** Positionszeilen, Summe, nächste Lastschrift, Preis-Pfad. Pausierte Agenten
+  werden nicht berechnet.
+- **Aufträge:** gemietete Agenten liefern Monatsabschluss, Rechnungsprüflauf, Fristenradar usw.
+  aus denselben Meridian-Zahlen.
+- Money-Shot **schreibt in die Flotte** (Reporting-Agent nach Auto-Buchung im Team sichtbar);
+  **`answerCard()`** schließt den Replay-Bug nach Modulwechsel.
+
 ## Phase B (Wartepunkt) — 2026-07-21 — Voll-Korpus-Kohärenz-Audit (12/12) + Config-Kommentar korrigiert, blockiert auf Sven — kein `prototype/`-Eingriff
 
 **Erster Voll-Korpus-Kohärenz-Audit** — jetzt möglich, weil die 12 Zwilling-Körper seit 2026-07-17 vollständig
