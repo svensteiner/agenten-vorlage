@@ -104,6 +104,26 @@
     </div>
     <div class="toast" id="fleetToast" hidden></div>
 
+    <!-- Live-Anmeldung (nur wenn der Produkt-Server läuft) -->
+    <div class="login-ov" id="loginOverlay" hidden>
+      <div class="login-panel" role="dialog" aria-labelledby="loginTitle">
+        <div class="login-brand">✦ AI Studio</div>
+        <h2 id="loginTitle">Anmelden</h2>
+        <p class="login-lead">Ihre private Wissensbasis und gemieteten Agenten — auf Ihrer Infrastruktur.</p>
+        <form id="loginForm">
+          <label>E-Mail
+            <input id="loginEmail" type="email" autocomplete="username" required />
+          </label>
+          <label>Passwort
+            <input id="loginPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <p class="login-error" id="loginError" hidden></p>
+          <button type="submit" class="btn primary">Anmelden</button>
+        </form>
+        <p class="login-hint">Demo-Mandant Meridian: <b id="loginDemoEmail">katharina.vogel@meridian.example</b> · Passwort <b>Meridian2026!</b><br />Vorstand (gesperrte Akten): markus.brandt@meridian.example</p>
+      </div>
+    </div>
+
     <!-- Onboarding-Coachmark (nur beim ersten Start) -->
     <div class="onboard" id="onboard" hidden>
       <div class="onboard-card" role="dialog" aria-label="Willkommen bei AI Studio">
@@ -123,6 +143,7 @@
   </div>
 
   <script src="data.js"></script>
+  <script src="product-client.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

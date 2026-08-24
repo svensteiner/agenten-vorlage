@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit — 2026-08-24 — Mandant, Wissensbasis, Miete, Aufträge
+
+**Die Mietplattform läuft als Produkt**, nicht nur als Demo-UI. Additive Schicht `product/`
+(`core/` und `platform/` unangetastet):
+- FastAPI auf Port 8123, SQLite + FTS5, Demo-Mandant Meridian (29 Dokumente, 8 Agenten).
+- Anmeldung (CFO / Vorstand), belegte Antworten, fail-closed bei gesperrten Akten.
+- Flotte mieten/pausieren/kündigen serverseitig, Abrechnung, Agent-Jobs über `core.orchestrator`.
+- Prototype erkennt `/api/health`: Live-Login + Live-Ask/Fleet; ohne Server unveränderte Offline-Demo.
+- Start: `./scripts/run_product.sh` · Docker: `docker compose up --build`.
+
 ## Mietplattform „Team" — 2026-08-24 — Digitale Mitarbeiter mieten, steuern, abrechnen
 
 **Die Agenten-Miete ist jetzt eine eigene Plattform**, nicht nur der Money-Shot am Demo-Ende.

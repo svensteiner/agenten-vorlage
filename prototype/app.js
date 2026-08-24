@@ -93,6 +93,16 @@
   }
 
   function resetFleet() {
+    if (isLive()) {
+      return AISTUDIO.fleetAction("", "reset").then((state) => {
+        fleet = state;
+        teamUi.tab = "fleet";
+        teamUi.filter = "alle";
+        teamUi.detailId = null;
+        teamUi.workId = null;
+        teamUi.workOut = null;
+      });
+    }
     fleet = defaultFleet();
     saveFleet();
     teamUi.tab = "fleet";
@@ -100,6 +110,7 @@
     teamUi.detailId = null;
     teamUi.workId = null;
     teamUi.workOut = null;
+    return Promise.resolve();
   }
 
   function catalogById(id) {
@@ -139,6 +150,10 @@
     return formatEur(a.price);
   }
 
+  function isLive() {
+    return !!(window.AISTUDIO && AISTUDIO.isLive && AISTUDIO.isLive());
+  }
+
   function todayGermanShort() {
     try { return new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
     catch (e) { return "24.08.2026"; }
@@ -154,26 +169,44 @@
 
   function rentAgent(id) {
     const a = catalogById(id);
-    if (!a || a.included) return a;
+    if (!a || a.included) return Promise.resolve(a);
+    if (isLive()) {
+      return AISTUDIO.fleetAction(id, "rent").then((state) => {
+        fleet = state;
+        return a;
+      });
+    }
     fleet.leases = fleet.leases || {};
     fleet.leases[id] = { status: "active", since: todayGermanShort(), included: false };
     saveFleet();
-    return a;
+    return Promise.resolve(a);
   }
 
   function togglePause(id) {
     const l = leaseOf(id);
-    if (!l || l.included) return;
+    if (!l || l.included) return Promise.resolve();
+    if (isLive()) {
+      const action = l.status === "paused" ? "resume" : "pause";
+      return AISTUDIO.fleetAction(id, action).then((state) => { fleet = state; });
+    }
     l.status = l.status === "paused" ? "active" : "paused";
     saveFleet();
+    return Promise.resolve();
   }
 
   function cancelAgent(id) {
     const l = leaseOf(id);
-    if (!l || l.included) return;
+    if (!l || l.included) return Promise.resolve();
+    if (isLive()) {
+      return AISTUDIO.fleetAction(id, "cancel").then((state) => {
+        fleet = state;
+        if (teamUi.workId === id) { teamUi.workId = null; teamUi.workOut = null; }
+      });
+    }
     delete fleet.leases[id];
     saveFleet();
     if (teamUi.workId === id) { teamUi.workId = null; teamUi.workOut = null; }
+    return Promise.resolve();
   }
 
   function paidCount() {
@@ -202,8 +235,11 @@
   const defaultSkin = { cat: "bericht" };
 
   // ---------- Bootstrapping ----------
-  function init() {
-    fleet = loadFleet();
+  async function init() {
+    if (window.AISTUDIO && typeof AISTUDIO.boot === "function") {
+      await AISTUDIO.boot();
+    }
+    fleet = (isLive() && AISTUDIO.fleet) ? AISTUDIO.fleet : loadFleet();
     renderSidebar();
     renderCompanyCard();
     selectModule("wissen");
@@ -214,6 +250,18 @@
     wireSearch();
     wireOnboarding();
     wireRentOverlay();
+    if (isLive()) {
+      const st = $(".status");
+      if (st) {
+        const who = (AISTUDIO.user && AISTUDIO.user.name) ? AISTUDIO.user.name : "";
+        st.classList.add("status-live");
+        st.innerHTML = `<span class="dot"></span> Live · Wissensbasis verbunden` +
+          (who ? `<span class="user-chip">${escapeHtml(who)}</span>` : "") +
+          `<button class="reset-btn" type="button" id="logoutBtn" title="Abmelden" style="margin-left:8px"><span class="rl">Abmelden</span></button>`;
+        const lo = $("#logoutBtn");
+        if (lo) lo.onclick = () => AISTUDIO.logout();
+      }
+    }
   }
 
   // ---------- Onboarding-Coachmark (nur beim ersten Start) ----------
@@ -305,13 +353,13 @@
   // Ein-Klick „Demo zurücksetzen": bringt die App in den sauberen Startzustand für
   // wiederholbare Video-Takes — laufende Demo sauber stoppen, Verlauf leeren, Viewer/
   // Palette schließen und zurück auf den Hero (Modul „Wissen"). Rein UI, kein Datenpfad.
-  function resetDemo() {
+  async function resetDemo() {
     if (demo.running) stopDemo(); else resetDemoUi();
     chatState.length = 0;
     closeViewer();
     closeSearch();
     closeRent();
-    resetFleet();
+    await resetFleet();
     hideFleetToast();
     selectModule("wissen");
   }
@@ -535,6 +583,32 @@
       await sleep(360);
     }
     thinking.remove();
+
+    if (demo.running) {
+      if (scenario) {
+        chatState.push({ role: "ai", answer: scenario.answer, question: text });
+        await streamAnswer(wrap, scenario.answer);
+      } else {
+        const fallback = fallbackAnswer(text);
+        chatState.push({ role: "ai", answer: fallback, question: text });
+        await streamAnswer(wrap, fallback);
+      }
+      return;
+    }
+
+    if (isLive()) {
+      try {
+        const answer = await AISTUDIO.ask(text);
+        chatState.push({ role: "ai", answer: answer, question: text });
+        await streamAnswer(wrap, answer);
+      } catch (e) {
+        const fallback = fallbackAnswer(text);
+        fallback.reasoning = (fallback.reasoning || []).concat(["Live-Suche nicht erreichbar — lokale Demo-Antwort."]);
+        chatState.push({ role: "ai", answer: fallback, question: text });
+        await streamAnswer(wrap, fallback);
+      }
+      return;
+    }
 
     if (scenario) {
       chatState.push({ role: "ai", answer: scenario.answer, question: text });
@@ -991,7 +1065,7 @@
     const done = el("span", "ag-live",
       `✓ Aktiviert · ab sofort Teil Ihres Teams · erste Auswertung heute Abend`);
     if (pend) pend.replaceWith(done); else foot.appendChild(done);
-    if (agent && agent.id) rentAgent(agent.id);
+    if (agent && agent.id) await rentAgent(agent.id);
     refreshNavCounts();
     if (!demo.running) showFleetToast(agent);
     scrollBottom();
@@ -1148,6 +1222,29 @@
       `<span style="font-size:12.5px;color:var(--ink-faint)">Hinweis: Alle Inhalte dieser Demo sind frei erfunden. Es werden keine echten Kundendaten verarbeitet.</span>`);
     note.style.marginTop = "18px";
     wrap.appendChild(note);
+
+    if (isLive()) {
+      const up = el("div", "upload-box");
+      up.innerHTML = `<h3>Dokument in die Wissensbasis legen</h3>` +
+        `<p>Textdatei bis 2 MB. Der Inhalt ist nur für diesen Mandanten suchbar und erscheint in den Antworten.</p>`;
+      const input = el("input");
+      input.type = "file";
+      input.accept = ".txt,.md,.csv,.json";
+      const status = el("p");
+      input.onchange = async () => {
+        if (!input.files || !input.files[0]) return;
+        status.textContent = "Wird aufgenommen…";
+        try {
+          const out = await AISTUDIO.upload(input.files[0]);
+          status.textContent = "Aufgenommen: " + (out.id || input.files[0].name);
+        } catch (e) {
+          status.textContent = e.message || "Upload fehlgeschlagen.";
+        }
+      };
+      up.append(input, status);
+      wrap.appendChild(up);
+    }
+
     scroll.appendChild(wrap);
   }
 
@@ -1733,10 +1830,10 @@
       const work = el("button", "btn primary", "Auftrag geben");
       work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
       const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
-      pause.onclick = () => { togglePause(a.id); renderTeamView(); };
+      pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
       const cancel = el("button", "btn warn", "Kündigen");
-      cancel.onclick = () => {
-        if (cancel.dataset.arm === "1") { cancelAgent(a.id); renderTeamView(); return; }
+      cancel.onclick = async () => {
+        if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
         cancel.dataset.arm = "1";
         cancel.textContent = "Wirklich kündigen?";
         setTimeout(() => {
@@ -1844,7 +1941,7 @@
     } else if (leaseOf(id) && leaseOf(id).status === "paused") {
       const resume = el("button", "btn primary", "Miete fortsetzen");
       resume.style.width = "100%";
-      resume.onclick = () => { togglePause(id); renderTeamView(); };
+      resume.onclick = async () => { await togglePause(id); renderTeamView(); };
       act.appendChild(resume);
     } else {
       const rent = el("button", "btn primary", "Jetzt mieten · " + agentPriceLabel(a) + " / Monat");
@@ -1938,6 +2035,20 @@
     const host = $("#workOut");
     if (!host) return;
     host.innerHTML = `<div class="thinking"><span class="spinner"></span><span class="steps">${escapeHtml(agent.name)} arbeitet…</span></div>`;
+    if (isLive()) {
+      try {
+        const result = await AISTUDIO.runAgent(agent.id, task.label || task.hint || "Auftrag");
+        const html =
+          `<div class="wo-kicker">${escapeHtml(agent.name)} · Live-Auftrag</div>` +
+          `<h3>${escapeHtml(task.label || "Lieferung")}</h3>` +
+          `<div class="text">${result.text || ""}</div>`;
+        teamUi.workOut = html;
+        host.innerHTML = html;
+      } catch (e) {
+        host.innerHTML = `<p class="work-empty">${escapeHtml(e.message || "Auftrag fehlgeschlagen.")}</p>`;
+      }
+      return;
+    }
     await sleep(reducedMotion() ? 0 : 720);
     const o = task.output || {};
     const html =
@@ -1998,7 +2109,7 @@
       ok.disabled = true;
       ok.textContent = "Wird eingerichtet…";
       await sleep(reducedMotion() ? 0 : 900);
-      rentAgent(id);
+      await rentAgent(id);
       closeRent();
       showFleetToast(a);
       teamUi.tab = "fleet";

@@ -20,6 +20,14 @@ cd prototype
 python -m http.server 8123
 ```
 
+**Live-Produkt** (Anmeldung, echte Suche, persistente Miete) — denselben Port, aber den Produkt-Server:
+
+```bash
+./scripts/run_product.sh
+```
+
+Details: [`../product/README.md`](../product/README.md). `file://` und der Mini-Server bleiben die bisherige Offline-Demo.
+
 ## Was die Demo zeigt
 
 - **Geführte Demo (▶ oben rechts)** — spielt alle 8 Szenarien **hands-free** nacheinander

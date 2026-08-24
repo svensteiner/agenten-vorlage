@@ -15,6 +15,9 @@ system easier to extend.
   `python control_panel.py`) — opens a browser page to configure autonomy, models,
   limits, and data-source connectors without editing any JSON/YAML.
   See [`control_panel.py`](control_panel.py).
+- **Product (knowledge + agent rental):** `./scripts/run_product.sh` then open
+  `http://127.0.0.1:8123` — login, FTS knowledge base, rent agents. See [`product/README.md`](product/README.md).
+- **Sales demo (offline):** double-click `prototype/index.html` or see [`prototype/README.md`](prototype/README.md).
 - **Validate the project pack:** `python tools/check.py` (add `--strict` / `--json` for CI).
 - **Deploy:** `scripts/deploy.sh` (Linux/macOS) or `scripts\deploy.ps1` (Windows).
 - Architecture doc: [docs/architecture.md](docs/architecture.md)

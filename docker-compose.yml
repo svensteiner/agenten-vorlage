@@ -1,0 +1,14 @@
+services:
+  aistudio:
+    build: .
+    ports:
+      - "8123:8123"
+    environment:
+      AISTUDIO_HOST: "0.0.0.0"
+      AISTUDIO_PORT: "8123"
+      AISTUDIO_DATA: /app/data
+      AISTUDIO_SECRET: ${AISTUDIO_SECRET:-change-me-in-production}
+    volumes:
+      - aistudio-data:/app/data
+volumes:
+  aistudio-data:
