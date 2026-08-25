@@ -272,11 +272,11 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
 
 
 def _followups(query: str) -> list[str]:
-    # Stable, useful next questions — not hallucinated document claims.
+    # Stable next questions that do not assume a demo corpus.
     return [
-        "Warum sind die Materialkosten gestiegen?",
-        "Finde alle Verträge mit automatischer Verlängerung.",
-        "Erstelle eine Zusammenfassung für den Vorstand.",
+        "Welche Dokumente liegen in der Wissensbasis?",
+        "Fasse die wichtigsten Fristen und Beträge zusammen.",
+        "Erstelle eine kurze Vorlage für den Vorstand.",
     ]
 
 
