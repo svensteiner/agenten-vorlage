@@ -126,6 +126,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_org ON documents(org_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_org ON jobs(org_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log(org_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_jti ON sessions(jti);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 """
 
 

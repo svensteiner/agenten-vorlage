@@ -13,6 +13,9 @@ Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/aistudio
 
 [Install]
 WantedBy=multi-user.target

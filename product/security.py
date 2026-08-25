@@ -1,7 +1,8 @@
-"""In-process rate limiting, client IP, security headers."""
+"""In-process rate limiting, client IP, security headers, access log."""
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import uuid
@@ -13,6 +14,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
 
 from product import config
+
+log = logging.getLogger("aistudio.access")
 
 _lock = threading.Lock()
 _hits: dict[str, deque[float]] = defaultdict(deque)
@@ -53,6 +56,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else response.headers.get("Cache-Control", "")
         if config.is_production():
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        return response
+
+
+class AccessLogMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        start = time.perf_counter()
+        response = await call_next(request)
+        if request.url.path.startswith("/api/"):
+            ms = int((time.perf_counter() - start) * 1000)
+            log.info(
+                "method=%s path=%s status=%s ms=%s rid=%s ip=%s",
+                request.method,
+                request.url.path,
+                response.status_code,
+                ms,
+                getattr(request.state, "request_id", "-"),
+                client_ip(request),
+            )
         return response
 
 

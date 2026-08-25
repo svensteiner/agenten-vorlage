@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,11 +13,16 @@ from fastapi.responses import FileResponse
 from product import config
 from product.api import router
 from product.db import connect
-from product.security import SecurityHeadersMiddleware
+from product.security import AccessLogMiddleware, SecurityHeadersMiddleware
 from product.seed import ensure_seeded
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTO = ROOT / "prototype"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 
 @asynccontextmanager
@@ -40,6 +46,7 @@ app = FastAPI(
 )
 origins = config.cors_origins()
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AccessLogMiddleware)
 if origins:
     app.add_middleware(
         CORSMiddleware,

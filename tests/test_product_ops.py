@@ -149,3 +149,58 @@ def test_health_hides_demo_email_in_production(client, monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     h = client.get("/api/health").json()
     assert "demo_email" not in h or h.get("env") == "production"
+
+
+def test_sessions_list_and_revoke_others(client):
+    first = client.post(
+        "/api/auth/login",
+        json={"email": "katharina.vogel@meridian.example", "password": "Meridian2026!"},
+    )
+    assert first.status_code == 200
+    h1 = {"Authorization": "Bearer " + first.json()["token"]}
+    second = client.post(
+        "/api/auth/login",
+        json={"email": "katharina.vogel@meridian.example", "password": "Meridian2026!"},
+    )
+    h2 = {"Authorization": "Bearer " + second.json()["token"]}
+    listed = client.get("/api/sessions", headers=h2).json()
+    assert len(listed["sessions"]) >= 2
+    assert sum(1 for s in listed["sessions"] if s["current"]) == 1
+    assert client.post("/api/sessions/revoke-others", headers=h2, json={}).status_code == 200
+    assert client.get("/api/me", headers=h1).status_code == 401
+    assert client.get("/api/me", headers=h2).status_code == 200
+
+
+def test_empty_kb_message_and_delete_doc(client):
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Leerwerk GmbH",
+            "name": "Lea Werk",
+            "email": "lea@leerwerk.example",
+            "password": "Leerwerk2026!",
+        },
+    )
+    assert r.status_code == 200, r.text
+    headers = {"Authorization": "Bearer " + r.json()["token"]}
+    ask = client.post("/api/ask", json={"q": "Was steht im Vertrag?"}, headers=headers)
+    assert ask.status_code == 200
+    assert "leer" in ask.json()["text"].lower()
+    up = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("vertrag.txt", "Der Wartungsvertrag endet am 31.12.2026.", "text/plain")},
+    )
+    assert up.status_code == 200
+    doc_id = up.json()["id"]
+    found = client.post("/api/ask", json={"q": "Wartungsvertrag"}, headers=headers).json()
+    assert found.get("sources") or "31.12.2026" in (found.get("text") or "")
+    assert client.delete(f"/api/docs/{doc_id}", headers=headers).status_code == 200
+    gone = client.post("/api/ask", json={"q": "Wartungsvertrag"}, headers=headers).json()
+    assert "leer" in gone["text"].lower() or not gone.get("sources")
+
+
+def test_security_headers_on_api(client):
+    r = client.get("/api/ready")
+    assert r.headers.get("permissions-policy")
+    assert r.headers.get("x-frame-options") == "DENY"

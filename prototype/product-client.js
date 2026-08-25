@@ -30,6 +30,7 @@
 
     isLive: function () { return !!(this.live && this.token); },
     isDemoTenant: function () {
+      if (this.tenantDemo) return true;
       return !!(this.health && this.health.demo && this.user && this.user.email &&
         /@meridian\.example$/.test(this.user.email));
     },
@@ -266,6 +267,12 @@
       const docs = await this.request("/api/docs");
       this.applyDocs(docs.docs || []);
       return data;
+    },
+
+    deleteDoc: async function (id) {
+      await this.request("/api/docs/" + encodeURIComponent(id), { method: "DELETE" });
+      const docs = await this.request("/api/docs");
+      this.applyDocs(docs.docs || []);
     },
 
     logout: async function () {

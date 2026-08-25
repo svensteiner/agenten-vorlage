@@ -150,7 +150,52 @@ def record_login_success(conn, user) -> None:
     )
 
 
+def prune_sessions(conn) -> None:
+    """Drop expired rows so the session table does not grow without bound."""
+    now = db.now_iso()
+    conn.execute("DELETE FROM sessions WHERE expires_at < ?", (now,))
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).replace(microsecond=0).isoformat()
+    conn.execute(
+        "DELETE FROM sessions WHERE revoked_at IS NOT NULL AND revoked_at < ?",
+        (cutoff,),
+    )
+
+
+def list_user_sessions(conn, user_id: str, current_jti: str) -> list[dict[str, Any]]:
+    prune_sessions(conn)
+    rows = conn.execute(
+        """SELECT id, jti, created_at, expires_at, ip, user_agent
+           FROM sessions WHERE user_id = ? AND revoked_at IS NULL
+           ORDER BY created_at DESC LIMIT 30""",
+        (user_id,),
+    ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "created_at": r["created_at"],
+            "expires_at": r["expires_at"],
+            "ip": r["ip"] or "",
+            "user_agent": (r["user_agent"] or "")[:120],
+            "current": r["jti"] == current_jti,
+        }
+        for r in rows
+    ]
+
+
+def revoke_session_id(conn, user_id: str, session_id: str, current_jti: str) -> None:
+    row = conn.execute(
+        "SELECT * FROM sessions WHERE id = ? AND user_id = ?",
+        (session_id, user_id),
+    ).fetchone()
+    if not row:
+        raise KeyError(session_id)
+    if row["jti"] == current_jti:
+        raise ValueError("Die aktuelle Sitzung beenden Sie über Abmelden.")
+    revoke_session(conn, row["jti"])
+
+
 def open_session(conn, user, *, ip: str = "", user_agent: str = "") -> str:
+    prune_sessions(conn)
     jti = uuid.uuid4().hex
     now = int(datetime.now(timezone.utc).timestamp())
     exp = now + config.TOKEN_TTL_SECONDS

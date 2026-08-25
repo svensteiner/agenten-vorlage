@@ -256,6 +256,45 @@ def password(body: PasswordBody, user: dict = Depends(current_user)) -> dict[str
         conn.close()
 
 
+@router.get("/sessions")
+def sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
+    conn = _conn()
+    try:
+        items = tenancy.list_user_sessions(conn, user["id"], user.get("_jti") or "")
+        return {"sessions": items}
+    finally:
+        conn.close()
+
+
+@router.post("/sessions/revoke-others")
+def revoke_other_sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
+    conn = _conn()
+    try:
+        tenancy.revoke_user_sessions(conn, user["id"], keep_jti=user.get("_jti"))
+        db.audit(user["org_id"], user["email"], "sessions_revoke_others", user["email"], conn=conn)
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@router.delete("/sessions/{session_id}")
+def delete_session(session_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
+    conn = _conn()
+    try:
+        try:
+            tenancy.revoke_session_id(conn, user["id"], session_id, user.get("_jti") or "")
+        except KeyError:
+            raise HTTPException(404, "Sitzung nicht gefunden.")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        db.audit(user["org_id"], user["email"], "session_revoke", session_id, conn=conn)
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
 @router.get("/me")
 def me(user: dict = Depends(current_user)) -> dict[str, Any]:
     conn = _conn()

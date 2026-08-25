@@ -30,16 +30,16 @@ export AISTUDIO_CORS_ORIGINS=https://studio.example.com
 ./scripts/run_product.sh
 ```
 
-Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. systemd-Einheit: `scripts/aistudio.service`. Docker: `docker compose up --build` mit Secret in der Umgebung.
+Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. systemd-Einheit: `scripts/aistudio.service`. Reverse-Proxy-Beispiel: `scripts/nginx-aistudio.conf` (dann `AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung. Sicherung: `./scripts/backup.sh`.
 
 ### Was die Instanz kann
 
-- Mandant registrieren, Nutzer mit Rollen (admin / cfo / board / member)
-- Sitzungen mit Widerruf (Logout, Passwortwechsel, Deaktivieren)
-- Anmeldesperre nach Fehlversuchen, Rate-Limits
+- Mandant registrieren, Nutzer mit Rollen (admin / cfo / board / member), Nutzer deaktivieren
+- Sitzungen mit Widerruf (Logout, Passwortwechsel, andere Geräte, Deaktivieren)
+- Anmeldesperre nach Fehlversuchen, Rate-Limits, Access-Log, Security-Header
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
-- Audit-Log, Security-Header, `/api/ready`
+- Audit-Log, `/api/ready`
 
 ### Bewusst nicht in dieser Version
 

@@ -159,6 +159,20 @@
     return !!(AISTUDIO.isDemoTenant && AISTUDIO.isDemoTenant());
   }
 
+  function isProductTenant() {
+    return isLive() && !isDemoTenant();
+  }
+
+  function orgName() {
+    if (isLive() && AISTUDIO.org && AISTUDIO.org.name) return AISTUDIO.org.name;
+    return COMPANY.name;
+  }
+
+  function orgTagline() {
+    if (isLive() && AISTUDIO.org && AISTUDIO.org.tagline) return AISTUDIO.org.tagline;
+    return COMPANY.tagline || "";
+  }
+
   function canMutateFleet() {
     if (!isLive()) return true;
     return !!(AISTUDIO.canMutateFleet && AISTUDIO.canMutateFleet());
@@ -271,13 +285,16 @@
         const lo = $("#logoutBtn");
         if (lo) lo.onclick = () => AISTUDIO.logout();
       }
-      if (!isDemoTenant()) {
+      if (isProductTenant()) {
         const demoBtn = $("#demoBtn");
         if (demoBtn) demoBtn.hidden = true;
+        const resetBtn = $("#resetBtn");
+        if (resetBtn) resetBtn.hidden = true;
         const hint = $(".composer .hint");
         if (hint) hint.textContent = "AI Studio durchsucht nur Dokumente, für die Sie berechtigt sind.";
-        const orgName = (AISTUDIO.org && AISTUDIO.org.name) || "AI Studio";
-        document.title = "AI Studio — " + orgName;
+        document.title = "AI Studio — " + orgName();
+        const co = $("#searchCompany");
+        if (co) co.textContent = orgName();
       }
     }
   }
@@ -552,10 +569,39 @@
 
   function renderHero(wrap) {
     const hero = el("div", "hero");
+    if (isProductTenant()) {
+      const n = Object.keys(DOCS || {}).length;
+      hero.innerHTML =
+        `<div class="spark">✦</div>` +
+        `<h1>Wissensbasis ${escapeHtml(orgName())}</h1>` +
+        `<p>${n
+          ? "Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht nur Dokumente dieses Mandanten und antwortet mit Quellen."
+          : "Noch keine Dokumente in der Wissensbasis. Legen Sie unter Betrieb Textdateien ab — Verträge, Berichte, Richtlinien. Danach können Sie hier fragen."}</p>`;
+      wrap.appendChild(hero);
+      if (!n) {
+        const empty = el("div", "empty-kb");
+        empty.appendChild(el("p", null, "Nur dieser Mandant sieht den Inhalt. Die Daten bleiben auf dieser Instanz."));
+        const btn = el("button", "btn primary", "Dokument aufnehmen");
+        btn.onclick = () => selectModule("einstellungen");
+        empty.appendChild(btn);
+        wrap.appendChild(empty);
+        return;
+      }
+      const grid = el("div", "suggestions");
+      Object.values(DOCS).filter((d) => !d.locked).slice(0, 6).forEach((d) => {
+        const card = el("button", "suggest-card",
+          `<div class="q">${escapeHtml(d.title)}</div><span class="tag">${escapeHtml(d.type || "Dokument")}</span>`);
+        card.onclick = () => ask("Was steht in „" + d.title + "“?");
+        grid.appendChild(card);
+      });
+      wrap.appendChild(grid);
+      return;
+    }
+
     hero.innerHTML =
       `<div class="spark">✦</div>` +
       `<h1>Ihr Unternehmenswissen — sofort abrufbar</h1>` +
-      `<p>Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht Verträge, Rechnungen, Berichte und Richtlinien der ${COMPANY.name} und antwortet mit belastbaren Quellen.</p>`;
+      `<p>Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht Verträge, Rechnungen, Berichte und Richtlinien der ${escapeHtml(orgName())} und antwortet mit belastbaren Quellen.</p>`;
     wrap.appendChild(hero);
 
     const grid = el("div", "suggestions");
@@ -633,10 +679,14 @@
         chatState.push({ role: "ai", answer: answer, question: text });
         await streamAnswer(wrap, answer);
       } catch (e) {
-        const fallback = fallbackAnswer(text);
-        fallback.reasoning = (fallback.reasoning || []).concat(["Live-Suche nicht erreichbar — lokale Demo-Antwort."]);
-        chatState.push({ role: "ai", answer: fallback, question: text });
-        await streamAnswer(wrap, fallback);
+        const fail = {
+          text: "Die Wissenssuche ist gerade nicht erreichbar. " + escapeHtml(e.message || "Bitte erneut versuchen."),
+          reasoning: ["Live-Suche fehlgeschlagen.", String(e.message || "")],
+          sources: [],
+          confidence: 0,
+        };
+        chatState.push({ role: "ai", answer: fail, question: text });
+        await streamAnswer(wrap, fail);
       }
       return;
     }
@@ -1005,12 +1055,15 @@
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
         `<span class="ad-txt"><b>Briefing an den Vorstand gesendet</b>` +
-        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(COMPANY.name)} · soeben · Ref. BRF-2026-${num}</span></span>`;
+        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(orgName())} · soeben · Ref. BRF-2026-${num}</span></span>`;
     } else {
+      const fileBase = isProductTenant()
+        ? (orgName().toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-|-$/g, "") || "mandant")
+        : "meridian";
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
         `<span class="ad-txt"><b>Briefing als PDF exportiert</b>` +
-        `<span class="ad-sub">meridian-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
+        `<span class="ad-sub">${escapeHtml(fileBase)}-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
     }
     row.replaceWith(done);
     scrollBottom();
@@ -1153,7 +1206,7 @@
       return {
         text: withheld
           ? "Zu Ihrer Frage sind ausschließlich Dokumente vorhanden, die <b>für Sie nicht freigegeben</b> sind — siehe unten. AI Studio zeigt deren Inhalt nicht an."
-          : "Ich konnte zu dieser Frage keine passenden Dokumente in der Demo-Wissensbasis finden. Probieren Sie eine der vorgeschlagenen Beispielfragen — die Demo-Firma umfasst Finanzen, HR, Verträge, Audit und Berichte.",
+          : "Ich konnte zu dieser Frage keine passenden Dokumente in der Wissensbasis finden. Formulieren Sie die Frage mit Begriffen aus Ihren Dokumenten.",
         reasoning: withheld
           ? ["Frage entgegengenommen.", "Zugriffsrechte des Kontos geprüft.", `${withheld.count} Treffer als „${withheld.role}" klassifiziert — Inhalt nicht gelesen und nicht angezeigt (fail-closed).`]
           : ["Frage entgegengenommen.", "Wissensbasis durchsucht — kein ausreichend relevanter Treffer.", "Ehrliche Rückmeldung statt Halluzination (fail-closed)."],
@@ -1188,7 +1241,7 @@
     wrap.appendChild(head);
 
     // Vorgeschlagene Fragen für dieses Modul
-    const sugg = MODULE_SUGGESTIONS[key] || [];
+    const sugg = isProductTenant() ? [] : (MODULE_SUGGESTIONS[key] || []);
     if (sugg.length) {
       const box = el("div", "chips");
       box.style.marginBottom = "20px";
@@ -1232,12 +1285,12 @@
     $("#composer").style.display = "none";
     const wrap = el("div", "wrap");
     const live = isLive();
-    const orgName = (live && AISTUDIO.org && AISTUDIO.org.name) || COMPANY.name;
+    const orgNameLive = (live && AISTUDIO.org && AISTUDIO.org.name) || COMPANY.name;
     wrap.appendChild(el("div", "lib-head",
       `<h2>${live && !isDemoTenant() ? "Betrieb" : "Datenquellen"}</h2>` +
       `<p>${live && !isDemoTenant()
         ? "Mandant, Nutzer, Audit und Wissensbasis — alles auf dieser Instanz."
-        : "Angebundene Systeme der " + orgName + ". In der Demo simuliert."}</p>`));
+        : "Angebundene Systeme der " + orgNameLive + ". In der Demo simuliert."}</p>`));
 
     if (!(live && !isDemoTenant())) {
       const srcs = [
@@ -1269,10 +1322,18 @@
     scroll.appendChild(wrap);
   }
 
+  function applyOrgChrome() {
+    document.title = "AI Studio — " + orgName();
+    const co = $("#searchCompany");
+    if (co) co.textContent = orgName();
+    renderCompanyCard();
+  }
+
   function renderLiveOps() {
     const box = el("div", "ops");
     const user = AISTUDIO.user || {};
     const org = AISTUDIO.org || {};
+    const canDocs = user.role === "admin" || user.role === "cfo";
 
     const pwd = el("div", "upload-box");
     pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
@@ -1291,25 +1352,95 @@
     pwd.append(oldP, newP, pwdBtn, pwdStatus);
     box.appendChild(pwd);
 
+    const sessBox = el("div", "upload-box");
+    sessBox.innerHTML = `<h3>Sitzungen</h3><p>Aktive Anmeldungen dieses Kontos. Andere Geräte können Sie hier abmelden.</p>`;
+    const sessList = el("div", "sess-list");
+    const sessStatus = el("p");
+    const sessBtn = el("button", "btn", "Andere Sitzungen beenden");
+    const reloadSessions = async () => {
+      try {
+        const data = await AISTUDIO.request("/api/sessions");
+        sessList.innerHTML = "";
+        (data.sessions || []).forEach((s) => {
+          const row = el("div", "sess-row");
+          const when = escapeHtml((s.created_at || "").replace("T", " ").slice(0, 16));
+          const ip = escapeHtml(s.ip || "—");
+          row.innerHTML = `<span><b>${when}</b> · ${ip}` +
+            (s.current ? ` <span class="sess-current">diese Sitzung</span>` : "") + `</span>`;
+          if (!s.current) {
+            const b = el("button", "row-act", "Beenden");
+            b.onclick = async () => {
+              try {
+                await AISTUDIO.request("/api/sessions/" + encodeURIComponent(s.id), { method: "DELETE" });
+                await reloadSessions();
+              } catch (e) { sessStatus.textContent = e.message; }
+            };
+            row.appendChild(b);
+          }
+          sessList.appendChild(row);
+        });
+        if (!sessList.children.length) sessList.textContent = "Keine aktiven Sitzungen.";
+      } catch (e) { sessList.textContent = e.message; }
+    };
+    sessBtn.onclick = async () => {
+      sessStatus.textContent = "…";
+      try {
+        await AISTUDIO.request("/api/sessions/revoke-others", { method: "POST", json: {} });
+        sessStatus.textContent = "Andere Sitzungen beendet.";
+        await reloadSessions();
+      } catch (e) { sessStatus.textContent = e.message; }
+    };
+    sessBox.append(sessList, sessBtn, sessStatus);
+    box.appendChild(sessBox);
+    reloadSessions();
+
     const up = el("div", "upload-box");
-    up.innerHTML = `<h3>Dokument in die Wissensbasis legen</h3>` +
+    up.innerHTML = `<h3>Wissensbasis</h3>` +
       `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.</p>`;
+    const docList = el("div", "doc-admin-list");
     const input = el("input");
     input.type = "file";
     input.accept = ".txt,.md,.csv,.json";
     const status = el("p");
+    const reloadDocs = () => {
+      docList.innerHTML = "";
+      const items = Object.values(DOCS || {});
+      if (!items.length) {
+        docList.appendChild(el("p", null, "Noch keine Dokumente."));
+        return;
+      }
+      items.forEach((d) => {
+        const row = el("div", "doc-row");
+        row.innerHTML = `<span><b>${escapeHtml(d.title || d.id)}</b> · ${escapeHtml(d.type || "")} · ${escapeHtml(d.date || "")}</span>`;
+        if (canDocs && !d.locked) {
+          const b = el("button", "row-act", "Löschen");
+          b.onclick = async () => {
+            if (!confirm("Dokument „" + (d.title || d.id) + "“ löschen?")) return;
+            try {
+              await AISTUDIO.deleteDoc(d.id);
+              status.textContent = "Gelöscht.";
+              reloadDocs();
+            } catch (e) { status.textContent = e.message; }
+          };
+          row.appendChild(b);
+        }
+        docList.appendChild(row);
+      });
+    };
     input.onchange = async () => {
       if (!input.files || !input.files[0]) return;
       status.textContent = "Wird aufgenommen…";
       try {
         const out = await AISTUDIO.upload(input.files[0]);
         status.textContent = "Aufgenommen: " + (out.id || input.files[0].name);
+        reloadDocs();
       } catch (e) {
         status.textContent = e.message || "Upload fehlgeschlagen.";
       }
     };
-    up.append(input, status);
+    up.append(docList, input, status);
     box.appendChild(up);
+    reloadDocs();
 
     if (AISTUDIO.isAdmin && AISTUDIO.isAdmin()) {
       const usersBox = el("div", "upload-box");
@@ -1325,10 +1456,26 @@
       const reloadUsers = async () => {
         try {
           const data = await AISTUDIO.request("/api/users");
-          list.innerHTML = (data.users || []).map((u) =>
-            `<div class="user-row"><b>${escapeHtml(u.name)}</b> · ${escapeHtml(u.email)} · ${escapeHtml(u.role)}` +
-            (u.active ? "" : " · deaktiviert") + `</div>`
-          ).join("");
+          list.innerHTML = "";
+          (data.users || []).forEach((u) => {
+            const row = el("div", "user-row");
+            row.innerHTML = `<span><b>${escapeHtml(u.name)}</b> · ${escapeHtml(u.email)} · ${escapeHtml(u.role)}` +
+              (u.active ? "" : " · deaktiviert") + `</span>`;
+            if (u.id !== user.id) {
+              const b = el("button", "row-act", u.active ? "Deaktivieren" : "Aktivieren");
+              b.onclick = async () => {
+                try {
+                  await AISTUDIO.request("/api/users/" + encodeURIComponent(u.id), {
+                    method: "PATCH",
+                    json: { active: !u.active },
+                  });
+                  await reloadUsers();
+                } catch (e) { addStatus.textContent = e.message; }
+              };
+              row.appendChild(b);
+            }
+            list.appendChild(row);
+          });
         } catch (e) {
           list.textContent = e.message;
         }
@@ -1351,19 +1498,19 @@
 
       const orgBox = el("div", "upload-box");
       orgBox.innerHTML = `<h3>Mandant</h3><p>Anzeigename und Rechnungs-E-Mail.</p>`;
-      const orgName = el("input"); orgName.value = org.name || ""; orgName.placeholder = "Firmenname";
+      const orgNameI = el("input"); orgNameI.value = org.name || ""; orgNameI.placeholder = "Firmenname";
       const orgMail = el("input"); orgMail.type = "email"; orgMail.value = org.billing_email || ""; orgMail.placeholder = "Rechnung per E-Mail";
       const orgStatus = el("p");
       const orgBtn = el("button", "btn primary", "Speichern");
       orgBtn.onclick = async () => {
         try {
-          const out = await AISTUDIO.request("/api/org", { method: "PATCH", json: { name: orgName.value, billing_email: orgMail.value } });
+          const out = await AISTUDIO.request("/api/org", { method: "PATCH", json: { name: orgNameI.value, billing_email: orgMail.value } });
           AISTUDIO.org = out.org;
-          renderCompanyCard();
+          applyOrgChrome();
           orgStatus.textContent = "Gespeichert.";
         } catch (e) { orgStatus.textContent = e.message; }
       };
-      orgBox.append(orgName, orgMail, orgBtn, orgStatus);
+      orgBox.append(orgNameI, orgMail, orgBtn, orgStatus);
       box.appendChild(orgBox);
     }
 
@@ -1555,7 +1702,7 @@
   function buildLetterhead(doc, skin) {
     const iss = skin.extIssuer
       ? { name: doc.author.replace(/\s*\(.*\)$/, ""), sub: "Lieferant" }
-      : { name: COMPANY.name, sub: COMPANY.tagline };
+      : { name: orgName(), sub: orgTagline() || COMPANY.tagline };
     const initials = iss.name.replace(/[^A-Za-zÄÖÜ]/g, "").slice(0, 2).toUpperCase() || "AI";
     const lh = el("div", "lh");
     lh.innerHTML =
@@ -1612,7 +1759,7 @@
     const place = el("div", "sig-place", `München, ${escapeHtml(doc.date)}`);
     const row = el("div", "sig-row");
     row.innerHTML =
-      `<div class="col"><div class="line">Meridian Industrie GmbH</div></div>` +
+      `<div class="col"><div class="line">${escapeHtml(orgName())}</div></div>` +
       `<div class="col"><div class="line">${escapeHtml(doc.author.replace(/\s*\(.*\)$/, ""))}</div></div>`;
     box.appendChild(place);
     box.appendChild(row);
@@ -1646,7 +1793,7 @@
 
   function wireSearch() {
     const co = $("#searchCompany");
-    if (co) co.textContent = COMPANY.name;
+    if (co) co.textContent = orgName();
 
     $("#searchTrigger").onclick = openSearch;
     $("#searchClose").onclick = closeSearch;

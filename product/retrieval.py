@@ -242,10 +242,20 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
         reasoning.append("Ehrliche Rückmeldung statt Halluzination (fail-closed).")
         confidence = 38
     else:
-        text = (
-            "Ich konnte zu dieser Frage keine passenden Dokumente in der Wissensbasis finden. "
-            "Formulieren Sie die Frage mit Begriffen aus Verträgen, Berichten oder Belegen."
-        )
+        store = conn or db.get_conn()
+        n_docs = store.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE org_id = ?", (org_id,)
+        ).fetchone()["n"]
+        if n_docs == 0:
+            text = (
+                "Die Wissensbasis dieses Mandanten ist noch leer. "
+                "Legen Sie unter Betrieb eine Textdatei ab und stellen Sie die Frage danach erneut."
+            )
+        else:
+            text = (
+                "Ich konnte zu dieser Frage keine passenden Dokumente in der Wissensbasis finden. "
+                "Formulieren Sie die Frage mit Begriffen aus Verträgen, Berichten oder Belegen."
+            )
         reasoning.append("Kein ausreichend relevanter Treffer — keine Erfindung.")
         confidence = 30
 
