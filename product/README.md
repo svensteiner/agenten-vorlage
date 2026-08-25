@@ -2,7 +2,7 @@
 
 Mandantenfähige Schicht **über** `core/` und den Verkaufsprototyp. `core/` und `platform/` bleiben unangetastet.
 
-## Start
+## Start (Entwicklung / Demo)
 
 ```bash
 pip install -r requirements.txt
@@ -11,26 +11,38 @@ pip install -r requirements.txt
 
 Browser: [http://127.0.0.1:8123](http://127.0.0.1:8123)
 
-Demo-Anmeldung (fiktive Meridian Industrie GmbH):
+Demo-Anmeldung (fiktive Meridian Industrie GmbH), nur wenn `AISTUDIO_ALLOW_DEMO_SEED` nicht aus ist:
 
 | Rolle | E-Mail | Passwort |
 |---|---|---|
 | CFO | `katharina.vogel@meridian.example` | `Meridian2026!` |
 | Vorstand | `markus.brandt@meridian.example` | `Meridian2026!` |
 
-Vorstand sieht gesperrte Akten (z. B. Projekt Nordstern). Der CFO nicht — fail-closed.
+Eigener Mandant: auf dem Login-Dialog **Mandant anlegen** (Admin, leere Wissensbasis, Auskunfts-Agent inklusive).
 
-Ohne laufenden Server bleibt `prototype/index.html` die bisherige Offline-Demo (`file://` oder `python -m http.server`). `?demo=1` erzwingt den Offline-Modus auch hinter dem Produkt-Server.
+## Produktion
 
-## Was live ist
+```bash
+export AISTUDIO_ENV=production
+export AISTUDIO_SECRET='ein-langes-zufaelliges-geheimnis-min-24'
+export AISTUDIO_ALLOW_DEMO_SEED=false
+export AISTUDIO_CORS_ORIGINS=https://studio.example.com
+./scripts/run_product.sh
+```
 
-- Anmeldung (PBKDF2, HMAC-Token)
-- Private Wissensbasis in SQLite FTS5 (29 Meridian-Dokumente, Upload)
-- Belegte Antworten (`POST /api/ask`) — optional LLM, sonst extractiv
-- Agenten mieten / pausieren / kündigen, Abrechnung
-- Aufträge über `core.orchestrator` plus Wissenssuche
-- Audit-Log
+Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. systemd-Einheit: `scripts/aistudio.service`. Docker: `docker compose up --build` mit Secret in der Umgebung.
 
-Keine echten Zahlungen, kein SSO, keine Connectors nach SharePoint/SAP. Dafür: ein laufendes Mandanten-Produkt, das sich wie die Demo anfühlt.
+### Was die Instanz kann
 
-Docker: `docker compose up --build`.
+- Mandant registrieren, Nutzer mit Rollen (admin / cfo / board / member)
+- Sitzungen mit Widerruf (Logout, Passwortwechsel, Deaktivieren)
+- Anmeldesperre nach Fehlversuchen, Rate-Limits
+- Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
+- Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
+- Audit-Log, Security-Header, `/api/ready`
+
+### Bewusst nicht in dieser Version
+
+Echte SEPA-/Kartenlastschrift, SSO/SAML, SharePoint- oder SAP-Connector. Dafür die produktive Mandanten-Laufzeit auf der eigenen Infrastruktur.
+
+`file://` und `?demo=1` bleiben die bisherige Offline-Verkaufsdemo.

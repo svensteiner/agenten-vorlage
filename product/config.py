@@ -19,3 +19,57 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
+
+VERSION = "1.0.0"
+DEFAULT_SECRET = "dev-secret-change-me"
+LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
+LOCKOUT_MINUTES = int(os.environ.get("AISTUDIO_LOCKOUT_MINUTES", "15"))
+MAX_UPLOAD_BYTES = int(os.environ.get("AISTUDIO_MAX_UPLOAD_BYTES", str(2_000_000)))
+
+
+def _flag(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_name() -> str:
+    return os.environ.get("AISTUDIO_ENV", "development").strip().lower()
+
+
+def is_production() -> bool:
+    return env_name() in {"production", "prod"}
+
+
+def allow_demo_seed() -> bool:
+    return _flag("AISTUDIO_ALLOW_DEMO_SEED", default=not is_production())
+
+
+def allow_register() -> bool:
+    return _flag("AISTUDIO_ALLOW_REGISTER", default=True)
+
+
+def trust_proxy() -> bool:
+    return _flag("AISTUDIO_TRUST_PROXY", default=False)
+
+
+def cors_origins() -> list[str]:
+    raw = os.environ.get("AISTUDIO_CORS_ORIGINS")
+    if raw:
+        return [p.strip() for p in raw.split(",") if p.strip()]
+    if is_production():
+        return []
+    return ["*"]
+
+
+def validate_runtime() -> None:
+    """Refuse to boot a production process with the bundled demo secret."""
+    if not is_production():
+        return
+    secret = os.environ.get("AISTUDIO_SECRET") or SECRET
+    if not secret or secret == DEFAULT_SECRET or len(secret) < 24:
+        raise RuntimeError(
+            "Produktion verweigert den Start: AISTUDIO_SECRET muss gesetzt sein "
+            "(mindestens 24 Zeichen, nicht der Demo-Wert)."
+        )

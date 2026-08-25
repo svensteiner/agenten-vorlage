@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from product import auth, catalog, config, db, retrieval
+from product import auth, catalog, config, db, retrieval, tenancy
 from product.runtime import run_agent_job
-from product.seed import ensure_seeded, insert_document
+from product.security import client_ip, rate_limited
+from product.seed import delete_document, ensure_seeded, insert_document
 
 router = APIRouter()
 
@@ -21,7 +23,15 @@ def _conn():
     return conn
 
 
-def current_user(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+def _demo_present(conn) -> bool:
+    row = conn.execute("SELECT 1 FROM orgs WHERE slug = 'meridian'").fetchone()
+    return bool(row)
+
+
+def current_user(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(401, "Anmeldung erforderlich.")
     token = authorization.split(" ", 1)[1].strip()
@@ -36,9 +46,23 @@ def current_user(authorization: str | None = Header(default=None)) -> dict[str, 
         ).fetchone()
         if not row:
             raise HTTPException(401, "Benutzer unbekannt.")
-        return db.row_dict(row)  # type: ignore[return-value]
+        user = db.row_dict(row)
+        assert user is not None
+        if not user.get("active", 1):
+            raise HTTPException(401, "Konto deaktiviert.")
+        jti = claims.get("jti") or ""
+        if not tenancy.session_ok(conn, jti, user["id"]):
+            raise HTTPException(401, "Sitzung ungültig oder abgelaufen.")
+        user["_jti"] = jti
+        user["_ip"] = client_ip(request)
+        return user
     finally:
         conn.close()
+
+
+def _require(role_ok: bool, message: str = "Keine Berechtigung.") -> None:
+    if not role_ok:
+        raise HTTPException(403, message)
 
 
 class LoginBody(BaseModel):
@@ -46,8 +70,15 @@ class LoginBody(BaseModel):
     password: str
 
 
+class RegisterBody(BaseModel):
+    org_name: str = Field(min_length=2, max_length=120)
+    name: str = Field(min_length=1, max_length=120)
+    email: str
+    password: str
+
+
 class AskBody(BaseModel):
-    q: str = Field(min_length=1)
+    q: str = Field(min_length=1, max_length=4000)
     module: str | None = None
 
 
@@ -59,59 +90,168 @@ class FleetBody(BaseModel):
 
 class RunBody(BaseModel):
     agent_id: str
-    task: str = Field(min_length=3)
+    task: str = Field(min_length=3, max_length=4000)
+
+
+class PasswordBody(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class UserAddBody(BaseModel):
+    email: str
+    name: str
+    role: str = "member"
+    password: str
+
+
+class UserPatchBody(BaseModel):
+    role: str | None = None
+    active: bool | None = None
+
+
+class OrgPatchBody(BaseModel):
+    name: str | None = None
+    tagline: str | None = None
+    billing_email: str | None = None
+
+
+class PurgeBody(BaseModel):
+    password: str
 
 
 @router.get("/health")
 def health() -> dict[str, Any]:
     conn = _conn()
     try:
-        org = conn.execute("SELECT * FROM orgs LIMIT 1").fetchone()
+        orgs = conn.execute("SELECT COUNT(*) AS n FROM orgs").fetchone()["n"]
         docs = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
-        return {
+        demo = _demo_present(conn)
+        payload = {
             "ok": True,
             "product": "aistudio",
-            "host": config.HOST,
-            "port": config.PORT,
-            "org": org["name"] if org else None,
+            "version": config.VERSION,
+            "env": config.env_name(),
+            "demo": demo,
+            "allow_register": config.allow_register(),
+            "orgs": orgs,
             "documents": docs,
-            "demo_email": config.DEMO_EMAIL,
+        }
+        if demo and not config.is_production():
+            payload["demo_email"] = config.DEMO_EMAIL
+        return payload
+    finally:
+        conn.close()
+
+
+@router.get("/ready")
+def ready() -> dict[str, Any]:
+    conn = db.connect()
+    try:
+        db.init_db(conn)
+        conn.execute("SELECT 1").fetchone()
+        return {"ok": True, "db": True}
+    finally:
+        conn.close()
+
+
+@router.post("/auth/register")
+def register(body: RegisterBody, request: Request) -> dict[str, Any]:
+    if not config.allow_register():
+        raise HTTPException(403, "Registrierung ist auf dieser Instanz deaktiviert.")
+    if rate_limited("reg:" + client_ip(request), 8):
+        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
+    conn = _conn()
+    try:
+        try:
+            created = tenancy.register_org(
+                conn,
+                org_name=body.org_name,
+                email=body.email,
+                name=body.name,
+                password=body.password,
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        user = created["user"]
+        token = tenancy.open_session(
+            conn, user, ip=client_ip(request), user_agent=request.headers.get("user-agent", "")
+        )
+        conn.commit()
+        return {
+            "token": token,
+            "user": tenancy.public_user(user),
+            "org": db.row_dict(created["org"]),
         }
     finally:
         conn.close()
 
 
 @router.post("/auth/login")
-def login(body: LoginBody) -> dict[str, Any]:
+def login(body: LoginBody, request: Request) -> dict[str, Any]:
+    if rate_limited("login:" + client_ip(request), 30):
+        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
     conn = _conn()
     try:
         user = conn.execute(
             "SELECT * FROM users WHERE email = ?",
             (body.email.strip().lower(),),
         ).fetchone()
-        if not user or not auth.verify_password(body.password, user["password_hash"]):
+        if not user:
             db.audit("anon", body.email, "login_failed", body.email, conn=conn)
             conn.commit()
             raise HTTPException(401, "E-Mail oder Passwort falsch.")
-        token = auth.issue_token(
-            {
-                "sub": user["id"],
-                "org": user["org_id"],
-                "role": user["role"],
-                "email": user["email"],
-            }
+        user_d = db.row_dict(user)
+        assert user_d is not None
+        if not user_d.get("active", 1):
+            raise HTTPException(401, "Konto deaktiviert.")
+        if tenancy.is_locked(user_d):
+            raise HTTPException(423, "Konto vorübergehend gesperrt. Bitte später erneut versuchen.")
+        if not auth.verify_password(body.password, user["password_hash"]):
+            tenancy.record_login_failure(conn, user_d)
+            db.audit(user["org_id"], body.email, "login_failed", body.email, conn=conn)
+            conn.commit()
+            raise HTTPException(401, "E-Mail oder Passwort falsch.")
+        tenancy.record_login_success(conn, user_d)
+        token = tenancy.open_session(
+            conn, user_d, ip=client_ip(request), user_agent=request.headers.get("user-agent", "")
         )
         db.audit(user["org_id"], user["email"], "login", user["email"], conn=conn)
         conn.commit()
+        org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
         return {
             "token": token,
-            "user": {
-                "id": user["id"],
-                "email": user["email"],
-                "name": user["name"],
-                "role": user["role"],
-            },
+            "user": tenancy.public_user(user_d),
+            "org": db.row_dict(org),
         }
+    finally:
+        conn.close()
+
+
+@router.post("/auth/logout")
+def logout(user: dict = Depends(current_user)) -> dict[str, Any]:
+    conn = _conn()
+    try:
+        tenancy.revoke_session(conn, user.get("_jti") or "")
+        db.audit(user["org_id"], user["email"], "logout", user["email"], conn=conn)
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@router.post("/auth/password")
+def password(body: PasswordBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    conn = _conn()
+    try:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
+        try:
+            tenancy.change_password(conn, dict(row), old=body.old_password, new=body.new_password)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        tenancy.revoke_user_sessions(conn, user["id"], keep_jti=user.get("_jti"))
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 
@@ -122,14 +262,95 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
     try:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
         return {
-            "user": {
-                "id": user["id"],
-                "email": user["email"],
-                "name": user["name"],
-                "role": user["role"],
-            },
+            "user": tenancy.public_user(user),
             "org": db.row_dict(org) if org else None,
+            "demo": _demo_present(conn) and user["org_id"] == "org-meridian",
         }
+    finally:
+        conn.close()
+
+
+@router.patch("/org")
+def patch_org(body: OrgPatchBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    conn = _conn()
+    try:
+        org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
+        if not org:
+            raise HTTPException(404, "Mandant nicht gefunden.")
+        name = body.name.strip() if body.name else org["name"]
+        tagline = body.tagline if body.tagline is not None else org["tagline"]
+        billing = body.billing_email.strip() if body.billing_email is not None else org["billing_email"]
+        conn.execute(
+            "UPDATE orgs SET name = ?, tagline = ?, billing_email = ? WHERE id = ?",
+            (name, tagline, billing, user["org_id"]),
+        )
+        db.audit(user["org_id"], user["email"], "org_update", name, conn=conn)
+        conn.commit()
+        org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
+        return {"org": db.row_dict(org)}
+    finally:
+        conn.close()
+
+
+@router.get("/users")
+def list_users(user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM users WHERE org_id = ? ORDER BY email", (user["org_id"],)
+        ).fetchall()
+        return {"users": [tenancy.public_user(r) for r in rows]}
+    finally:
+        conn.close()
+
+
+@router.post("/users")
+def add_user(body: UserAddBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    conn = _conn()
+    try:
+        try:
+            created = tenancy.add_user(
+                conn,
+                user["org_id"],
+                email=body.email,
+                name=body.name,
+                role=body.role,
+                password=body.password,
+                actor=user["email"],
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        conn.commit()
+        return {"user": created}
+    finally:
+        conn.close()
+
+
+@router.patch("/users/{user_id}")
+def patch_user(user_id: str, body: UserPatchBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    if user_id == user["id"] and body.active is False:
+        raise HTTPException(400, "Sie können sich nicht selbst deaktivieren.")
+    conn = _conn()
+    try:
+        try:
+            updated = tenancy.set_user_state(
+                conn,
+                user["org_id"],
+                user_id,
+                role=body.role,
+                active=body.active,
+                actor=user["email"],
+            )
+        except KeyError:
+            raise HTTPException(404, "Benutzer nicht gefunden.")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        conn.commit()
+        return {"user": updated}
     finally:
         conn.close()
 
@@ -140,6 +361,21 @@ def docs(user: dict = Depends(current_user)) -> dict[str, Any]:
     try:
         items = retrieval.list_documents(conn=conn, org_id=user["org_id"], role=user["role"])
         return {"docs": [retrieval.to_frontend_doc(d) for d in items]}
+    finally:
+        conn.close()
+
+
+@router.delete("/docs/{doc_id}")
+def remove_doc(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_delete_docs(user["role"]))
+    conn = _conn()
+    try:
+        ok = delete_document(conn, user["org_id"], doc_id)
+        if not ok:
+            raise HTTPException(404, "Dokument nicht gefunden.")
+        db.audit(user["org_id"], user["email"], "doc_delete", doc_id, conn=conn)
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 
@@ -161,6 +397,8 @@ def search(q: str, user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.post("/ask")
 def ask(body: AskBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("ask:" + user["id"], 120):
+        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
     conn = _conn()
     try:
         db.audit(user["org_id"], user["email"], "ask", body.q[:400], conn=conn)
@@ -186,6 +424,7 @@ def get_fleet(user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.post("/fleet")
 def mutate_fleet(body: FleetBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_mutate_fleet(user["role"]), "Nur Admin oder CFO dürfen die Flotte ändern.")
     conn = _conn()
     try:
         try:
@@ -196,6 +435,7 @@ def mutate_fleet(body: FleetBody, user: dict = Depends(current_user)) -> dict[st
             raise HTTPException(404, "Agent nicht gefunden.")
         except ValueError as exc:
             raise HTTPException(400, str(exc))
+        tenancy.persist_invoice(conn, user["org_id"])
         db.audit(
             user["org_id"],
             user["email"],
@@ -213,7 +453,14 @@ def mutate_fleet(body: FleetBody, user: dict = Depends(current_user)) -> dict[st
 def billing(user: dict = Depends(current_user)) -> dict[str, Any]:
     conn = _conn()
     try:
-        return catalog.billing_payload(user["org_id"], conn=conn)
+        payload = catalog.billing_payload(user["org_id"], conn=conn)
+        invoices = conn.execute(
+            "SELECT id, period, amount_cents, currency, status, created_at FROM invoices "
+            "WHERE org_id = ? ORDER BY period DESC LIMIT 12",
+            (user["org_id"],),
+        ).fetchall()
+        payload["invoices"] = [dict(r) for r in invoices]
+        return payload
     finally:
         conn.close()
 
@@ -291,7 +538,7 @@ def jobs(user: dict = Depends(current_user), limit: int = 20) -> dict[str, Any]:
         rows = conn.execute(
             "SELECT id, agent_id, task, status, created_at FROM jobs "
             "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
-            (user["org_id"], limit),
+            (user["org_id"], min(limit, 100)),
         ).fetchall()
         return {"jobs": [dict(r) for r in rows]}
     finally:
@@ -300,15 +547,45 @@ def jobs(user: dict = Depends(current_user), limit: int = 20) -> dict[str, Any]:
 
 @router.get("/audit")
 def audit(user: dict = Depends(current_user), limit: int = 50) -> dict[str, Any]:
-    if user["role"] not in {"board", "admin", "cfo"}:
-        raise HTTPException(403, "Kein Zugriff auf das Audit-Log.")
+    _require(tenancy.can_see_audit(user["role"]), "Kein Zugriff auf das Audit-Log.")
     conn = _conn()
     try:
         rows = conn.execute(
-            "SELECT * FROM audit_log WHERE org_id IN (?, 'anon') ORDER BY created_at DESC LIMIT ?",
-            (user["org_id"], limit),
+            "SELECT * FROM audit_log WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+            (user["org_id"], min(limit, 200)),
         ).fetchall()
         return {"events": [dict(r) for r in rows]}
+    finally:
+        conn.close()
+
+
+@router.get("/export")
+def export(user: dict = Depends(current_user)) -> JSONResponse:
+    _require(tenancy.can_export(user["role"]), "Kein Export-Recht.")
+    conn = _conn()
+    try:
+        payload = tenancy.export_tenant(conn, user["org_id"], user["role"])
+        db.audit(user["org_id"], user["email"], "export", "tenant-json", conn=conn)
+        conn.commit()
+        return JSONResponse(
+            payload,
+            headers={"Content-Disposition": 'attachment; filename="aistudio-export.json"'},
+        )
+    finally:
+        conn.close()
+
+
+@router.post("/org/purge")
+def purge(body: PurgeBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    conn = _conn()
+    try:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
+        if not row or not auth.verify_password(body.password, row["password_hash"]):
+            raise HTTPException(401, "Passwort falsch.")
+        tenancy.purge_org(conn, user["org_id"])
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 
@@ -318,13 +595,18 @@ async def upload_doc(
     user: dict = Depends(current_user),
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
+    if rate_limited("up:" + user["id"], 40):
+        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
     raw = await file.read()
-    if len(raw) > 2_000_000:
+    if len(raw) > config.MAX_UPLOAD_BYTES:
         raise HTTPException(400, "Datei zu groß (max. 2 MB in dieser Instanz).")
+    name = (file.filename or "upload.txt").lower()
+    if not name.endswith((".txt", ".md", ".csv", ".json", ".log")):
+        raise HTTPException(400, "Nur Textformate (.txt, .md, .csv, .json).")
     text = raw.decode("utf-8", errors="replace")
     stamp = db.now_iso()
     doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
-    dest = config.DATA_DIR / "uploads" / f"{doc_id}.txt"
+    dest = config.DATA_DIR / "uploads" / user["org_id"] / f"{doc_id}.txt"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(text, encoding="utf-8")
     conn = _conn()

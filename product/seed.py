@@ -21,9 +21,14 @@ def load_seed() -> dict:
 
 
 def ensure_seeded(conn=None) -> dict:
-    """Idempotent: creates the demo org once, then no-ops."""
+    """Idempotent: creates the demo org once, then no-ops.
+
+    In Produktion (AISTUDIO_ALLOW_DEMO_SEED=false) nur Schema, kein Meridian.
+    """
     c = conn or db.get_conn()
     db.init_db(c)
+    if not config.allow_demo_seed():
+        return {"org_id": None, "created": False, "skipped": True}
     seed = load_seed()
     company = seed.get("company") or {}
     name = company.get("name") or "Meridian Industrie GmbH"
@@ -74,6 +79,18 @@ def ensure_seeded(conn=None) -> dict:
         )
         db.audit(org_id, "system", "seed", "Demo-Mandant Meridian angelegt", conn=c)
     return {"org_id": org_id, "created": True}
+
+
+def delete_document(conn, org_id: str, doc_id: str) -> bool:
+    row = conn.execute(
+        "SELECT rowid FROM documents WHERE org_id = ? AND id = ?",
+        (org_id, doc_id),
+    ).fetchone()
+    if not row:
+        return False
+    conn.execute("DELETE FROM documents_fts WHERE rowid = ?", (row["rowid"],))
+    conn.execute("DELETE FROM documents WHERE org_id = ? AND id = ?", (org_id, doc_id))
+    return True
 
 
 def insert_document(conn, org_id: str, doc: dict) -> None:

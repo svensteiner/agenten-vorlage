@@ -9,9 +9,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
+from product import config
 from product.api import router
-from product.config import HOST, PORT
 from product.db import connect
+from product.security import SecurityHeadersMiddleware
 from product.seed import ensure_seeded
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ PROTO = ROOT / "prototype"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    config.validate_runtime()
     conn = connect()
     try:
         ensure_seeded(conn)
@@ -28,13 +30,23 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="AI Studio", version="0.9.0", lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+_docs = None if config.is_production() else "/docs"
+app = FastAPI(
+    title="AI Studio",
+    version=config.VERSION,
+    lifespan=lifespan,
+    docs_url=_docs,
+    redoc_url=None if config.is_production() else "/redoc",
 )
+origins = config.cors_origins()
+app.add_middleware(SecurityHeadersMiddleware)
+if origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    )
 app.include_router(router, prefix="/api")
 
 
@@ -60,7 +72,8 @@ def static_file(path: str):
 def run() -> None:
     import uvicorn
 
-    uvicorn.run("product.main:app", host=HOST, port=PORT, reload=False)
+    config.validate_runtime()
+    uvicorn.run("product.main:app", host=config.HOST, port=config.PORT, reload=False)
 
 
 if __name__ == "__main__":

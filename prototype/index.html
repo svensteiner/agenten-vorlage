@@ -108,8 +108,12 @@
     <div class="login-ov" id="loginOverlay" hidden>
       <div class="login-panel" role="dialog" aria-labelledby="loginTitle">
         <div class="login-brand">✦ AI Studio</div>
+        <div class="login-tabs" id="loginTabs">
+          <button type="button" class="login-tab on" data-tab="login">Anmelden</button>
+          <button type="button" class="login-tab" data-tab="register" id="registerTab">Mandant anlegen</button>
+        </div>
         <h2 id="loginTitle">Anmelden</h2>
-        <p class="login-lead">Ihre private Wissensbasis und gemieteten Agenten — auf Ihrer Infrastruktur.</p>
+        <p class="login-lead" id="loginLead">Ihre private Wissensbasis und gemieteten Agenten — auf Ihrer Infrastruktur.</p>
         <form id="loginForm">
           <label>E-Mail
             <input id="loginEmail" type="email" autocomplete="username" required />
@@ -120,7 +124,23 @@
           <p class="login-error" id="loginError" hidden></p>
           <button type="submit" class="btn primary">Anmelden</button>
         </form>
-        <p class="login-hint">Demo-Mandant Meridian: <b id="loginDemoEmail">katharina.vogel@meridian.example</b> · Passwort <b>Meridian2026!</b><br />Vorstand (gesperrte Akten): markus.brandt@meridian.example</p>
+        <form id="registerForm" hidden>
+          <label>Firma
+            <input id="regOrg" type="text" autocomplete="organization" required minlength="2" placeholder="Muster GmbH" />
+          </label>
+          <label>Ihr Name
+            <input id="regName" type="text" autocomplete="name" required placeholder="Vor- und Nachname" />
+          </label>
+          <label>E-Mail
+            <input id="regEmail" type="email" autocomplete="username" required />
+          </label>
+          <label>Passwort (min. 10 Zeichen, Buchstaben und Ziffern)
+            <input id="regPassword" type="password" autocomplete="new-password" required minlength="10" />
+          </label>
+          <p class="login-error" id="registerError" hidden></p>
+          <button type="submit" class="btn primary">Mandant erstellen</button>
+        </form>
+        <p class="login-hint" id="loginHint">Demo-Mandant Meridian: <b id="loginDemoEmail">katharina.vogel@meridian.example</b> · Passwort <b>Meridian2026!</b><br />Vorstand (gesperrte Akten): markus.brandt@meridian.example</p>
       </div>
     </div>
 

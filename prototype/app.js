@@ -154,6 +154,16 @@
     return !!(window.AISTUDIO && AISTUDIO.isLive && AISTUDIO.isLive());
   }
 
+  function isDemoTenant() {
+    if (!isLive()) return true;
+    return !!(AISTUDIO.isDemoTenant && AISTUDIO.isDemoTenant());
+  }
+
+  function canMutateFleet() {
+    if (!isLive()) return true;
+    return !!(AISTUDIO.canMutateFleet && AISTUDIO.canMutateFleet());
+  }
+
   function todayGermanShort() {
     try { return new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
     catch (e) { return "24.08.2026"; }
@@ -261,6 +271,14 @@
         const lo = $("#logoutBtn");
         if (lo) lo.onclick = () => AISTUDIO.logout();
       }
+      if (!isDemoTenant()) {
+        const demoBtn = $("#demoBtn");
+        if (demoBtn) demoBtn.hidden = true;
+        const hint = $(".composer .hint");
+        if (hint) hint.textContent = "AI Studio durchsucht nur Dokumente, für die Sie berechtigt sind.";
+        const orgName = (AISTUDIO.org && AISTUDIO.org.name) || "AI Studio";
+        document.title = "AI Studio — " + orgName;
+      }
     }
   }
 
@@ -271,6 +289,7 @@
   function wireOnboarding() {
     const ob = $("#onboard");
     if (!ob) return;
+    if (isLive() && !isDemoTenant()) return;
 
     let seen = false;
     try { seen = localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { seen = false; }
@@ -479,6 +498,18 @@
 
   function renderCompanyCard() {
     const c = $("#companyCard");
+    if (isLive() && AISTUDIO.org) {
+      const org = AISTUDIO.org;
+      const user = AISTUDIO.user || {};
+      c.innerHTML =
+        `<h4>${escapeHtml(org.name || "Mandant")}</h4>` +
+        `<div class="row"><span>Rolle</span><span>${escapeHtml(user.role || "")}</span></div>` +
+        `<div class="row"><span>Konto</span><span>${escapeHtml(user.email || "")}</span></div>` +
+        (isDemoTenant()
+          ? `<div class="demo-badge">● Demo-Daten · rein fiktiv</div>`
+          : `<div class="demo-badge">● Mandant · Daten bleiben hier</div>`);
+      return;
+    }
     const rows = COMPANY.facts
       .map((f) => `<div class="row"><span>${f.label}</span><span>${f.value}</span></div>`)
       .join("");
@@ -1200,52 +1231,172 @@
     scroll.innerHTML = "";
     $("#composer").style.display = "none";
     const wrap = el("div", "wrap");
-    wrap.appendChild(el("div", "lib-head", `<h2>Datenquellen</h2><p>Angebundene Systeme der ${COMPANY.name}. In der Demo simuliert.</p>`));
+    const live = isLive();
+    const orgName = (live && AISTUDIO.org && AISTUDIO.org.name) || COMPANY.name;
+    wrap.appendChild(el("div", "lib-head",
+      `<h2>${live && !isDemoTenant() ? "Betrieb" : "Datenquellen"}</h2>` +
+      `<p>${live && !isDemoTenant()
+        ? "Mandant, Nutzer, Audit und Wissensbasis — alles auf dieser Instanz."
+        : "Angebundene Systeme der " + orgName + ". In der Demo simuliert."}</p>`));
 
-    const srcs = [
-      { i: "📁", t: "SharePoint", s: "Richtlinien, Verträge, Vorstandsprotokolle" },
-      { i: "🗄", t: "Fileserver", s: "Controlling, Projekte, Nachweise" },
-      { i: "🧾", t: "SAP S/4HANA", s: "Rechnungen, Bestellungen, Wareneingänge" },
-      { i: "✉", t: "Exchange / E-Mail", s: "Postfächer & Anhänge" },
-      { i: "📊", t: "Excel & Berichte", s: "Quartalszahlen, ESG-Kennzahlen" },
-      { i: "🔒", t: "Berechtigungen", s: "Zugriff je Nutzer wird respektiert" },
-    ];
-    const grid = el("div", "sources-grid");
-    srcs.forEach((x) => {
-      const tile = el("div", "src-tile");
-      tile.innerHTML = `<span class="si">${x.i}</span><div><div class="t">${x.t}</div><div class="s">${x.s}</div></div><span class="on">● verbunden</span>`;
-      grid.appendChild(tile);
-    });
-    wrap.appendChild(grid);
+    if (!(live && !isDemoTenant())) {
+      const srcs = [
+        { i: "📁", t: "SharePoint", s: "Richtlinien, Verträge, Vorstandsprotokolle" },
+        { i: "🗄", t: "Fileserver", s: "Controlling, Projekte, Nachweise" },
+        { i: "🧾", t: "SAP S/4HANA", s: "Rechnungen, Bestellungen, Wareneingänge" },
+        { i: "✉", t: "Exchange / E-Mail", s: "Postfächer & Anhänge" },
+        { i: "📊", t: "Excel & Berichte", s: "Quartalszahlen, ESG-Kennzahlen" },
+        { i: "🔒", t: "Berechtigungen", s: "Zugriff je Nutzer wird respektiert" },
+      ];
+      const grid = el("div", "sources-grid");
+      srcs.forEach((x) => {
+        const tile = el("div", "src-tile");
+        tile.innerHTML = `<span class="si">${x.i}</span><div><div class="t">${x.t}</div><div class="s">${x.s}</div></div><span class="on">● verbunden</span>`;
+        grid.appendChild(tile);
+      });
+      wrap.appendChild(grid);
+    }
 
-    const note = el("p", null,
-      `<span style="font-size:12.5px;color:var(--ink-faint)">Hinweis: Alle Inhalte dieser Demo sind frei erfunden. Es werden keine echten Kundendaten verarbeitet.</span>`);
-    note.style.marginTop = "18px";
-    wrap.appendChild(note);
-
-    if (isLive()) {
-      const up = el("div", "upload-box");
-      up.innerHTML = `<h3>Dokument in die Wissensbasis legen</h3>` +
-        `<p>Textdatei bis 2 MB. Der Inhalt ist nur für diesen Mandanten suchbar und erscheint in den Antworten.</p>`;
-      const input = el("input");
-      input.type = "file";
-      input.accept = ".txt,.md,.csv,.json";
-      const status = el("p");
-      input.onchange = async () => {
-        if (!input.files || !input.files[0]) return;
-        status.textContent = "Wird aufgenommen…";
-        try {
-          const out = await AISTUDIO.upload(input.files[0]);
-          status.textContent = "Aufgenommen: " + (out.id || input.files[0].name);
-        } catch (e) {
-          status.textContent = e.message || "Upload fehlgeschlagen.";
-        }
-      };
-      up.append(input, status);
-      wrap.appendChild(up);
+    if (live) {
+      wrap.appendChild(renderLiveOps());
+    } else {
+      const note = el("p", null,
+        `<span style="font-size:12.5px;color:var(--ink-faint)">Hinweis: Alle Inhalte dieser Demo sind frei erfunden. Es werden keine echten Kundendaten verarbeitet.</span>`);
+      note.style.marginTop = "18px";
+      wrap.appendChild(note);
     }
 
     scroll.appendChild(wrap);
+  }
+
+  function renderLiveOps() {
+    const box = el("div", "ops");
+    const user = AISTUDIO.user || {};
+    const org = AISTUDIO.org || {};
+
+    const pwd = el("div", "upload-box");
+    pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
+    const oldP = el("input"); oldP.type = "password"; oldP.placeholder = "Aktuelles Passwort";
+    const newP = el("input"); newP.type = "password"; newP.placeholder = "Neues Passwort";
+    const pwdStatus = el("p");
+    const pwdBtn = el("button", "btn primary", "Speichern");
+    pwdBtn.onclick = async () => {
+      pwdStatus.textContent = "…";
+      try {
+        await AISTUDIO.request("/api/auth/password", { method: "POST", json: { old_password: oldP.value, new_password: newP.value } });
+        pwdStatus.textContent = "Passwort aktualisiert.";
+        oldP.value = ""; newP.value = "";
+      } catch (e) { pwdStatus.textContent = e.message; }
+    };
+    pwd.append(oldP, newP, pwdBtn, pwdStatus);
+    box.appendChild(pwd);
+
+    const up = el("div", "upload-box");
+    up.innerHTML = `<h3>Dokument in die Wissensbasis legen</h3>` +
+      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.</p>`;
+    const input = el("input");
+    input.type = "file";
+    input.accept = ".txt,.md,.csv,.json";
+    const status = el("p");
+    input.onchange = async () => {
+      if (!input.files || !input.files[0]) return;
+      status.textContent = "Wird aufgenommen…";
+      try {
+        const out = await AISTUDIO.upload(input.files[0]);
+        status.textContent = "Aufgenommen: " + (out.id || input.files[0].name);
+      } catch (e) {
+        status.textContent = e.message || "Upload fehlgeschlagen.";
+      }
+    };
+    up.append(input, status);
+    box.appendChild(up);
+
+    if (AISTUDIO.isAdmin && AISTUDIO.isAdmin()) {
+      const usersBox = el("div", "upload-box");
+      usersBox.innerHTML = `<h3>Nutzer</h3><p>Rollen: admin, cfo, board, member. Board sieht gesperrte Akten.</p>`;
+      const list = el("div", "user-list");
+      usersBox.appendChild(list);
+      const emailI = el("input"); emailI.type = "email"; emailI.placeholder = "E-Mail";
+      const nameI = el("input"); nameI.placeholder = "Name";
+      const roleI = el("input"); roleI.placeholder = "Rolle (member)";
+      const passI = el("input"); passI.type = "password"; passI.placeholder = "Startpasswort";
+      const addStatus = el("p");
+      const addBtn = el("button", "btn primary", "Nutzer anlegen");
+      const reloadUsers = async () => {
+        try {
+          const data = await AISTUDIO.request("/api/users");
+          list.innerHTML = (data.users || []).map((u) =>
+            `<div class="user-row"><b>${escapeHtml(u.name)}</b> · ${escapeHtml(u.email)} · ${escapeHtml(u.role)}` +
+            (u.active ? "" : " · deaktiviert") + `</div>`
+          ).join("");
+        } catch (e) {
+          list.textContent = e.message;
+        }
+      };
+      addBtn.onclick = async () => {
+        addStatus.textContent = "…";
+        try {
+          await AISTUDIO.request("/api/users", {
+            method: "POST",
+            json: { email: emailI.value, name: nameI.value, role: roleI.value || "member", password: passI.value },
+          });
+          emailI.value = ""; nameI.value = ""; roleI.value = ""; passI.value = "";
+          addStatus.textContent = "Angelegt.";
+          await reloadUsers();
+        } catch (e) { addStatus.textContent = e.message; }
+      };
+      usersBox.append(emailI, nameI, roleI, passI, addBtn, addStatus);
+      box.appendChild(usersBox);
+      reloadUsers();
+
+      const orgBox = el("div", "upload-box");
+      orgBox.innerHTML = `<h3>Mandant</h3><p>Anzeigename und Rechnungs-E-Mail.</p>`;
+      const orgName = el("input"); orgName.value = org.name || ""; orgName.placeholder = "Firmenname";
+      const orgMail = el("input"); orgMail.type = "email"; orgMail.value = org.billing_email || ""; orgMail.placeholder = "Rechnung per E-Mail";
+      const orgStatus = el("p");
+      const orgBtn = el("button", "btn primary", "Speichern");
+      orgBtn.onclick = async () => {
+        try {
+          const out = await AISTUDIO.request("/api/org", { method: "PATCH", json: { name: orgName.value, billing_email: orgMail.value } });
+          AISTUDIO.org = out.org;
+          renderCompanyCard();
+          orgStatus.textContent = "Gespeichert.";
+        } catch (e) { orgStatus.textContent = e.message; }
+      };
+      orgBox.append(orgName, orgMail, orgBtn, orgStatus);
+      box.appendChild(orgBox);
+    }
+
+    const auditBox = el("div", "upload-box");
+    auditBox.innerHTML = `<h3>Audit</h3>`;
+    const auditList = el("div", "audit-list");
+    auditBox.appendChild(auditList);
+    AISTUDIO.request("/api/audit?limit=30").then((data) => {
+      auditList.innerHTML = (data.events || []).slice(0, 30).map((e) =>
+        `<div class="audit-row"><span>${escapeHtml(e.created_at || "")}</span> <b>${escapeHtml(e.action)}</b> ${escapeHtml(e.actor || "")} — ${escapeHtml(e.detail || "")}</div>`
+      ).join("") || "Kein Zugriff oder keine Ereignisse.";
+    }).catch((e) => { auditList.textContent = e.message; });
+    box.appendChild(auditBox);
+
+    if (user.role === "admin" || user.role === "cfo") {
+      const exp = el("div", "upload-box");
+      exp.innerHTML = `<h3>Export (DSGVO)</h3><p>JSON mit Mandant, Nutzern, Dokumenten, Flotte, Audit.</p>`;
+      const expBtn = el("button", "btn", "Export herunterladen");
+      expBtn.onclick = async () => {
+        try {
+          const data = await AISTUDIO.request("/api/export");
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "aistudio-export.json";
+          a.click();
+        } catch (e) { exp.appendChild(el("p", null, e.message)); }
+      };
+      exp.appendChild(expBtn);
+      box.appendChild(exp);
+    }
+
+    return box;
   }
 
   // ---------- Dokumentenviewer ----------
@@ -1829,18 +1980,21 @@
     if (!a.included) {
       const work = el("button", "btn primary", "Auftrag geben");
       work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
-      const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
-      pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
-      const cancel = el("button", "btn warn", "Kündigen");
-      cancel.onclick = async () => {
-        if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
-        cancel.dataset.arm = "1";
-        cancel.textContent = "Wirklich kündigen?";
-        setTimeout(() => {
-          if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
-        }, 4000);
-      };
-      actions.append(work, pause, cancel);
+      actions.appendChild(work);
+      if (canMutateFleet()) {
+        const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
+        pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
+        const cancel = el("button", "btn warn", "Kündigen");
+        cancel.onclick = async () => {
+          if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
+          cancel.dataset.arm = "1";
+          cancel.textContent = "Wirklich kündigen?";
+          setTimeout(() => {
+            if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
+          }, 4000);
+        };
+        actions.append(pause, cancel);
+      }
     } else {
       const go = el("button", "btn", "Im Chat fragen");
       go.onclick = () => selectModule("wissen");
@@ -1939,15 +2093,21 @@
       };
       act.appendChild(work);
     } else if (leaseOf(id) && leaseOf(id).status === "paused") {
-      const resume = el("button", "btn primary", "Miete fortsetzen");
-      resume.style.width = "100%";
-      resume.onclick = async () => { await togglePause(id); renderTeamView(); };
-      act.appendChild(resume);
-    } else {
+      if (canMutateFleet()) {
+        const resume = el("button", "btn primary", "Miete fortsetzen");
+        resume.style.width = "100%";
+        resume.onclick = async () => { await togglePause(id); renderTeamView(); };
+        act.appendChild(resume);
+      } else {
+        act.appendChild(el("p", "bill-note", "Pausiert. Miete ändert nur Admin oder CFO."));
+      }
+    } else if (canMutateFleet()) {
       const rent = el("button", "btn primary", "Jetzt mieten · " + agentPriceLabel(a) + " / Monat");
       rent.style.width = "100%";
       rent.onclick = () => openRent(id);
       act.appendChild(rent);
+    } else {
+      act.appendChild(el("p", "bill-note", "Mieten dürfen nur Admin oder CFO."));
     }
     side.appendChild(act);
     grid.append(main, side);
@@ -1976,13 +2136,17 @@
     const pay = el("div", "pay-row");
     pay.appendChild(el("div", "pay-tile",
       `<div class="k">Nächste Lastschrift</div><div class="v">${nextInvoiceGerman()} · ${formatEur(monthlyTotal())}</div>` +
-      `<div class="k" style="margin-top:8px">Mandat SEPA (Demo)</div><div class="v">DE12 1001 0000 0123 4567 89 · Meridian Industrie GmbH</div>`));
+      (isDemoTenant()
+        ? `<div class="k" style="margin-top:8px">Mandat SEPA (Demo)</div><div class="v">DE12 1001 0000 0123 4567 89 · Meridian Industrie GmbH</div>`
+        : `<div class="k" style="margin-top:8px">Rechnungsempfänger</div><div class="v">${escapeHtml((AISTUDIO.org && (AISTUDIO.org.billing_email || AISTUDIO.org.name)) || "")}</div>`)));
     pay.appendChild(el("div", "pay-tile",
       `<div class="k">Preis-Pfad</div><div class="v">Audit 149 € → Wissensbasis ab 5.000 € → Agent ab 400 €/Monat</div>` +
       `<div class="k" style="margin-top:8px">Ersparnis-Hinweis</div><div class="v">Ein Reporting-Agent ersetzt keine Abteilung — er liefert die Vorlage, die ein Controller sonst 2 Tage schreibt.</div>`));
     box.appendChild(pay);
     box.appendChild(el("p", "bill-note",
-      "Demo-Abrechnung: keine echte Lastschrift. Monatlich kündbar, keine Mindestlaufzeit. Pausierte Agenten erscheinen in der nächsten Periode nicht auf der Rechnung."));
+      isDemoTenant()
+        ? "Demo-Abrechnung: keine echte Lastschrift. Monatlich kündbar, keine Mindestlaufzeit. Pausierte Agenten erscheinen in der nächsten Periode nicht auf der Rechnung."
+        : "Interne Abrechnung als Entwurf (keine echte Lastschrift in dieser Version). Monatlich kündbar. Pausierte Agenten werden nicht berechnet."));
     return box;
   }
 

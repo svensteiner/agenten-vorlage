@@ -1,7 +1,7 @@
 /*
  * Live-Produkt-Client. Additiv: ohne /api/health (file://, statischer Demo-Server)
  * bleibt die bestehende Demo unverändert. Bei laufendem product-Server: Login,
- * echte FTS-Antworten, persistente Flotte, Agent-Jobs.
+ * echte FTS-Antworten, persistente Flotte, Agent-Jobs, Mandantenbetrieb.
  */
 (function (global) {
   "use strict";
@@ -10,14 +10,35 @@
   const params = new URLSearchParams(location.search || "");
   const forceDemo = params.get("demo") === "1";
 
+  function detailMessage(data, fallback) {
+    if (!data) return fallback || "Fehler";
+    const d = data.detail;
+    if (typeof d === "string") return d;
+    if (Array.isArray(d)) {
+      return d.map(function (x) { return (x && (x.msg || x.message)) || String(x); }).join(" ");
+    }
+    return data.message || fallback || "Fehler";
+  }
+
   const api = {
     live: false,
     token: null,
     user: null,
     org: null,
     fleet: null,
+    health: null,
 
     isLive: function () { return !!(this.live && this.token); },
+    isDemoTenant: function () {
+      return !!(this.health && this.health.demo && this.user && this.user.email &&
+        /@meridian\.example$/.test(this.user.email));
+    },
+    canMutateFleet: function () {
+      if (!this.isLive()) return true;
+      const r = this.user && this.user.role;
+      return r === "admin" || r === "cfo";
+    },
+    isAdmin: function () { return !!(this.user && this.user.role === "admin"); },
 
     _headers: function (extra) {
       const h = Object.assign({ "Accept": "application/json" }, extra || {});
@@ -41,7 +62,7 @@
         data = { detail: await res.text() };
       }
       if (!res.ok) {
-        const err = new Error((data && (data.detail || data.message)) || ("HTTP " + res.status));
+        const err = new Error(detailMessage(data, "HTTP " + res.status));
         err.status = res.status;
         err.body = data;
         throw err;
@@ -76,6 +97,27 @@
       await this.hydrate();
     },
 
+    _showTab: function (tab) {
+      const loginForm = document.getElementById("loginForm");
+      const registerForm = document.getElementById("registerForm");
+      const title = document.getElementById("loginTitle");
+      const lead = document.getElementById("loginLead");
+      document.querySelectorAll(".login-tab").forEach(function (b) {
+        b.classList.toggle("on", b.getAttribute("data-tab") === tab);
+      });
+      if (tab === "register") {
+        if (loginForm) loginForm.hidden = true;
+        if (registerForm) registerForm.hidden = false;
+        if (title) title.textContent = "Mandant anlegen";
+        if (lead) lead.textContent = "Eigene Instanz: leere Wissensbasis, Auskunfts-Agent inklusive, Sie sind Admin.";
+      } else {
+        if (loginForm) loginForm.hidden = false;
+        if (registerForm) registerForm.hidden = true;
+        if (title) title.textContent = "Anmelden";
+        if (lead) lead.textContent = "Ihre private Wissensbasis und gemieteten Agenten — auf Ihrer Infrastruktur.";
+      }
+    },
+
     loginUi: function () {
       const self = this;
       return new Promise((resolve) => {
@@ -83,16 +125,40 @@
         if (!ov) { resolve(); return; }
         ov.hidden = false;
         const form = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
         const err = document.getElementById("loginError");
         const email = document.getElementById("loginEmail");
         const password = document.getElementById("loginPassword");
+        const hint = document.getElementById("loginHint");
         const demoHint = document.getElementById("loginDemoEmail");
-        if (demoHint && self.health && self.health.demo_email) {
-          demoHint.textContent = self.health.demo_email;
+        const registerTab = document.getElementById("registerTab");
+        const demo = !!(self.health && self.health.demo);
+        if (!self.health || !self.health.allow_register) {
+          if (registerTab) registerTab.hidden = true;
         }
-        if (email && self.health && self.health.demo_email) email.value = self.health.demo_email;
-        if (password) password.value = "Meridian2026!";
-        const onSubmit = async (e) => {
+        if (hint) hint.hidden = !demo;
+        if (demo) {
+          if (demoHint && self.health.demo_email) demoHint.textContent = self.health.demo_email;
+          if (email && self.health.demo_email) email.value = self.health.demo_email;
+          if (password) password.value = "Meridian2026!";
+        } else if (password) {
+          password.value = "";
+        }
+        document.querySelectorAll(".login-tab").forEach(function (b) {
+          b.onclick = function () { self._showTab(b.getAttribute("data-tab")); };
+        });
+        self._showTab("login");
+
+        const finish = function (out) {
+          self.token = out.token;
+          self.user = out.user;
+          self.org = out.org || self.org;
+          try { sessionStorage.setItem(TOKEN_KEY, out.token); } catch (err2) { /* ignore */ }
+          ov.hidden = true;
+          resolve();
+        };
+
+        const onSubmit = async function (e) {
           e.preventDefault();
           if (err) { err.hidden = true; err.textContent = ""; }
           const btn = form.querySelector("button[type=submit]");
@@ -102,12 +168,8 @@
               method: "POST",
               json: { email: email.value.trim(), password: password.value },
             });
-            self.token = out.token;
-            self.user = out.user;
-            try { sessionStorage.setItem(TOKEN_KEY, out.token); } catch (err2) { /* ignore */ }
-            ov.hidden = true;
             form.removeEventListener("submit", onSubmit);
-            resolve();
+            finish(out);
           } catch (ex) {
             if (err) {
               err.hidden = false;
@@ -118,6 +180,35 @@
           }
         };
         form.addEventListener("submit", onSubmit);
+
+        if (registerForm) {
+          const rerr = document.getElementById("registerError");
+          registerForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            if (rerr) { rerr.hidden = true; rerr.textContent = ""; }
+            const btn = registerForm.querySelector("button[type=submit]");
+            if (btn) { btn.disabled = true; btn.textContent = "Wird angelegt…"; }
+            try {
+              const out = await self.request("/api/auth/register", {
+                method: "POST",
+                json: {
+                  org_name: document.getElementById("regOrg").value.trim(),
+                  name: document.getElementById("regName").value.trim(),
+                  email: document.getElementById("regEmail").value.trim(),
+                  password: document.getElementById("regPassword").value,
+                },
+              });
+              finish(out);
+            } catch (ex) {
+              if (rerr) {
+                rerr.hidden = false;
+                rerr.textContent = ex.message || "Registrierung fehlgeschlagen.";
+              }
+            } finally {
+              if (btn) { btn.disabled = false; btn.textContent = "Mandant erstellen"; }
+            }
+          });
+        }
       });
     },
 
@@ -125,6 +216,7 @@
       const me = await this.request("/api/me");
       this.user = me.user;
       this.org = me.org;
+      this.tenantDemo = !!me.demo;
       const docs = await this.request("/api/docs");
       this.applyDocs(docs.docs || []);
       this.fleet = await this.request("/api/fleet");
@@ -170,13 +262,14 @@
         body: body,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Upload fehlgeschlagen");
+      if (!res.ok) throw new Error(detailMessage(data, "Upload fehlgeschlagen"));
       const docs = await this.request("/api/docs");
       this.applyDocs(docs.docs || []);
       return data;
     },
 
-    logout: function () {
+    logout: async function () {
+      try { await this.request("/api/auth/logout", { method: "POST", json: {} }); } catch (e) { /* ignore */ }
       this.token = null;
       this.user = null;
       try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }

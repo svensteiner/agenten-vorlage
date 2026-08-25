@@ -7,7 +7,10 @@ services:
       AISTUDIO_HOST: "0.0.0.0"
       AISTUDIO_PORT: "8123"
       AISTUDIO_DATA: /app/data
-      AISTUDIO_SECRET: ${AISTUDIO_SECRET:-change-me-in-production}
+      AISTUDIO_ENV: ${AISTUDIO_ENV:-development}
+      AISTUDIO_SECRET: ${AISTUDIO_SECRET:-dev-secret-change-me}
+      AISTUDIO_ALLOW_DEMO_SEED: ${AISTUDIO_ALLOW_DEMO_SEED:-true}
+      AISTUDIO_ALLOW_REGISTER: ${AISTUDIO_ALLOW_REGISTER:-true}
     volumes:
       - aistudio-data:/app/data
 volumes:

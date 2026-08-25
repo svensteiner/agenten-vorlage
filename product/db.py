@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS orgs (
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
     tagline TEXT DEFAULT '',
+    billing_email TEXT DEFAULT '',
+    country TEXT DEFAULT 'DE',
     created_at TEXT NOT NULL
 );
 
@@ -31,7 +33,23 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'member',
     created_at TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    failed_logins INTEGER NOT NULL DEFAULT 0,
+    locked_until TEXT,
+    last_login_at TEXT,
     FOREIGN KEY (org_id) REFERENCES orgs(id)
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    jti TEXT UNIQUE NOT NULL,
+    user_id TEXT NOT NULL,
+    org_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT,
+    ip TEXT DEFAULT '',
+    user_agent TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS documents (
@@ -103,6 +121,11 @@ CREATE TABLE IF NOT EXISTS audit_log (
     detail TEXT DEFAULT '',
     created_at TEXT NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_documents_org ON documents(org_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_org ON jobs(org_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log(org_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_jti ON sessions(jti);
 """
 
 
@@ -131,7 +154,29 @@ def get_conn() -> sqlite3.Connection:
 def init_db(conn: sqlite3.Connection | None = None) -> None:
     c = conn or get_conn()
     c.executescript(SCHEMA)
+    migrate(c)
     c.commit()
+
+
+def _add_column(conn: sqlite3.Connection, table: str, column: str, spec: str) -> None:
+    cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column in cols:
+        return
+    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {spec}")
+
+
+def migrate(conn: sqlite3.Connection) -> None:
+    """Additive columns for databases created before the production schema."""
+    try:
+        _add_column(conn, "orgs", "billing_email", "TEXT DEFAULT ''")
+        _add_column(conn, "orgs", "country", "TEXT DEFAULT 'DE'")
+        _add_column(conn, "users", "active", "INTEGER NOT NULL DEFAULT 1")
+        _add_column(conn, "users", "failed_logins", "INTEGER NOT NULL DEFAULT 0")
+        _add_column(conn, "users", "locked_until", "TEXT")
+        _add_column(conn, "users", "last_login_at", "TEXT")
+    except sqlite3.OperationalError:
+        # Table may not exist yet on a brand-new file before SCHEMA ran.
+        return
 
 
 @contextmanager

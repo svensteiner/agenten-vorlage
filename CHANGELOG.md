@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktionslaufzeit — 2026-08-25 — Mandant anlegen, Sitzungen, Rollen, Betrieb
+
+**AI Studio als Werkzeug auf der eigenen Infrastruktur**, soweit ohne SSO/Zahlungsanbieter möglich.
+Additiv in `product/` (+ Login/Einstellungen im Prototype):
+- **Mandant anlegen** (Admin, leere Wissensbasis), Nutzerrollen admin/cfo/board/member.
+- Sitzungen mit JTI, Logout widerruft, Passwortwechsel, Anmeldesperre, Rate-Limits, Security-Header.
+- Produktion startet nicht mit Demo-Secret; `/docs` aus; Demo-Seed per Env abschaltbar.
+- Betrieb in Einstellungen: Upload, Nutzer, Mandant, Audit, DSGVO-Export. Flotte nur Admin/CFO.
+- Interne Rechnungsentwürfe, `/api/ready`, systemd-Einheit.
+
 ## Produktlaufzeit — 2026-08-24 — Mandant, Wissensbasis, Miete, Aufträge
 
 **Die Mietplattform läuft als Produkt**, nicht nur als Demo-UI. Additive Schicht `product/`

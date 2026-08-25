@@ -10,6 +10,8 @@ import os
 import time
 from typing import Any
 
+import re
+
 from . import config
 
 _PBKDF_ROUNDS = 120_000
@@ -41,6 +43,17 @@ def _b64url(data: bytes) -> str:
 def _b64url_decode(text: str) -> bytes:
     pad = "=" * (-len(text) % 4)
     return base64.urlsafe_b64decode(text + pad)
+
+
+def validate_password(password: str, email: str = "") -> str | None:
+    """Return an error message, or None if the password is acceptable."""
+    if len(password or "") < 10:
+        return "Passwort mindestens 10 Zeichen."
+    if email and password.strip().lower() == email.strip().lower():
+        return "Passwort darf nicht der E-Mail entsprechen."
+    if not re.search(r"[A-Za-zÄÖÜäöüß]", password) or not re.search(r"[0-9]", password):
+        return "Passwort braucht Buchstaben und Ziffern."
+    return None
 
 
 def issue_token(payload: dict[str, Any], ttl: int | None = None) -> str:
