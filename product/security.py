@@ -78,5 +78,18 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class LimitRequestMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        raw = request.headers.get("content-length")
+        if raw:
+            try:
+                size = int(raw)
+            except ValueError:
+                size = 0
+            if size > config.MAX_REQUEST_BYTES:
+                return JSONResponse({"detail": "Anfrage zu groß."}, status_code=413)
+        return await call_next(request)
+
+
 def too_many() -> JSONResponse:
     return JSONResponse({"detail": "Zu viele Anfragen. Bitte kurz warten."}, status_code=429)

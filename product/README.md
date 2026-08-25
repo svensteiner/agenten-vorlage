@@ -30,16 +30,19 @@ export AISTUDIO_CORS_ORIGINS=https://studio.example.com
 ./scripts/run_product.sh
 ```
 
-Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. systemd-Einheit: `scripts/aistudio.service`. Reverse-Proxy-Beispiel: `scripts/nginx-aistudio.conf` (dann `AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung. Sicherung: `./scripts/backup.sh`.
+Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password '…'`. systemd: `scripts/aistudio.service`, tägliche Sicherung: `scripts/aistudio-backup.timer`. Reverse-Proxy: `scripts/nginx-aistudio.conf` (`AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung. Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh`. Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
+
+In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kommt über `AISTUDIO_BOOTSTRAP_*` (oder kurz `AISTUDIO_ALLOW_REGISTER=true`).
 
 ### Was die Instanz kann
 
-- Mandant registrieren, Nutzer mit Rollen (admin / cfo / board / member), Nutzer deaktivieren
+- Mandant registrieren, Nutzer mit Rollen (admin / cfo / board / member), Nutzer deaktivieren, Passwort setzen
 - Sitzungen mit Widerruf (Logout, Passwortwechsel, andere Geräte, Deaktivieren)
-- Anmeldesperre nach Fehlversuchen, Rate-Limits, Access-Log, Security-Header
+- Anmeldesperre nach Fehlversuchen, Rate-Limits, Access-Log, Security-Header, Größenlimit
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
-- Audit-Log, `/api/ready`
+- Audit-Log, Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis)
+- Erstmandant per `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist
 
 ### Bewusst nicht in dieser Version
 

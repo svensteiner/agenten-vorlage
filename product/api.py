@@ -105,6 +105,10 @@ class UserAddBody(BaseModel):
     password: str
 
 
+class UserPasswordBody(BaseModel):
+    password: str
+
+
 class UserPatchBody(BaseModel):
     role: str | None = None
     active: bool | None = None
@@ -150,7 +154,22 @@ def ready() -> dict[str, Any]:
     try:
         db.init_db(conn)
         conn.execute("SELECT 1").fetchone()
-        return {"ok": True, "db": True}
+        data = config.DATA_DIR
+        data.mkdir(parents=True, exist_ok=True)
+        probe = data / ".write-ok"
+        writable = False
+        try:
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            writable = True
+        except OSError:
+            writable = False
+        return {
+            "ok": True,
+            "db": True,
+            "writable": writable,
+            "version": config.VERSION,
+        }
     finally:
         conn.close()
 
@@ -390,6 +409,25 @@ def patch_user(user_id: str, body: UserPatchBody, user: dict = Depends(current_u
             raise HTTPException(400, str(exc))
         conn.commit()
         return {"user": updated}
+    finally:
+        conn.close()
+
+
+@router.post("/users/{user_id}/password")
+def admin_password(user_id: str, body: UserPasswordBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    _require(tenancy.can_manage_users(user["role"]))
+    conn = _conn()
+    try:
+        try:
+            tenancy.admin_set_password(
+                conn, user["org_id"], user_id, password=body.password, actor=user["email"]
+            )
+        except KeyError:
+            raise HTTPException(404, "Benutzer nicht gefunden.")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 

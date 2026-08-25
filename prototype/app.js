@@ -1461,6 +1461,20 @@
             const row = el("div", "user-row");
             row.innerHTML = `<span><b>${escapeHtml(u.name)}</b> · ${escapeHtml(u.email)} · ${escapeHtml(u.role)}` +
               (u.active ? "" : " · deaktiviert") + `</span>`;
+            const acts = el("span");
+            const pw = el("button", "row-act", "Passwort");
+            pw.onclick = async () => {
+              const np = window.prompt("Neues Passwort für " + u.email + " (min. 10 Zeichen, Buchstaben und Ziffern)");
+              if (!np) return;
+              try {
+                await AISTUDIO.request("/api/users/" + encodeURIComponent(u.id) + "/password", {
+                  method: "POST",
+                  json: { password: np },
+                });
+                addStatus.textContent = "Passwort gesetzt. Sitzungen des Kontos wurden beendet.";
+              } catch (e) { addStatus.textContent = e.message; }
+            };
+            acts.appendChild(pw);
             if (u.id !== user.id) {
               const b = el("button", "row-act", u.active ? "Deaktivieren" : "Aktivieren");
               b.onclick = async () => {
@@ -1472,8 +1486,9 @@
                   await reloadUsers();
                 } catch (e) { addStatus.textContent = e.message; }
               };
-              row.appendChild(b);
+              acts.appendChild(b);
             }
+            row.appendChild(acts);
             list.appendChild(row);
           });
         } catch (e) {
@@ -1524,6 +1539,17 @@
       ).join("") || "Kein Zugriff oder keine Ereignisse.";
     }).catch((e) => { auditList.textContent = e.message; });
     box.appendChild(auditBox);
+
+    const jobsBox = el("div", "upload-box");
+    jobsBox.innerHTML = `<h3>Aufträge</h3><p>Letzte Agent-Läufe dieses Mandanten.</p>`;
+    const jobsList = el("div", "audit-list");
+    jobsBox.appendChild(jobsList);
+    AISTUDIO.request("/api/jobs?limit=15").then((data) => {
+      jobsList.innerHTML = (data.jobs || []).map((j) =>
+        `<div class="audit-row"><span>${escapeHtml((j.created_at || "").replace("T", " ").slice(0, 16))}</span> <b>${escapeHtml(j.agent_id || "")}</b> ${escapeHtml(j.status || "")} — ${escapeHtml((j.task || "").slice(0, 90))}</div>`
+      ).join("") || "Noch keine Aufträge.";
+    }).catch((e) => { jobsList.textContent = e.message; });
+    box.appendChild(jobsBox);
 
     if (user.role === "admin" || user.role === "cfo") {
       const exp = el("div", "upload-box");

@@ -20,11 +20,12 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
 LOCKOUT_MINUTES = int(os.environ.get("AISTUDIO_LOCKOUT_MINUTES", "15"))
 MAX_UPLOAD_BYTES = int(os.environ.get("AISTUDIO_MAX_UPLOAD_BYTES", str(2_000_000)))
+MAX_REQUEST_BYTES = int(os.environ.get("AISTUDIO_MAX_REQUEST_BYTES", str(MAX_UPLOAD_BYTES + 200_000)))
 
 
 def _flag(name: str, default: bool) -> bool:
@@ -47,11 +48,22 @@ def allow_demo_seed() -> bool:
 
 
 def allow_register() -> bool:
-    return _flag("AISTUDIO_ALLOW_REGISTER", default=True)
+    return _flag("AISTUDIO_ALLOW_REGISTER", default=not is_production())
 
 
 def trust_proxy() -> bool:
     return _flag("AISTUDIO_TRUST_PROXY", default=False)
+
+
+def bootstrap_spec() -> dict | None:
+    """First-tenant env bootstrap. None unless org, email and password are set."""
+    org = (os.environ.get("AISTUDIO_BOOTSTRAP_ORG") or "").strip()
+    email = (os.environ.get("AISTUDIO_BOOTSTRAP_EMAIL") or "").strip()
+    password = os.environ.get("AISTUDIO_BOOTSTRAP_PASSWORD") or ""
+    name = (os.environ.get("AISTUDIO_BOOTSTRAP_NAME") or "").strip()
+    if not org or not email or not password:
+        return None
+    return {"org_name": org, "email": email, "password": password, "name": name or email}
 
 
 def cors_origins() -> list[str]:

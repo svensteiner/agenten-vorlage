@@ -204,3 +204,95 @@ def test_security_headers_on_api(client):
     r = client.get("/api/ready")
     assert r.headers.get("permissions-policy")
     assert r.headers.get("x-frame-options") == "DENY"
+    body = r.json()
+    assert body["writable"] is True
+    assert body.get("version")
+
+
+def test_production_register_off_by_default(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.delenv("AISTUDIO_ALLOW_REGISTER", raising=False)
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Closed GmbH",
+            "name": "C Admin",
+            "email": "c@closed.example",
+            "password": "Closedwerk2026!",
+        },
+    )
+    assert r.status_code == 403
+
+
+def test_oversize_request_rejected(client):
+    r = client.post(
+        "/api/auth/login",
+        json={"email": "a@b.example", "password": "x"},
+        headers={"content-length": "9000000"},
+    )
+    assert r.status_code == 413
+
+
+def test_admin_sets_member_password(client):
+    reg = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Passwerk GmbH",
+            "name": "Admin Person",
+            "email": "admin@passwerk.example",
+            "password": "Passwerk2026x",
+        },
+    )
+    assert reg.status_code == 200, reg.text
+    admin_h = {"Authorization": "Bearer " + reg.json()["token"]}
+    added = client.post(
+        "/api/users",
+        headers=admin_h,
+        json={
+            "email": "member@passwerk.example",
+            "name": "Max Member",
+            "role": "member",
+            "password": "Passwerk2026x",
+        },
+    )
+    assert added.status_code == 200, added.text
+    uid = added.json()["user"]["id"]
+    reset = client.post(
+        f"/api/users/{uid}/password",
+        headers=admin_h,
+        json={"password": "NeuesWerk2026!"},
+    )
+    assert reset.status_code == 200, reset.text
+    old = client.post(
+        "/api/auth/login",
+        json={"email": "member@passwerk.example", "password": "Passwerk2026x"},
+    )
+    assert old.status_code == 401
+    new = client.post(
+        "/api/auth/login",
+        json={"email": "member@passwerk.example", "password": "NeuesWerk2026!"},
+    )
+    assert new.status_code == 200
+
+
+def test_bootstrap_creates_first_tenant(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "boot.db")
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.SECRET", "test-secret-not-for-production-use")
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_ORG", "Start GmbH")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_EMAIL", "ada@start.example")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_PASSWORD", "Startwerk2026!")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_NAME", "Ada Admin")
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as c:
+        r = c.post(
+            "/api/auth/login",
+            json={"email": "ada@start.example", "password": "Startwerk2026!"},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["user"]["role"] == "admin"
+        assert r.json()["org"]["name"] == "Start GmbH"

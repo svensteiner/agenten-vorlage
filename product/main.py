@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from product import config
 from product.api import router
 from product.db import connect
-from product.security import AccessLogMiddleware, SecurityHeadersMiddleware
+from product.security import AccessLogMiddleware, LimitRequestMiddleware, SecurityHeadersMiddleware
 from product.seed import ensure_seeded
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +31,13 @@ async def lifespan(_app: FastAPI):
     conn = connect()
     try:
         ensure_seeded(conn)
+        from product import tenancy
+
+        try:
+            tenancy.bootstrap_if_empty(conn)
+        except ValueError as exc:
+            raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
+        conn.commit()
     finally:
         conn.close()
     yield
@@ -46,6 +53,7 @@ app = FastAPI(
 )
 origins = config.cors_origins()
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(LimitRequestMiddleware)
 app.add_middleware(AccessLogMiddleware)
 if origins:
     app.add_middleware(
@@ -80,7 +88,15 @@ def run() -> None:
     import uvicorn
 
     config.validate_runtime()
-    uvicorn.run("product.main:app", host=config.HOST, port=config.PORT, reload=False)
+    uvicorn.run(
+        "product.main:app",
+        host=config.HOST,
+        port=config.PORT,
+        reload=False,
+        proxy_headers=config.trust_proxy(),
+        forwarded_allow_ips="*" if config.trust_proxy() else None,
+        timeout_keep_alive=30,
+    )
 
 
 if __name__ == "__main__":

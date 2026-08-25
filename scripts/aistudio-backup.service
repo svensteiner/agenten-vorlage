@@ -1,0 +1,9 @@
+[Unit]
+Description=AI Studio SQLite backup
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/aistudio
+EnvironmentFile=-/opt/aistudio/.env
+ExecStart=/opt/aistudio/scripts/backup.sh

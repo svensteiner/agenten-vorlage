@@ -266,6 +266,42 @@ def revoke_user_sessions(conn, user_id: str, *, keep_jti: str | None = None) -> 
         )
 
 
+def bootstrap_if_empty(conn) -> dict[str, Any] | None:
+    """Create the first tenant from env when the database has no orgs yet."""
+    if conn.execute("SELECT 1 FROM orgs LIMIT 1").fetchone():
+        return None
+    spec = config.bootstrap_spec()
+    if not spec:
+        return None
+    created = register_org(
+        conn,
+        org_name=spec["org_name"],
+        email=spec["email"],
+        name=spec["name"],
+        password=spec["password"],
+    )
+    db.audit(created["org"]["id"], "system", "bootstrap", spec["org_name"], conn=conn)
+    return created
+
+
+def admin_set_password(conn, org_id: str, user_id: str, *, password: str, actor: str) -> dict[str, Any]:
+    row = conn.execute(
+        "SELECT * FROM users WHERE id = ? AND org_id = ?", (user_id, org_id)
+    ).fetchone()
+    if not row:
+        raise KeyError(user_id)
+    problem = auth.validate_password(password, row["email"])
+    if problem:
+        raise ValueError(problem)
+    conn.execute(
+        "UPDATE users SET password_hash = ? WHERE id = ?",
+        (auth.hash_password(password), user_id),
+    )
+    revoke_user_sessions(conn, user_id)
+    db.audit(org_id, actor, "password_reset", row["email"], conn=conn)
+    return public_user(row)
+
+
 def add_user(conn, org_id: str, *, email: str, name: str, role: str, password: str, actor: str) -> dict[str, Any]:
     email = email.strip().lower()
     role = (role or "member").strip()
