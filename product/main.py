@@ -38,10 +38,11 @@ async def lifespan(_app: FastAPI):
 
         try:
             created = tenancy.bootstrap_if_empty(conn)
-            if created:
+            leftover = created or config.has_bootstrap_residue()
+            if leftover:
                 if config.consume_bootstrap_env():
                     logging.getLogger("product").info(
-                        "Bootstrap-Zugang aus der Env-Datei entfernt."
+                        "Bootstrap-Zugang aus der Datendatei entfernt."
                     )
                 else:
                     logging.getLogger("product").info(

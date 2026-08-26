@@ -32,7 +32,7 @@ export AISTUDIO_CORS_ORIGINS=https://studio.example.com
 
 Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs` und `/openapi.json`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password-file ./pass.txt` (`data/` wird 0700; `--systemd` schreibt Einheiten für dieses Verzeichnis). Secret-Wechsel: neues `AISTUDIO_SECRET`, altes in `AISTUDIO_SECRET_PREV`, nach Ablauf der Sitzungen `PREV` entfernen. Reverse-Proxy: `scripts/nginx-aistudio.conf` (HTTP ohne Zertifikat) bzw. `scripts/nginx-aistudio.tls.conf` nach certbot (`AISTUDIO_TRUST_PROXY=true`, `AISTUDIO_ALLOWED_HOSTS` um den öffentlichen Namen ergänzen). Docker: `docker compose up --build` mit Secret in der Umgebung, Root-Dateisystem read-only, Port nur auf 127.0.0.1. Produktion: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build` (`AISTUDIO_SECRET` Pflicht, kein Demo-Seed). Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh` (SQLite plus `uploads/`; optional `AISTUDIO_BACKUP_PASS` für AES-256). Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
 
-In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kommt über `AISTUDIO_BOOTSTRAP_*` (oder kurz `AISTUDIO_ALLOW_REGISTER=true`).
+In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kommt über `data/bootstrap.env` (`AISTUDIO_BOOTSTRAP_*`, von `install.sh` geschrieben) oder kurz `AISTUDIO_ALLOW_REGISTER=true`.
 
 ### Was die Instanz kann
 
@@ -44,7 +44,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - **Modell-Schicht** (`product/llm.py`): einziges Tor nach außen. Die Wissensbasis bleibt auf der Instanz. Standard `AISTUDIO_LLM_EGRESS=in_boundary` (extractiv oder lokales Modell). Erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — dann gehen nur freigegebene Kurzauszüge, nie der Bestand. Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + `AISTUDIO_LLM_BASE_URL`. Nach wiederholten Ausfällen Schutzschalter (extractiv, ohne weiteres Warten).
 - Audit-Log (ohne Fragen/Auftragstexte, nur Länge), Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis, Alter der letzten Sicherung), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
 - Housekeeping beim Start und alle `AISTUDIO_HOUSEKEEPING_HOURS` Stunden (Standard 24): abgelaufene Sitzungen, Audit, Aufträge, WAL-Checkpoint, verwaiste Uploads. Cron: `./scripts/housekeeping.sh`.
-- Erstmandant per `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist. Nach Erfolg entfernt der Prozess diese Variablen aus `.env`.
+- Erstmandant per `data/bootstrap.env` bzw. `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist. Nach Erfolg löscht der Prozess die Datei und entfernt die Variablen aus der Umgebung (und aus `.env`, falls sie dort noch stehen). systemd schreibt nur `data/` — deshalb liegt das Bootstrap-Passwort nicht mehr in `.env`.
 - Sitzungsruhe (`AISTUDIO_SESSION_IDLE`), optional Host-Allowlist (`AISTUDIO_ALLOWED_HOSTS`)
 
 ### Sprachmodell

@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.13 — 2026-08-26 — Bootstrap-Passwort unter data/, kein Demo-PREV
+
+`install.sh` schreibt den Erstmandant nach `data/bootstrap.env` (600), nicht nach `.env`.
+Der Prozess liest die Datei, legt den Mandanten an und löscht sie — systemd darf `data/`
+schreiben, `.env` nicht. Überzählige Bootstrap-Variablen werden auch dann entfernt,
+wenn schon ein Mandant existiert (Neustart lädt sie sonst erneut). `--password-file`
+muss 600 oder 400 sein. `AISTUDIO_SECRET_PREV` mit Demo-Wert oder unter 24 Zeichen
+wird in Produktion ignoriert. WAL/SHM der SQLite-Datei werden 0600.
+
 ## Produktlaufzeit 1.4.12 — 2026-08-26 — Secret-Rotation, Install ohne argv-Passwort
 
 Sitzungstokens akzeptieren optional das vorige HMAC-Geheimnis (`AISTUDIO_SECRET_PREV`),

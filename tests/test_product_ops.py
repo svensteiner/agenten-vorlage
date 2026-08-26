@@ -476,6 +476,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_ALLOWED_HOSTS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "--password-file" in install
+    assert "data/bootstrap.env" in install
+    assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
@@ -604,6 +606,116 @@ def test_bootstrap_strips_password_from_env_file(tmp_path, monkeypatch):
     import os
 
     assert os.environ.get("AISTUDIO_BOOTSTRAP_PASSWORD") is None
+
+
+def test_bootstrap_from_data_file(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "boot.db")
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.SECRET", "test-secret-not-for-production-use")
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    for key in (
+        "AISTUDIO_BOOTSTRAP_ORG",
+        "AISTUDIO_BOOTSTRAP_EMAIL",
+        "AISTUDIO_BOOTSTRAP_PASSWORD",
+        "AISTUDIO_BOOTSTRAP_NAME",
+    ):
+        monkeypatch.delenv(key, raising=False)
+    boot = tmp_path / "bootstrap.env"
+    boot.write_text(
+        "AISTUDIO_BOOTSTRAP_ORG=Datei GmbH\n"
+        "AISTUDIO_BOOTSTRAP_EMAIL=ada@datei.example\n"
+        "AISTUDIO_BOOTSTRAP_PASSWORD=Datewerk2026!\n"
+        "AISTUDIO_BOOTSTRAP_NAME=Ada Datei\n",
+        encoding="utf-8",
+    )
+    os.chmod(boot, 0o600)
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as c:
+        r = c.post(
+            "/api/auth/login",
+            json={"email": "ada@datei.example", "password": "Datewerk2026!"},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["org"]["name"] == "Datei GmbH"
+    assert not boot.exists()
+
+
+def test_leftover_bootstrap_stripped_when_orgs_exist(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "boot.db")
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.SECRET", "test-secret-not-for-production-use")
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    from product import db, tenancy
+
+    conn = db.connect()
+    try:
+        db.init_db(conn)
+        tenancy.register_org(
+            conn,
+            org_name="Schon da GmbH",
+            email="ada@schon.example",
+            name="Ada",
+            password="SchonDa2026!",
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    boot = tmp_path / "bootstrap.env"
+    boot.write_text(
+        "AISTUDIO_BOOTSTRAP_ORG=Zu spaet GmbH\n"
+        "AISTUDIO_BOOTSTRAP_EMAIL=spaet@example.com\n"
+        "AISTUDIO_BOOTSTRAP_PASSWORD=ZuSpaet2026!\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_PASSWORD", "ZuSpaet2026!")
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as c:
+        r = c.post(
+            "/api/auth/login",
+            json={"email": "ada@schon.example", "password": "SchonDa2026!"},
+        )
+        assert r.status_code == 200, r.text
+        late = c.post(
+            "/api/auth/login",
+            json={"email": "spaet@example.com", "password": "ZuSpaet2026!"},
+        )
+        assert late.status_code == 401
+    assert not boot.exists()
+    assert os.environ.get("AISTUDIO_BOOTSTRAP_PASSWORD") is None
+
+
+def test_signing_secrets_skip_demo_prev(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_SECRET", "production-secret-not-demo-xx")
+    monkeypatch.setenv("AISTUDIO_SECRET_PREV", "dev-secret-change-me")
+    keys = config.signing_secrets()
+    assert "dev-secret-change-me" not in keys
+    assert "production-secret-not-demo-xx" in keys
+
+
+def test_harden_data_dir_chmod_wal(tmp_path, monkeypatch):
+    db_path = tmp_path / "aistudio.db"
+    wal = tmp_path / "aistudio.db-wal"
+    shm = tmp_path / "aistudio.db-shm"
+    db_path.write_bytes(b"x")
+    wal.write_bytes(b"y")
+    shm.write_bytes(b"z")
+    os.chmod(db_path, 0o644)
+    os.chmod(wal, 0o644)
+    os.chmod(shm, 0o644)
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.DB_PATH", db_path)
+    config.harden_data_dir()
+    assert (db_path.stat().st_mode & 0o777) == 0o600
+    assert (wal.stat().st_mode & 0o777) == 0o600
+    assert (shm.stat().st_mode & 0o777) == 0o600
+    assert (tmp_path.stat().st_mode & 0o777) == 0o700
 
 
 def test_backup_age_from_dir(tmp_path, monkeypatch):

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # First-run production files: .env with a fresh secret, data directory.
-# Optional first tenant:
+# Optional first tenant (written to data/bootstrap.env, deleted after first start):
 #   ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example --password-file ./pass.txt
 #   AISTUDIO_BOOTSTRAP_PASSWORD='…' ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example
 # --password steht in der Prozessliste — nur für lokale Versuche.
+# --password-file muss chmod 600 oder 400 sein.
 # Optional systemd units rewritten for this checkout:
 #   ./scripts/install.sh --systemd
 set -euo pipefail
@@ -36,6 +37,11 @@ done
 if [[ -n "$PASSWORD_FILE" ]]; then
   if [[ ! -f "$PASSWORD_FILE" ]]; then
     echo "Passwort-Datei nicht gefunden: $PASSWORD_FILE" >&2
+    exit 1
+  fi
+  MODE="$(stat -c '%a' "$PASSWORD_FILE" 2>/dev/null || true)"
+  if [[ -n "$MODE" && "$MODE" != "600" && "$MODE" != "400" ]]; then
+    echo "Passwort-Datei muss chmod 600 oder 400 sein (ist $MODE)." >&2
     exit 1
   fi
   PASSWORD="$(python3 -c 'import pathlib,sys; p=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"); print(p.rstrip("\n"))' "$PASSWORD_FILE")"
@@ -98,15 +104,25 @@ else
     echo "AISTUDIO_HOUSEKEEPING_HOURS=24"
     echo "AISTUDIO_LLM_PER_USER_DAY=200"
     echo "AISTUDIO_LLM_PER_ORG_DAY=800"
-    if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
+  } > "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
+  echo "geschrieben: $ENV_FILE"
+fi
+
+if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
+  BOOT="$ROOT/data/bootstrap.env"
+  if [[ -f "$BOOT" ]]; then
+    echo "$BOOT existiert bereits — nichts überschrieben." >&2
+  else
+    {
       echo "AISTUDIO_BOOTSTRAP_ORG=$ORG"
       echo "AISTUDIO_BOOTSTRAP_EMAIL=$EMAIL"
       echo "AISTUDIO_BOOTSTRAP_PASSWORD=$PASSWORD"
       echo "AISTUDIO_BOOTSTRAP_NAME=${NAME:-$EMAIL}"
-    fi
-  } > "$ENV_FILE"
-  chmod 600 "$ENV_FILE"
-  echo "geschrieben: $ENV_FILE"
+    } > "$BOOT"
+    chmod 600 "$BOOT"
+    echo "geschrieben: $BOOT (wird nach dem ersten Start gelöscht)"
+  fi
 fi
 
 if [[ "$SYSTEMD" -eq 1 ]]; then
@@ -114,7 +130,8 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
 fi
 
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
-echo "Nach dem ersten Start entfernt der Prozess AISTUDIO_BOOTSTRAP_* aus .env."
+echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann data/ schreiben)."
+echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
 echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS für AES-256)"
 echo "Aufräumen: ./scripts/housekeeping.sh"
