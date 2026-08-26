@@ -483,10 +483,10 @@ def test_systemd_unit_rewrites_install_root():
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
-    assert "/api/auth/register" in nginx
+    assert "/api/auth/(login|register)" in nginx
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
-    assert "/api/auth/register" in tls
+    assert "/api/auth/(login|register)" in tls
 
 
 def test_orphan_upload_pruned(client, tmp_path):
