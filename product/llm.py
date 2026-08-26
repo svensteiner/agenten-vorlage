@@ -173,6 +173,24 @@ def public_status() -> dict[str, Any]:
     }
 
 
+def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool:
+    """Budget for paid/cloud calls. Exhausted budget → extractive fallback, not 429."""
+    cfg = settings()
+    if not cfg["ready"]:
+        return True
+    from product.security import rate_limited
+
+    per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
+    per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
+    if user_id and rate_limited("llm-user:" + user_id, per_user):
+        log.info("llm budget exhausted scope=user")
+        return False
+    if org_id and rate_limited("llm-org:" + org_id, per_org):
+        log.info("llm budget exhausted scope=org")
+        return False
+    return True
+
+
 def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[str, Any]:
     """Call the configured model. Never logs ``system`` or ``user``."""
     cfg = settings()

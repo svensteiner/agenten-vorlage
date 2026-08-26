@@ -232,3 +232,46 @@ def test_ask_falls_back_extractive_when_gateway_closed(tmp_path, monkeypatch):
         data = r.json()
         assert data["via"] == "extractive"
         assert data["sources"]
+
+
+def test_llm_budget_falls_back_without_second_call(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "aistudio.db")
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.SECRET", "test-secret")
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
+    monkeypatch.setenv("AISTUDIO_LLM_PER_USER", "1")
+    calls: list[int] = []
+
+    def fake_complete(*, system, user, max_tokens=None):
+        calls.append(1)
+        return {
+            "ok": True,
+            "text": "<p>Nur Modell.</p>",
+            "provider": "openai",
+            "model": "gpt-4o-mini",
+            "kind": "api",
+            "error": "",
+            "latency_ms": 1,
+        }
+
+    monkeypatch.setattr("product.llm.complete", fake_complete)
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as client:
+        login = client.post(
+            "/api/auth/login",
+            json={"email": "katharina.vogel@meridian.example", "password": "Meridian2026!"},
+        )
+        headers = {"Authorization": "Bearer " + login.json()["token"]}
+        first = client.post("/api/ask", json={"q": "Reiserichtlinie"}, headers=headers)
+        second = client.post("/api/ask", json={"q": "Reiserichtlinie Hotel"}, headers=headers)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["via"] == "llm"
+        assert second.json()["via"] == "extractive"
+        assert len(calls) == 1
+        assert "Kontingent" in " ".join(second.json().get("reasoning") or [])

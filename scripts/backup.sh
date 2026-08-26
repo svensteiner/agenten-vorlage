@@ -17,6 +17,12 @@ OUT="$DEST/aistudio-$STAMP.db"
 
 if command -v sqlite3 >/dev/null 2>&1; then
   sqlite3 "$DB" ".backup '$OUT'"
+  CHECK="$(sqlite3 "$OUT" "PRAGMA integrity_check;")"
+  if [[ "$CHECK" != "ok" ]]; then
+    echo "Sicherung beschädigt ($CHECK) — $OUT verworfen." >&2
+    rm -f "$OUT"
+    exit 1
+  fi
 else
   cp "$DB" "$OUT"
   if [[ -f "$DB-wal" ]]; then
