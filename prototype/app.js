@@ -1364,7 +1364,11 @@
       `<br>Kontingent Cloud: ${escapeHtml(String(llm.per_user != null ? llm.per_user : 20))}/min je Nutzer, ` +
       `${escapeHtml(String(llm.per_org != null ? llm.per_org : 60))}/min je Mandant` +
       ` · ${escapeHtml(String(llm.per_user_day != null ? llm.per_user_day : 200))}/Tag je Nutzer, ` +
-      `${escapeHtml(String(llm.per_org_day != null ? llm.per_org_day : 800))}/Tag je Mandant — bei Ausschöpfung Antworten aus Belegen.</p>`;
+      `${escapeHtml(String(llm.per_org_day != null ? llm.per_org_day : 800))}/Tag je Mandant — bei Ausschöpfung Antworten aus Belegen.` +
+      (llm.circuit_open
+        ? `<br>Schutzschalter offen` + (llm.circuit_open_s ? ` (${escapeHtml(String(llm.circuit_open_s))} s)` : "") + ` — Antworten bleiben auf der Instanz, bis der Anbieter wieder erreichbar ist.`
+        : "") +
+      `</p>`;
     box.appendChild(llmBox);
 
     const pwd = el("div", "upload-box");
@@ -1427,8 +1431,14 @@
     reloadSessions();
 
     const up = el("div", "upload-box");
+    const storage = AISTUDIO.storage || {};
+    const usedMb = storage.used_bytes != null ? (Number(storage.used_bytes) / (1024 * 1024)).toFixed(1) : "—";
+    const limitMb = storage.limit_bytes ? Math.round(Number(storage.limit_bytes) / (1024 * 1024)) : 0;
+    const quotaLine = limitMb
+      ? ` Derzeit ${escapeHtml(String(usedMb))} MB von ${escapeHtml(String(limitMb))} MB für diesen Mandanten.`
+      : "";
     up.innerHTML = `<h3>Wissensbasis</h3>` +
-      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.</p>`;
+      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.${quotaLine}</p>`;
     const docList = el("div", "doc-admin-list");
     const input = el("input");
     input.type = "file";

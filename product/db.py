@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     revoked_at TEXT,
+    last_seen_at TEXT,
     ip TEXT DEFAULT '',
     user_agent TEXT DEFAULT ''
 );
@@ -186,6 +187,7 @@ def migrate(conn: sqlite3.Connection) -> None:
         _add_column(conn, "users", "failed_logins", "INTEGER NOT NULL DEFAULT 0")
         _add_column(conn, "users", "locked_until", "TEXT")
         _add_column(conn, "users", "last_login_at", "TEXT")
+        _add_column(conn, "sessions", "last_seen_at", "TEXT")
     except sqlite3.OperationalError:
         # Table may not exist yet on a brand-new file before SCHEMA ran.
         return

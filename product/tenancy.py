@@ -164,7 +164,7 @@ def prune_sessions(conn) -> None:
 def list_user_sessions(conn, user_id: str, current_jti: str) -> list[dict[str, Any]]:
     prune_sessions(conn)
     rows = conn.execute(
-        """SELECT id, jti, created_at, expires_at, ip, user_agent
+        """SELECT id, jti, created_at, expires_at, last_seen_at, ip, user_agent
            FROM sessions WHERE user_id = ? AND revoked_at IS NULL
            ORDER BY created_at DESC LIMIT 30""",
         (user_id,),
@@ -174,6 +174,7 @@ def list_user_sessions(conn, user_id: str, current_jti: str) -> list[dict[str, A
             "id": r["id"],
             "created_at": r["created_at"],
             "expires_at": r["expires_at"],
+            "last_seen_at": r["last_seen_at"] or r["created_at"],
             "ip": r["ip"] or "",
             "user_agent": (r["user_agent"] or "")[:120],
             "current": r["jti"] == current_jti,
@@ -199,16 +200,18 @@ def open_session(conn, user, *, ip: str = "", user_agent: str = "") -> str:
     jti = uuid.uuid4().hex
     now = int(datetime.now(timezone.utc).timestamp())
     exp = now + config.TOKEN_TTL_SECONDS
+    now_iso = db.now_iso()
     conn.execute(
-        """INSERT INTO sessions (id, jti, user_id, org_id, created_at, expires_at, ip, user_agent)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO sessions (id, jti, user_id, org_id, created_at, expires_at, last_seen_at, ip, user_agent)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             _uid("sess"),
             jti,
             user["id"],
             user["org_id"],
-            db.now_iso(),
+            now_iso,
             datetime.fromtimestamp(exp, timezone.utc).replace(microsecond=0).isoformat(),
+            now_iso,
             (ip or "")[:80],
             (user_agent or "")[:240],
         ),
@@ -224,6 +227,18 @@ def open_session(conn, user, *, ip: str = "", user_agent: str = "") -> str:
     )
 
 
+def _parse_ts(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        ts = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts
+
+
 def session_ok(conn, jti: str, user_id: str) -> bool:
     if not jti:
         return not config.is_production()
@@ -233,14 +248,22 @@ def session_ok(conn, jti: str, user_id: str) -> bool:
     ).fetchone()
     if not row or row["revoked_at"]:
         return False
-    try:
-        exp = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
-        if exp.tzinfo is None:
-            exp = exp.replace(tzinfo=timezone.utc)
-        if exp < datetime.now(timezone.utc):
-            return False
-    except ValueError:
+    now = datetime.now(timezone.utc)
+    exp = _parse_ts(row["expires_at"])
+    if exp is None or exp < now:
         return False
+    idle = config.session_idle_seconds()
+    if idle > 0:
+        seen = _parse_ts(row["last_seen_at"] if "last_seen_at" in row.keys() else None) or _parse_ts(
+            row["created_at"]
+        )
+        if seen is None or (now - seen).total_seconds() > idle:
+            revoke_session(conn, jti)
+            return False
+    conn.execute(
+        "UPDATE sessions SET last_seen_at = ? WHERE jti = ? AND revoked_at IS NULL",
+        (db.now_iso(), jti),
+    )
     return True
 
 

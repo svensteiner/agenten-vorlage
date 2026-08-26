@@ -55,6 +55,7 @@ def current_user(
         jti = claims.get("jti") or ""
         if not tenancy.session_ok(conn, jti, user["id"]):
             raise HTTPException(401, "Sitzung ungültig oder abgelaufen.")
+        conn.commit()
         user["_jti"] = jti
         user["_ip"] = client_ip(request)
         return user
@@ -264,6 +265,8 @@ def _metrics_prom(payload: dict[str, Any]) -> str:
         "aistudio_llm_complete_fail_total %s" % calls.get("complete_fail", 0),
         "# TYPE aistudio_llm_budget_blocked_total counter",
         "aistudio_llm_budget_blocked_total %s" % calls.get("budget_blocked", 0),
+        "# TYPE aistudio_llm_circuit_open_total counter",
+        "aistudio_llm_circuit_open_total %s" % calls.get("circuit_open", 0),
     ]
     return "\n".join(lines) + "\n"
 
@@ -413,10 +416,16 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
     conn = _conn()
     try:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
+        used = config.org_upload_bytes(user["org_id"])
+        limit = config.org_upload_limit_bytes()
         return {
             "user": tenancy.public_user(user),
             "org": db.row_dict(org) if org else None,
             "demo": _demo_present(conn) and user["org_id"] == "org-meridian",
+            "storage": {
+                "used_bytes": used,
+                "limit_bytes": limit,
+            },
         }
     finally:
         conn.close()
@@ -821,6 +830,15 @@ async def upload_doc(
         name = "upload.txt"
     if not name.endswith((".txt", ".md", ".csv", ".json", ".log")):
         raise HTTPException(400, "Nur Textformate (.txt, .md, .csv, .json).")
+    limit = config.org_upload_limit_bytes()
+    if limit:
+        used = config.org_upload_bytes(user["org_id"])
+        if used + len(raw) > limit:
+            mb = max(1, limit // (1024 * 1024))
+            raise HTTPException(
+                413,
+                "Speicherlimit des Mandanten erreicht (%s MB)." % mb,
+            )
     title = (file.filename or "Upload").replace("\\", "/").rsplit("/", 1)[-1][:180]
     text = raw.decode("utf-8", errors="replace")
     stamp = db.now_iso()

@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.9 — 2026-08-26 — Schutzschalter, Speicherlimit, Sitzungsruhe
+
+Nach wiederholten Modell-Ausfällen bleiben Antworten extractiv (`AISTUDIO_LLM_BREAKER_FAILS` /
+`AISTUDIO_LLM_BREAKER_SECONDS`, Standard 5 / 300 s) — der Worker wartet nicht weiter auf
+eine tote API. Uploads sind je Mandant begrenzt (`AISTUDIO_ORG_UPLOAD_MB`, Standard 200).
+Ungenutzte Sitzungen laufen nach `AISTUDIO_SESSION_IDLE` aus (Install: 4 Stunden).
+Produktion blendet `/openapi.json` aus. Optional `AISTUDIO_ALLOWED_HOSTS` prüft den
+Host-Header. systemd: `MemoryMax=512M`.
+
 ## Produktlaufzeit 1.4.8 — 2026-08-26 — LLM-Tageskontingent
 
 Cloud-Aufrufe sind zusätzlich pro Kalendertag begrenzt (`AISTUDIO_LLM_PER_USER_DAY` /

@@ -29,7 +29,8 @@ import httpx
 log = logging.getLogger("product.llm")
 
 _stats_lock = threading.Lock()
-_stats = {"complete_ok": 0, "complete_fail": 0, "budget_blocked": 0}
+_stats = {"complete_ok": 0, "complete_fail": 0, "budget_blocked": 0, "circuit_open": 0}
+_breaker = {"fails": 0, "open_until": 0.0}
 
 CLOUD_HOSTS = ("api.openai.com", "api.anthropic.com")
 DEFAULT_OPENAI_URL = "https://api.openai.com/v1"
@@ -170,6 +171,7 @@ def public_status() -> dict[str, Any]:
     per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
     per_user_day = int(os.environ.get("AISTUDIO_LLM_PER_USER_DAY", "200"))
     per_org_day = int(os.environ.get("AISTUDIO_LLM_PER_ORG_DAY", "800"))
+    brk = breaker_status()
     return {
         "provider": cfg["provider"],
         "kind": cfg["kind"],
@@ -183,7 +185,51 @@ def public_status() -> dict[str, Any]:
         "per_org": per_org,
         "per_user_day": per_user_day,
         "per_org_day": per_org_day,
+        "circuit_open": brk["open"],
+        "circuit_open_s": brk["open_for_s"],
     }
+
+
+def breaker_status() -> dict[str, Any]:
+    """Process-local circuit: consecutive vendor failures pause outbound calls."""
+    with _stats_lock:
+        open_until = float(_breaker["open_until"] or 0)
+        fails = int(_breaker["fails"] or 0)
+    remaining = max(0, int(open_until - time.time()))
+    return {"open": remaining > 0, "open_for_s": remaining, "consecutive_fails": fails}
+
+
+def circuit_open() -> bool:
+    _fails, seconds = _breaker_limits()
+    if seconds <= 0:
+        return False
+    with _stats_lock:
+        return time.time() < float(_breaker["open_until"] or 0)
+
+
+def _breaker_limits() -> tuple[int, int]:
+    return max(1, _int_env("AISTUDIO_LLM_BREAKER_FAILS", 5)), max(
+        0, _int_env("AISTUDIO_LLM_BREAKER_SECONDS", 300)
+    )
+
+
+def _breaker_note(ok: bool) -> None:
+    threshold, seconds = _breaker_limits()
+    if seconds <= 0:
+        return
+    with _stats_lock:
+        if ok:
+            _breaker["fails"] = 0
+            _breaker["open_until"] = 0.0
+            return
+        _breaker["fails"] = int(_breaker["fails"] or 0) + 1
+        if int(_breaker["fails"]) >= threshold:
+            _breaker["open_until"] = time.time() + seconds
+            log.info(
+                "llm circuit open for=%ss after=%s fails",
+                seconds,
+                _breaker["fails"],
+            )
 
 
 def call_stats() -> dict[str, int]:
@@ -295,6 +341,10 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
     if not cfg["ready"]:
         _log_complete(cfg, ok=False, ms=0, error=empty["error"])
         return empty
+    if circuit_open():
+        _log_complete(cfg, ok=False, ms=0, error="circuit_open", circuit=True)
+        empty["error"] = "circuit_open"
+        return empty
     tokens = int(max_tokens or cfg["max_tokens"])
     try:
         if cfg["provider"] == "anthropic":
@@ -302,14 +352,19 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
         else:
             text = _openai_compat(cfg, system, user, tokens)
     except httpx.TimeoutException:
+        _breaker_note(False)
         return _fail(cfg, started, "timeout")
     except httpx.HTTPStatusError as exc:
+        _breaker_note(False)
         return _fail(cfg, started, "http_%s" % exc.response.status_code)
     except Exception:
+        _breaker_note(False)
         return _fail(cfg, started, "request_failed")
     ms = int((time.monotonic() - started) * 1000)
     text = sanitize_html(text or "")
     ok = bool(text)
+    if ok:
+        _breaker_note(True)
     _log_complete(cfg, ok=ok, ms=ms, error="" if ok else "empty")
     return {
         "ok": ok,
@@ -399,9 +454,14 @@ def _fail(cfg: dict[str, Any], started: float, error: str) -> dict[str, Any]:
     }
 
 
-def _log_complete(cfg: dict[str, Any], *, ok: bool, ms: int, error: str) -> None:
+def _log_complete(
+    cfg: dict[str, Any], *, ok: bool, ms: int, error: str, circuit: bool = False
+) -> None:
     with _stats_lock:
-        _stats["complete_ok" if ok else "complete_fail"] += 1
+        if circuit:
+            _stats["circuit_open"] += 1
+        else:
+            _stats["complete_ok" if ok else "complete_fail"] += 1
     log.info(
         "llm complete provider=%s model=%s kind=%s egress=%s ok=%s ms=%s error=%s",
         cfg.get("provider"),

@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from product import config
@@ -57,13 +58,11 @@ async def lifespan(_app: FastAPI):
     housekeeping.stop_loop()
 
 
-_docs = None if config.is_production() else "/docs"
 app = FastAPI(
     title="AI Studio",
     version=config.VERSION,
     lifespan=lifespan,
-    docs_url=_docs,
-    redoc_url=None if config.is_production() else "/redoc",
+    **config.docs_kwargs(),
 )
 origins = config.cors_origins()
 app.add_middleware(SecurityHeadersMiddleware)
@@ -76,6 +75,9 @@ if origins:
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
+_hosts = config.allowed_hosts()
+if _hosts:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_hosts)
 app.include_router(router, prefix="/api")
 
 

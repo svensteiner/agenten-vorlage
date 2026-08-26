@@ -251,6 +251,10 @@ def ask(
                 reasoning.append(
                     "Antwort extractiv auf der Instanz — Modell-Kontingent erschöpft."
                 )
+            elif llm_meta.get("error") == "circuit_open":
+                reasoning.append(
+                    "Antwort extractiv auf der Instanz — Modell vorübergehend nicht erreichbar."
+                )
             else:
                 reasoning.append(
                     "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
@@ -316,6 +320,8 @@ def _maybe_llm_answer(
     from product import llm
 
     empty: dict[str, Any] = {}
+    if llm.circuit_open():
+        return "", {"error": "circuit_open"}
     if not llm.allow_call(org_id=org_id, user_id=user_id, conn=conn):
         return "", {"error": "rate_limited"}
     excerpts = llm.excerpts_from_hits(hits, query, quote_fn=quote_from)

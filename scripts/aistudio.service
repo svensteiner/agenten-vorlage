@@ -28,6 +28,9 @@ LockPersonality=true
 SystemCallArchitectures=native
 UMask=0077
 LimitNOFILE=4096
+MemoryMax=512M
+MemorySwapMax=0
+TasksMax=128
 ReadWritePaths=/opt/aistudio
 
 [Install]

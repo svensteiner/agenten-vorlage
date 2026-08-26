@@ -27,6 +27,7 @@
     org: null,
     fleet: null,
     health: null,
+    storage: null,
 
     isLive: function () { return !!(this.live && this.token); },
     isDemoTenant: function () {
@@ -218,6 +219,7 @@
       this.user = me.user;
       this.org = me.org;
       this.tenantDemo = !!me.demo;
+      this.storage = me.storage || null;
       const docs = await this.request("/api/docs");
       this.applyDocs(docs.docs || []);
       this.fleet = await this.request("/api/fleet");

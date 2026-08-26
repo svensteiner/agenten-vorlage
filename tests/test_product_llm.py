@@ -323,3 +323,46 @@ def test_llm_daily_budget_persists(tmp_path, monkeypatch):
         health = client.get("/api/health").json()
         assert health["llm"]["per_user_day"] == 1
         assert "sk-" not in str(health)
+
+
+def test_llm_circuit_opens_without_further_calls(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
+    monkeypatch.setenv("AISTUDIO_LLM_BREAKER_FAILS", "2")
+    monkeypatch.setenv("AISTUDIO_LLM_BREAKER_SECONDS", "60")
+    with llm._stats_lock:
+        llm._breaker["fails"] = 0
+        llm._breaker["open_until"] = 0.0
+        llm._stats["circuit_open"] = 0
+    posts = []
+
+    class Boom:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            posts.append(1)
+            raise llm.httpx.TimeoutException("offline")
+
+    monkeypatch.setattr(llm.httpx, "Client", Boom)
+    first = llm.complete(system="sys", user="Frage: intern")
+    second = llm.complete(system="sys", user="Frage: intern")
+    third = llm.complete(system="sys", user="Frage: intern")
+    assert first["error"] == "timeout"
+    assert second["error"] == "timeout"
+    assert third["error"] == "circuit_open"
+    assert third["ok"] is False
+    assert len(posts) == 2
+    status = llm.public_status()
+    assert status["circuit_open"] is True
+    assert llm.call_stats()["circuit_open"] >= 1
+    with llm._stats_lock:
+        llm._breaker["fails"] = 0
+        llm._breaker["open_until"] = 0.0

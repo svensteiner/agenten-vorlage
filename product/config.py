@@ -26,7 +26,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.8"
+VERSION = "1.4.9"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -80,6 +80,64 @@ def cors_origins() -> list[str]:
     if is_production():
         return []
     return ["*"]
+
+
+def allowed_hosts() -> list[str] | None:
+    """Host-Header allowlist. None = do not enforce (development / unset)."""
+    raw = os.environ.get("AISTUDIO_ALLOWED_HOSTS")
+    if raw is None:
+        return None
+    text = raw.strip()
+    if not text or text == "*":
+        return None
+    hosts = [p.strip() for p in text.split(",") if p.strip()]
+    return hosts or None
+
+
+def docs_kwargs() -> dict:
+    """Hide OpenAPI in production — /docs was already off, /openapi.json was not."""
+    if is_production():
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
+def session_idle_seconds() -> int:
+    """0 = only the signed token TTL applies. Production install sets 4 hours."""
+    try:
+        n = int(os.environ.get("AISTUDIO_SESSION_IDLE", "0"))
+    except ValueError:
+        n = 0
+    return max(0, min(n, 7 * 24 * 3600))
+
+
+def org_upload_limit_bytes() -> int:
+    """Per-tenant upload cap. 0 = unlimited. Default 200 MB."""
+    try:
+        mb = int(os.environ.get("AISTUDIO_ORG_UPLOAD_MB", "200"))
+    except ValueError:
+        mb = 200
+    if mb <= 0:
+        return 0
+    return max(1, min(mb, 10_240)) * 1024 * 1024
+
+
+def org_upload_bytes(org_id: str) -> int:
+    root = DATA_DIR / "uploads" / org_dir(org_id)
+    if not root.is_dir():
+        return 0
+    try:
+        root.resolve().relative_to(Path(DATA_DIR).resolve())
+    except ValueError:
+        return 0
+    total = 0
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        try:
+            total += path.stat().st_size
+        except OSError:
+            continue
+    return total
 
 
 def validate_runtime() -> None:

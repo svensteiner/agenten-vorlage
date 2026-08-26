@@ -442,8 +442,10 @@ def test_systemd_unit_rewrites_install_root():
     assert "WorkingDirectory=/srv/studio" in rendered
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
     assert "/opt/aistudio" not in rendered
+    assert "MemoryMax=512M" in src
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
+    assert "AISTUDIO_ALLOWED_HOSTS" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
@@ -464,3 +466,67 @@ def test_orphan_upload_pruned(client, tmp_path):
         assert not orphan.exists()
     finally:
         conn.close()
+
+
+def test_org_upload_quota(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ORG_UPLOAD_MB", "1")
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    blob = "x" * 600_000
+    first = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("a.txt", blob, "text/plain")},
+    )
+    assert first.status_code == 200, first.text
+    second = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("b.txt", blob, "text/plain")},
+    )
+    assert second.status_code == 413
+    me = client.get("/api/me", headers=headers).json()
+    assert me["storage"]["limit_bytes"] == 1024 * 1024
+    assert me["storage"]["used_bytes"] >= 600_000
+
+
+def test_idle_session_revoked(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_SESSION_IDLE", "60")
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    assert client.get("/api/me", headers=headers).status_code == 200
+    from product import db
+
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE sessions SET last_seen_at = ?",
+            ("2020-01-01T00:00:00+00:00",),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert client.get("/api/me", headers=headers).status_code == 401
+
+
+def test_production_hides_openapi_and_checks_hosts(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "studio.example.com")
+    assert config.docs_kwargs()["openapi_url"] is None
+    assert config.docs_kwargs()["docs_url"] is None
+    assert config.allowed_hosts() == ["studio.example.com"]
+    from fastapi import FastAPI
+    from fastapi.middleware.trustedhost import TrustedHostMiddleware
+    from fastapi.testclient import TestClient
+
+    app = FastAPI(**config.docs_kwargs())
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.allowed_hosts())
+
+    @app.get("/ping")
+    def ping():
+        return {"ok": True}
+
+    with TestClient(app, base_url="http://studio.example.com") as c:
+        assert c.get("/ping").status_code == 200
+        assert c.get("/openapi.json").status_code == 404
+        assert c.get("/docs").status_code == 404
+    with TestClient(app, base_url="http://evil.example") as c:
+        assert c.get("/ping").status_code == 400
