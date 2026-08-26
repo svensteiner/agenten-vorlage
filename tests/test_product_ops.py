@@ -469,20 +469,24 @@ def test_systemd_unit_rewrites_install_root():
     assert "ReadWritePaths=/opt/aistudio/data" in src
     assert "ReadWritePaths=/opt/aistudio\n" not in src
     assert "CapabilityBoundingSet=" in src
+    assert "StartLimitBurst=5" in src
     backup = (root / "scripts" / "aistudio-backup.service").read_text(encoding="utf-8")
     assert "ReadWritePaths=/opt/aistudio/data" in backup
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
+    assert "AISTUDIO_BACKUP_PASS" in install
     assert "--password-file" in install
     assert "data/bootstrap.env" in install
     assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
+    assert "/api/auth/register" in nginx
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
+    assert "/api/auth/register" in tls
 
 
 def test_orphan_upload_pruned(client, tmp_path):

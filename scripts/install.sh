@@ -84,6 +84,7 @@ if [[ -f "$ENV_FILE" ]]; then
 else
   SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   METRICS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  BACKUP_PASS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   {
     echo "AISTUDIO_ENV=production"
     echo "AISTUDIO_HOST=127.0.0.1"
@@ -91,6 +92,7 @@ else
     echo "AISTUDIO_DATA=$ROOT/data"
     echo "AISTUDIO_SECRET=$SECRET"
     echo "AISTUDIO_METRICS_TOKEN=$METRICS"
+    echo "AISTUDIO_BACKUP_PASS=$BACKUP_PASS"
     echo "AISTUDIO_ALLOW_DEMO_SEED=false"
     echo "AISTUDIO_ALLOW_REGISTER=false"
     echo "AISTUDIO_TRUST_PROXY=true"
@@ -107,6 +109,9 @@ else
   } > "$ENV_FILE"
   chmod 600 "$ENV_FILE"
   echo "geschrieben: $ENV_FILE"
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "Hinweis: openssl fehlt — der Backup-Timer schreibt dann keine Sicherung (AISTUDIO_BACKUP_PASS ist gesetzt). openssl installieren." >&2
+  fi
 fi
 
 if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
@@ -133,7 +138,7 @@ echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
 echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann data/ schreiben)."
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
-echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS für AES-256)"
+echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in .env, AES-256; Restore braucht denselben Wert)"
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."

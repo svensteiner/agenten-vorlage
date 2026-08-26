@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.15 — 2026-08-26 — Backup-Passwort bei Install, nginx Register, Crash-Loop
+
+`install.sh` legt `AISTUDIO_BACKUP_PASS` an — der Backup-Timer schreibt AES-256,
+kein Klartext mehr in `data/backups` bei Neuinstallation. nginx begrenzt
+`/api/auth/register` wie Login. systemd: `StartLimitBurst=5` / 120 s gegen
+Crash-Loops.
+
 ## Produktlaufzeit 1.4.14 — 2026-08-26 — Restore-Kopien begrenzen
 
 `restore.sh` legt Vor-Restore-Kopien 0600/0700 an und behält nur die letzten drei
