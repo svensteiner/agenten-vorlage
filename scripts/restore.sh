@@ -11,8 +11,12 @@ TMP_DB=""
 TMP_UP=""
 
 cleanup() {
-  [[ -n "$TMP_DB" && -f "$TMP_DB" ]] && rm -f "$TMP_DB"
-  [[ -n "$TMP_UP" && -f "$TMP_UP" ]] && rm -f "$TMP_UP"
+  if [[ -n "${TMP_DB:-}" ]]; then
+    rm -f "$TMP_DB"
+  fi
+  if [[ -n "${TMP_UP:-}" ]]; then
+    rm -f "$TMP_UP"
+  fi
 }
 trap cleanup EXIT
 

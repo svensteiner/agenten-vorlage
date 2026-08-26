@@ -43,6 +43,7 @@ def test_backup_restore_roundtrip_with_uploads(tmp_path):
 
     dest = tmp_path / "backups"
     env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
     r = subprocess.run(
         [str(BACKUP), str(dest)],
         cwd=str(ROOT),
