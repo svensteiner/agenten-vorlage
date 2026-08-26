@@ -141,12 +141,13 @@ def health() -> dict[str, Any]:
             "env": config.env_name(),
             "demo": demo,
             "allow_register": config.allow_register(),
-            "orgs": orgs,
-            "documents": docs,
             "llm": llm.public_status(),
         }
-        if demo and not config.is_production():
-            payload["demo_email"] = config.DEMO_EMAIL
+        if not config.is_production():
+            payload["orgs"] = orgs
+            payload["documents"] = docs
+            if demo:
+                payload["demo_email"] = config.DEMO_EMAIL
         return payload
     finally:
         conn.close()

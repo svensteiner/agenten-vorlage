@@ -20,6 +20,8 @@ log = logging.getLogger("aistudio.access")
 
 _lock = threading.Lock()
 _hits: dict[str, deque[float]] = defaultdict(deque)
+_sweep = 0
+_MAX_KEYS = 8000
 
 
 def client_ip(request: Request) -> str:
@@ -40,9 +42,35 @@ def rate_limited(key: str, limit: int, window_s: int = 60) -> bool:
         while q and now - q[0] > window_s:
             q.popleft()
         if len(q) >= limit:
+            _sweep_idle(now)
             return True
         q.append(now)
+        _sweep_idle(now)
         return False
+
+
+def _sweep_idle(now: float) -> None:
+    """Drop idle keys so unique IPs cannot grow the map without bound."""
+    global _sweep
+    _sweep += 1
+    if _sweep < 32 and len(_hits) < _MAX_KEYS:
+        return
+    _sweep = 0
+    stale = [
+        k
+        for k, q in _hits.items()
+        if not q or now - q[-1] > 120
+    ]
+    for k in stale:
+        del _hits[k]
+    if len(_hits) <= _MAX_KEYS:
+        return
+    extra = sorted(
+        _hits.items(),
+        key=lambda kv: kv[1][-1] if kv[1] else 0,
+    )
+    for k, _q in extra[: len(_hits) - _MAX_KEYS]:
+        del _hits[k]
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

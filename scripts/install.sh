@@ -25,6 +25,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$ROOT/data"
+chmod 700 "$ROOT/data"
 if [[ -f "$ENV_FILE" ]]; then
   echo "$ENV_FILE existiert bereits — nichts überschrieben." >&2
 else

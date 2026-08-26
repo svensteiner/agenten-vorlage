@@ -30,7 +30,7 @@ export AISTUDIO_CORS_ORIGINS=https://studio.example.com
 ./scripts/run_product.sh
 ```
 
-Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password '…'`. systemd: `scripts/aistudio.service`, tägliche Sicherung: `scripts/aistudio-backup.timer`. Reverse-Proxy: `scripts/nginx-aistudio.conf` (`AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung, Root-Dateisystem read-only. Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh`. Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
+Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password '…'` (`data/` wird 0700). systemd: `scripts/aistudio.service`, tägliche Sicherung: `scripts/aistudio-backup.timer`. Reverse-Proxy: `scripts/nginx-aistudio.conf` (HTTP→HTTPS, `AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung, Root-Dateisystem read-only. Produktion: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build` (`AISTUDIO_SECRET` Pflicht, kein Demo-Seed). Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh` (SQLite plus `uploads/`). Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
 
 In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kommt über `AISTUDIO_BOOTSTRAP_*` (oder kurz `AISTUDIO_ALLOW_REGISTER=true`).
 

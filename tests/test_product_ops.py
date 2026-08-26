@@ -152,7 +152,11 @@ def test_production_requires_secret(monkeypatch):
 def test_health_hides_demo_email_in_production(client, monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     h = client.get("/api/health").json()
-    assert "demo_email" not in h or h.get("env") == "production"
+    assert h.get("env") == "production"
+    assert "demo_email" not in h
+    assert "orgs" not in h
+    assert "documents" not in h
+    assert "llm" in h
 
 
 def test_sessions_list_and_revoke_others(client):
@@ -360,3 +364,19 @@ def test_housekeeping_prunes_old_audit(client):
         ).fetchone()["n"] == 0
     finally:
         conn.close()
+
+
+def test_rate_limiter_drops_idle_keys():
+    import time
+    from collections import deque
+
+    from product import security
+
+    security._hits.clear()
+    security._sweep = 31
+    security._hits["old"] = deque([time.time() - 200])
+    assert security.rate_limited("fresh", 10) is False
+    assert "old" not in security._hits
+    assert "fresh" in security._hits
+    security._hits.clear()
+    security._sweep = 0

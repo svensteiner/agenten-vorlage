@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.4 — 2026-08-26 — Rate-Limiter, Restore, Compose-Prod
+
+Rate-Limiter vergisst idle Keys (kein unbegrenztes Wachstum). Restore prüft
+die Quelle vor dem Überschreiben, legt bei Fehler den vorherigen Stand zurück
+und spielt Uploads aus dem Schwesterarchiv wieder ein. `backup.sh` sichert
+`uploads/` mit. `docker-compose.prod.yml` ohne Demo-Seed, Secret Pflicht.
+Image enthält `sqlite3` (WAL-sichere Sicherung). nginx leitet HTTP nach HTTPS.
+Install setzt `data/` auf 0700. `/api/health` nennt in Produktion keine
+Mandanten-/Dokumentzahlen.
+
 ## Produktlaufzeit 1.4.3 — 2026-08-26 — Image und Dateiauslieferung
 
 `.dockerignore` lässt `.env`, Tests und `platform/` draußen. Statische Dateien nur

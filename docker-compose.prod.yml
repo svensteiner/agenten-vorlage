@@ -1,0 +1,12 @@
+# Production overlay. Secret is required:
+#   AISTUDIO_SECRET='…' docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+services:
+  aistudio:
+    environment:
+      AISTUDIO_ENV: production
+      AISTUDIO_SECRET: ${AISTUDIO_SECRET:?AISTUDIO_SECRET muss gesetzt sein}
+      AISTUDIO_ALLOW_DEMO_SEED: "false"
+      AISTUDIO_ALLOW_REGISTER: "false"
+      AISTUDIO_LLM_EGRESS: ${AISTUDIO_LLM_EGRESS:-in_boundary}
+      AISTUDIO_TRUST_PROXY: ${AISTUDIO_TRUST_PROXY:-true}
+      AISTUDIO_TOKEN_TTL: ${AISTUDIO_TOKEN_TTL:-43200}
