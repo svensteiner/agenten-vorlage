@@ -153,6 +153,24 @@ def test_production_requires_secret(monkeypatch):
         config.validate_runtime()
 
 
+def test_secret_prev_accepts_old_tokens(monkeypatch):
+    from product import auth
+
+    old = "old-secret-not-for-production-xx"
+    new = "new-secret-not-for-production-xx"
+    monkeypatch.delenv("AISTUDIO_SECRET", raising=False)
+    monkeypatch.delenv("AISTUDIO_SECRET_PREV", raising=False)
+    monkeypatch.setattr(config, "SECRET", old)
+    token = auth.issue_token({"sub": "user-rotate", "org": "org-x", "jti": "j1"})
+    monkeypatch.setattr(config, "SECRET", new)
+    monkeypatch.setenv("AISTUDIO_SECRET", new)
+    assert auth.read_token(token) is None
+    monkeypatch.setenv("AISTUDIO_SECRET_PREV", old)
+    body = auth.read_token(token)
+    assert body is not None
+    assert body["sub"] == "user-rotate"
+
+
 def test_health_hides_demo_email_in_production(client, monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     h = client.get("/api/health").json()
@@ -457,6 +475,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "--systemd" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
+    assert "--password-file" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx

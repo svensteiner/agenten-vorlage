@@ -26,7 +26,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.11"
+VERSION = "1.4.12"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -238,6 +238,20 @@ def backup_max_age_hours() -> float:
     except ValueError:
         n = 36.0
     return max(1.0, min(n, 24 * 14))
+
+
+def signing_secrets() -> list[str]:
+    """Current HMAC secret, then optional previous secret for rotation."""
+    keys: list[str] = []
+    for item in (
+        os.environ.get("AISTUDIO_SECRET"),
+        SECRET,
+        os.environ.get("AISTUDIO_SECRET_PREV"),
+    ):
+        text = (item or "").strip()
+        if text and text not in keys:
+            keys.append(text)
+    return keys
 
 
 def require_backup_for_ready() -> bool:

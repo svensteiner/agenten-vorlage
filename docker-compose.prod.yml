@@ -6,6 +6,7 @@ services:
     environment:
       AISTUDIO_ENV: production
       AISTUDIO_SECRET: ${AISTUDIO_SECRET:?AISTUDIO_SECRET muss gesetzt sein}
+      AISTUDIO_SECRET_PREV: ${AISTUDIO_SECRET_PREV:-}
       AISTUDIO_ALLOW_DEMO_SEED: "false"
       AISTUDIO_ALLOW_REGISTER: "false"
       AISTUDIO_LLM_EGRESS: ${AISTUDIO_LLM_EGRESS:-in_boundary}

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # First-run production files: .env with a fresh secret, data directory.
 # Optional first tenant:
-#   ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example --password 'Mindestens10x'
+#   ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example --password-file ./pass.txt
+#   AISTUDIO_BOOTSTRAP_PASSWORD='…' ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example
+# --password steht in der Prozessliste — nur für lokale Versuche.
 # Optional systemd units rewritten for this checkout:
 #   ./scripts/install.sh --systemd
 set -euo pipefail
@@ -10,6 +12,8 @@ ENV_FILE="$ROOT/.env"
 ORG=""
 EMAIL=""
 PASSWORD=""
+PASSWORD_FILE=""
+PASSWORD_FROM_CLI=0
 NAME=""
 SYSTEMD=0
 
@@ -17,16 +21,33 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --org) ORG="$2"; shift 2 ;;
     --email) EMAIL="$2"; shift 2 ;;
-    --password) PASSWORD="$2"; shift 2 ;;
+    --password) PASSWORD="$2"; PASSWORD_FROM_CLI=1; shift 2 ;;
+    --password-file) PASSWORD_FILE="$2"; shift 2 ;;
     --name) NAME="$2"; shift 2 ;;
     --systemd) SYSTEMD=1; shift ;;
     -h|--help)
-      echo "usage: $0 [--org NAME --email EMAIL --password PASS --name NAME] [--systemd]"
+      echo "usage: $0 [--org NAME --email EMAIL --password-file FILE|--password PASS --name NAME] [--systemd]"
       exit 0
       ;;
     *) echo "unbekanntes Argument: $1" >&2; exit 1 ;;
   esac
 done
+
+if [[ -n "$PASSWORD_FILE" ]]; then
+  if [[ ! -f "$PASSWORD_FILE" ]]; then
+    echo "Passwort-Datei nicht gefunden: $PASSWORD_FILE" >&2
+    exit 1
+  fi
+  PASSWORD="$(python3 -c 'import pathlib,sys; p=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"); print(p.rstrip("\n"))' "$PASSWORD_FILE")"
+  PASSWORD_FROM_CLI=0
+fi
+if [[ -z "$PASSWORD" && -n "${AISTUDIO_BOOTSTRAP_PASSWORD:-}" ]]; then
+  PASSWORD="$AISTUDIO_BOOTSTRAP_PASSWORD"
+  PASSWORD_FROM_CLI=0
+fi
+if [[ "$PASSWORD_FROM_CLI" -eq 1 ]]; then
+  echo "Hinweis: --password ist in der Prozessliste sichtbar. Lieber --password-file oder AISTUDIO_BOOTSTRAP_PASSWORD." >&2
+fi
 
 mkdir -p "$ROOT/data/backups"
 chmod 700 "$ROOT/data"

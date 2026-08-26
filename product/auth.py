@@ -60,7 +60,8 @@ def issue_token(payload: dict[str, Any], ttl: int | None = None) -> str:
     body = dict(payload)
     body["exp"] = int(time.time()) + int(ttl or config.TOKEN_TTL_SECONDS)
     raw = json.dumps(body, separators=(",", ":"), sort_keys=True).encode("utf-8")
-    sig = hmac.new(config.SECRET.encode("utf-8"), raw, hashlib.sha256).digest()
+    secret = (os.environ.get("AISTUDIO_SECRET") or config.SECRET).encode("utf-8")
+    sig = hmac.new(secret, raw, hashlib.sha256).digest()
     return _b64url(raw) + "." + _b64url(sig)
 
 
@@ -71,8 +72,13 @@ def read_token(token: str) -> dict[str, Any] | None:
         sig = _b64url_decode(sig_b64)
     except (ValueError, Exception):
         return None
-    expected = hmac.new(config.SECRET.encode("utf-8"), raw, hashlib.sha256).digest()
-    if not hmac.compare_digest(sig, expected):
+    matched = False
+    for secret in config.signing_secrets():
+        expected = hmac.new(secret.encode("utf-8"), raw, hashlib.sha256).digest()
+        if hmac.compare_digest(sig, expected):
+            matched = True
+            break
+    if not matched:
         return None
     try:
         body = json.loads(raw.decode("utf-8"))

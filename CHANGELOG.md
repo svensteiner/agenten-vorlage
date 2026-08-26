@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.12 — 2026-08-26 — Secret-Rotation, Install ohne argv-Passwort
+
+Sitzungstokens akzeptieren optional das vorige HMAC-Geheimnis (`AISTUDIO_SECRET_PREV`),
+damit ein Secret-Wechsel nicht alle Anmeldungen sofort ungültig macht.
+`install.sh` liest das Bootstrap-Passwort aus `--password-file` oder
+`AISTUDIO_BOOTSTRAP_PASSWORD`; `--password` bleibt, warnt aber (Prozessliste).
+
 ## Produktlaufzeit 1.4.11 — 2026-08-26 — Audit ohne Fragen, systemd nur data/
 
 Fragen und Auftrags-Texte stehen nicht mehr im Audit-Log (nur Zeichenlänge).
