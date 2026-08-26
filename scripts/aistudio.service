@@ -1,0 +1,21 @@
+[Unit]
+Description=AI Studio product
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/aistudio
+Environment=PYTHONPATH=/opt/aistudio
+Environment=AISTUDIO_ENV=production
+EnvironmentFile=-/opt/aistudio/.env
+ExecStart=/usr/bin/python3 -m product
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/aistudio
+
+[Install]
+WantedBy=multi-user.target

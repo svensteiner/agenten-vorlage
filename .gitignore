@@ -4,6 +4,7 @@ logs/
 .env
 tasks.json
 .claude/
+data/
 
 # Python
 __pycache__/

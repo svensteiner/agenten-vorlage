@@ -1,7 +1,17 @@
 """Gemeinsame Test-Fixtures für die Agenten-Vorlage."""
 import json
-import pytest
+import os
 from pathlib import Path
+
+import pytest
+
+# Product tests must never call a cloud model, even if a local .env has a key.
+os.environ["AISTUDIO_LOAD_DOTENV"] = "0"
+os.environ["AISTUDIO_LLM_PROVIDER"] = "none"
+os.environ["AISTUDIO_LLM_EGRESS"] = "in_boundary"
+os.environ.pop("AISTUDIO_LLM_API_KEY", None)
+os.environ.pop("OPENAI_API_KEY", None)
+os.environ.pop("ANTHROPIC_API_KEY", None)
 
 
 MINIMAL_MANIFEST = {

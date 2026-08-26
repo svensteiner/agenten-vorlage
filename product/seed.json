@@ -1,0 +1,1893 @@
+{
+  "company": {
+    "name": "Meridian Industrie GmbH",
+    "tagline": "Maschinen- & Anlagenbau · München",
+    "facts": [
+      {
+        "label": "Gegründet",
+        "value": "1971"
+      },
+      {
+        "label": "Mitarbeitende",
+        "value": "2.412"
+      },
+      {
+        "label": "Standorte",
+        "value": "München · Werk 2 Ingolstadt · Logistik Nürnberg"
+      },
+      {
+        "label": "Umsatz 2025",
+        "value": "612 Mio. €"
+      }
+    ],
+    "people": {
+      "ceo": "Markus Brandt",
+      "cfo": "Dr. Katharina Vogel",
+      "hr": "Sabine Reuter",
+      "procurement": "Thomas Krüger",
+      "legal": "Dr. Elena Wagner",
+      "audit": "Frank Hoffmann"
+    }
+  },
+  "agents": [
+    {
+      "id": "auskunft",
+      "icon": "✦",
+      "name": "Auskunfts-Agent",
+      "role": "Ihre Wissensbasis",
+      "category": "wissen",
+      "price": 0,
+      "included": true,
+      "recommended": false,
+      "desc": "Beantwortet Fragen aus Ihrem gesamten Firmenwissen — mit Belegen und Quellenangabe. Der Agent, der Ihnen gerade geantwortet hat.",
+      "long": "Der Auskunfts-Agent ist das Fundament: Er durchsucht Verträge, Rechnungen, Berichte und E-Mails, prüft Zugriffsrechte und antwortet nur mit dem, wofür Sie berechtigt sind. Jede Aussage trägt Quelle, Zitat und Konfidenz. Inklusive in der Wissensbasis — keine Extra-Miete.",
+      "skills": [
+        "Belegte Antworten",
+        "Quellen & Zitate",
+        "Nur freigegebene Treffer"
+      ],
+      "sla": "Antwort in 1,2–2,6 s",
+      "hours": "24/7",
+      "owner": "Wissen",
+      "firstDeliverable": "Bereits aktiv — beantwortet Fragen aus Ihrem Wissensspeicher.",
+      "nextRun": "sofort bei jeder Frage",
+      "tools": [
+        "Wissensspeicher",
+        "Dokumentenviewer",
+        "Berechtigungsprüfung"
+      ],
+      "tasks": [
+        {
+          "id": "wissen-frage",
+          "label": "Eine belegte Frage beantworten",
+          "hint": "Wechselt ins Modul Wissen — der Auskunfts-Agent arbeitet dort im Chat.",
+          "jump": "wissen"
+        }
+      ],
+      "sampleWork": {
+        "title": "Letzte Auskunft",
+        "when": "soeben",
+        "kicker": "Live im Chat",
+        "html": "<p>Der Auskunfts-Agent arbeitet im Modul <b>Wissen</b>. Jede Antwort trägt Belege, Konfidenz und — wo vorhanden — die Entscheidungskette.</p>"
+      }
+    },
+    {
+      "id": "reporting",
+      "icon": "📊",
+      "name": "Reporting-Agent",
+      "role": "Berichte & Vorstandsvorlagen",
+      "category": "berichte",
+      "price": 400,
+      "included": false,
+      "recommended": true,
+      "desc": "Erstellt Monatsabschluss-Kommentare, Soll-Ist-Vergleiche und fertige Vorstandsvorlagen automatisch aus Ihren freigegebenen Zahlen.",
+      "long": "Der Reporting-Agent liest Controlling-Zahlen, Projektstatus und Vorstandsprotokolle und liefert kommentierte Vorlagen statt Rohtabellen. Er kennzeichnet Risiken offen (kein Schönfärben) und legt jede Zahl auf ein Originaldokument. Typische Lieferung: Monatsabschluss-Kommentar bis 18:40 am Abschlusstag.",
+      "skills": [
+        "Monatsabschluss-Kommentar",
+        "Soll-Ist-Vergleich",
+        "Vorstandsvorlage"
+      ],
+      "sla": "Erste Auswertung am Abend der Buchung",
+      "hours": "Werktags 07–19 Uhr",
+      "owner": "Controlling",
+      "firstDeliverable": "Monatsabschluss-Kommentar (Entwurf) heute Abend.",
+      "nextRun": "nächster Monatsultimo 18:40",
+      "tools": [
+        "Quartalsberichte",
+        "Projektstatus",
+        "Vorstandsprotokolle"
+      ],
+      "tasks": [
+        {
+          "id": "mai-kommentar",
+          "label": "Monatsabschluss-Kommentar Mai 2026",
+          "output": {
+            "title": "Monatsabschluss-Kommentar Mai 2026",
+            "kicker": "Entwurf · wartet auf Freigabe durch die CFO",
+            "html": "<p>Materialkosten liegen <b>18,4 %</b> über Vorjahr, getrieben durch Baustahl S355 (<b>920 €/t</b>, +17,9 %). Rohertragsmarge 31,6 % (Vj. 34,1 %). Umsatz stabil bei 158 Mio. €.</p><table><tr><th>Position</th><th>Ist</th><th>Vj.</th><th>Delta</th></tr><tr><td>Materialkosten</td><td>48,8 Mio. €</td><td>41,2 Mio. €</td><td><b>+18,4 %</b></td></tr><tr><td>Rohertragsmarge</td><td>31,6 %</td><td>34,1 %</td><td>−2,5 PP</td></tr><tr><td>Umsatz</td><td>158 Mio. €</td><td>158 Mio. €</td><td>0 %</td></tr></table><ul><li><b>Empfehlung:</b> Ferro-Nord-Quote auf 30 % heben, sobald Qualifikation abgeschlossen.</li><li>Projekt Beta bleibt termingefährdet (3 Wo.) — Pönale-Deckel 0,43 Mio. € im Blick behalten.</li></ul>"
+          }
+        },
+        {
+          "id": "portfolio-vorlage",
+          "label": "Vorstandsvorlage Projektportfolio",
+          "output": {
+            "title": "Vorstandsvorlage — Projektportfolio Q1 2026",
+            "kicker": "bereit zur Sitzung",
+            "html": "<p>Portfolio-Volumen <b>32,6 Mio. €</b>, davon 18,8 Mio. € verausgabt. <b>1 von 2</b> Vorhaben termingefährdet — offen gekennzeichnet.</p><table><tr><th>Projekt</th><th>Fortschritt</th><th>Budget</th><th>Status</th></tr><tr><td>Alpha</td><td>62 %</td><td>24,0 Mio. €</td><td>✓ im Zeitplan</td></tr><tr><td>Beta</td><td>48 %</td><td>8,6 Mio. €</td><td>⚠ 3 Wo. Verzug</td></tr></table>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "Monatsabschluss-Kommentar Mai 2026",
+        "when": "heute 18:40",
+        "kicker": "Entwurf · Freigabe CFO",
+        "html": "<p>Material +18,4 % vs. Vj. — Stahl 920 €/t. Empfehlung: Ferro-Nord-Quote auf 30 % heben.</p>"
+      }
+    },
+    {
+      "id": "rechnung",
+      "icon": "🧾",
+      "name": "Rechnungs-Agent",
+      "role": "Eingangsrechnungen prüfen",
+      "category": "finanzen",
+      "price": 600,
+      "included": false,
+      "recommended": false,
+      "desc": "Prüft jede Eingangsrechnung im Drei-Wege-Abgleich gegen Bestellung und Wareneingang und meldet Abweichungen, bevor gezahlt wird.",
+      "long": "Der Rechnungs-Agent legt jede neue Eingangsrechnung auf Bestellung und Wareneingang. Menge, Preis und Konto müssen zusammenpassen — Abweichungen gehen als Ampel an den Einkauf, nicht als stille Buchung. Er kennt den Donau-Drei-Wege-Abgleich und den Reklamationspfad (Mängelrüge → Gutschrift).",
+      "skills": [
+        "Drei-Wege-Abgleich",
+        "Abweichungs-Ampel",
+        "Gutschriften erkennen"
+      ],
+      "sla": "Prüfung jeder neuen Rechnung in < 4 Min",
+      "hours": "Werktags 06–20 Uhr",
+      "owner": "Kreditorenbuchhaltung",
+      "firstDeliverable": "Offene Eingangsrechnungen geprüft, Abweichungen markiert.",
+      "nextRun": "bei jedem neuen Beleg",
+      "tools": [
+        "SAP-Belege",
+        "Bestellungen",
+        "Wareneingänge"
+      ],
+      "tasks": [
+        {
+          "id": "offene-rechnungen",
+          "label": "Offene Eingangsrechnungen prüfen",
+          "output": {
+            "title": "Prüflauf Eingangsrechnungen — 24.08.2026",
+            "kicker": "3 Belege · 1 Abweichung",
+            "html": "<table><tr><th>Beleg</th><th>Lieferant</th><th>Betrag</th><th>Abgleich</th></tr><tr><td>RE-2026-1843</td><td>Stahlwerk Donau AG</td><td>87.584 €</td><td>✓ PO + WE identisch</td></tr><tr><td>RE-2026-1902</td><td>ElektroSys GmbH</td><td>12.400 €</td><td>⚠ Bestellung weicht um 400 € ab</td></tr><tr><td>RE-2026-1888</td><td>Siemens AG</td><td>4.180 €</td><td>✓ ok</td></tr></table><ul><li><b>Freigabe empfohlen</b> für Donau und Siemens.</li><li>ElektroSys: Rückfrage Einkauf, Zahlung zurückhalten.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "Prüflauf Eingangsrechnungen",
+        "when": "heute 09:12",
+        "kicker": "1 Abweichung offen",
+        "html": "<p>3 Belege geprüft — Donau 87.584 € sauber, ElektroSys ⚠ 400 € Abweichung.</p>"
+      }
+    },
+    {
+      "id": "vertrag",
+      "icon": "📑",
+      "name": "Vertrags-Agent",
+      "role": "Fristen & Kündigungen",
+      "category": "vertraege",
+      "price": 500,
+      "included": false,
+      "recommended": false,
+      "desc": "Überwacht Laufzeiten und Kündigungsfristen aller Verträge und warnt rechtzeitig vor jeder automatischen Verlängerung.",
+      "long": "Der Vertrags-Agent liest Klauseln, nicht nur Deckblätter. Automatische Verlängerung, Preisgleitklausel, Pönale — jede Frist landet in einer Ampel, 90 / 30 / 7 Tage vorher. Zwei Meridian-Verträge enden am 28.02.2026: Donau-Rahmen und Siemens-Wartung.",
+      "skills": [
+        "Kündigungsfristen",
+        "Auto-Verlängerung",
+        "Klausel-Radar"
+      ],
+      "sla": "Warnung 90 / 30 / 7 Tage vor Frist",
+      "hours": "24/7 Überwachung",
+      "owner": "Recht / Einkauf",
+      "firstDeliverable": "Fristenradar der nächsten 90 Tage.",
+      "nextRun": "täglich 07:00",
+      "tools": [
+        "Vertragsarchiv",
+        "Klausel-Index",
+        "Kalender"
+      ],
+      "tasks": [
+        {
+          "id": "fristen-90",
+          "label": "Kündigungsfristen der nächsten 90 Tage",
+          "output": {
+            "title": "Fristenradar — nächste 90 Tage",
+            "kicker": "2 dringend · 1 im Blick",
+            "html": "<table><tr><th>Vertrag</th><th>Verlängerung</th><th>Kündigung bis</th></tr><tr><td>Rahmenvertrag Stahlwerk Donau</td><td>+12 Monate</td><td><b>28.02.2026 ⚠</b></td></tr><tr><td>Wartungsvertrag Siemens</td><td>+24 Monate</td><td><b>28.02.2026 ⚠</b></td></tr><tr><td>Lizenzvertrag SAP</td><td>+12 Monate</td><td>31.07.2026</td></tr></table><ul><li>Mietvertrag Logistikzentrum Nürnberg: feste Laufzeit bis 2029, <b>keine</b> Auto-Verlängerung.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "Fristenradar 90 Tage",
+        "when": "heute 07:00",
+        "kicker": "2 Fristen in 6 Tagen",
+        "html": "<p>Donau-Rahmen und Siemens-Wartung: Kündigung bis <b>28.02.2026</b>.</p>"
+      }
+    },
+    {
+      "id": "liquiditaet",
+      "icon": "💧",
+      "name": "Liquiditäts-Agent",
+      "role": "Cash & 90-Tage-Risiko",
+      "category": "finanzen",
+      "price": 450,
+      "included": false,
+      "recommended": false,
+      "desc": "Projiziert Zahlungseingänge und -ausgänge auf 90 Tage und markiert Engpässe, bevor sie in der Linie ankommen.",
+      "long": "Der Liquiditäts-Agent verdichtet offene Posten, fällige Kreditoren und Projektabrufe zu einer 90-Tage-Sicht. Engpässe werden als Ampel gemeldet — mit dem Beleg, der sie verursacht, nicht als abstrakte Prognose.",
+      "skills": [
+        "90-Tage-Forecast",
+        "Offene Posten",
+        "Engpass-Ampel"
+      ],
+      "sla": "Aktualisierung werktäglich 08:00",
+      "hours": "Werktags 07–18 Uhr",
+      "owner": "Treasury",
+      "firstDeliverable": "90-Tage-Liquiditätsband mit Engpassmarkierung.",
+      "nextRun": "morgen 08:00",
+      "tools": [
+        "Offene Posten",
+        "Kreditoren",
+        "Projektabrufe"
+      ],
+      "tasks": [
+        {
+          "id": "cash-90",
+          "label": "90-Tage-Liquidität rechnen",
+          "output": {
+            "title": "Liquiditätsband — 90 Tage ab 24.08.2026",
+            "kicker": "kein Engpass in 30 Tagen · ⚠ KW 41 eng",
+            "html": "<table><tr><th>Fenster</th><th>Zufluss</th><th>Abfluss</th><th>Saldo</th></tr><tr><td>30 Tage</td><td>18,4 Mio. €</td><td>16,1 Mio. €</td><td>✓ +2,3 Mio. €</td></tr><tr><td>60 Tage</td><td>31,0 Mio. €</td><td>29,8 Mio. €</td><td>✓ +1,2 Mio. €</td></tr><tr><td>90 Tage</td><td>44,2 Mio. €</td><td>45,1 Mio. €</td><td>⚠ −0,9 Mio. €</td></tr></table><ul><li>KW 41: Beta-Nachtrag 476.000 € brutto plus Donau-Stahlabruf — Verschiebung des Abrufs um 10 Tage schließt die Lücke.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "90-Tage-Liquiditätsband",
+        "when": "heute 08:00",
+        "kicker": "⚠ KW 41 eng",
+        "html": "<p>30/60 Tage solide, 90 Tage −0,9 Mio. € — Beta-Nachtrag und Stahlabruf treffen sich.</p>"
+      }
+    },
+    {
+      "id": "compliance",
+      "icon": "⚖",
+      "name": "Compliance-Agent",
+      "role": "DSGVO, Audit, Fristen",
+      "category": "audit",
+      "price": 550,
+      "included": false,
+      "recommended": false,
+      "desc": "Überwacht offene Auflagen aus Datenschutz-Audit und interner Revision und eskaliert Fristen, bevor sie verfallen.",
+      "long": "Der Compliance-Agent hält das Verzeichnis von Verarbeitungstätigkeiten und die offenen Audit-Auflagen aktuell. Zwei DSGVO-Auflagen laufen am 31.03.2026 ab (AV-Vertrag Cloud-Backup, Löschkonzept Bewerberdaten). Er erfindet keine Entwarnung — offene Punkte bleiben offen.",
+      "skills": [
+        "Auflagen-Radar",
+        "VVT-Wächter",
+        "Frist-Eskalation"
+      ],
+      "sla": "Eskalation 14 Tage vor Frist",
+      "hours": "24/7 Überwachung",
+      "owner": "Datenschutz / Revision",
+      "firstDeliverable": "Offene Auflagen mit Halter und Frist.",
+      "nextRun": "täglich 07:30",
+      "tools": [
+        "Audit-Berichte",
+        "VVT Art. 30",
+        "Maßnahmenliste"
+      ],
+      "tasks": [
+        {
+          "id": "auflagen",
+          "label": "Offene Compliance-Auflagen listen",
+          "output": {
+            "title": "Offene Auflagen — Stand 24.08.2026",
+            "kicker": "2 offen · Frist 31.03.2026",
+            "html": "<table><tr><th>Auflage</th><th>Rechtsgrund</th><th>Halter</th><th>Frist</th></tr><tr><td>AV-Vertrag Cloud-Backup</td><td>Art. 28 DSGVO</td><td>IT</td><td>⚠ 31.03.2026</td></tr><tr><td>Löschkonzept Bewerberdaten</td><td>Art. 17 DSGVO</td><td>HR</td><td>⚠ 31.03.2026</td></tr></table><ul><li>Letztes Datenschutz-Audit 20.11.2025: <b>bestanden</b>, 0 meldepflichtige Vorfälle 2025.</li><li>Kein akutes Bußgeldrisiko — aber die Frist ist hart.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "Auflagen-Radar",
+        "when": "heute 07:30",
+        "kicker": "2 Fristen 31.03.2026",
+        "html": "<p>AV-Vertrag Cloud-Backup und Löschkonzept Bewerberdaten noch offen.</p>"
+      }
+    },
+    {
+      "id": "einkauf",
+      "icon": "🏭",
+      "name": "Einkaufs-Agent",
+      "role": "Lieferanten & Klumpenrisiko",
+      "category": "finanzen",
+      "price": 500,
+      "included": false,
+      "recommended": false,
+      "desc": "Überwacht Konzentration, Single-Source und Preisgleitklauseln — und schlägt Zweitquellen vor, bevor der Einkauf eng wird.",
+      "long": "Der Einkaufs-Agent hält das Klumpenrisiko im Blick: Stahlwerk Donau 23,9 % vom Einkaufsvolumen, Baustahl S355 als Single-Source. Er kennt den Vorstandsbeschluss Ferro Nord und rechnet Preisgleitklauseln (§6) in Mehrbedarf um, bevor sie im Monatsabschluss überraschen.",
+      "skills": [
+        "Konzentrations-Ampel",
+        "Single-Source",
+        "Preisgleit-Radar"
+      ],
+      "sla": "Wochenreport montags 08:30",
+      "hours": "Werktags 07–18 Uhr",
+      "owner": "Einkauf",
+      "firstDeliverable": "Konzentrations- und Single-Source-Radar.",
+      "nextRun": "nächster Montag 08:30",
+      "tools": [
+        "Lieferantenanalyse",
+        "Rahmenverträge",
+        "Preislisten"
+      ],
+      "tasks": [
+        {
+          "id": "klumpen",
+          "label": "Klumpenrisiko und Zweitquellen",
+          "output": {
+            "title": "Lieferantenradar — KW 35 / 2026",
+            "kicker": "Donau 23,9 % · Single-Source S355",
+            "html": "<table><tr><th>Lieferant</th><th>Volumen 2025</th><th>Anteil</th></tr><tr><td>Stahlwerk Donau AG</td><td>64 Mio. €</td><td><b>23,9 % ⚠</b></td></tr><tr><td>Siemens AG</td><td>31 Mio. €</td><td>11,6 %</td></tr><tr><td>Robotik Bayern GmbH</td><td>22 Mio. €</td><td>8,2 %</td></tr></table><ul><li>Baustahl S355 bleibt Single-Source Donau — Ferro Nord ist qualifiziert, Quote noch 0 %.</li><li>Ziel laut Vorstand: Donau-Anteil bis Ende 2027 unter 15 %.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "Lieferantenradar KW 35",
+        "when": "Mo 08:30",
+        "kicker": "Single-Source S355",
+        "html": "<p>Donau 23,9 % — Ferro-Nord-Qualifikation steht, Abrufquote noch 0 %.</p>"
+      }
+    },
+    {
+      "id": "esg",
+      "icon": "🌱",
+      "name": "ESG-Agent",
+      "role": "CO₂, CSRD, Zielpfad",
+      "category": "berichte",
+      "price": 450,
+      "included": false,
+      "recommended": false,
+      "desc": "Hält den CO₂-Zielpfad und die CSRD-Kennzahlen aktuell und sagt ehrlich, wo die Lücke zum 2030-Ziel liegt.",
+      "long": "Der ESG-Agent liest Energie- und Emissionskennzahlen, rechnet den linearen Zielpfad und legt die Lücke offen: 2025 stehen 41.200 t (−12 % vs. 2020), der lineare Pfad läge bei −15 %. Kein Greenwashing — die Zahl und die Lücke stehen nebeneinander.",
+      "skills": [
+        "CO₂-Zielpfad",
+        "CSRD-Kennzahlen",
+        "Lücken-Offenlegung"
+      ],
+      "sla": "Quartals-Update plus Ad-hoc bei neuen Messwerten",
+      "hours": "Werktags 08–17 Uhr",
+      "owner": "Nachhaltigkeit",
+      "firstDeliverable": "CO₂-Zielpfad mit ehrlicher Lücke.",
+      "nextRun": "nächster Quartalsstichtag",
+      "tools": [
+        "Emissionsbericht",
+        "ESG-Bericht",
+        "Energiekennzahlen"
+      ],
+      "tasks": [
+        {
+          "id": "co2-pfad",
+          "label": "CO₂-Zielpfad 2030 aktualisieren",
+          "output": {
+            "title": "CO₂-Zielpfad — Stand 2025",
+            "kicker": "Lücke zum linearen Pfad offen ausgewiesen",
+            "html": "<table><tr><th>Jahr</th><th>t CO₂</th><th>vs. 2020</th></tr><tr><td>2020</td><td>46.800</td><td>—</td></tr><tr><td>2025</td><td>41.200</td><td>−12 %</td></tr><tr><td>2030 Ziel</td><td>32.760</td><td>−30 %</td></tr></table><ul><li>Linearer Pfad 2025 wäre −15 % — wir liegen <b>3 Prozentpunkte</b> dahinter.</li><li>Hebel: Grünstrom 68 %, Scope-1-Reduktion Werk 2, Ferro-Nord-Logistik kürzer.</li></ul>"
+          }
+        }
+      ],
+      "sampleWork": {
+        "title": "CO₂-Zielpfad 2025",
+        "when": "Q1-Update",
+        "kicker": "−12 % vs. Zielpfad −15 %",
+        "html": "<p>41.200 t CO₂ — Lücke zum linearen 2030-Pfad ehrlich ausgewiesen.</p>"
+      }
+    }
+  ],
+  "docs": [
+    {
+      "id": "reiserichtlinie-2026",
+      "title": "Reiserichtlinie 2026",
+      "type": "Richtlinie",
+      "module": "hr",
+      "path": "SharePoint › HR › Richtlinien › Reiserichtlinie_2026_v3.pdf",
+      "author": "Sabine Reuter (Leiterin HR)",
+      "date": "2026-01-15",
+      "snippet": "Verbindliche Regeln für Dienstreisen: Buchung, Klassen, Verpflegung, Abrechnung.",
+      "body": "Reiserichtlinie 2026 der Meridian Industrie GmbH — gültig ab 1. Februar 2026. Ersetzt die Fassung 2024.\n§2 Bahnreisen: Fahrten ab 3 Stunden Reisezeit dürfen in der 1. Klasse gebucht werden. Kürzere Fahrten in der 2. Klasse.\n§3 Flugreisen: Economy Class ist Standard. Business Class nur bei Flügen über 6 Stunden und mit Freigabe der Bereichsleitung.\n§4 Übernachtung: Der erstattungsfähige Hotelhöchstsatz beträgt 140 € pro Nacht (Inland) bzw. 180 € (Ausland).\n§5 Verpflegungspauschale: 28 € pro vollem Reisetag, 14 € für An- und Abreisetage, gemäß gesetzlicher Pauschale.\n§7 Buchung: Alle Reisen sind über das Reiseportal (Concur) mindestens 7 Tage im Voraus zu buchen.",
+      "body_parts": [
+        {
+          "t": "Reiserichtlinie 2026 der Meridian Industrie GmbH — gültig ab 1. Februar 2026. Ersetzt die Fassung 2024.",
+          "highlight": false
+        },
+        {
+          "t": "§2 Bahnreisen: Fahrten ab 3 Stunden Reisezeit dürfen in der 1. Klasse gebucht werden. Kürzere Fahrten in der 2. Klasse.",
+          "highlight": true
+        },
+        {
+          "t": "§3 Flugreisen: Economy Class ist Standard. Business Class nur bei Flügen über 6 Stunden und mit Freigabe der Bereichsleitung.",
+          "highlight": true
+        },
+        {
+          "t": "§4 Übernachtung: Der erstattungsfähige Hotelhöchstsatz beträgt 140 € pro Nacht (Inland) bzw. 180 € (Ausland).",
+          "highlight": true
+        },
+        {
+          "t": "§5 Verpflegungspauschale: 28 € pro vollem Reisetag, 14 € für An- und Abreisetage, gemäß gesetzlicher Pauschale.",
+          "highlight": false
+        },
+        {
+          "t": "§7 Buchung: Alle Reisen sind über das Reiseportal (Concur) mindestens 7 Tage im Voraus zu buchen.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "q1-bericht-2026",
+      "title": "Quartalsbericht Q1 2026",
+      "type": "Finanzbericht",
+      "module": "finanzen",
+      "path": "Fileserver › Controlling › 2026 › Quartalsbericht_Q1_2026.xlsx",
+      "author": "Dr. Katharina Vogel (CFO)",
+      "date": "2026-04-10",
+      "snippet": "Materialkostenanstieg von 18,4 % ggü. Vorjahr, getrieben durch Stahlpreise.",
+      "body": "Quartalsbericht Q1 2026 — Meridian Industrie GmbH, Bereich Controlling.\nDie Materialkosten stiegen im Q1 2026 um 18,4 % gegenüber Q1 2025 (von 41,2 Mio. € auf 48,8 Mio. €).\nHaupttreiber ist der Stahleinkauf: Der Tonnenpreis für Baustahl S355 stieg von 780 € auf 920 € (+17,9 %), bedingt durch Energiekosten und Lieferengpässe.\nDer Lieferant Stahlwerk Donau AG hat zum 01.03.2026 eine Preisanpassung von 15 % durchgesetzt (Rahmenvertrag RV-2023-014, Preisgleitklausel §6).\nGegenmaßnahme: Der Einkauf verhandelt einen Zweitlieferanten (Ferro Nord) zur Reduktion der Abhängigkeit. Erwartete Entlastung ab Q3 2026.\nRohertragsmarge sank folglich von 34,1 % auf 31,6 %. Umsatz stabil bei 158 Mio. €.",
+      "body_parts": [
+        {
+          "t": "Quartalsbericht Q1 2026 — Meridian Industrie GmbH, Bereich Controlling.",
+          "highlight": false
+        },
+        {
+          "t": "Die Materialkosten stiegen im Q1 2026 um 18,4 % gegenüber Q1 2025 (von 41,2 Mio. € auf 48,8 Mio. €).",
+          "highlight": true
+        },
+        {
+          "t": "Haupttreiber ist der Stahleinkauf: Der Tonnenpreis für Baustahl S355 stieg von 780 € auf 920 € (+17,9 %), bedingt durch Energiekosten und Lieferengpässe.",
+          "highlight": true
+        },
+        {
+          "t": "Der Lieferant Stahlwerk Donau AG hat zum 01.03.2026 eine Preisanpassung von 15 % durchgesetzt (Rahmenvertrag RV-2023-014, Preisgleitklausel §6).",
+          "highlight": true
+        },
+        {
+          "t": "Gegenmaßnahme: Der Einkauf verhandelt einen Zweitlieferanten (Ferro Nord) zur Reduktion der Abhängigkeit. Erwartete Entlastung ab Q3 2026.",
+          "highlight": false
+        },
+        {
+          "t": "Rohertragsmarge sank folglich von 34,1 % auf 31,6 %. Umsatz stabil bei 158 Mio. €.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "rechnung-2026-1843",
+      "title": "Rechnung 2026-1843",
+      "type": "Eingangsrechnung",
+      "module": "finanzen",
+      "path": "SAP › FI › Belege › 2026 › ER_2026-1843.pdf",
+      "author": "Stahlwerk Donau AG (Lieferant)",
+      "date": "2026-03-22",
+      "snippet": "Lieferung Baustahl S355 · 87.584 € brutto · Bestellbezug PO-2026-0512.",
+      "body": "Rechnung Nr. 2026-1843 — Stahlwerk Donau AG an Meridian Industrie GmbH.\nPosition: 80 t Baustahl S355, Preis 920 €/t = 73.600 € netto.\nUmsatzsteuer 19 %: 13.984 €. Rechnungsbetrag brutto: 87.584 €.\nBestellbezug: PO-2026-0512. Lieferung erfolgt am 20.03.2026, Werk 2 Ingolstadt.\nZahlungsziel: 30 Tage netto, 2 % Skonto bei Zahlung innerhalb 14 Tagen.",
+      "body_parts": [
+        {
+          "t": "Rechnung Nr. 2026-1843 — Stahlwerk Donau AG an Meridian Industrie GmbH.",
+          "highlight": false
+        },
+        {
+          "t": "Position: 80 t Baustahl S355, Preis 920 €/t = 73.600 € netto.",
+          "highlight": true
+        },
+        {
+          "t": "Umsatzsteuer 19 %: 13.984 €. Rechnungsbetrag brutto: 87.584 €.",
+          "highlight": true
+        },
+        {
+          "t": "Bestellbezug: PO-2026-0512. Lieferung erfolgt am 20.03.2026, Werk 2 Ingolstadt.",
+          "highlight": true
+        },
+        {
+          "t": "Zahlungsziel: 30 Tage netto, 2 % Skonto bei Zahlung innerhalb 14 Tagen.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Rechnung 2026-1843",
+        "ref": "Bestellbezug PO-2026-0512",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Baustahl S355, Warmband — Materialzeugnis 3.1 (EN 10204)",
+            "qty": "80,000 t",
+            "unit": "920,00 €",
+            "sum": "73.600,00 €"
+          }
+        ],
+        "net": "73.600,00 €",
+        "vatRate": "19 %",
+        "vat": "13.984,00 €",
+        "gross": "87.584,00 €"
+      }
+    },
+    {
+      "id": "bestellung-po-2026-0512",
+      "title": "Bestellung PO-2026-0512",
+      "type": "Bestellung",
+      "module": "finanzen",
+      "path": "SAP › MM › Bestellungen › PO-2026-0512.pdf",
+      "author": "Thomas Krüger (Einkauf)",
+      "date": "2026-03-05",
+      "snippet": "80 t Baustahl S355 bei Stahlwerk Donau AG · genehmigt.",
+      "body": "Bestellung PO-2026-0512 — Meridian Industrie GmbH an Stahlwerk Donau AG.\nBestellmenge: 80 t Baustahl S355 zu 920 €/t = 73.600 € netto.\nFreigabe: Thomas Krüger (Einkaufsleiter) am 05.03.2026, Kostenstelle Werk 2 / Projekt Alpha.\nLiefertermin vereinbart: 20.03.2026, Werk 2 Ingolstadt.",
+      "body_parts": [
+        {
+          "t": "Bestellung PO-2026-0512 — Meridian Industrie GmbH an Stahlwerk Donau AG.",
+          "highlight": false
+        },
+        {
+          "t": "Bestellmenge: 80 t Baustahl S355 zu 920 €/t = 73.600 € netto.",
+          "highlight": true
+        },
+        {
+          "t": "Freigabe: Thomas Krüger (Einkaufsleiter) am 05.03.2026, Kostenstelle Werk 2 / Projekt Alpha.",
+          "highlight": true
+        },
+        {
+          "t": "Liefertermin vereinbart: 20.03.2026, Werk 2 Ingolstadt.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Bestellung PO-2026-0512",
+        "ref": "Kostenstelle Werk 2 / Projekt Alpha",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Baustahl S355, Warmband — Liefertermin 20.03.2026",
+            "qty": "80,000 t",
+            "unit": "920,00 €",
+            "sum": "73.600,00 €"
+          }
+        ],
+        "net": "73.600,00 €"
+      }
+    },
+    {
+      "id": "wareneingang-we-2026-0778",
+      "title": "Wareneingang WE-2026-0778",
+      "type": "Wareneingang",
+      "module": "audit",
+      "path": "SAP › MM › Wareneingänge › WE-2026-0778.pdf",
+      "author": "Lager Werk 2 (automatisch erfasst)",
+      "date": "2026-03-20",
+      "snippet": "80 t Baustahl S355 vollständig eingegangen · Bestellbezug PO-2026-0512.",
+      "body": "Wareneingangsbeleg WE-2026-0778 — Werk 2 Ingolstadt.\nEingang: 80 t Baustahl S355 am 20.03.2026, geprüft durch Wareneingangskontrolle.\nBestellbezug: PO-2026-0512. Menge stimmt mit Bestellung überein, keine Abweichung.\nQualitätsprüfung: bestanden (Materialzeugnis 3.1 nach EN 10204 liegt vor).",
+      "body_parts": [
+        {
+          "t": "Wareneingangsbeleg WE-2026-0778 — Werk 2 Ingolstadt.",
+          "highlight": false
+        },
+        {
+          "t": "Eingang: 80 t Baustahl S355 am 20.03.2026, geprüft durch Wareneingangskontrolle.",
+          "highlight": true
+        },
+        {
+          "t": "Bestellbezug: PO-2026-0512. Menge stimmt mit Bestellung überein, keine Abweichung.",
+          "highlight": true
+        },
+        {
+          "t": "Qualitätsprüfung: bestanden (Materialzeugnis 3.1 nach EN 10204 liegt vor).",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Wareneingang WE-2026-0778",
+        "ref": "Bestellbezug PO-2026-0512 · keine Abweichung",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Baustahl S355, Warmband — Qualitätsprüfung bestanden",
+            "qty": "80,000 t",
+            "unit": "—",
+            "sum": "vollständig"
+          }
+        ]
+      }
+    },
+    {
+      "id": "maengelruege-mr-2026-0091",
+      "title": "Mängelrüge MR-2026-0091",
+      "type": "Mängelrüge",
+      "module": "audit",
+      "path": "SAP › MM › Reklamationen › MR-2026-0091.pdf",
+      "author": "Thomas Krüger (Einkauf)",
+      "date": "2026-04-24",
+      "snippet": "Rüge Teilmenge 12 t Baustahl S355 · Maßabweichung EN 10029 · Bestellbezug PO-2026-0684.",
+      "body": "Mängelrüge MR-2026-0091 — Meridian Industrie GmbH an Stahlwerk Donau AG.\nBetrifft Lieferung vom 22.04.2026 zu Bestellung PO-2026-0684 (60 t Baustahl S355, Wareneingang WE-2026-0791), Werk 2 Ingolstadt.\nBei der Wareneingangsprüfung wurde an 12 t eine Dickentoleranz außerhalb der Norm EN 10029 sowie ein Walzhautfehler festgestellt. Die betroffene Teilmenge wurde gesperrt und ist nicht verbaubar.\nWir rügen den Mangel hiermit form- und fristgerecht gemäß §377 HGB (Prüfung am Eingangstag, Rüge am 2. Tag) sowie auf Grundlage der Gewährleistungsklausel §12 des Rahmenvertrags RV-2023-014.\nWir fordern bis 08.05.2026 wahlweise mangelfreie Nachlieferung der 12 t oder eine Gutschrift über den Warenwert von 11.040 € netto (12 t × 920 €/t).\nDie einwandfreie Teilmenge von 48 t wurde angenommen und verbleibt in der Fertigung. Für Rückfragen: Einkauf, Durchwahl -318.",
+      "body_parts": [
+        {
+          "t": "Mängelrüge MR-2026-0091 — Meridian Industrie GmbH an Stahlwerk Donau AG.",
+          "highlight": false
+        },
+        {
+          "t": "Betrifft Lieferung vom 22.04.2026 zu Bestellung PO-2026-0684 (60 t Baustahl S355, Wareneingang WE-2026-0791), Werk 2 Ingolstadt.",
+          "highlight": false
+        },
+        {
+          "t": "Bei der Wareneingangsprüfung wurde an 12 t eine Dickentoleranz außerhalb der Norm EN 10029 sowie ein Walzhautfehler festgestellt. Die betroffene Teilmenge wurde gesperrt und ist nicht verbaubar.",
+          "highlight": true
+        },
+        {
+          "t": "Wir rügen den Mangel hiermit form- und fristgerecht gemäß §377 HGB (Prüfung am Eingangstag, Rüge am 2. Tag) sowie auf Grundlage der Gewährleistungsklausel §12 des Rahmenvertrags RV-2023-014.",
+          "highlight": true
+        },
+        {
+          "t": "Wir fordern bis 08.05.2026 wahlweise mangelfreie Nachlieferung der 12 t oder eine Gutschrift über den Warenwert von 11.040 € netto (12 t × 920 €/t).",
+          "highlight": true
+        },
+        {
+          "t": "Die einwandfreie Teilmenge von 48 t wurde angenommen und verbleibt in der Fertigung. Für Rückfragen: Einkauf, Durchwahl -318.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "gutschrift-gs-2026-0203",
+      "title": "Gutschrift GS-2026-0203",
+      "type": "Gutschrift",
+      "module": "finanzen",
+      "path": "SAP › FI › Belege › 2026 › GS_2026-0203.pdf",
+      "author": "Stahlwerk Donau AG (Lieferant)",
+      "date": "2026-05-06",
+      "snippet": "Gutschrift 13.137,60 € brutto für reklamierte 12 t Baustahl S355 · Bezug MR-2026-0091.",
+      "body": "Gutschrift Nr. GS-2026-0203 — Stahlwerk Donau AG an Meridian Industrie GmbH.\nBezug: Mängelrüge MR-2026-0091 vom 24.04.2026, Bestellung PO-2026-0684. Die beanstandete Maßabweichung (EN 10029) ist von uns bestätigt.\nGutgeschrieben: 12 t Baustahl S355 zu 920 €/t = 11.040 € netto. Umsatzsteuer 19 %: 2.097,60 €. Gutschriftbetrag brutto: 13.137,60 €.\nDie Verrechnung erfolgt mit der nächsten offenen Rechnung. Eine mangelfreie Nachlieferung der 12 t ist auf Wunsch möglich; der Kunde hat die Gutschrift gewählt.\nWir bedauern die Beanstandung und haben unsere Wareneingangs-Endkontrolle für Warmband entsprechend nachgeschärft.",
+      "body_parts": [
+        {
+          "t": "Gutschrift Nr. GS-2026-0203 — Stahlwerk Donau AG an Meridian Industrie GmbH.",
+          "highlight": false
+        },
+        {
+          "t": "Bezug: Mängelrüge MR-2026-0091 vom 24.04.2026, Bestellung PO-2026-0684. Die beanstandete Maßabweichung (EN 10029) ist von uns bestätigt.",
+          "highlight": true
+        },
+        {
+          "t": "Gutgeschrieben: 12 t Baustahl S355 zu 920 €/t = 11.040 € netto. Umsatzsteuer 19 %: 2.097,60 €. Gutschriftbetrag brutto: 13.137,60 €.",
+          "highlight": true
+        },
+        {
+          "t": "Die Verrechnung erfolgt mit der nächsten offenen Rechnung. Eine mangelfreie Nachlieferung der 12 t ist auf Wunsch möglich; der Kunde hat die Gutschrift gewählt.",
+          "highlight": true
+        },
+        {
+          "t": "Wir bedauern die Beanstandung und haben unsere Wareneingangs-Endkontrolle für Warmband entsprechend nachgeschärft.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Gutschrift GS-2026-0203",
+        "ref": "Bezug Mängelrüge MR-2026-0091 · Bestellung PO-2026-0684",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Baustahl S355 — reklamierte Teilmenge, Maßabweichung EN 10029",
+            "qty": "12,000 t",
+            "unit": "920,00 €",
+            "sum": "11.040,00 €"
+          }
+        ],
+        "net": "11.040,00 €",
+        "vatRate": "19 %",
+        "vat": "2.097,60 €",
+        "gross": "13.137,60 €"
+      }
+    },
+    {
+      "id": "rahmenvertrag-stahlwerk-donau",
+      "title": "Rahmenvertrag Stahlwerk Donau AG",
+      "type": "Rahmenvertrag",
+      "module": "vertraege",
+      "path": "SharePoint › Recht › Verträge › RV-2023-014_Stahlwerk_Donau.pdf",
+      "author": "Dr. Elena Wagner (Recht)",
+      "date": "2023-06-01",
+      "snippet": "Liefervertrag Baustahl · automatische Verlängerung um 12 Monate · Preisgleitklausel.",
+      "body": "Rahmenvertrag RV-2023-014 zwischen Meridian Industrie GmbH und Stahlwerk Donau AG.\n§9 Laufzeit: Der Vertrag läuft bis 31.05.2026 und verlängert sich automatisch um jeweils 12 Monate, sofern nicht 3 Monate vor Ablauf schriftlich gekündigt wird.\n§6 Preisgleitklausel: Der Lieferant darf Preise bei Rohstoff- oder Energiekostensteigerungen von mehr als 10 % anpassen.\n§12 Gewährleistung: Der Lieferant gewährleistet die Einhaltung der vereinbarten Werkstoff- und Maßtoleranzen (EN 10029). Mängel sind unverzüglich nach Wareneingangsprüfung zu rügen (§377 HGB); der Lieferant leistet Nachlieferung oder Gutschrift.\nNächste Kündigungsfrist: 28.02.2026. Bei Nichtkündigung Verlängerung bis 31.05.2027.",
+      "body_parts": [
+        {
+          "t": "Rahmenvertrag RV-2023-014 zwischen Meridian Industrie GmbH und Stahlwerk Donau AG.",
+          "highlight": false
+        },
+        {
+          "t": "§9 Laufzeit: Der Vertrag läuft bis 31.05.2026 und verlängert sich automatisch um jeweils 12 Monate, sofern nicht 3 Monate vor Ablauf schriftlich gekündigt wird.",
+          "highlight": true
+        },
+        {
+          "t": "§6 Preisgleitklausel: Der Lieferant darf Preise bei Rohstoff- oder Energiekostensteigerungen von mehr als 10 % anpassen.",
+          "highlight": true
+        },
+        {
+          "t": "§12 Gewährleistung: Der Lieferant gewährleistet die Einhaltung der vereinbarten Werkstoff- und Maßtoleranzen (EN 10029). Mängel sind unverzüglich nach Wareneingangsprüfung zu rügen (§377 HGB); der Lieferant leistet Nachlieferung oder Gutschrift.",
+          "highlight": true
+        },
+        {
+          "t": "Nächste Kündigungsfrist: 28.02.2026. Bei Nichtkündigung Verlängerung bis 31.05.2027.",
+          "highlight": true
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "email-preisanpassung-donau",
+      "title": "Preisanpassung Baustahl S355",
+      "type": "E-Mail",
+      "module": "finanzen",
+      "path": "Outlook › Einkauf › Posteingang › 2026-02 › Preisanpassung Baustahl S355.eml",
+      "author": "Andreas Huber (Vertrieb, Stahlwerk Donau AG)",
+      "date": "2026-02-12",
+      "snippet": "Ankündigung der 15-%-Preisanpassung auf Baustahl S355 über die Preisgleitklausel §6.",
+      "body": "Preisanpassung Baustahl S355 zum 01.03.2026\nSehr geehrter Herr Krüger,\naufgrund der anhaltend hohen Energie- und Rohstoffkosten passen wir gemäß der Preisgleitklausel (§6 des Rahmenvertrags RV-2023-014) den Tonnenpreis für Baustahl S355 zum 01.03.2026 um 15 % an.\nDer neue Tonnenpreis beträgt damit 920 € (bisher 800 €). Die vollständige angepasste Preisliste finden Sie im Anhang.\nGrundlage ist der Anstieg unserer Energiekosten um mehr als 10 % im zweiten Halbjahr 2025. Bereits bestätigte Bestellungen bleiben von der Anpassung unberührt.\nFür Rückfragen stehe ich Ihnen gern zur Verfügung.\nMit freundlichen Grüßen\nAndreas Huber — Vertrieb Großkunden, Stahlwerk Donau AG",
+      "body_parts": [
+        {
+          "t": "Preisanpassung Baustahl S355 zum 01.03.2026",
+          "highlight": false
+        },
+        {
+          "t": "Sehr geehrter Herr Krüger,",
+          "highlight": false
+        },
+        {
+          "t": "aufgrund der anhaltend hohen Energie- und Rohstoffkosten passen wir gemäß der Preisgleitklausel (§6 des Rahmenvertrags RV-2023-014) den Tonnenpreis für Baustahl S355 zum 01.03.2026 um 15 % an.",
+          "highlight": true
+        },
+        {
+          "t": "Der neue Tonnenpreis beträgt damit 920 € (bisher 800 €). Die vollständige angepasste Preisliste finden Sie im Anhang.",
+          "highlight": true
+        },
+        {
+          "t": "Grundlage ist der Anstieg unserer Energiekosten um mehr als 10 % im zweiten Halbjahr 2025. Bereits bestätigte Bestellungen bleiben von der Anpassung unberührt.",
+          "highlight": false
+        },
+        {
+          "t": "Für Rückfragen stehe ich Ihnen gern zur Verfügung.",
+          "highlight": false
+        },
+        {
+          "t": "Mit freundlichen Grüßen",
+          "highlight": false
+        },
+        {
+          "t": "Andreas Huber — Vertrieb Großkunden, Stahlwerk Donau AG",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "email-weiterleitung-materialbudget",
+      "title": "WG: Preisanpassung Baustahl — Auswirkung Projekt Alpha",
+      "type": "E-Mail",
+      "module": "finanzen",
+      "path": "Outlook › CFO › Posteingang › 2026-02 › WG Preisanpassung Baustahl S355.eml",
+      "author": "Thomas Krüger (Einkauf, Meridian Industrie GmbH)",
+      "date": "2026-02-13",
+      "snippet": "Interne Weiterleitung: Bewertung der Donau-Preisanpassung — 0,9 Mio. € Mehrbedarf für Projekt Alpha, Vorschlag für die Vorstandsvorlage.",
+      "body": "WG: Preisanpassung Baustahl S355 zum 01.03.2026\nSehr geehrte Frau Dr. Vogel,\nwie besprochen leite ich Ihnen die schriftliche Preisanpassung von Stahlwerk Donau weiter (siehe unten). Die 15-%-Anhebung ist über die Preisgleitklausel §6 vertraglich gedeckt — ein Widerspruch ist nicht durchsetzbar.\nAuswirkung auf das Materialbudget: Bei einem geplanten Jahresbedarf von rund 640 t Baustahl S355 für Projekt Alpha steigt der Einkaufswert um 120 €/t — das entspricht einem Mehrbedarf von rund 0,9 Mio. € für 2026.\nEmpfehlung: Aufnahme in die nächste Vorstandssitzung als Beschlussvorlage (Mehrbudget 0,9 Mio. €) sowie Beschleunigung der Qualifizierung des Zweitlieferanten Ferro Nord, um die Single-Source-Abhängigkeit ab Q3 2026 zu reduzieren.\nFür die Sitzungsvorlage stelle ich Ihnen gern die Mengengerüste und die Rechnung 2026-1843 als Referenz bereit.\nMit freundlichen Grüßen\nThomas Krüger — Einkaufsleiter, Meridian Industrie GmbH",
+      "body_parts": [
+        {
+          "t": "WG: Preisanpassung Baustahl S355 zum 01.03.2026",
+          "highlight": false
+        },
+        {
+          "t": "Sehr geehrte Frau Dr. Vogel,",
+          "highlight": false
+        },
+        {
+          "t": "wie besprochen leite ich Ihnen die schriftliche Preisanpassung von Stahlwerk Donau weiter (siehe unten). Die 15-%-Anhebung ist über die Preisgleitklausel §6 vertraglich gedeckt — ein Widerspruch ist nicht durchsetzbar.",
+          "highlight": true
+        },
+        {
+          "t": "Auswirkung auf das Materialbudget: Bei einem geplanten Jahresbedarf von rund 640 t Baustahl S355 für Projekt Alpha steigt der Einkaufswert um 120 €/t — das entspricht einem Mehrbedarf von rund 0,9 Mio. € für 2026.",
+          "highlight": true
+        },
+        {
+          "t": "Empfehlung: Aufnahme in die nächste Vorstandssitzung als Beschlussvorlage (Mehrbudget 0,9 Mio. €) sowie Beschleunigung der Qualifizierung des Zweitlieferanten Ferro Nord, um die Single-Source-Abhängigkeit ab Q3 2026 zu reduzieren.",
+          "highlight": true
+        },
+        {
+          "t": "Für die Sitzungsvorlage stelle ich Ihnen gern die Mengengerüste und die Rechnung 2026-1843 als Referenz bereit.",
+          "highlight": false
+        },
+        {
+          "t": "Mit freundlichen Grüßen",
+          "highlight": false
+        },
+        {
+          "t": "Thomas Krüger — Einkaufsleiter, Meridian Industrie GmbH",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "wartungsvertrag-siemens",
+      "title": "Wartungsvertrag Siemens",
+      "type": "Wartungsvertrag",
+      "module": "vertraege",
+      "path": "SharePoint › Recht › Verträge › WV-2022-041_Siemens.pdf",
+      "author": "Dr. Elena Wagner (Recht)",
+      "date": "2022-09-01",
+      "snippet": "Wartung Fertigungsanlagen · automatische Verlängerung um 24 Monate.",
+      "body": "Wartungsvertrag WV-2022-041 zwischen Meridian Industrie GmbH und Siemens AG.\n§8 Laufzeit: Erstlaufzeit bis 31.08.2026, danach automatische Verlängerung um jeweils 24 Monate.\nKündigungsfrist: 6 Monate zum Laufzeitende. Nächster Kündigungstermin: 28.02.2026.",
+      "body_parts": [
+        {
+          "t": "Wartungsvertrag WV-2022-041 zwischen Meridian Industrie GmbH und Siemens AG.",
+          "highlight": false
+        },
+        {
+          "t": "§8 Laufzeit: Erstlaufzeit bis 31.08.2026, danach automatische Verlängerung um jeweils 24 Monate.",
+          "highlight": true
+        },
+        {
+          "t": "Kündigungsfrist: 6 Monate zum Laufzeitende. Nächster Kündigungstermin: 28.02.2026.",
+          "highlight": true
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "lizenzvertrag-sap",
+      "title": "Lizenzvertrag SAP S/4HANA",
+      "type": "Lizenzvertrag",
+      "module": "vertraege",
+      "path": "SharePoint › Recht › Verträge › LV-2021-007_SAP.pdf",
+      "author": "Dr. Elena Wagner (Recht)",
+      "date": "2021-11-01",
+      "snippet": "ERP-Lizenzen · automatische Verlängerung um 12 Monate · 1.100 Nutzer.",
+      "body": "Lizenzvertrag LV-2021-007 zwischen Meridian Industrie GmbH und SAP SE.\n§11 Laufzeit: 12 Monate, automatische Verlängerung um jeweils weitere 12 Monate ohne fristgerechte Kündigung (3 Monate).\nNächster Kündigungstermin: 31.07.2026. Lizenzvolumen: 1.100 Named User.",
+      "body_parts": [
+        {
+          "t": "Lizenzvertrag LV-2021-007 zwischen Meridian Industrie GmbH und SAP SE.",
+          "highlight": false
+        },
+        {
+          "t": "§11 Laufzeit: 12 Monate, automatische Verlängerung um jeweils weitere 12 Monate ohne fristgerechte Kündigung (3 Monate).",
+          "highlight": true
+        },
+        {
+          "t": "Nächster Kündigungstermin: 31.07.2026. Lizenzvolumen: 1.100 Named User.",
+          "highlight": true
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "mietvertrag-logistik",
+      "title": "Mietvertrag Logistikzentrum Nürnberg",
+      "type": "Mietvertrag",
+      "module": "vertraege",
+      "path": "SharePoint › Recht › Verträge › MV-2024-003_Logistik_Nuernberg.pdf",
+      "author": "Dr. Elena Wagner (Recht)",
+      "date": "2024-01-01",
+      "snippet": "Feste Laufzeit bis 2029 · KEINE automatische Verlängerung.",
+      "body": "Mietvertrag MV-2024-003 für das Logistikzentrum Nürnberg.\n§4 Laufzeit: Feste Laufzeit bis 31.12.2029. Keine automatische Verlängerung; eine Anschlussmietung bedarf einer neuen Vereinbarung.",
+      "body_parts": [
+        {
+          "t": "Mietvertrag MV-2024-003 für das Logistikzentrum Nürnberg.",
+          "highlight": false
+        },
+        {
+          "t": "§4 Laufzeit: Feste Laufzeit bis 31.12.2029. Keine automatische Verlängerung; eine Anschlussmietung bedarf einer neuen Vereinbarung.",
+          "highlight": true
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "projekt-alpha-status",
+      "title": "Projekt Alpha — Statusbericht",
+      "type": "Projektbericht",
+      "module": "berichte",
+      "path": "Fileserver › Projekte › Alpha › Statusbericht_2026-03.docx",
+      "author": "Projektleitung Alpha (Ing. Petra Lang)",
+      "date": "2026-03-31",
+      "snippet": "Neue Fertigungslinie Werk 2 · Budget 24 Mio. € · Inbetriebnahme Q4 2026.",
+      "body": "Projekt Alpha — Aufbau einer neuen automatisierten Fertigungslinie in Werk 2 Ingolstadt.\nZiel: Kapazitätserhöhung um 35 % bei Getriebekomponenten. Gesamtbudget: 24 Mio. €.\nStatus per 31.03.2026: 62 % abgeschlossen, im Zeitplan. Bislang 14,1 Mio. € verausgabt.\nRisiken: Stahlpreisanstieg belastet das Materialbudget (+0,9 Mio. € erwartet, siehe Q1-Bericht). Liefertermin Robotik-Zellen um 3 Wochen verschoben.\nMeilenstein: Geplante Inbetriebnahme Q4 2026. Abnahmetests ab Oktober.",
+      "body_parts": [
+        {
+          "t": "Projekt Alpha — Aufbau einer neuen automatisierten Fertigungslinie in Werk 2 Ingolstadt.",
+          "highlight": false
+        },
+        {
+          "t": "Ziel: Kapazitätserhöhung um 35 % bei Getriebekomponenten. Gesamtbudget: 24 Mio. €.",
+          "highlight": true
+        },
+        {
+          "t": "Status per 31.03.2026: 62 % abgeschlossen, im Zeitplan. Bislang 14,1 Mio. € verausgabt.",
+          "highlight": true
+        },
+        {
+          "t": "Risiken: Stahlpreisanstieg belastet das Materialbudget (+0,9 Mio. € erwartet, siehe Q1-Bericht). Liefertermin Robotik-Zellen um 3 Wochen verschoben.",
+          "highlight": true
+        },
+        {
+          "t": "Meilenstein: Geplante Inbetriebnahme Q4 2026. Abnahmetests ab Oktober.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "projekt-beta-status",
+      "title": "Projekt Beta — Statusbericht",
+      "type": "Projektbericht",
+      "module": "berichte",
+      "path": "Fileserver › Projekte › Beta › Statusbericht_2026-03.docx",
+      "author": "Projektleitung Beta (Ing. Markus Feldmann)",
+      "date": "2026-03-31",
+      "snippet": "Kundenanlage Nordwind Logistik · Budget 8,6 Mio. € · verzögert, Liefertermin Q4 2026.",
+      "body": "Projekt Beta — kundenspezifische, automatisierte Verpackungs- und Palettierlinie für die Nordwind Logistik AG (Engineering München, Endmontage Werk 2 Ingolstadt).\nAuftragswert / Budget: 8,6 Mio. €. Ziel: schlüsselfertige Übergabe der Anlage inklusive Werksabnahme (FAT) beim Kunden.\nStatus per 31.03.2026: 48 % abgeschlossen, rund 3 Wochen in Verzug. Bislang 4,7 Mio. € verausgabt.\nUrsachen der Verzögerung: (1) Lieferverzug der Steuerungselektronik — der Zulieferer ElektroSys hat den Termin um 6 Wochen verschoben. (2) Kunden-Änderungswunsch: eine zusätzliche Prüfstation (Scope-Change, +0,4 Mio. €).\nTerminrisiko: Der ursprüngliche Liefertermin Q3 2026 wurde auf Q4 2026 verschoben (Werksabnahme November 2026). Bei weiterer Verzögerung greift die vertragliche Pönale von 0,5 % des Auftragswerts je angefangene Verzugswoche, gedeckelt bei 5 % (max. 0,43 Mio. €).\nGegenmaßnahmen: Zweitquelle für die Steuerungselektronik qualifiziert; der Change Request wird kaufmännisch beim Kunden geltend gemacht; wöchentliches Eskalations-Jour-fixe mit CFO und Vorstand.",
+      "body_parts": [
+        {
+          "t": "Projekt Beta — kundenspezifische, automatisierte Verpackungs- und Palettierlinie für die Nordwind Logistik AG (Engineering München, Endmontage Werk 2 Ingolstadt).",
+          "highlight": false
+        },
+        {
+          "t": "Auftragswert / Budget: 8,6 Mio. €. Ziel: schlüsselfertige Übergabe der Anlage inklusive Werksabnahme (FAT) beim Kunden.",
+          "highlight": true
+        },
+        {
+          "t": "Status per 31.03.2026: 48 % abgeschlossen, rund 3 Wochen in Verzug. Bislang 4,7 Mio. € verausgabt.",
+          "highlight": true
+        },
+        {
+          "t": "Ursachen der Verzögerung: (1) Lieferverzug der Steuerungselektronik — der Zulieferer ElektroSys hat den Termin um 6 Wochen verschoben. (2) Kunden-Änderungswunsch: eine zusätzliche Prüfstation (Scope-Change, +0,4 Mio. €).",
+          "highlight": true
+        },
+        {
+          "t": "Terminrisiko: Der ursprüngliche Liefertermin Q3 2026 wurde auf Q4 2026 verschoben (Werksabnahme November 2026). Bei weiterer Verzögerung greift die vertragliche Pönale von 0,5 % des Auftragswerts je angefangene Verzugswoche, gedeckelt bei 5 % (max. 0,43 Mio. €).",
+          "highlight": true
+        },
+        {
+          "t": "Gegenmaßnahmen: Zweitquelle für die Steuerungselektronik qualifiziert; der Change Request wird kaufmännisch beim Kunden geltend gemacht; wöchentliches Eskalations-Jour-fixe mit CFO und Vorstand.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "eskalation-beta-elektronik",
+      "title": "Eskalation Projekt Beta — Lieferverzug Steuerungselektronik",
+      "type": "E-Mail",
+      "module": "berichte",
+      "path": "Outlook › CFO › Posteingang › 2026-03 › Eskalation Projekt Beta Elektronik.eml",
+      "author": "Markus Feldmann (Projektleitung Beta, Meridian Industrie GmbH)",
+      "date": "2026-03-24",
+      "snippet": "Eskalation: 6 Wochen Lieferverzug bei der Steuerungselektronik, Pönale-Risiko gegenüber Nordwind, Antrag auf Zweitquelle.",
+      "body": "Eskalation Projekt Beta — Terminrisiko Kundenanlage Nordwind Logistik\nSehr geehrte Frau Dr. Vogel,\nLieferverzug der Steuerungselektronik: Der Zulieferer ElektroSys hat den Liefertermin um sechs Wochen verschoben. Dadurch droht eine Vertragsstrafe (Pönale) gegenüber der Nordwind Logistik AG.\nAuswirkung: Der Liefertermin verschiebt sich von Q3 auf Q4 2026 (Werksabnahme November). Die Pönale beträgt 0,5 % des Auftragswerts je Verzugswoche, gedeckelt bei 5 % — bei 8,6 Mio. € Auftragswert also bis zu 0,43 Mio. €.\nAntrag: Freigabe einer bereits qualifizierten Zweitquelle für die Steuerungselektronik, um den Verzug zu begrenzen. Der parallele Kunden-Änderungswunsch (zusätzliche Prüfstation, +0,4 Mio. €) wird als Change Request kaufmännisch geltend gemacht.\nIch schlage ein wöchentliches Eskalations-Jour-fixe bis zur Werksabnahme vor und berichte den Fortschritt direkt an den Vorstand.\nMit freundlichen Grüßen\nMarkus Feldmann — Projektleitung Beta, Meridian Industrie GmbH",
+      "body_parts": [
+        {
+          "t": "Eskalation Projekt Beta — Terminrisiko Kundenanlage Nordwind Logistik",
+          "highlight": false
+        },
+        {
+          "t": "Sehr geehrte Frau Dr. Vogel,",
+          "highlight": false
+        },
+        {
+          "t": "Lieferverzug der Steuerungselektronik: Der Zulieferer ElektroSys hat den Liefertermin um sechs Wochen verschoben. Dadurch droht eine Vertragsstrafe (Pönale) gegenüber der Nordwind Logistik AG.",
+          "highlight": true
+        },
+        {
+          "t": "Auswirkung: Der Liefertermin verschiebt sich von Q3 auf Q4 2026 (Werksabnahme November). Die Pönale beträgt 0,5 % des Auftragswerts je Verzugswoche, gedeckelt bei 5 % — bei 8,6 Mio. € Auftragswert also bis zu 0,43 Mio. €.",
+          "highlight": true
+        },
+        {
+          "t": "Antrag: Freigabe einer bereits qualifizierten Zweitquelle für die Steuerungselektronik, um den Verzug zu begrenzen. Der parallele Kunden-Änderungswunsch (zusätzliche Prüfstation, +0,4 Mio. €) wird als Change Request kaufmännisch geltend gemacht.",
+          "highlight": true
+        },
+        {
+          "t": "Ich schlage ein wöchentliches Eskalations-Jour-fixe bis zur Werksabnahme vor und berichte den Fortschritt direkt an den Vorstand.",
+          "highlight": false
+        },
+        {
+          "t": "Mit freundlichen Grüßen",
+          "highlight": false
+        },
+        {
+          "t": "Markus Feldmann — Projektleitung Beta, Meridian Industrie GmbH",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "nachtrag-nordwind-beta",
+      "title": "Nachtragsangebot NA-2026-0037 — Zusätzliche Prüfstation",
+      "type": "Nachtragsangebot",
+      "module": "berichte",
+      "path": "SAP › SD › Angebote › 2026 › NA_2026-0037_Nordwind.pdf",
+      "author": "Vertrieb Sondermaschinen (Meridian Industrie GmbH)",
+      "date": "2026-03-27",
+      "snippet": "Kaufmännischer Nachtrag an Nordwind Logistik AG · zusätzliche Prüfstation · +400.000 € netto · Bezug Rahmenauftrag NW-2025-0442.",
+      "body": "Nachtragsangebot NA-2026-0037 — Meridian Industrie GmbH an Nordwind Logistik AG.\nBezug: Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie) sowie Ihr Änderungswunsch vom 18.03.2026.\nGegenstand: Integration einer zusätzlichen Prüfstation (Kamera-Inspektion zur Qualitätskontrolle) in die vereinbarte Linie — ein Scope-Change gegenüber dem ursprünglichen Auftragsumfang.\nNachtragswert: 400.000 € netto (476.000 € brutto). Der Betrag deckt Hardware/Sensorik, Engineering und SPS-Integration sowie die erweiterte Werksabnahme (FAT) ab.\nTermin: Der Änderungswunsch verschiebt den Liefertermin um rund 3 Wochen auf Q4 2026; die zusätzliche Prüfstation wird in die laufende Endmontage eingeplant. Die Pönale-Klausel des Hauptvertrags bleibt vom genehmigten Scope-Change unberührt.\nGültigkeit: Dieses Nachtragsangebot ist bis 15.04.2026 verbindlich. Mit schriftlicher Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts.",
+      "body_parts": [
+        {
+          "t": "Nachtragsangebot NA-2026-0037 — Meridian Industrie GmbH an Nordwind Logistik AG.",
+          "highlight": false
+        },
+        {
+          "t": "Bezug: Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie) sowie Ihr Änderungswunsch vom 18.03.2026.",
+          "highlight": false
+        },
+        {
+          "t": "Gegenstand: Integration einer zusätzlichen Prüfstation (Kamera-Inspektion zur Qualitätskontrolle) in die vereinbarte Linie — ein Scope-Change gegenüber dem ursprünglichen Auftragsumfang.",
+          "highlight": true
+        },
+        {
+          "t": "Nachtragswert: 400.000 € netto (476.000 € brutto). Der Betrag deckt Hardware/Sensorik, Engineering und SPS-Integration sowie die erweiterte Werksabnahme (FAT) ab.",
+          "highlight": true
+        },
+        {
+          "t": "Termin: Der Änderungswunsch verschiebt den Liefertermin um rund 3 Wochen auf Q4 2026; die zusätzliche Prüfstation wird in die laufende Endmontage eingeplant. Die Pönale-Klausel des Hauptvertrags bleibt vom genehmigten Scope-Change unberührt.",
+          "highlight": true
+        },
+        {
+          "t": "Gültigkeit: Dieses Nachtragsangebot ist bis 15.04.2026 verbindlich. Mit schriftlicher Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Nachtragsangebot NA-2026-0037",
+        "ref": "Bezug Rahmenauftrag NW-2025-0442 · Änderungswunsch Nordwind Logistik AG vom 18.03.2026",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Zusätzliche Prüfstation — Kamera-Inspektion inkl. Sensorik und Hardware",
+            "qty": "1 Stk.",
+            "unit": "250.000,00 €",
+            "sum": "250.000,00 €"
+          },
+          {
+            "pos": "2",
+            "desc": "Engineering, SPS-Integration und Anpassung der Anlagensteuerung",
+            "qty": "pauschal",
+            "unit": "110.000,00 €",
+            "sum": "110.000,00 €"
+          },
+          {
+            "pos": "3",
+            "desc": "Erweiterte Werksabnahme (FAT) und Dokumentation",
+            "qty": "pauschal",
+            "unit": "40.000,00 €",
+            "sum": "40.000,00 €"
+          }
+        ],
+        "net": "400.000,00 €",
+        "vatRate": "19 %",
+        "vat": "76.000,00 €",
+        "gross": "476.000,00 €",
+        "grossLabel": "Angebotssumme brutto"
+      }
+    },
+    {
+      "id": "auftrag-nordwind-beta",
+      "title": "Auftragsbestätigung Nordwind — Nachtrag NA-2026-0037 beauftragt",
+      "type": "Auftragsbestätigung",
+      "module": "berichte",
+      "path": "SAP › SD › Aufträge › 2026 › AB_Nordwind_NA-2026-0037.pdf",
+      "author": "Einkauf / Projektleitung (Nordwind Logistik AG)",
+      "date": "2026-04-03",
+      "snippet": "Nordwind Logistik AG beauftragt Nachtrag NA-2026-0037 schriftlich · +400.000 € netto · Bestellnummer NW-BEST-2026-0091.",
+      "body": "Auftragsbestätigung / Beauftragung — Nordwind Logistik AG an Meridian Industrie GmbH.\nBezug: Ihr Nachtragsangebot NA-2026-0037 vom 27.03.2026 zum Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie).\nHiermit beauftragen wir den Nachtrag verbindlich: die zusätzliche Prüfstation (Kamera-Inspektion) wird zum angebotenen Preis von 400.000 € netto (476.000 € brutto) freigegeben.\nUnsere Bestellnummer: NW-BEST-2026-0091. Mit dieser Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts gemäß Ihrem Angebot.\nTermin: Die daraus folgende Verschiebung des Liefertermins um rund 3 Wochen auf Q4 2026 wird ausdrücklich akzeptiert; die Pönale-Klausel des Hauptvertrags bleibt für den genehmigten Scope-Change ausgesetzt.\nFreigabe: Projektleitung und Einkauf Nordwind Logistik AG, 03.04.2026. Die Rechnungsstellung erfolgt nach erfolgreicher erweiterter Werksabnahme (FAT).",
+      "body_parts": [
+        {
+          "t": "Auftragsbestätigung / Beauftragung — Nordwind Logistik AG an Meridian Industrie GmbH.",
+          "highlight": false
+        },
+        {
+          "t": "Bezug: Ihr Nachtragsangebot NA-2026-0037 vom 27.03.2026 zum Rahmenauftrag NW-2025-0442 (Projekt Beta — automatisierte Verpackungs- und Palettierlinie).",
+          "highlight": false
+        },
+        {
+          "t": "Hiermit beauftragen wir den Nachtrag verbindlich: die zusätzliche Prüfstation (Kamera-Inspektion) wird zum angebotenen Preis von 400.000 € netto (476.000 € brutto) freigegeben.",
+          "highlight": true
+        },
+        {
+          "t": "Unsere Bestellnummer: NW-BEST-2026-0091. Mit dieser Beauftragung wird der Nachtragswert Bestandteil des Auftragswerts gemäß Ihrem Angebot.",
+          "highlight": true
+        },
+        {
+          "t": "Termin: Die daraus folgende Verschiebung des Liefertermins um rund 3 Wochen auf Q4 2026 wird ausdrücklich akzeptiert; die Pönale-Klausel des Hauptvertrags bleibt für den genehmigten Scope-Change ausgesetzt.",
+          "highlight": true
+        },
+        {
+          "t": "Freigabe: Projektleitung und Einkauf Nordwind Logistik AG, 03.04.2026. Die Rechnungsstellung erfolgt nach erfolgreicher erweiterter Werksabnahme (FAT).",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Beauftragung NW-BEST-2026-0091",
+        "ref": "Bezug Nachtragsangebot NA-2026-0037 · Rahmenauftrag NW-2025-0442",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Nachtrag NA-2026-0037 — zusätzliche Prüfstation (Kamera-Inspektion) inkl. Engineering, SPS-Integration und erweiterter FAT",
+            "qty": "1 Pauschale",
+            "unit": "400.000,00 €",
+            "sum": "400.000,00 €"
+          }
+        ],
+        "net": "400.000,00 €",
+        "vatRate": "19 %",
+        "vat": "76.000,00 €",
+        "gross": "476.000,00 €",
+        "grossLabel": "Beauftragter Nachtragswert brutto"
+      }
+    },
+    {
+      "id": "vorstandsprotokoll-2026-03",
+      "title": "Vorstandsprotokoll März 2026",
+      "type": "Sitzungsprotokoll",
+      "module": "berichte",
+      "path": "SharePoint › Vorstand › Protokolle › Protokoll_2026-03.pdf",
+      "author": "Markus Brandt (CEO)",
+      "date": "2026-03-28",
+      "snippet": "Beschlüsse zu Zweitlieferant, Projekt Alpha und ESG-Zielen.",
+      "body": "Vorstandssitzung Meridian Industrie GmbH, 28.03.2026.\nTOP 1: Materialkosten. Der Vorstand beschließt die Aufnahme von Ferro Nord als Zweitlieferant zur Reduktion der Stahlpreis-Abhängigkeit.\nTOP 2: Projekt Alpha bleibt im Zeitplan; Vorstand genehmigt Mehrbudget von 0,9 Mio. € für Materialpreissteigerung.\nTOP 3: ESG-Ziel bekräftigt — 30 % CO₂-Reduktion bis 2030 gegenüber 2020.",
+      "body_parts": [
+        {
+          "t": "Vorstandssitzung Meridian Industrie GmbH, 28.03.2026.",
+          "highlight": false
+        },
+        {
+          "t": "TOP 1: Materialkosten. Der Vorstand beschließt die Aufnahme von Ferro Nord als Zweitlieferant zur Reduktion der Stahlpreis-Abhängigkeit.",
+          "highlight": true
+        },
+        {
+          "t": "TOP 2: Projekt Alpha bleibt im Zeitplan; Vorstand genehmigt Mehrbudget von 0,9 Mio. € für Materialpreissteigerung.",
+          "highlight": true
+        },
+        {
+          "t": "TOP 3: ESG-Ziel bekräftigt — 30 % CO₂-Reduktion bis 2030 gegenüber 2020.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "brandschutzordnung-werk2",
+      "title": "Brandschutzordnung Werk 2",
+      "type": "Sicherheitsdokument",
+      "module": "audit",
+      "path": "SharePoint › Arbeitssicherheit › Werk2 › Brandschutzordnung_Teil_B.pdf",
+      "author": "Fachkraft Arbeitssicherheit (M. Ostermann)",
+      "date": "2025-11-12",
+      "snippet": "Brandschutzordnung nach DIN 14096, Teil A/B/C · Werk 2 Ingolstadt.",
+      "body": "Brandschutzordnung Werk 2 Ingolstadt nach DIN 14096 (Teil A, B und C).\nTeil B §3: Flucht- und Rettungswege sind freizuhalten; Brandschutztüren stets geschlossen halten.\nTeil B §5: Sammelplatz bei Alarm ist Parkplatz Nord. Räumung über die gekennzeichneten Notausgänge.\nBrandschutzbeauftragter: M. Ostermann, erreichbar unter Durchwahl -412.",
+      "body_parts": [
+        {
+          "t": "Brandschutzordnung Werk 2 Ingolstadt nach DIN 14096 (Teil A, B und C).",
+          "highlight": false
+        },
+        {
+          "t": "Teil B §3: Flucht- und Rettungswege sind freizuhalten; Brandschutztüren stets geschlossen halten.",
+          "highlight": true
+        },
+        {
+          "t": "Teil B §5: Sammelplatz bei Alarm ist Parkplatz Nord. Räumung über die gekennzeichneten Notausgänge.",
+          "highlight": true
+        },
+        {
+          "t": "Brandschutzbeauftragter: M. Ostermann, erreichbar unter Durchwahl -412.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "feuerbeschau-2025",
+      "title": "Feuerbeschau-Protokoll Werk 2",
+      "type": "Prüfnachweis",
+      "module": "audit",
+      "path": "Fileserver › Arbeitssicherheit › Nachweise › Feuerbeschau_Werk2_2025.pdf",
+      "author": "Feuerwehr Ingolstadt (behördlich)",
+      "date": "2025-10-08",
+      "snippet": "Behördliche Feuerbeschau bestanden · keine wesentlichen Mängel.",
+      "body": "Protokoll der behördlichen Feuerbeschau Werk 2 Ingolstadt, 08.10.2025.\nErgebnis: Bestanden. Flucht- und Rettungswege, Löschmittel und Brandmeldeanlage in Ordnung.\nAuflage: Nachrüstung eines Rauchmelders in Lagerhalle C bis 31.12.2025 (erledigt am 03.12.2025).",
+      "body_parts": [
+        {
+          "t": "Protokoll der behördlichen Feuerbeschau Werk 2 Ingolstadt, 08.10.2025.",
+          "highlight": false
+        },
+        {
+          "t": "Ergebnis: Bestanden. Flucht- und Rettungswege, Löschmittel und Brandmeldeanlage in Ordnung.",
+          "highlight": true
+        },
+        {
+          "t": "Auflage: Nachrüstung eines Rauchmelders in Lagerhalle C bis 31.12.2025 (erledigt am 03.12.2025).",
+          "highlight": true
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "datenschutz-audit-2025",
+      "title": "Datenschutz-Audit 2025",
+      "type": "Prüfnachweis",
+      "module": "audit",
+      "path": "SharePoint › Compliance › Datenschutz › Datenschutz-Audit_2025.pdf",
+      "author": "Dr. Julia Sander (externe Datenschutzbeauftragte)",
+      "date": "2025-11-20",
+      "snippet": "Jährliches DSGVO-Audit · konform mit zwei offenen Auflagen · 0 meldepflichtige Datenpannen.",
+      "body": "Datenschutz-Audit 2025 der Meridian Industrie GmbH, durchgeführt am 20.11.2025 durch die externe Datenschutzbeauftragte Dr. Julia Sander (Kanzlei Sander & Partner).\nGesamtergebnis: DSGVO-konform mit zwei offenen Auflagen. Keine wesentlichen Mängel, kein akutes Bußgeldrisiko.\nVerzeichnis von Verarbeitungstätigkeiten (Art. 30 DSGVO): vollständig und aktuell, 34 Tätigkeiten dokumentiert.\nTechnisch-organisatorische Maßnahmen (Art. 32): Zwei-Faktor-Authentifizierung, Verschlüsselung ruhender Daten, Zutritts- und Rollenkonzept geprüft — angemessen.\nAuflage 1: Auftragsverarbeitungsvertrag (Art. 28) mit dem Cloud-Backup-Dienstleister nachziehen — Frist 31.03.2026.\nAuflage 2: Löschkonzept für Bewerberdaten präzisieren (Regelfrist 6 Monate nach Absage) — Frist 31.03.2026.\nMeldeprozess für Datenpannen (72-Stunden-Frist nach Art. 33) etabliert und getestet. 2025: 0 meldepflichtige Vorfälle.\nNächstes reguläres Audit: November 2026. Datenschutzbeauftragte extern bestellt, direkt an die Geschäftsführung berichtend.",
+      "body_parts": [
+        {
+          "t": "Datenschutz-Audit 2025 der Meridian Industrie GmbH, durchgeführt am 20.11.2025 durch die externe Datenschutzbeauftragte Dr. Julia Sander (Kanzlei Sander & Partner).",
+          "highlight": false
+        },
+        {
+          "t": "Gesamtergebnis: DSGVO-konform mit zwei offenen Auflagen. Keine wesentlichen Mängel, kein akutes Bußgeldrisiko.",
+          "highlight": true
+        },
+        {
+          "t": "Verzeichnis von Verarbeitungstätigkeiten (Art. 30 DSGVO): vollständig und aktuell, 34 Tätigkeiten dokumentiert.",
+          "highlight": true
+        },
+        {
+          "t": "Technisch-organisatorische Maßnahmen (Art. 32): Zwei-Faktor-Authentifizierung, Verschlüsselung ruhender Daten, Zutritts- und Rollenkonzept geprüft — angemessen.",
+          "highlight": true
+        },
+        {
+          "t": "Auflage 1: Auftragsverarbeitungsvertrag (Art. 28) mit dem Cloud-Backup-Dienstleister nachziehen — Frist 31.03.2026.",
+          "highlight": true
+        },
+        {
+          "t": "Auflage 2: Löschkonzept für Bewerberdaten präzisieren (Regelfrist 6 Monate nach Absage) — Frist 31.03.2026.",
+          "highlight": true
+        },
+        {
+          "t": "Meldeprozess für Datenpannen (72-Stunden-Frist nach Art. 33) etabliert und getestet. 2025: 0 meldepflichtige Vorfälle.",
+          "highlight": true
+        },
+        {
+          "t": "Nächstes reguläres Audit: November 2026. Datenschutzbeauftragte extern bestellt, direkt an die Geschäftsführung berichtend.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "verarbeitungsverzeichnis-2026",
+      "title": "Verzeichnis von Verarbeitungstätigkeiten",
+      "type": "Verzeichnis",
+      "module": "audit",
+      "path": "SharePoint › Compliance › Datenschutz › VVT_Art30_2026.xlsx",
+      "author": "Dr. Julia Sander (externe Datenschutzbeauftragte)",
+      "date": "2026-01-31",
+      "snippet": "Verzeichnis nach Art. 30 DSGVO · 34 Verarbeitungstätigkeiten mit Zweck, Rechtsgrundlage und Löschfrist.",
+      "body": "Verzeichnis von Verarbeitungstätigkeiten (VVT) nach Art. 30 DSGVO — Meridian Industrie GmbH, Stand 31.01.2026.\nInsgesamt 34 Verarbeitungstätigkeiten in vier Kategorien: Beschäftigtendaten, Kundendaten, Lieferantendaten und Bewerberdaten.\nBeschäftigtendaten: Zweck Personalverwaltung/Lohn, Rechtsgrundlage Art. 6 Abs. 1 b (Vertrag) und § 26 BDSG, Löschfrist 10 Jahre nach Austritt (steuerrechtlich).\nBewerberdaten: Zweck Recruiting, Rechtsgrundlage Art. 6 Abs. 1 b, Regel-Löschfrist 6 Monate nach Abschluss des Verfahrens.\nFür jede Tätigkeit sind Verantwortliche, Empfänger, Drittlandtransfer und technisch-organisatorische Maßnahmen hinterlegt. Auftragsverarbeiter sind über AV-Verträge (Art. 28) gebunden.",
+      "body_parts": [
+        {
+          "t": "Verzeichnis von Verarbeitungstätigkeiten (VVT) nach Art. 30 DSGVO — Meridian Industrie GmbH, Stand 31.01.2026.",
+          "highlight": false
+        },
+        {
+          "t": "Insgesamt 34 Verarbeitungstätigkeiten in vier Kategorien: Beschäftigtendaten, Kundendaten, Lieferantendaten und Bewerberdaten.",
+          "highlight": true
+        },
+        {
+          "t": "Beschäftigtendaten: Zweck Personalverwaltung/Lohn, Rechtsgrundlage Art. 6 Abs. 1 b (Vertrag) und § 26 BDSG, Löschfrist 10 Jahre nach Austritt (steuerrechtlich).",
+          "highlight": true
+        },
+        {
+          "t": "Bewerberdaten: Zweck Recruiting, Rechtsgrundlage Art. 6 Abs. 1 b, Regel-Löschfrist 6 Monate nach Abschluss des Verfahrens.",
+          "highlight": true
+        },
+        {
+          "t": "Für jede Tätigkeit sind Verantwortliche, Empfänger, Drittlandtransfer und technisch-organisatorische Maßnahmen hinterlegt. Auftragsverarbeiter sind über AV-Verträge (Art. 28) gebunden.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "esg-bericht-2025",
+      "title": "ESG-Bericht 2025",
+      "type": "Nachhaltigkeitsbericht",
+      "module": "berichte",
+      "path": "SharePoint › Vorstand › ESG › ESG_Bericht_2025.pdf",
+      "author": "Nachhaltigkeitsteam",
+      "date": "2026-02-20",
+      "snippet": "CO₂-Bilanz, Energie, Lieferkette · Fortschritt gegen Ziel 2030.",
+      "body": "ESG-Bericht 2025 der Meridian Industrie GmbH nach CSRD/ESRS.\nCO₂-Emissionen 2025: 41.200 t (Scope 1+2), -12 % ggü. Basisjahr 2020. Ziel: -30 % bis 2030.\nScope 1 (eigene Anlagen und Fuhrpark): 12.400 t. Scope 2 (Strombezug): 28.800 t.\nAnteil erneuerbarer Energie am Strombezug: 68 % (Vorjahr 61 %). Photovoltaik Werk 2 seit Q3 2025 aktiv (4,2 GWh/Jahr).\nZielpfad: Ein linearer Reduktionspfad läge 2025 bei rund -15 %; mit -12 % liegen wir leicht dahinter, holen aber durch PV-Ausbau und Grünstrom auf.\nSoziales & Governance: Arbeitsunfallquote -18 %, Frauenanteil in Führung 27 %, Lieferanten-Kodex von 94 % der A-Lieferanten unterzeichnet.",
+      "body_parts": [
+        {
+          "t": "ESG-Bericht 2025 der Meridian Industrie GmbH nach CSRD/ESRS.",
+          "highlight": false
+        },
+        {
+          "t": "CO₂-Emissionen 2025: 41.200 t (Scope 1+2), -12 % ggü. Basisjahr 2020. Ziel: -30 % bis 2030.",
+          "highlight": true
+        },
+        {
+          "t": "Scope 1 (eigene Anlagen und Fuhrpark): 12.400 t. Scope 2 (Strombezug): 28.800 t.",
+          "highlight": true
+        },
+        {
+          "t": "Anteil erneuerbarer Energie am Strombezug: 68 % (Vorjahr 61 %). Photovoltaik Werk 2 seit Q3 2025 aktiv (4,2 GWh/Jahr).",
+          "highlight": true
+        },
+        {
+          "t": "Zielpfad: Ein linearer Reduktionspfad läge 2025 bei rund -15 %; mit -12 % liegen wir leicht dahinter, holen aber durch PV-Ausbau und Grünstrom auf.",
+          "highlight": true
+        },
+        {
+          "t": "Soziales & Governance: Arbeitsunfallquote -18 %, Frauenanteil in Führung 27 %, Lieferanten-Kodex von 94 % der A-Lieferanten unterzeichnet.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "energie-emissionsbericht-2025",
+      "title": "Energie- & Emissionskennzahlen 2025",
+      "type": "Kennzahlenbericht",
+      "module": "berichte",
+      "path": "Fileserver › Controlling › Nachhaltigkeit › Energie_Emissionen_2025.xlsx",
+      "author": "Controlling & Nachhaltigkeit",
+      "date": "2026-02-12",
+      "snippet": "CO₂-Trend 2020–2025, Zielpfad 2030 und Energieintensität auf einen Blick.",
+      "body": "Energie- & Emissionskennzahlen 2025 — Meridian Industrie GmbH, Bereich Controlling.\nCO₂-Trend (Scope 1+2): 2020 46.800 t · 2023 44.100 t · 2024 42.600 t · 2025 41.200 t.\nZielwert 2030: 32.760 t (-30 % ggü. 2020). Verbleibende Reduktion: 8.440 t in 5 Jahren.\nStromverbrauch 2025: 96 GWh, davon 68 % erneuerbar. Energieintensität: 157 kWh je 1.000 € Umsatz (-6 % ggü. Vorjahr).\nGrößte Hebel bis 2030: Ausbau Photovoltaik (Werk 2 plus geplant Werk 1), Umstellung Prozesswärme auf Wärmepumpe, Grünstrom-PPA.",
+      "body_parts": [
+        {
+          "t": "Energie- & Emissionskennzahlen 2025 — Meridian Industrie GmbH, Bereich Controlling.",
+          "highlight": false
+        },
+        {
+          "t": "CO₂-Trend (Scope 1+2): 2020 46.800 t · 2023 44.100 t · 2024 42.600 t · 2025 41.200 t.",
+          "highlight": true
+        },
+        {
+          "t": "Zielwert 2030: 32.760 t (-30 % ggü. 2020). Verbleibende Reduktion: 8.440 t in 5 Jahren.",
+          "highlight": true
+        },
+        {
+          "t": "Stromverbrauch 2025: 96 GWh, davon 68 % erneuerbar. Energieintensität: 157 kWh je 1.000 € Umsatz (-6 % ggü. Vorjahr).",
+          "highlight": true
+        },
+        {
+          "t": "Größte Hebel bis 2030: Ausbau Photovoltaik (Werk 2 plus geplant Werk 1), Umstellung Prozesswärme auf Wärmepumpe, Grünstrom-PPA.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "onboarding-checkliste-2026",
+      "title": "Onboarding-Checkliste (Erster Tag)",
+      "type": "Checkliste",
+      "module": "hr",
+      "path": "SharePoint › HR › Onboarding › Checkliste_Erster_Tag_2026.pdf",
+      "author": "Sabine Reuter (Leiterin HR)",
+      "date": "2026-01-20",
+      "snippet": "Was ein neuer Mitarbeiter am ersten Tag erledigt: Zugänge, Unterweisung, Pflichtdokumente.",
+      "body": "Onboarding-Checkliste der Meridian Industrie GmbH — verbindlich für alle neuen Mitarbeitenden am ersten Arbeitstag.\n1. Empfang um 08:30 Uhr am Hauptstandort München; Begrüßung durch HR (Sabine Reuter) und die zuständige Führungskraft.\n2. Werksausweis und Zeiterfassung: Ausweis in der Personalabteilung abholen, Foto wird vor Ort erstellt.\n3. IT-Zugänge: Laptop im IT-Service (Raum B-014) abholen, Windows-Anmeldung und E-Mail einrichten, Zwei-Faktor per Firmenhandy aktivieren.\n4. Sicherheitsunterweisung: Pflicht-Unterweisung Arbeits- und Brandschutz am ersten Tag (Fluchtwege, Sammelplatz). Ohne Unterweisung kein Zutritt zu den Werkshallen.\n5. Pflichtdokumente unterschreiben: Arbeitsvertrag (falls offen), Verschwiegenheitserklärung, IT-Nutzungsrichtlinie und Kenntnisnahme der Reiserichtlinie 2026.\n6. Team & Arbeitsplatz: Vorstellung im Team, Arbeitsplatz einrichten, Patin/Pate für die ersten zwei Wochen wird benannt.\nRückfragen: HR-Servicedesk, Durchwahl -100, onboarding@meridian-industrie.example.",
+      "body_parts": [
+        {
+          "t": "Onboarding-Checkliste der Meridian Industrie GmbH — verbindlich für alle neuen Mitarbeitenden am ersten Arbeitstag.",
+          "highlight": false
+        },
+        {
+          "t": "1. Empfang um 08:30 Uhr am Hauptstandort München; Begrüßung durch HR (Sabine Reuter) und die zuständige Führungskraft.",
+          "highlight": false
+        },
+        {
+          "t": "2. Werksausweis und Zeiterfassung: Ausweis in der Personalabteilung abholen, Foto wird vor Ort erstellt.",
+          "highlight": true
+        },
+        {
+          "t": "3. IT-Zugänge: Laptop im IT-Service (Raum B-014) abholen, Windows-Anmeldung und E-Mail einrichten, Zwei-Faktor per Firmenhandy aktivieren.",
+          "highlight": true
+        },
+        {
+          "t": "4. Sicherheitsunterweisung: Pflicht-Unterweisung Arbeits- und Brandschutz am ersten Tag (Fluchtwege, Sammelplatz). Ohne Unterweisung kein Zutritt zu den Werkshallen.",
+          "highlight": true
+        },
+        {
+          "t": "5. Pflichtdokumente unterschreiben: Arbeitsvertrag (falls offen), Verschwiegenheitserklärung, IT-Nutzungsrichtlinie und Kenntnisnahme der Reiserichtlinie 2026.",
+          "highlight": true
+        },
+        {
+          "t": "6. Team & Arbeitsplatz: Vorstellung im Team, Arbeitsplatz einrichten, Patin/Pate für die ersten zwei Wochen wird benannt.",
+          "highlight": false
+        },
+        {
+          "t": "Rückfragen: HR-Servicedesk, Durchwahl -100, onboarding@meridian-industrie.example.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": null
+    },
+    {
+      "id": "lieferanten-risikoanalyse-2026",
+      "title": "Lieferanten-Risikoanalyse 2026",
+      "type": "Risikobericht",
+      "module": "finanzen",
+      "path": "Fileserver › Einkauf › Risiko › Lieferanten_Risikoanalyse_2026.xlsx",
+      "author": "Thomas Krüger (Einkaufsleiter)",
+      "date": "2026-04-05",
+      "snippet": "Konzentrationsrisiko im Einkauf: Stahlwerk Donau AG = 23,9 % des Volumens, Single-Source Baustahl.",
+      "body": "Lieferanten-Risikoanalyse 2026 — Meridian Industrie GmbH, Bereich Einkauf.\nGesamtes Einkaufsvolumen 2025: 268 Mio. €. Die fünf größten Lieferanten decken zusammen 51 % des Volumens ab.\nGrößter Lieferant: Stahlwerk Donau AG mit 64 Mio. € = 23,9 % des Einkaufsvolumens — deutliches Klumpenrisiko.\nKritisch: Baustahl S355 wird derzeit als Single-Source ausschließlich bei Stahlwerk Donau AG bezogen. Ein Ausfall würde Projekt Alpha und die laufende Fertigung unmittelbar treffen.\nGegenmaßnahme: Ferro Nord ist als Zweitquelle für Baustahl qualifiziert (Vorstandsbeschluss März 2026). Ziel: Donau-Anteil bis Ende 2027 auf unter 15 % senken.\nPreisrisiko: Der Rahmenvertrag mit Stahlwerk Donau (RV-2023-014) enthält eine Preisgleitklausel (§6); im Q1 2026 wurde bereits eine Anpassung von 15 % ausgelöst.",
+      "body_parts": [
+        {
+          "t": "Lieferanten-Risikoanalyse 2026 — Meridian Industrie GmbH, Bereich Einkauf.",
+          "highlight": false
+        },
+        {
+          "t": "Gesamtes Einkaufsvolumen 2025: 268 Mio. €. Die fünf größten Lieferanten decken zusammen 51 % des Volumens ab.",
+          "highlight": true
+        },
+        {
+          "t": "Größter Lieferant: Stahlwerk Donau AG mit 64 Mio. € = 23,9 % des Einkaufsvolumens — deutliches Klumpenrisiko.",
+          "highlight": true
+        },
+        {
+          "t": "Kritisch: Baustahl S355 wird derzeit als Single-Source ausschließlich bei Stahlwerk Donau AG bezogen. Ein Ausfall würde Projekt Alpha und die laufende Fertigung unmittelbar treffen.",
+          "highlight": true
+        },
+        {
+          "t": "Gegenmaßnahme: Ferro Nord ist als Zweitquelle für Baustahl qualifiziert (Vorstandsbeschluss März 2026). Ziel: Donau-Anteil bis Ende 2027 auf unter 15 % senken.",
+          "highlight": true
+        },
+        {
+          "t": "Preisrisiko: Der Rahmenvertrag mit Stahlwerk Donau (RV-2023-014) enthält eine Preisgleitklausel (§6); im Q1 2026 wurde bereits eine Anpassung von 15 % ausgelöst.",
+          "highlight": false
+        }
+      ],
+      "locked": false,
+      "lockedRole": null,
+      "classification": null,
+      "lineItems": {
+        "doc": "Top-Lieferanten nach Einkaufsvolumen 2025",
+        "ref": "Gesamtvolumen 268 Mio. €",
+        "rows": [
+          {
+            "pos": "1",
+            "desc": "Stahlwerk Donau AG — Baustahl S355 (Single-Source)",
+            "qty": "64,0 Mio. €",
+            "unit": "23,9 %",
+            "sum": "hoch"
+          },
+          {
+            "pos": "2",
+            "desc": "Siemens AG — Antriebs- & Automatisierungstechnik",
+            "qty": "31,0 Mio. €",
+            "unit": "11,6 %",
+            "sum": "mittel"
+          },
+          {
+            "pos": "3",
+            "desc": "Robotik Bayern GmbH — Robotik-Zellen Projekt Alpha",
+            "qty": "22,0 Mio. €",
+            "unit": "8,2 %",
+            "sum": "mittel"
+          },
+          {
+            "pos": "4",
+            "desc": "ElektroTech Nord — Steuerungskomponenten",
+            "qty": "11,0 Mio. €",
+            "unit": "4,1 %",
+            "sum": "niedrig"
+          },
+          {
+            "pos": "5",
+            "desc": "LogiPart AG — Logistik & Verpackung",
+            "qty": "8,7 Mio. €",
+            "unit": "3,2 %",
+            "sum": "niedrig"
+          }
+        ]
+      }
+    },
+    {
+      "id": "akquisition-nordstern",
+      "title": "Projekt Nordstern — Akquisitionsvorlage",
+      "type": "Vorstandsvorlage",
+      "module": "berichte",
+      "path": "SharePoint › Vorstand › Vertraulich › Projekt_Nordstern_M&A.pdf",
+      "author": "Markus Brandt (CEO)",
+      "date": "2026-03-10",
+      "snippet": "Bewertung und Angebotsrahmen für eine mögliche Akquisition. Zugriff auf den Vorstand beschränkt.",
+      "body": "",
+      "body_parts": [],
+      "locked": true,
+      "lockedRole": "Vorstand",
+      "classification": "Streng vertraulich",
+      "lineItems": null
+    },
+    {
+      "id": "vorstandsverguetung-2026",
+      "title": "Vorstandsvergütung 2026",
+      "type": "Personalvorlage",
+      "module": "berichte",
+      "path": "SharePoint › Vorstand › Vertraulich › Verguetung_Vorstand_2026.xlsx",
+      "author": "Aufsichtsrat",
+      "date": "2026-02-05",
+      "snippet": "Individuelle Vergütung und Boni der Geschäftsführung. Zugriff auf Vorstand & Aufsichtsrat beschränkt.",
+      "body": "",
+      "body_parts": [],
+      "locked": true,
+      "lockedRole": "Vorstand & Aufsichtsrat",
+      "classification": "Streng vertraulich",
+      "lineItems": null
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "reiserichtlinie",
+      "module": "hr",
+      "question": "Wo finde ich die aktuelle Reiserichtlinie?",
+      "keywords": [
+        "reise",
+        "reiserichtlinie",
+        "dienstreise",
+        "travel",
+        "bahn",
+        "hotel",
+        "flug",
+        "spesen"
+      ]
+    },
+    {
+      "id": "materialkosten",
+      "module": "finanzen",
+      "question": "Warum sind die Materialkosten gestiegen?",
+      "keywords": [
+        "material",
+        "materialkosten",
+        "kosten gestiegen",
+        "stahl",
+        "preis",
+        "teurer",
+        "marge"
+      ]
+    },
+    {
+      "id": "budget-herkunft",
+      "module": "finanzen",
+      "question": "Wie kam das Mehrbudget von 0,9 Mio. € für Projekt Alpha zustande?",
+      "keywords": [
+        "mehrbudget",
+        "0,9 mio",
+        "900.000",
+        "herkunft",
+        "wie kam",
+        "wie kam es",
+        "entscheidungskette",
+        "beleg-pfad",
+        "budget zustande",
+        "wer hat entschieden",
+        "genehmigung",
+        "beschlossen"
+      ]
+    },
+    {
+      "id": "beleg-rechnung",
+      "module": "audit",
+      "question": "Zeig mir die Belege zu Rechnung 2026-1843.",
+      "keywords": [
+        "beleg",
+        "rechnung 2026-1843",
+        "1843",
+        "nachweis",
+        "prüfung",
+        "three-way",
+        "abgleich"
+      ]
+    },
+    {
+      "id": "reklamation-stahl",
+      "module": "audit",
+      "question": "Wie haben wir die mangelhafte Stahllieferung reklamiert?",
+      "keywords": [
+        "reklamation",
+        "mangel",
+        "mangelhaft",
+        "mängelrüge",
+        "maengelruege",
+        "rüge",
+        "gutschrift",
+        "qualität",
+        "qualitätsmangel",
+        "defekt",
+        "walzfehler",
+        "beanstandung",
+        "toleranz",
+        "en 10029",
+        "reklamiert"
+      ]
+    },
+    {
+      "id": "projekt-alpha",
+      "module": "berichte",
+      "question": "Fasse Projekt Alpha zusammen.",
+      "keywords": [
+        "projekt alpha",
+        "alpha",
+        "fertigungslinie",
+        "projektstatus",
+        "projekt zusammenfassen"
+      ]
+    },
+    {
+      "id": "projekt-beta",
+      "module": "berichte",
+      "question": "Wie steht Projekt Beta?",
+      "keywords": [
+        "projekt beta",
+        "beta",
+        "sondermaschine",
+        "verpackungslinie",
+        "palettierlinie",
+        "nordwind",
+        "kundenanlage"
+      ]
+    },
+    {
+      "id": "projekt-portfolio",
+      "module": "berichte",
+      "question": "Welche Projekte laufen aktuell?",
+      "keywords": [
+        "welche projekte",
+        "projekte",
+        "portfolio",
+        "projektportfolio",
+        "projektübersicht",
+        "übersicht projekte",
+        "laufende projekte",
+        "alle projekte",
+        "projektlandschaft"
+      ]
+    },
+    {
+      "id": "vertraege-verlaengerung",
+      "module": "vertraege",
+      "question": "Finde alle Verträge mit automatischer Verlängerung.",
+      "keywords": [
+        "vertrag",
+        "verträge",
+        "verlängerung",
+        "automatisch",
+        "kündigung",
+        "laufzeit",
+        "renewal"
+      ]
+    },
+    {
+      "id": "vorstand-summary",
+      "module": "berichte",
+      "question": "Erstelle eine Zusammenfassung für den Vorstand.",
+      "keywords": [
+        "vorstand",
+        "zusammenfassung",
+        "board",
+        "management summary",
+        "überblick",
+        "briefing"
+      ]
+    },
+    {
+      "id": "brandschutz",
+      "module": "audit",
+      "question": "Wo ist die Brandschutzdokumentation für Werk 2?",
+      "keywords": [
+        "brandschutz",
+        "feuer",
+        "sicherheit",
+        "feuerbeschau",
+        "rettungsweg",
+        "din 14096",
+        "werk 2"
+      ]
+    },
+    {
+      "id": "datenschutz-audit",
+      "module": "audit",
+      "question": "Sind wir DSGVO-konform — wann war das letzte Datenschutz-Audit?",
+      "keywords": [
+        "dsgvo",
+        "datenschutz",
+        "gdpr",
+        "audit",
+        "verarbeitungsverzeichnis",
+        "vvt",
+        "art. 30",
+        "art 30",
+        "betroffenenrechte",
+        "datenpanne",
+        "datenschutzbeauftragte",
+        "datenschutzbeauftragter",
+        "dsb",
+        "löschkonzept",
+        "auftragsverarbeitung",
+        "compliance"
+      ]
+    },
+    {
+      "id": "esg-co2",
+      "module": "berichte",
+      "question": "Wie hat sich unser CO₂-Fußabdruck entwickelt — sind wir auf ESG-Kurs?",
+      "keywords": [
+        "co2",
+        "co₂",
+        "esg",
+        "nachhaltigkeit",
+        "emission",
+        "klima",
+        "fußabdruck",
+        "erneuerbar",
+        "grün",
+        "csrd",
+        "scope"
+      ]
+    },
+    {
+      "id": "strategie-ausblick",
+      "module": "berichte",
+      "question": "Was hat der Vorstand für die Wachstumsstrategie beschlossen?",
+      "keywords": [
+        "strategie",
+        "wachstum",
+        "wachstumsstrategie",
+        "vorstand beschlossen",
+        "akquisition",
+        "übernahme",
+        "ausblick",
+        "m&a",
+        "zukauf"
+      ]
+    },
+    {
+      "id": "onboarding-tag1",
+      "module": "hr",
+      "question": "Was muss ein neuer Mitarbeiter am ersten Tag erledigen?",
+      "keywords": [
+        "onboarding",
+        "erster tag",
+        "neuer mitarbeiter",
+        "einarbeitung",
+        "neue mitarbeitende",
+        "willkommen",
+        "einstieg",
+        "erster arbeitstag",
+        "checkliste"
+      ]
+    },
+    {
+      "id": "lieferanten-risiko",
+      "module": "finanzen",
+      "question": "Wie abhängig sind wir von unserem größten Lieferanten?",
+      "keywords": [
+        "lieferant",
+        "lieferanten",
+        "abhängig",
+        "abhängigkeit",
+        "klumpenrisiko",
+        "konzentration",
+        "single source",
+        "risiko",
+        "einkauf",
+        "beschaffung",
+        "supplier"
+      ]
+    },
+    {
+      "id": "agent-dazubuchen",
+      "module": "berichte",
+      "question": "Kann ich einen weiteren Agenten dazubuchen?",
+      "keywords": [
+        "agent",
+        "agenten",
+        "dazubuchen",
+        "dazu buchen",
+        "buchen",
+        "mieten",
+        "digitale mitarbeiter",
+        "digitaler mitarbeiter",
+        "reporting-agent",
+        "rechnungs-agent",
+        "vertrags-agent",
+        "abo",
+        "abonnement",
+        "weiteren agenten",
+        "neuer agent",
+        "team erweitern"
+      ]
+    }
+  ]
+}

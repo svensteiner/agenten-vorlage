@@ -1,0 +1,11 @@
+.git
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+htmlcov
+state
+logs
+data
+.env
+node_modules

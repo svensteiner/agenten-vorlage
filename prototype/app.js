@@ -2,7 +2,7 @@
  * AI Studio Demo — Interaktionslogik.
  * Reines Vanilla-JS, keine Abhängigkeiten, läuft per Doppelklick (file://).
  * Rendert Chat, gestreamte Antworten, Quellen und den Dokumentenviewer.
- * Datenquelle: data.js (COMPANY, MODULES, DOCS, SCENARIOS, MODULE_SUGGESTIONS).
+ * Datenquelle: data.js (COMPANY, MODULES, DOCS, SCENARIOS, AGENT_CATALOG).
  */
 (function () {
   "use strict";
@@ -53,7 +53,191 @@
     return list.length ? list : SCENARIOS.slice();
   }
 
-  // Dokument-Skins: geben jedem Dokumenttyp im Viewer eine realistische
+  // ---------- Mietflotte (digitale Mitarbeiter) ----------
+  // Persistente Miete: der Money-Shot und das Modul „Team" teilen denselben Stand.
+  // Reset setzt auf den Auskunfts-Agenten (inklusive) zurück.
+  const FLEET_KEY = "aistudio.fleet.v1";
+  const teamUi = { tab: "fleet", filter: "alle", detailId: null, workId: null, workOut: null };
+  let fleet = { leases: {} };
+
+  function defaultFleet() {
+    const leases = {};
+    (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).forEach((a) => {
+      if (a.included) leases[a.id] = { status: "active", since: "inklusive", included: true };
+    });
+    return { leases };
+  }
+
+  function loadFleet() {
+    let f = defaultFleet();
+    try {
+      const raw = localStorage.getItem(FLEET_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.leases && typeof parsed.leases === "object") f = parsed;
+      }
+    } catch (e) { /* file:// ohne Storage */ }
+    const known = new Set((typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).map((a) => a.id));
+    Object.keys(f.leases || {}).forEach((id) => { if (!known.has(id)) delete f.leases[id]; });
+    (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).forEach((a) => {
+      if (a.included && !(f.leases && f.leases[a.id])) {
+        f.leases = f.leases || {};
+        f.leases[a.id] = { status: "active", since: "inklusive", included: true };
+      }
+    });
+    return f;
+  }
+
+  function saveFleet() {
+    try { localStorage.setItem(FLEET_KEY, JSON.stringify(fleet)); } catch (e) { /* ignore */ }
+  }
+
+  function resetFleet() {
+    if (isLive()) {
+      return AISTUDIO.fleetAction("", "reset").then((state) => {
+        fleet = state;
+        teamUi.tab = "fleet";
+        teamUi.filter = "alle";
+        teamUi.detailId = null;
+        teamUi.workId = null;
+        teamUi.workOut = null;
+      });
+    }
+    fleet = defaultFleet();
+    saveFleet();
+    teamUi.tab = "fleet";
+    teamUi.filter = "alle";
+    teamUi.detailId = null;
+    teamUi.workId = null;
+    teamUi.workOut = null;
+    return Promise.resolve();
+  }
+
+  function catalogById(id) {
+    return (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).find((a) => a.id === id) || null;
+  }
+
+  function leaseOf(id) { return (fleet.leases || {})[id] || null; }
+
+  function isActive(id) {
+    const a = catalogById(id);
+    if (a && a.included) return true;
+    const l = leaseOf(id);
+    return !!(l && l.status === "active");
+  }
+
+  function isRented(id) {
+    const a = catalogById(id);
+    if (a && a.included) return true;
+    const l = leaseOf(id);
+    return !!(l && (l.status === "active" || l.status === "paused"));
+  }
+
+  function activeAgents() {
+    return (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).filter((a) => isActive(a.id));
+  }
+
+  function monthlyTotal() {
+    return activeAgents().reduce((s, a) => s + (a.included ? 0 : (Number(a.price) || 0)), 0);
+  }
+
+  function formatEur(n) { return Number(n).toLocaleString("de-DE") + " €"; }
+
+  function agentPriceLabel(a) {
+    if (!a) return "";
+    if (a.included || a.price === 0 || a.price === "inklusive") return "inklusive";
+    if (typeof a.price === "string") return a.price;
+    return formatEur(a.price);
+  }
+
+  function isLive() {
+    return !!(window.AISTUDIO && AISTUDIO.isLive && AISTUDIO.isLive());
+  }
+
+  function isDemoTenant() {
+    if (!isLive()) return true;
+    return !!(AISTUDIO.isDemoTenant && AISTUDIO.isDemoTenant());
+  }
+
+  function isProductTenant() {
+    return isLive() && !isDemoTenant();
+  }
+
+  function orgName() {
+    if (isLive() && AISTUDIO.org && AISTUDIO.org.name) return AISTUDIO.org.name;
+    return COMPANY.name;
+  }
+
+  function orgTagline() {
+    if (isLive() && AISTUDIO.org && AISTUDIO.org.tagline) return AISTUDIO.org.tagline;
+    return COMPANY.tagline || "";
+  }
+
+  function canMutateFleet() {
+    if (!isLive()) return true;
+    return !!(AISTUDIO.canMutateFleet && AISTUDIO.canMutateFleet());
+  }
+
+  function todayGermanShort() {
+    try { return new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
+    catch (e) { return "24.08.2026"; }
+  }
+
+  function nextInvoiceGerman() {
+    try {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth() + 1, 1)
+        .toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch (e) { return "01.09.2026"; }
+  }
+
+  function rentAgent(id) {
+    const a = catalogById(id);
+    if (!a || a.included) return Promise.resolve(a);
+    if (isLive()) {
+      return AISTUDIO.fleetAction(id, "rent").then((state) => {
+        fleet = state;
+        return a;
+      });
+    }
+    fleet.leases = fleet.leases || {};
+    fleet.leases[id] = { status: "active", since: todayGermanShort(), included: false };
+    saveFleet();
+    return Promise.resolve(a);
+  }
+
+  function togglePause(id) {
+    const l = leaseOf(id);
+    if (!l || l.included) return Promise.resolve();
+    if (isLive()) {
+      const action = l.status === "paused" ? "resume" : "pause";
+      return AISTUDIO.fleetAction(id, action).then((state) => { fleet = state; });
+    }
+    l.status = l.status === "paused" ? "active" : "paused";
+    saveFleet();
+    return Promise.resolve();
+  }
+
+  function cancelAgent(id) {
+    const l = leaseOf(id);
+    if (!l || l.included) return Promise.resolve();
+    if (isLive()) {
+      return AISTUDIO.fleetAction(id, "cancel").then((state) => {
+        fleet = state;
+        if (teamUi.workId === id) { teamUi.workId = null; teamUi.workOut = null; }
+      });
+    }
+    delete fleet.leases[id];
+    saveFleet();
+    if (teamUi.workId === id) { teamUi.workId = null; teamUi.workOut = null; }
+    return Promise.resolve();
+  }
+
+  function paidCount() {
+    return activeAgents().filter((a) => !a.included).length;
+  }
+
+  // ---------- Dokument-Skins ----------
   // Papier-Anmutung (Briefkopf, Beleg-Stempel, Unterschriftszeile).
   const DOC_SKINS = {
     "Eingangsrechnung":     { cat: "beleg", extIssuer: true, stamp: { text: "EINGANG", tone: "ink" } },
@@ -75,7 +259,11 @@
   const defaultSkin = { cat: "bericht" };
 
   // ---------- Bootstrapping ----------
-  function init() {
+  async function init() {
+    if (window.AISTUDIO && typeof AISTUDIO.boot === "function") {
+      await AISTUDIO.boot();
+    }
+    fleet = (isLive() && AISTUDIO.fleet) ? AISTUDIO.fleet : loadFleet();
     renderSidebar();
     renderCompanyCard();
     selectModule("wissen");
@@ -85,6 +273,30 @@
     wireReset();
     wireSearch();
     wireOnboarding();
+    wireRentOverlay();
+    if (isLive()) {
+      const st = $(".status");
+      if (st) {
+        const who = (AISTUDIO.user && AISTUDIO.user.name) ? AISTUDIO.user.name : "";
+        st.classList.add("status-live");
+        st.innerHTML = `<span class="dot"></span> Live · Wissensbasis verbunden` +
+          (who ? `<span class="user-chip">${escapeHtml(who)}</span>` : "") +
+          `<button class="reset-btn" type="button" id="logoutBtn" title="Abmelden" style="margin-left:8px"><span class="rl">Abmelden</span></button>`;
+        const lo = $("#logoutBtn");
+        if (lo) lo.onclick = () => AISTUDIO.logout();
+      }
+      if (isProductTenant()) {
+        const demoBtn = $("#demoBtn");
+        if (demoBtn) demoBtn.hidden = true;
+        const resetBtn = $("#resetBtn");
+        if (resetBtn) resetBtn.hidden = true;
+        const hint = $(".composer .hint");
+        if (hint) hint.textContent = "AI Studio durchsucht nur Dokumente, für die Sie berechtigt sind.";
+        document.title = "AI Studio — " + orgName();
+        const co = $("#searchCompany");
+        if (co) co.textContent = orgName();
+      }
+    }
   }
 
   // ---------- Onboarding-Coachmark (nur beim ersten Start) ----------
@@ -94,6 +306,7 @@
   function wireOnboarding() {
     const ob = $("#onboard");
     if (!ob) return;
+    if (isLive() && !isDemoTenant()) return;
 
     let seen = false;
     try { seen = localStorage.getItem(ONBOARD_KEY) === "1"; } catch (e) { seen = false; }
@@ -176,11 +389,14 @@
   // Ein-Klick „Demo zurücksetzen": bringt die App in den sauberen Startzustand für
   // wiederholbare Video-Takes — laufende Demo sauber stoppen, Verlauf leeren, Viewer/
   // Palette schließen und zurück auf den Hero (Modul „Wissen"). Rein UI, kein Datenpfad.
-  function resetDemo() {
+  async function resetDemo() {
     if (demo.running) stopDemo(); else resetDemoUi();
     chatState.length = 0;
     closeViewer();
     closeSearch();
+    closeRent();
+    await resetFleet();
+    hideFleetToast();
     selectModule("wissen");
   }
 
@@ -273,17 +489,44 @@
   function renderSidebar() {
     const nav = $("#nav");
     nav.innerHTML = "";
-    nav.appendChild(el("div", "nav-label", "Module"));
-    MODULES.forEach((m) => {
-      const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>`);
-      btn.dataset.key = m.key;
-      btn.onclick = () => selectModule(m.key);
-      nav.appendChild(btn);
+    const groups = (typeof MODULE_GROUPS !== "undefined" && MODULE_GROUPS.length)
+      ? MODULE_GROUPS
+      : [{ label: "Module", keys: MODULES.map((m) => m.key) }];
+    groups.forEach((g) => {
+      nav.appendChild(el("div", "nav-label", g.label));
+      g.keys.forEach((key) => {
+        const m = MODULES.find((x) => x.key === key);
+        if (!m) return;
+        const count = m.key === "team" ? paidCount() : 0;
+        const badge = count ? `<span class="nav-count">${count}</span>` : "";
+        const btn = el("button", "nav-item", `<span class="ic">${m.icon}</span><span>${m.label}</span>${badge}`);
+        btn.dataset.key = m.key;
+        btn.onclick = () => selectModule(m.key);
+        nav.appendChild(btn);
+      });
     });
+  }
+
+  function refreshNavCounts() {
+    const key = currentModule;
+    renderSidebar();
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
   }
 
   function renderCompanyCard() {
     const c = $("#companyCard");
+    if (isLive() && AISTUDIO.org) {
+      const org = AISTUDIO.org;
+      const user = AISTUDIO.user || {};
+      c.innerHTML =
+        `<h4>${escapeHtml(org.name || "Mandant")}</h4>` +
+        `<div class="row"><span>Rolle</span><span>${escapeHtml(user.role || "")}</span></div>` +
+        `<div class="row"><span>Konto</span><span>${escapeHtml(user.email || "")}</span></div>` +
+        (isDemoTenant()
+          ? `<div class="demo-badge">● Demo-Daten · rein fiktiv</div>`
+          : `<div class="demo-badge">● Mandant · Daten bleiben hier</div>`);
+      return;
+    }
     const rows = COMPANY.facts
       .map((f) => `<div class="row"><span>${f.label}</span><span>${f.value}</span></div>`)
       .join("");
@@ -299,6 +542,7 @@
     $("#topTitle").innerHTML = `${mod.label}<small>${mod.hint}</small>`;
 
     if (key === "wissen") return renderChatView();
+    if (key === "team") return renderTeamView();
     if (key === "einstellungen") return renderSettingsView();
     return renderLibraryView(key);
   }
@@ -325,10 +569,39 @@
 
   function renderHero(wrap) {
     const hero = el("div", "hero");
+    if (isProductTenant()) {
+      const n = Object.keys(DOCS || {}).length;
+      hero.innerHTML =
+        `<div class="spark">✦</div>` +
+        `<h1>Wissensbasis ${escapeHtml(orgName())}</h1>` +
+        `<p>${n
+          ? "Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht nur Dokumente dieses Mandanten und antwortet mit Quellen."
+          : "Noch keine Dokumente in der Wissensbasis. Legen Sie unter Betrieb Textdateien ab — Verträge, Berichte, Richtlinien. Danach können Sie hier fragen."}</p>`;
+      wrap.appendChild(hero);
+      if (!n) {
+        const empty = el("div", "empty-kb");
+        empty.appendChild(el("p", null, "Nur dieser Mandant sieht den Inhalt. Die Daten bleiben auf dieser Instanz."));
+        const btn = el("button", "btn primary", "Dokument aufnehmen");
+        btn.onclick = () => selectModule("einstellungen");
+        empty.appendChild(btn);
+        wrap.appendChild(empty);
+        return;
+      }
+      const grid = el("div", "suggestions");
+      Object.values(DOCS).filter((d) => !d.locked).slice(0, 6).forEach((d) => {
+        const card = el("button", "suggest-card",
+          `<div class="q">${escapeHtml(d.title)}</div><span class="tag">${escapeHtml(d.type || "Dokument")}</span>`);
+        card.onclick = () => ask("Was steht in „" + d.title + "“?");
+        grid.appendChild(card);
+      });
+      wrap.appendChild(grid);
+      return;
+    }
+
     hero.innerHTML =
       `<div class="spark">✦</div>` +
       `<h1>Ihr Unternehmenswissen — sofort abrufbar</h1>` +
-      `<p>Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht Verträge, Rechnungen, Berichte und Richtlinien der ${COMPANY.name} und antwortet mit belastbaren Quellen.</p>`;
+      `<p>Stellen Sie eine Frage in natürlicher Sprache. AI Studio durchsucht Verträge, Rechnungen, Berichte und Richtlinien der ${escapeHtml(orgName())} und antwortet mit belastbaren Quellen.</p>`;
     wrap.appendChild(hero);
 
     const grid = el("div", "suggestions");
@@ -348,6 +621,17 @@
   async function ask(text) {
     text = (text || "").trim();
     if (!text) return;
+
+    // Direkte Sprünge in die Mietplattform (nicht der Money-Shot-Chat).
+    if (isTeamJump(text)) {
+      const q = text.toLowerCase();
+      teamUi.tab = /marktplatz|agenten mieten|mieten/.test(q) ? "market"
+        : /abrechnung|rechnung/.test(q) ? "billing"
+        : /auftrag/.test(q) ? "work"
+        : "fleet";
+      selectModule("team");
+      return;
+    }
 
     // Falls der Hero noch da ist: Chat-Ansicht in „aktiven" Modus versetzen
     if (currentModule !== "wissen") selectModule("wissen");
@@ -376,6 +660,36 @@
       await sleep(360);
     }
     thinking.remove();
+
+    if (demo.running) {
+      if (scenario) {
+        chatState.push({ role: "ai", answer: scenario.answer, question: text });
+        await streamAnswer(wrap, scenario.answer);
+      } else {
+        const fallback = fallbackAnswer(text);
+        chatState.push({ role: "ai", answer: fallback, question: text });
+        await streamAnswer(wrap, fallback);
+      }
+      return;
+    }
+
+    if (isLive()) {
+      try {
+        const answer = await AISTUDIO.ask(text);
+        chatState.push({ role: "ai", answer: answer, question: text });
+        await streamAnswer(wrap, answer);
+      } catch (e) {
+        const fail = {
+          text: "Die Wissenssuche ist gerade nicht erreichbar. " + escapeHtml(e.message || "Bitte erneut versuchen."),
+          reasoning: ["Live-Suche fehlgeschlagen.", String(e.message || "")],
+          sources: [],
+          confidence: 0,
+        };
+        chatState.push({ role: "ai", answer: fail, question: text });
+        await streamAnswer(wrap, fail);
+      }
+      return;
+    }
 
     if (scenario) {
       chatState.push({ role: "ai", answer: scenario.answer, question: text });
@@ -431,6 +745,17 @@
       `</span>`;
   }
 
+  function viaBadge(answer) {
+    if (!answer || !answer.via) return "";
+    if (answer.via === "llm") {
+      return `<span class="via via-llm" title="Formuliert aus freigegebenen Kurzauszügen. Die Wissensbasis bleibt auf der Instanz.">formuliert</span>`;
+    }
+    if (answer.via === "extractive") {
+      return `<span class="via via-docs" title="Wörtlich aus Ihren Dokumenten auf dieser Instanz — ohne Cloud-Modell.">aus Belegen</span>`;
+    }
+    return "";
+  }
+
   // ---------- Antwort streamen ----------
   async function streamAnswer(wrap, answer) {
     const msg = el("div", "msg");
@@ -453,7 +778,7 @@
         `</span>${pop}</span>`
       : "";
     card.appendChild(el("div", "head",
-      `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` + viaBadge(answer) +
       `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">0,0 s</b></span>` +
       confHtml));
     const textEl = el("div", "text");
@@ -493,6 +818,44 @@
     appendAgents(card, answer);
     revealBlocks(card);
     scrollBottom();
+  }
+
+  // Replay vorhandener Chat-Antworten nach Modulwechsel (ohne Tipp-/Zähl-Animation).
+  // Schließt den latenten Bug: renderChatView() rief answerCard(), die nicht existierte.
+  function answerCard(answer) {
+    const msg = el("div", "msg");
+    const card = el("div", "answer");
+    const hasConf = typeof answer.confidence === "number";
+    const confCls = answer.confidence >= 90 ? "" : "mid";
+    const secs = answerSeconds(answer);
+    const pop = hasConf ? buildConfPop(answer) : "";
+    const confHtml = hasConf
+      ? `<span class="conf${pop ? " has-pop" : ""}"${pop ? ' tabindex="0" aria-label="Konfidenz — Herleitung anzeigen"' : ""}>` +
+        `<span class="conf-meter">Konfidenz` +
+        `<span class="conf-bar ${confCls}"><i style="width:${answer.confidence}%"></i></span>` +
+        `<b>${answer.confidence}%</b>` +
+        (pop ? `<span class="conf-i" aria-hidden="true">ⓘ</span>` : "") +
+        `</span>${pop}</span>`
+      : "";
+    const secStr = String(secs).replace(".", ",");
+    card.appendChild(el("div", "head",
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` + viaBadge(answer) +
+      `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">${secStr} s</b></span>` +
+      confHtml));
+    const textEl = el("div", "text");
+    textEl.innerHTML = answer.text || "";
+    card.appendChild(textEl);
+    msg.appendChild(card);
+    appendChain(card, answer.chain);
+    appendReasoning(card, answer.reasoning);
+    appendSources(card, answer.sources);
+    appendWithheld(card, answer.withheld);
+    appendRelated(card, answer.related);
+    appendFollowups(card, answer.followups);
+    appendActions(card, answer);
+    appendAgents(card, answer);
+    if (pop) wireConfPopBars(card);
+    return msg;
   }
 
   // Lässt die strukturierten Blöcke (Nachvollziehbarkeit → Quellen → Verwandte →
@@ -703,12 +1066,15 @@
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
         `<span class="ad-txt"><b>Briefing an den Vorstand gesendet</b>` +
-        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(COMPANY.name)} · soeben · Ref. BRF-2026-${num}</span></span>`;
+        `<span class="ad-sub">Empfänger: Vorstand · ${escapeHtml(orgName())} · soeben · Ref. BRF-2026-${num}</span></span>`;
     } else {
+      const fileBase = isProductTenant()
+        ? (orgName().toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-|-$/g, "") || "mandant")
+        : "meridian";
       done.innerHTML =
         `<span class="ok-badge">✓</span>` +
         `<span class="ad-txt"><b>Briefing als PDF exportiert</b>` +
-        `<span class="ad-sub">meridian-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
+        `<span class="ad-sub">${escapeHtml(fileBase)}-briefing-2026-${num}.pdf · ${escapeHtml(todayGerman())}</span></span>`;
     }
     row.replaceWith(done);
     scrollBottom();
@@ -726,22 +1092,26 @@
     b.appendChild(el("div", "block-title", "🤝 Agenten dazubuchen — wie neue Mitarbeiter"));
     const grid = el("div", "agent-grid");
     answer.agents.forEach((a) => {
-      const item = el("div", "agent-card" + (a.recommended ? " rec" : "") + (a.active ? " on" : ""));
-      const badge = a.active
+      const cat = a.id ? catalogById(a.id) : null;
+      const live = cat ? isActive(cat.id) : !!a.active;
+      const rec = !!(a.recommended || (cat && cat.recommended));
+      const item = el("div", "agent-card" + (rec && !live ? " rec" : "") + (live ? " on" : ""));
+      const badge = live
         ? `<span class="ag-badge active">● Aktiv</span>`
-        : (a.recommended ? `<span class="ag-badge rec">Empfohlen</span>` : "");
+        : (rec ? `<span class="ag-badge rec">Empfohlen</span>` : "");
+      const price = cat ? agentPriceLabel(cat) : (a.price || "");
       item.innerHTML =
         `<div class="ag-top">` +
-        `<span class="ag-ic">${a.icon}</span>` +
+        `<span class="ag-ic">${a.icon || (cat && cat.icon) || "✦"}</span>` +
         `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
         `<span class="ag-role">${escapeHtml(a.role)}</span></span>` +
         badge +
         `</div>` +
         `<div class="ag-desc">${escapeHtml(a.desc)}</div>` +
-        `<div class="ag-foot"><span class="ag-price">${escapeHtml(a.price)}` +
-        (a.active ? `` : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
+        `<div class="ag-foot"><span class="ag-price">${escapeHtml(price)}` +
+        (live || price === "inklusive" ? `` : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
       const foot = $(".ag-foot", item);
-      if (!a.active) {
+      if (!live) {
         const btn = el("button", "ag-book", `<span class="ag-plus">＋</span>Dazubuchen`);
         btn.onclick = () => bookAgent(item, a);
         foot.appendChild(btn);
@@ -752,6 +1122,14 @@
     });
     b.appendChild(grid);
     if (answer.priceNote) b.appendChild(el("div", "ag-note", escapeHtml(answer.priceNote)));
+    if (!demo.running) {
+      const more = el("button", "btn ghost");
+      more.style.margin = "12px auto 0";
+      more.style.display = "flex";
+      more.textContent = "Alle Agenten im Modul Team →";
+      more.onclick = () => { teamUi.tab = "market"; selectModule("team"); };
+      b.appendChild(more);
+    }
     card.appendChild(b);
 
     // Hands-free-Payoff: In der Geführten Demo bucht sich der empfohlene Agent
@@ -759,7 +1137,11 @@
     // ohne dass jemand klicken muss. Außerhalb der Demo bleibt es interaktiv.
     if (demo.running) {
       const recCard = $(".agent-card.rec", b);
-      const rec = answer.agents.find((a) => a.recommended && !a.active);
+      const rec = answer.agents.find((a) => {
+        const cat = a.id ? catalogById(a.id) : null;
+        const live = cat ? isActive(cat.id) : !!a.active;
+        return (a.recommended || (cat && cat.recommended)) && !live;
+      });
       if (recCard && rec) scheduleAutoBook(recCard, rec);
     }
   }
@@ -778,6 +1160,9 @@
     const done = el("span", "ag-live",
       `✓ Aktiviert · ab sofort Teil Ihres Teams · erste Auswertung heute Abend`);
     if (pend) pend.replaceWith(done); else foot.appendChild(done);
+    if (agent && agent.id) await rentAgent(agent.id);
+    refreshNavCounts();
+    if (!demo.running) showFleetToast(agent);
     scrollBottom();
   }
 
@@ -832,7 +1217,7 @@
       return {
         text: withheld
           ? "Zu Ihrer Frage sind ausschließlich Dokumente vorhanden, die <b>für Sie nicht freigegeben</b> sind — siehe unten. AI Studio zeigt deren Inhalt nicht an."
-          : "Ich konnte zu dieser Frage keine passenden Dokumente in der Demo-Wissensbasis finden. Probieren Sie eine der vorgeschlagenen Beispielfragen — die Demo-Firma umfasst Finanzen, HR, Verträge, Audit und Berichte.",
+          : "Ich konnte zu dieser Frage keine passenden Dokumente in der Wissensbasis finden. Formulieren Sie die Frage mit Begriffen aus Ihren Dokumenten.",
         reasoning: withheld
           ? ["Frage entgegengenommen.", "Zugriffsrechte des Kontos geprüft.", `${withheld.count} Treffer als „${withheld.role}" klassifiziert — Inhalt nicht gelesen und nicht angezeigt (fail-closed).`]
           : ["Frage entgegengenommen.", "Wissensbasis durchsucht — kein ausreichend relevanter Treffer.", "Ehrliche Rückmeldung statt Halluzination (fail-closed)."],
@@ -867,7 +1252,7 @@
     wrap.appendChild(head);
 
     // Vorgeschlagene Fragen für dieses Modul
-    const sugg = MODULE_SUGGESTIONS[key] || [];
+    const sugg = isProductTenant() ? [] : (MODULE_SUGGESTIONS[key] || []);
     if (sugg.length) {
       const box = el("div", "chips");
       box.style.marginBottom = "20px";
@@ -910,29 +1295,309 @@
     scroll.innerHTML = "";
     $("#composer").style.display = "none";
     const wrap = el("div", "wrap");
-    wrap.appendChild(el("div", "lib-head", `<h2>Datenquellen</h2><p>Angebundene Systeme der ${COMPANY.name}. In der Demo simuliert.</p>`));
+    const live = isLive();
+    const orgNameLive = (live && AISTUDIO.org && AISTUDIO.org.name) || COMPANY.name;
+    wrap.appendChild(el("div", "lib-head",
+      `<h2>${live && !isDemoTenant() ? "Betrieb" : "Datenquellen"}</h2>` +
+      `<p>${live && !isDemoTenant()
+        ? "Mandant, Nutzer, Audit und Wissensbasis — alles auf dieser Instanz."
+        : "Angebundene Systeme der " + orgNameLive + ". In der Demo simuliert."}</p>`));
 
-    const srcs = [
-      { i: "📁", t: "SharePoint", s: "Richtlinien, Verträge, Vorstandsprotokolle" },
-      { i: "🗄", t: "Fileserver", s: "Controlling, Projekte, Nachweise" },
-      { i: "🧾", t: "SAP S/4HANA", s: "Rechnungen, Bestellungen, Wareneingänge" },
-      { i: "✉", t: "Exchange / E-Mail", s: "Postfächer & Anhänge" },
-      { i: "📊", t: "Excel & Berichte", s: "Quartalszahlen, ESG-Kennzahlen" },
-      { i: "🔒", t: "Berechtigungen", s: "Zugriff je Nutzer wird respektiert" },
-    ];
-    const grid = el("div", "sources-grid");
-    srcs.forEach((x) => {
-      const tile = el("div", "src-tile");
-      tile.innerHTML = `<span class="si">${x.i}</span><div><div class="t">${x.t}</div><div class="s">${x.s}</div></div><span class="on">● verbunden</span>`;
-      grid.appendChild(tile);
-    });
-    wrap.appendChild(grid);
+    if (!(live && !isDemoTenant())) {
+      const srcs = [
+        { i: "📁", t: "SharePoint", s: "Richtlinien, Verträge, Vorstandsprotokolle" },
+        { i: "🗄", t: "Fileserver", s: "Controlling, Projekte, Nachweise" },
+        { i: "🧾", t: "SAP S/4HANA", s: "Rechnungen, Bestellungen, Wareneingänge" },
+        { i: "✉", t: "Exchange / E-Mail", s: "Postfächer & Anhänge" },
+        { i: "📊", t: "Excel & Berichte", s: "Quartalszahlen, ESG-Kennzahlen" },
+        { i: "🔒", t: "Berechtigungen", s: "Zugriff je Nutzer wird respektiert" },
+      ];
+      const grid = el("div", "sources-grid");
+      srcs.forEach((x) => {
+        const tile = el("div", "src-tile");
+        tile.innerHTML = `<span class="si">${x.i}</span><div><div class="t">${x.t}</div><div class="s">${x.s}</div></div><span class="on">● verbunden</span>`;
+        grid.appendChild(tile);
+      });
+      wrap.appendChild(grid);
+    }
 
-    const note = el("p", null,
-      `<span style="font-size:12.5px;color:var(--ink-faint)">Hinweis: Alle Inhalte dieser Demo sind frei erfunden. Es werden keine echten Kundendaten verarbeitet.</span>`);
-    note.style.marginTop = "18px";
-    wrap.appendChild(note);
+    if (live) {
+      wrap.appendChild(renderLiveOps());
+    } else {
+      const note = el("p", null,
+        `<span style="font-size:12.5px;color:var(--ink-faint)">Hinweis: Alle Inhalte dieser Demo sind frei erfunden. Es werden keine echten Kundendaten verarbeitet.</span>`);
+      note.style.marginTop = "18px";
+      wrap.appendChild(note);
+    }
+
     scroll.appendChild(wrap);
+  }
+
+  function applyOrgChrome() {
+    document.title = "AI Studio — " + orgName();
+    const co = $("#searchCompany");
+    if (co) co.textContent = orgName();
+    renderCompanyCard();
+  }
+
+  function renderLiveOps() {
+    const box = el("div", "ops");
+    const user = AISTUDIO.user || {};
+    const org = AISTUDIO.org || {};
+    const canDocs = user.role === "admin" || user.role === "cfo";
+
+    const llm = (AISTUDIO.health && AISTUDIO.health.llm) || {};
+    const llmBox = el("div", "upload-box");
+    const kindLabel = llm.kind === "decentral" ? "lokal / dezentral"
+      : llm.kind === "api" ? "Cloud-API" : "kein Modell";
+    const egressLabel = llm.egress === "cloud"
+      ? "Cloud erlaubt — nur Kurzauszüge, nie die Wissensbasis"
+      : "in der Instanz — Auszüge verlassen den Server nicht";
+    const readyLabel = llm.ready ? "aktiv" : "nicht aktiv — Antworten aus Belegen auf der Instanz";
+    llmBox.innerHTML =
+      `<h3>Sprachmodell</h3>` +
+      `<p>Nur diese Schicht spricht mit einem Modell. Die Dokumente bleiben auf der Instanz. ` +
+      `Es gehen höchstens freigegebene Kurzauszüge, und nur wenn Cloud-Ausgang ausdrücklich erlaubt ist.</p>` +
+      `<p><b>${escapeHtml(llm.provider || "none")}</b>` +
+      (llm.model ? ` · ${escapeHtml(llm.model)}` : "") +
+      ` · ${escapeHtml(kindLabel)}<br>${escapeHtml(egressLabel)}<br>${escapeHtml(readyLabel)}</p>`;
+    box.appendChild(llmBox);
+
+    const pwd = el("div", "upload-box");
+    pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
+    const oldP = el("input"); oldP.type = "password"; oldP.placeholder = "Aktuelles Passwort";
+    const newP = el("input"); newP.type = "password"; newP.placeholder = "Neues Passwort";
+    const pwdStatus = el("p");
+    const pwdBtn = el("button", "btn primary", "Speichern");
+    pwdBtn.onclick = async () => {
+      pwdStatus.textContent = "…";
+      try {
+        await AISTUDIO.request("/api/auth/password", { method: "POST", json: { old_password: oldP.value, new_password: newP.value } });
+        pwdStatus.textContent = "Passwort aktualisiert.";
+        oldP.value = ""; newP.value = "";
+      } catch (e) { pwdStatus.textContent = e.message; }
+    };
+    pwd.append(oldP, newP, pwdBtn, pwdStatus);
+    box.appendChild(pwd);
+
+    const sessBox = el("div", "upload-box");
+    sessBox.innerHTML = `<h3>Sitzungen</h3><p>Aktive Anmeldungen dieses Kontos. Andere Geräte können Sie hier abmelden.</p>`;
+    const sessList = el("div", "sess-list");
+    const sessStatus = el("p");
+    const sessBtn = el("button", "btn", "Andere Sitzungen beenden");
+    const reloadSessions = async () => {
+      try {
+        const data = await AISTUDIO.request("/api/sessions");
+        sessList.innerHTML = "";
+        (data.sessions || []).forEach((s) => {
+          const row = el("div", "sess-row");
+          const when = escapeHtml((s.created_at || "").replace("T", " ").slice(0, 16));
+          const ip = escapeHtml(s.ip || "—");
+          row.innerHTML = `<span><b>${when}</b> · ${ip}` +
+            (s.current ? ` <span class="sess-current">diese Sitzung</span>` : "") + `</span>`;
+          if (!s.current) {
+            const b = el("button", "row-act", "Beenden");
+            b.onclick = async () => {
+              try {
+                await AISTUDIO.request("/api/sessions/" + encodeURIComponent(s.id), { method: "DELETE" });
+                await reloadSessions();
+              } catch (e) { sessStatus.textContent = e.message; }
+            };
+            row.appendChild(b);
+          }
+          sessList.appendChild(row);
+        });
+        if (!sessList.children.length) sessList.textContent = "Keine aktiven Sitzungen.";
+      } catch (e) { sessList.textContent = e.message; }
+    };
+    sessBtn.onclick = async () => {
+      sessStatus.textContent = "…";
+      try {
+        await AISTUDIO.request("/api/sessions/revoke-others", { method: "POST", json: {} });
+        sessStatus.textContent = "Andere Sitzungen beendet.";
+        await reloadSessions();
+      } catch (e) { sessStatus.textContent = e.message; }
+    };
+    sessBox.append(sessList, sessBtn, sessStatus);
+    box.appendChild(sessBox);
+    reloadSessions();
+
+    const up = el("div", "upload-box");
+    up.innerHTML = `<h3>Wissensbasis</h3>` +
+      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.</p>`;
+    const docList = el("div", "doc-admin-list");
+    const input = el("input");
+    input.type = "file";
+    input.accept = ".txt,.md,.csv,.json";
+    const status = el("p");
+    const reloadDocs = () => {
+      docList.innerHTML = "";
+      const items = Object.values(DOCS || {});
+      if (!items.length) {
+        docList.appendChild(el("p", null, "Noch keine Dokumente."));
+        return;
+      }
+      items.forEach((d) => {
+        const row = el("div", "doc-row");
+        row.innerHTML = `<span><b>${escapeHtml(d.title || d.id)}</b> · ${escapeHtml(d.type || "")} · ${escapeHtml(d.date || "")}</span>`;
+        if (canDocs && !d.locked) {
+          const b = el("button", "row-act", "Löschen");
+          b.onclick = async () => {
+            if (!confirm("Dokument „" + (d.title || d.id) + "“ löschen?")) return;
+            try {
+              await AISTUDIO.deleteDoc(d.id);
+              status.textContent = "Gelöscht.";
+              reloadDocs();
+            } catch (e) { status.textContent = e.message; }
+          };
+          row.appendChild(b);
+        }
+        docList.appendChild(row);
+      });
+    };
+    input.onchange = async () => {
+      if (!input.files || !input.files[0]) return;
+      status.textContent = "Wird aufgenommen…";
+      try {
+        const out = await AISTUDIO.upload(input.files[0]);
+        status.textContent = "Aufgenommen: " + (out.id || input.files[0].name);
+        reloadDocs();
+      } catch (e) {
+        status.textContent = e.message || "Upload fehlgeschlagen.";
+      }
+    };
+    up.append(docList, input, status);
+    box.appendChild(up);
+    reloadDocs();
+
+    if (AISTUDIO.isAdmin && AISTUDIO.isAdmin()) {
+      const usersBox = el("div", "upload-box");
+      usersBox.innerHTML = `<h3>Nutzer</h3><p>Rollen: admin, cfo, board, member. Board sieht gesperrte Akten.</p>`;
+      const list = el("div", "user-list");
+      usersBox.appendChild(list);
+      const emailI = el("input"); emailI.type = "email"; emailI.placeholder = "E-Mail";
+      const nameI = el("input"); nameI.placeholder = "Name";
+      const roleI = el("input"); roleI.placeholder = "Rolle (member)";
+      const passI = el("input"); passI.type = "password"; passI.placeholder = "Startpasswort";
+      const addStatus = el("p");
+      const addBtn = el("button", "btn primary", "Nutzer anlegen");
+      const reloadUsers = async () => {
+        try {
+          const data = await AISTUDIO.request("/api/users");
+          list.innerHTML = "";
+          (data.users || []).forEach((u) => {
+            const row = el("div", "user-row");
+            row.innerHTML = `<span><b>${escapeHtml(u.name)}</b> · ${escapeHtml(u.email)} · ${escapeHtml(u.role)}` +
+              (u.active ? "" : " · deaktiviert") + `</span>`;
+            const acts = el("span");
+            const pw = el("button", "row-act", "Passwort");
+            pw.onclick = async () => {
+              const np = window.prompt("Neues Passwort für " + u.email + " (min. 10 Zeichen, Buchstaben und Ziffern)");
+              if (!np) return;
+              try {
+                await AISTUDIO.request("/api/users/" + encodeURIComponent(u.id) + "/password", {
+                  method: "POST",
+                  json: { password: np },
+                });
+                addStatus.textContent = "Passwort gesetzt. Sitzungen des Kontos wurden beendet.";
+              } catch (e) { addStatus.textContent = e.message; }
+            };
+            acts.appendChild(pw);
+            if (u.id !== user.id) {
+              const b = el("button", "row-act", u.active ? "Deaktivieren" : "Aktivieren");
+              b.onclick = async () => {
+                try {
+                  await AISTUDIO.request("/api/users/" + encodeURIComponent(u.id), {
+                    method: "PATCH",
+                    json: { active: !u.active },
+                  });
+                  await reloadUsers();
+                } catch (e) { addStatus.textContent = e.message; }
+              };
+              acts.appendChild(b);
+            }
+            row.appendChild(acts);
+            list.appendChild(row);
+          });
+        } catch (e) {
+          list.textContent = e.message;
+        }
+      };
+      addBtn.onclick = async () => {
+        addStatus.textContent = "…";
+        try {
+          await AISTUDIO.request("/api/users", {
+            method: "POST",
+            json: { email: emailI.value, name: nameI.value, role: roleI.value || "member", password: passI.value },
+          });
+          emailI.value = ""; nameI.value = ""; roleI.value = ""; passI.value = "";
+          addStatus.textContent = "Angelegt.";
+          await reloadUsers();
+        } catch (e) { addStatus.textContent = e.message; }
+      };
+      usersBox.append(emailI, nameI, roleI, passI, addBtn, addStatus);
+      box.appendChild(usersBox);
+      reloadUsers();
+
+      const orgBox = el("div", "upload-box");
+      orgBox.innerHTML = `<h3>Mandant</h3><p>Anzeigename und Rechnungs-E-Mail.</p>`;
+      const orgNameI = el("input"); orgNameI.value = org.name || ""; orgNameI.placeholder = "Firmenname";
+      const orgMail = el("input"); orgMail.type = "email"; orgMail.value = org.billing_email || ""; orgMail.placeholder = "Rechnung per E-Mail";
+      const orgStatus = el("p");
+      const orgBtn = el("button", "btn primary", "Speichern");
+      orgBtn.onclick = async () => {
+        try {
+          const out = await AISTUDIO.request("/api/org", { method: "PATCH", json: { name: orgNameI.value, billing_email: orgMail.value } });
+          AISTUDIO.org = out.org;
+          applyOrgChrome();
+          orgStatus.textContent = "Gespeichert.";
+        } catch (e) { orgStatus.textContent = e.message; }
+      };
+      orgBox.append(orgNameI, orgMail, orgBtn, orgStatus);
+      box.appendChild(orgBox);
+    }
+
+    const auditBox = el("div", "upload-box");
+    auditBox.innerHTML = `<h3>Audit</h3>`;
+    const auditList = el("div", "audit-list");
+    auditBox.appendChild(auditList);
+    AISTUDIO.request("/api/audit?limit=30").then((data) => {
+      auditList.innerHTML = (data.events || []).slice(0, 30).map((e) =>
+        `<div class="audit-row"><span>${escapeHtml(e.created_at || "")}</span> <b>${escapeHtml(e.action)}</b> ${escapeHtml(e.actor || "")} — ${escapeHtml(e.detail || "")}</div>`
+      ).join("") || "Kein Zugriff oder keine Ereignisse.";
+    }).catch((e) => { auditList.textContent = e.message; });
+    box.appendChild(auditBox);
+
+    const jobsBox = el("div", "upload-box");
+    jobsBox.innerHTML = `<h3>Aufträge</h3><p>Letzte Agent-Läufe dieses Mandanten.</p>`;
+    const jobsList = el("div", "audit-list");
+    jobsBox.appendChild(jobsList);
+    AISTUDIO.request("/api/jobs?limit=15").then((data) => {
+      jobsList.innerHTML = (data.jobs || []).map((j) =>
+        `<div class="audit-row"><span>${escapeHtml((j.created_at || "").replace("T", " ").slice(0, 16))}</span> <b>${escapeHtml(j.agent_id || "")}</b> ${escapeHtml(j.status || "")} — ${escapeHtml((j.preview || j.task || "").slice(0, 90))}</div>`
+      ).join("") || "Noch keine Aufträge.";
+    }).catch((e) => { jobsList.textContent = e.message; });
+    box.appendChild(jobsBox);
+
+    if (user.role === "admin" || user.role === "cfo") {
+      const exp = el("div", "upload-box");
+      exp.innerHTML = `<h3>Export (DSGVO)</h3><p>JSON mit Mandant, Nutzern, Dokumenten, Flotte, Audit.</p>`;
+      const expBtn = el("button", "btn", "Export herunterladen");
+      expBtn.onclick = async () => {
+        try {
+          const data = await AISTUDIO.request("/api/export");
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "aistudio-export.json";
+          a.click();
+        } catch (e) { exp.appendChild(el("p", null, e.message)); }
+      };
+      exp.appendChild(expBtn);
+      box.appendChild(exp);
+    }
+
+    return box;
   }
 
   // ---------- Dokumentenviewer ----------
@@ -1091,7 +1756,7 @@
   function buildLetterhead(doc, skin) {
     const iss = skin.extIssuer
       ? { name: doc.author.replace(/\s*\(.*\)$/, ""), sub: "Lieferant" }
-      : { name: COMPANY.name, sub: COMPANY.tagline };
+      : { name: orgName(), sub: orgTagline() || COMPANY.tagline };
     const initials = iss.name.replace(/[^A-Za-zÄÖÜ]/g, "").slice(0, 2).toUpperCase() || "AI";
     const lh = el("div", "lh");
     lh.innerHTML =
@@ -1148,7 +1813,7 @@
     const place = el("div", "sig-place", `München, ${escapeHtml(doc.date)}`);
     const row = el("div", "sig-row");
     row.innerHTML =
-      `<div class="col"><div class="line">Meridian Industrie GmbH</div></div>` +
+      `<div class="col"><div class="line">${escapeHtml(orgName())}</div></div>` +
       `<div class="col"><div class="line">${escapeHtml(doc.author.replace(/\s*\(.*\)$/, ""))}</div></div>`;
     box.appendChild(place);
     box.appendChild(row);
@@ -1182,7 +1847,7 @@
 
   function wireSearch() {
     const co = $("#searchCompany");
-    if (co) co.textContent = COMPANY.name;
+    if (co) co.textContent = orgName();
 
     $("#searchTrigger").onclick = openSearch;
     $("#searchClose").onclick = closeSearch;
@@ -1423,6 +2088,459 @@
     };
     conf.addEventListener("mouseenter", run);
     conf.addEventListener("focus", run, true);
+  }
+
+  function isTeamJump(text) {
+    const q = (text || "").toLowerCase();
+    if (/dazubuchen|dazu buchen|weiteren agenten/.test(q)) return false;
+    return /mietplattform|digitales team|mein team|modul team|agenten mieten|marktplatz|abrechnung der agenten/.test(q);
+  }
+
+  // ---------- Modul Team: Mietplattform ----------
+  function renderTeamView() {
+    const scroll = $("#scroll");
+    scroll.innerHTML = "";
+    $("#composer").style.display = "none";
+    const wrap = el("div", "wrap wide");
+    wrap.appendChild(el("div", "lib-head",
+      `<h2>Digitale Mitarbeiter mieten</h2>` +
+      `<p>Wie eine Neueinstellung — monatlich kündbar, ab 400 €, sofort im selben Firmenwissen zu Hause.</p>`));
+
+    const tabs = el("div", "team-tabs");
+    [
+      { id: "fleet", label: "Ihr Team" },
+      { id: "market", label: "Marktplatz" },
+      { id: "billing", label: "Abrechnung" },
+      { id: "work", label: "Aufträge" },
+    ].forEach((t) => {
+      const b = el("button", "team-tab" + (teamUi.tab === t.id ? " on" : ""), t.label);
+      b.onclick = () => { teamUi.tab = t.id; if (t.id !== "market") teamUi.detailId = null; renderTeamView(); };
+      tabs.appendChild(b);
+    });
+    wrap.appendChild(tabs);
+
+    if (teamUi.tab === "fleet") wrap.appendChild(renderFleetPane());
+    else if (teamUi.tab === "market") wrap.appendChild(teamUi.detailId ? renderDetailPane(teamUi.detailId) : renderMarketPane());
+    else if (teamUi.tab === "billing") wrap.appendChild(renderBillingPane());
+    else wrap.appendChild(renderWorkPane());
+
+    scroll.appendChild(wrap);
+    refreshNavCounts();
+  }
+
+  function renderFleetPane() {
+    const box = el("div");
+    const active = activeAgents();
+    const paid = paidCount();
+    const kpis = el("div", "kpi-row");
+    [
+      { k: "Aktive Agenten", v: String(active.length), s: paid ? (paid + " gemietet") : "Auskunft inklusive" },
+      { k: "Monatliche Miete", v: formatEur(monthlyTotal()), s: "netto · monatlich kündbar" },
+      { k: "Nächste Rechnung", v: nextInvoiceGerman(), s: "SEPA-Lastschrift" },
+      { k: "vs. 1 FTE Controlling", v: "400 €", s: "statt ~6.500 € Personalkosten" },
+    ].forEach((x) => {
+      kpis.appendChild(el("div", "kpi", `<div class="k">${x.k}</div><div class="v">${x.v}</div><div class="s">${x.s}</div>`));
+    });
+    box.appendChild(kpis);
+
+    const roster = el("div", "roster");
+    const catalog = typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [];
+    const shown = catalog.filter((a) => isRented(a.id));
+    shown.forEach((a) => roster.appendChild(rosterCard(a)));
+    box.appendChild(roster);
+
+    const cta = el("div", "team-cta");
+    cta.innerHTML = `<p><b>Team erweitern.</b> Reporting, Rechnungen, Verträge und vier weitere Spezialisten stehen bereit.</p>`;
+    const go = el("button", "btn primary", "Marktplatz öffnen →");
+    go.onclick = () => { teamUi.tab = "market"; teamUi.detailId = null; renderTeamView(); };
+    cta.appendChild(go);
+    box.appendChild(cta);
+    return box;
+  }
+
+  function rosterCard(a) {
+    const l = leaseOf(a.id) || { status: "active", since: a.included ? "inklusive" : "—" };
+    const paused = l.status === "paused";
+    const card = el("div", "roster-card" + (paused ? " paused" : ""));
+    const badge = paused
+      ? `<span class="ag-badge">Pausiert</span>`
+      : `<span class="ag-badge active">● Aktiv</span>`;
+    const left = el("div");
+    left.innerHTML =
+      `<div class="rc-top">` +
+      `<span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span>${badge}</div>` +
+      `<div class="ag-desc" style="margin:8px 0 10px">${escapeHtml(a.desc)}</div>` +
+      `<div class="rc-meta">` +
+      `<span>Miete <b>${escapeHtml(agentPriceLabel(a))}${a.included ? "" : " / Monat"}</b></span>` +
+      `<span>Seit <b>${escapeHtml(l.since)}</b></span>` +
+      `<span>Nächster Lauf <b>${escapeHtml(a.nextRun || "—")}</b></span>` +
+      `</div>`;
+    const actions = el("div", "rc-actions");
+    const work = el("button", "btn primary", "Auftrag geben");
+    work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
+    actions.appendChild(work);
+    if (a.included) {
+      const go = el("button", "btn", "Im Chat fragen");
+      go.onclick = () => selectModule("wissen");
+      actions.appendChild(go);
+    } else if (canMutateFleet()) {
+      const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
+      pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
+      const cancel = el("button", "btn warn", "Kündigen");
+      cancel.onclick = async () => {
+        if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
+        cancel.dataset.arm = "1";
+        cancel.textContent = "Wirklich kündigen?";
+        setTimeout(() => {
+          if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
+        }, 4000);
+      };
+      actions.append(pause, cancel);
+    }
+    card.append(left, actions);
+    return card;
+  }
+
+  function renderMarketPane() {
+    const box = el("div");
+    const filters = el("div", "mkt-filters");
+    const cats = typeof AGENT_CATEGORIES !== "undefined" ? AGENT_CATEGORIES : [{ id: "alle", label: "Alle" }];
+    cats.forEach((c) => {
+      const b = el("button", "chip-f" + (teamUi.filter === c.id ? " on" : ""), c.label);
+      b.onclick = () => { teamUi.filter = c.id; renderTeamView(); };
+      filters.appendChild(b);
+    });
+    box.appendChild(filters);
+
+    const grid = el("div", "mkt-grid");
+    const list = (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [])
+      .filter((a) => teamUi.filter === "alle" || a.category === teamUi.filter);
+    list.forEach((a) => {
+      const live = isActive(a.id);
+      const rec = a.recommended && !live;
+      const card = el("button", "mkt-card" + (rec ? " rec" : "") + (live ? " on" : ""));
+      const skills = (a.skills || []).slice(0, 3).map((s) => `<span class="sk-chip">${escapeHtml(s)}</span>`).join("");
+      const badge = live
+        ? `<span class="ag-badge active">● Im Team</span>`
+        : (rec ? `<span class="ag-badge rec">Empfohlen</span>` : `<span class="ag-badge" style="background:var(--bg);color:var(--ink-soft)">${escapeHtml(catLabel(a.category))}</span>`);
+      card.innerHTML =
+        `<div class="ag-top"><span class="ag-ic">${a.icon}</span>` +
+        `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+        `<span class="ag-role">${escapeHtml(a.role)}</span></span>${badge}</div>` +
+        `<div class="ag-desc">${escapeHtml(a.desc)}</div>` +
+        `<div class="mkt-skills">${skills}</div>` +
+        `<div class="mkt-sla">${escapeHtml(a.sla || "")}</div>` +
+        `<div class="mkt-foot"><span class="ag-price">${escapeHtml(agentPriceLabel(a))}` +
+        (a.included ? "" : `<span class="ag-per"> / Monat</span>`) + `</span></div>`;
+      card.onclick = () => { teamUi.detailId = a.id; renderTeamView(); };
+      grid.appendChild(card);
+    });
+    box.appendChild(grid);
+    return box;
+  }
+
+  function catLabel(id) {
+    const c = (typeof AGENT_CATEGORIES !== "undefined" ? AGENT_CATEGORIES : []).find((x) => x.id === id);
+    return c ? c.label : id;
+  }
+
+  function renderDetailPane(id) {
+    const a = catalogById(id);
+    const box = el("div");
+    if (!a) return el("p", null, "Agent nicht gefunden.");
+    const back = el("button", "btn ghost detail-back", "← Marktplatz");
+    back.onclick = () => { teamUi.detailId = null; renderTeamView(); };
+    box.appendChild(back);
+
+    const grid = el("div", "detail-grid");
+    const main = el("div", "detail-main");
+    main.innerHTML =
+      `<div class="ag-top" style="margin-bottom:12px"><span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name" style="font-size:20px">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span></div>` +
+      `<p>${escapeHtml(a.long || a.desc)}</p>` +
+      `<h3>Kann ausliefern</h3><ul class="skill-list">${(a.skills || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` +
+      `<h3 style="margin-top:16px">Werkzeuge</h3><ul class="skill-list">${(a.tools || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`;
+    if (a.sampleWork) {
+      const sm = el("div", "sample-box");
+      sm.innerHTML = `<div class="when">${escapeHtml(a.sampleWork.when || "")} · ${escapeHtml(a.sampleWork.kicker || "")}</div>` +
+        `<b>${escapeHtml(a.sampleWork.title || "")}</b>${a.sampleWork.html || ""}`;
+      main.appendChild(sm);
+    }
+
+    const side = el("div", "detail-side");
+    side.innerHTML =
+      `<div class="side-price">${escapeHtml(agentPriceLabel(a))}${a.included ? "" : "<span class='ag-per'> / Monat</span>"}</div>` +
+      `<div class="side-row"><span>SLA</span><span>${escapeHtml(a.sla || "—")}</span></div>` +
+      `<div class="side-row"><span>Einsatz</span><span>${escapeHtml(a.hours || "—")}</span></div>` +
+      `<div class="side-row"><span>Verantwortlich</span><span>${escapeHtml(a.owner || "—")}</span></div>` +
+      `<div class="side-row"><span>Erste Lieferung</span><span>${escapeHtml(a.firstDeliverable || "—")}</span></div>` +
+      `<div class="side-row"><span>Kündigung</span><span>monatlich, ohne Frist</span></div>`;
+    const act = el("div");
+    act.style.marginTop = "16px";
+    if (isActive(id)) {
+      act.appendChild(el("div", "ag-live", "✓ Bereits Teil Ihres Teams"));
+      const work = el("button", "btn primary");
+      work.style.marginTop = "10px";
+      work.style.width = "100%";
+      work.textContent = a.included ? "Im Chat fragen" : "Auftrag geben";
+      work.onclick = () => {
+        if (a.included) selectModule("wissen");
+        else { teamUi.tab = "work"; teamUi.workId = id; teamUi.workOut = null; renderTeamView(); }
+      };
+      act.appendChild(work);
+    } else if (leaseOf(id) && leaseOf(id).status === "paused") {
+      if (canMutateFleet()) {
+        const resume = el("button", "btn primary", "Miete fortsetzen");
+        resume.style.width = "100%";
+        resume.onclick = async () => { await togglePause(id); renderTeamView(); };
+        act.appendChild(resume);
+      } else {
+        act.appendChild(el("p", "bill-note", "Pausiert. Miete ändert nur Admin oder CFO."));
+      }
+    } else if (canMutateFleet()) {
+      const rent = el("button", "btn primary", "Jetzt mieten · " + agentPriceLabel(a) + " / Monat");
+      rent.style.width = "100%";
+      rent.onclick = () => openRent(id);
+      act.appendChild(rent);
+    } else {
+      act.appendChild(el("p", "bill-note", "Mieten dürfen nur Admin oder CFO."));
+    }
+    side.appendChild(act);
+    grid.append(main, side);
+    box.appendChild(grid);
+    return box;
+  }
+
+  function renderBillingPane() {
+    const box = el("div");
+    const catalog = typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : [];
+    const rows = catalog.filter((a) => isRented(a.id));
+    const table = el("table", "bill-table");
+    let body = `<tr><th>Agent</th><th>Status</th><th class="num">Preis / Monat</th></tr>`;
+    rows.forEach((a) => {
+      const l = leaseOf(a.id) || { status: "active" };
+      const billed = l.status === "active" && !a.included;
+      const status = a.included ? "Inklusive" : (l.status === "paused" ? "Pausiert — nicht berechnet" : "Aktiv");
+      const price = billed ? formatEur(a.price) : (a.included ? "0 €" : "0 €");
+      body += `<tr><td><b>${escapeHtml(a.name)}</b><div style="font-size:12px;color:var(--ink-faint)">${escapeHtml(a.role)}</div></td>` +
+        `<td>${status}</td><td class="num">${price}</td></tr>`;
+    });
+    body += `<tr><td class="sum" colspan="2">Summe netto</td><td class="num sum">${formatEur(monthlyTotal())}</td></tr>`;
+    table.innerHTML = body;
+    box.appendChild(table);
+
+    const pay = el("div", "pay-row");
+    pay.appendChild(el("div", "pay-tile",
+      `<div class="k">Nächste Lastschrift</div><div class="v">${nextInvoiceGerman()} · ${formatEur(monthlyTotal())}</div>` +
+      (isDemoTenant()
+        ? `<div class="k" style="margin-top:8px">Mandat SEPA (Demo)</div><div class="v">DE12 1001 0000 0123 4567 89 · Meridian Industrie GmbH</div>`
+        : `<div class="k" style="margin-top:8px">Rechnungsempfänger</div><div class="v">${escapeHtml((AISTUDIO.org && (AISTUDIO.org.billing_email || AISTUDIO.org.name)) || "")}</div>`)));
+    pay.appendChild(el("div", "pay-tile",
+      `<div class="k">Preis-Pfad</div><div class="v">Audit 149 € → Wissensbasis ab 5.000 € → Agent ab 400 €/Monat</div>` +
+      `<div class="k" style="margin-top:8px">Ersparnis-Hinweis</div><div class="v">Ein Reporting-Agent ersetzt keine Abteilung — er liefert die Vorlage, die ein Controller sonst 2 Tage schreibt.</div>`));
+    box.appendChild(pay);
+    box.appendChild(el("p", "bill-note",
+      isDemoTenant()
+        ? "Demo-Abrechnung: keine echte Lastschrift. Monatlich kündbar, keine Mindestlaufzeit. Pausierte Agenten erscheinen in der nächsten Periode nicht auf der Rechnung."
+        : "Interne Abrechnung als Entwurf (keine echte Lastschrift in dieser Version). Monatlich kündbar. Pausierte Agenten werden nicht berechnet."));
+    return box;
+  }
+
+  function renderWorkPane() {
+    const box = el("div");
+    const specialists = (typeof AGENT_CATALOG !== "undefined" ? AGENT_CATALOG : []).filter((a) => isActive(a.id));
+    if (!specialists.length) {
+      box.appendChild(el("p", "work-empty", "Noch kein Agent aktiv. Mieten Sie einen Spezialisten im Marktplatz."));
+      return box;
+    }
+    if (!teamUi.workId || !specialists.some((a) => a.id === teamUi.workId)) {
+      teamUi.workId = (specialists.find((a) => !a.included) || specialists[0]).id;
+    }
+    const pick = el("div", "work-pick");
+    specialists.forEach((a) => {
+      const b = el("button", "work-agent" + (teamUi.workId === a.id ? " on" : ""),
+        `<span>${a.icon}</span>${escapeHtml(a.name)}`);
+      b.onclick = () => { teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
+      pick.appendChild(b);
+    });
+    box.appendChild(pick);
+
+    const agent = catalogById(teamUi.workId);
+    const chips = el("div", "chips");
+    chips.style.marginBottom = "16px";
+    const tasks = isProductTenant()
+      ? [
+          { label: "Fasse die Wissensbasis in Stichpunkten zusammen.", prompt: "Fasse die Wissensbasis in Stichpunkten zusammen." },
+          { label: "Welche Fristen und Beträge stehen in den Dokumenten?", prompt: "Welche Fristen und Beträge stehen in den Dokumenten?" },
+        ]
+      : ((agent && agent.tasks) || []);
+    tasks.forEach((t) => {
+      const b = el("button", "chip", "▶ " + t.label);
+      b.onclick = () => runAgentTask(agent, t);
+      chips.appendChild(b);
+    });
+    box.appendChild(chips);
+
+    if (isProductTenant()) {
+      const form = el("div", "work-form");
+      const ta = el("textarea");
+      ta.rows = 3;
+      ta.placeholder = "Auftrag in eigenen Worten, z. B. fasse die Reiserichtlinie für die Geschäftsführung zusammen.";
+      const go = el("button", "btn primary", "Auftrag starten");
+      go.onclick = () => {
+        const q = (ta.value || "").trim();
+        if (!q) { ta.focus(); return; }
+        runAgentTask(agent, { label: q, prompt: q });
+      };
+      form.append(ta, go);
+      box.appendChild(form);
+    }
+
+    const out = el("div", "work-out");
+    out.id = "workOut";
+    if (teamUi.workOut) {
+      out.innerHTML = teamUi.workOut;
+    } else {
+      out.appendChild(el("p", "work-empty",
+        isProductTenant()
+          ? "Beschreiben Sie den Auftrag oder wählen Sie eine Vorlage. Der Agent arbeitet nur mit der Wissensbasis dieses Mandanten."
+          : (agent && agent.included
+            ? "Der Auskunfts-Agent arbeitet im Modul Wissen. Stellen Sie dort eine Frage — oder mieten Sie einen Spezialisten für wiederkehrende Lieferungen."
+            : "Wählen Sie einen Auftrag. Der Agent liefert aus Ihrem Firmenwissen, mit derselben Beleg-Disziplin wie der Chat.")));
+    }
+    box.appendChild(out);
+    return box;
+  }
+
+  async function runAgentTask(agent, task) {
+    if (task.jump === "wissen" && !isProductTenant()) { selectModule("wissen"); return; }
+    const host = $("#workOut");
+    if (!host) return;
+    const prompt = (task.prompt || task.label || task.hint || "Auftrag").trim();
+    host.innerHTML = `<div class="thinking"><span class="spinner"></span><span class="steps">${escapeHtml(agent.name)} arbeitet…</span></div>`;
+    if (isLive()) {
+      try {
+        const result = await AISTUDIO.runAgent(agent.id, prompt);
+        const srcs = (result.sources || []).filter((s) => s.docId);
+        const srcHtml = srcs.length
+          ? `<div class="wo-src">Quellen: ${srcs.map((s) => escapeHtml(s.docId)).join(" · ")}</div>`
+          : "";
+        const jobHtml = result.job_id
+          ? `<div class="wo-kicker">Auftrag ${escapeHtml(result.job_id)}</div>`
+          : "";
+        const viaHtml = result.via === "llm"
+          ? `<div class="wo-kicker">formuliert aus freigegebenen Auszügen</div>`
+          : result.via === "extractive"
+            ? `<div class="wo-kicker">aus Ihren Belegen auf der Instanz</div>`
+            : "";
+        const html =
+          `<div class="wo-kicker">${escapeHtml(agent.name)} · Live-Auftrag</div>` +
+          viaHtml +
+          `<h3>${escapeHtml(task.label || "Lieferung")}</h3>` +
+          `<div class="text">${result.text || ""}</div>` +
+          srcHtml + jobHtml;
+        teamUi.workOut = html;
+        host.innerHTML = html;
+      } catch (e) {
+        host.innerHTML = `<p class="work-empty">${escapeHtml(e.message || "Auftrag fehlgeschlagen.")}</p>`;
+      }
+      return;
+    }
+    await sleep(reducedMotion() ? 0 : 720);
+    const o = task.output || {};
+    const html =
+      `<div class="wo-kicker">${escapeHtml(agent.name)} · ${escapeHtml(o.kicker || "Lieferung")}</div>` +
+      `<h3>${escapeHtml(o.title || task.label)}</h3>` +
+      (o.html || "<p>Keine Lieferung hinterlegt.</p>");
+    teamUi.workOut = html;
+    host.innerHTML = html;
+    const actions = el("div", "block actions");
+    actions.style.borderTop = "1px solid var(--line)";
+    actions.style.marginTop = "12px";
+    actions.appendChild(el("div", "block-title", "↗ Ergebnis weiterreichen"));
+    const row = el("div", "act-row");
+    const send = el("button", "act primary", "✉ An Vorstand senden");
+    send.onclick = () => runAction(row, "send", briefingNumber({ text: o.title || task.label, confidence: 90 }));
+    row.appendChild(send);
+    actions.appendChild(row);
+    host.appendChild(actions);
+  }
+
+  function wireRentOverlay() {
+    const ov = $("#rentOverlay");
+    if (!ov) return;
+    const closeBtn = $("#rentClose");
+    if (closeBtn) closeBtn.onclick = closeRent;
+    ov.addEventListener("click", (e) => { if (e.target === ov) closeRent(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && ov && !ov.hidden) closeRent();
+    });
+  }
+
+  function closeRent() {
+    const ov = $("#rentOverlay");
+    if (ov) ov.hidden = true;
+  }
+
+  function openRent(id) {
+    const a = catalogById(id);
+    const ov = $("#rentOverlay");
+    if (!a || !ov) return;
+    $("#rentTitle").textContent = a.name + " mieten";
+    $("#rentBody").innerHTML =
+      `<div class="rp-agent"><span class="ag-ic">${a.icon}</span>` +
+      `<span class="ag-h"><span class="ag-name">${escapeHtml(a.name)}</span>` +
+      `<span class="ag-role">${escapeHtml(a.role)}</span></span></div>` +
+      `<p>Sie mieten <b>${escapeHtml(a.name)}</b> für <b>${escapeHtml(agentPriceLabel(a))} / Monat</b>, kündbar zum Monatsende, ohne Mindestlaufzeit.</p>` +
+      `<ul class="rp-list">` +
+      `<li>Start: <b>heute</b> — ${escapeHtml(a.firstDeliverable || "erste Lieferung folgt.")}</li>` +
+      `<li>Arbeitet mit demselben Firmenwissen wie der Auskunfts-Agent.</li>` +
+      (isProductTenant()
+        ? `<li>Nächste interne Abrechnung: <b>${nextInvoiceGerman()}</b> — Entwurf, keine echte Lastschrift.</li>`
+        : `<li>Nächste Lastschrift: <b>${nextInvoiceGerman()}</b> (Demo, keine echte Zahlung).</li>`) +
+      `</ul>`;
+    const foot = $("#rentFoot");
+    foot.innerHTML = "";
+    const cancel = el("button", "btn", "Abbrechen");
+    cancel.onclick = closeRent;
+    const ok = el("button", "btn primary", "Bestätigen · " + agentPriceLabel(a) + " / Monat");
+    ok.onclick = async () => {
+      ok.disabled = true;
+      ok.textContent = "Wird eingerichtet…";
+      await sleep(reducedMotion() ? 0 : 900);
+      await rentAgent(id);
+      closeRent();
+      showFleetToast(a);
+      teamUi.tab = "fleet";
+      teamUi.detailId = null;
+      if (currentModule === "team") renderTeamView();
+      else refreshNavCounts();
+    };
+    foot.append(cancel, ok);
+    ov.hidden = false;
+  }
+
+  let toastTimer = 0;
+  function hideFleetToast() {
+    const t = $("#fleetToast");
+    if (t) t.hidden = true;
+    if (toastTimer) clearTimeout(toastTimer);
+  }
+
+  function showFleetToast(agent) {
+    const t = $("#fleetToast");
+    if (!t || !agent) return;
+    t.innerHTML = "";
+    t.appendChild(el("span", null, "✓ " + agent.name + " ist Teil Ihres Teams"));
+    const go = el("button", null, "Im Team ansehen");
+    go.onclick = () => { hideFleetToast(); teamUi.tab = "fleet"; selectModule("team"); };
+    t.appendChild(go);
+    t.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideFleetToast, 5200);
   }
 
   // ---------- Helfer ----------

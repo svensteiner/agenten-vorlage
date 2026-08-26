@@ -2,6 +2,54 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.0 — 2026-08-26 — Modell-Schicht, Daten bleiben auf der Instanz
+
+**Sprachmodell hinter einem Tor, nicht als Direktaufruf.** Additiv `product/llm.py`
+(`core/` und `platform/` unangetastet, kein `brain.py` mehr im Produktpfad):
+- Standard `AISTUDIO_LLM_EGRESS=in_boundary`: Cloud-APIs werden verweigert, Antworten extractiv lokal.
+- Opt-in erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — nur ACL-gefilterte Kurzauszüge, nie die Wissensbasis.
+- Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + lokale `AISTUDIO_LLM_BASE_URL`.
+- Prompts werden nicht geloggt. `/api/health` zeigt Provider/Modell ohne Schlüssel.
+- Antwortkarte: Badge „formuliert“ / „aus Belegen“. Betrieb zeigt die Schicht.
+
+## Produktionslaufzeit — 2026-08-25 — Mandant anlegen, Sitzungen, Rollen, Betrieb
+
+**AI Studio als Werkzeug auf der eigenen Infrastruktur**, soweit ohne SSO/Zahlungsanbieter möglich.
+Additiv in `product/` (+ Login/Einstellungen im Prototype):
+- **Mandant anlegen** (Admin, leere Wissensbasis), Nutzerrollen admin/cfo/board/member.
+- Sitzungen mit JTI, Logout widerruft, Passwortwechsel, Anmeldesperre, Rate-Limits, Security-Header.
+- Produktion startet nicht mit Demo-Secret; `/docs` aus; Demo-Seed per Env abschaltbar.
+- Betrieb in Einstellungen: Upload, Nutzer, Mandant, Audit, DSGVO-Export. Flotte nur Admin/CFO.
+- Interne Rechnungsentwürfe, `/api/ready`, systemd-Einheit.
+
+## Produktlaufzeit — 2026-08-24 — Mandant, Wissensbasis, Miete, Aufträge
+
+**Die Mietplattform läuft als Produkt**, nicht nur als Demo-UI. Additive Schicht `product/`
+(`core/` und `platform/` unangetastet):
+- FastAPI auf Port 8123, SQLite + FTS5, Demo-Mandant Meridian (29 Dokumente, 8 Agenten).
+- Anmeldung (CFO / Vorstand), belegte Antworten, fail-closed bei gesperrten Akten.
+- Flotte mieten/pausieren/kündigen serverseitig, Abrechnung, Agent-Jobs über `core.orchestrator`.
+- Prototype erkennt `/api/health`: Live-Login + Live-Ask/Fleet; ohne Server unveränderte Offline-Demo.
+- Start: `./scripts/run_product.sh` · Docker: `docker compose up --build`.
+
+## Mietplattform „Team" — 2026-08-24 — Digitale Mitarbeiter mieten, steuern, abrechnen
+
+**Die Agenten-Miete ist jetzt eine eigene Plattform**, nicht nur der Money-Shot am Demo-Ende.
+Additiv in `prototype/` (bestehende Demo, Guided-Tour und Money-Shot bleiben):
+- **Neues Modul `Team`** in der Seitenleiste (Gruppe Betrieb, neben Einstellungen): vier Karten
+  **Ihr Team · Marktplatz · Abrechnung · Aufträge**.
+- **`AGENT_CATALOG` in `data.js`** — 8 digitale Mitarbeiter (Auskunft inklusive, Reporting 400 €
+  empfohlen, Rechnung 600 €, Vertrag 500 €, plus Liquidität 450 €, Compliance 550 €, Einkauf 500 €,
+  ESG 450 €), mit SLA, Skills, Werkzeugen und Demo-Lieferungen. Money-Shot-Karten tragen dieselben `id`s.
+- **Flotte:** mieten (Bestätigungsdialog), pausieren, kündigen (Zwei-Klick), persistiert in
+  `localStorage` (`aistudio.fleet.v1`). Reset setzt auf den Auskunfts-Agenten zurück.
+- **Abrechnung:** Positionszeilen, Summe, nächste Lastschrift, Preis-Pfad. Pausierte Agenten
+  werden nicht berechnet.
+- **Aufträge:** gemietete Agenten liefern Monatsabschluss, Rechnungsprüflauf, Fristenradar usw.
+  aus denselben Meridian-Zahlen.
+- Money-Shot **schreibt in die Flotte** (Reporting-Agent nach Auto-Buchung im Team sichtbar);
+  **`answerCard()`** schließt den Replay-Bug nach Modulwechsel.
+
 ## Phase B (Wartepunkt) — 2026-07-21 — Voll-Korpus-Kohärenz-Audit (12/12) + Config-Kommentar korrigiert, blockiert auf Sven — kein `prototype/`-Eingriff
 
 **Erster Voll-Korpus-Kohärenz-Audit** — jetzt möglich, weil die 12 Zwilling-Körper seit 2026-07-17 vollständig

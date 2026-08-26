@@ -20,6 +20,14 @@ cd prototype
 python -m http.server 8123
 ```
 
+**Live-Produkt** (Anmeldung, echte Suche, persistente Miete) — denselben Port, aber den Produkt-Server:
+
+```bash
+./scripts/run_product.sh
+```
+
+Details: [`../product/README.md`](../product/README.md). `file://` und der Mini-Server bleiben die bisherige Offline-Demo.
+
 ## Was die Demo zeigt
 
 - **Geführte Demo (▶ oben rechts)** — spielt alle 8 Szenarien **hands-free** nacheinander
@@ -33,7 +41,8 @@ python -m http.server 8123
   Dokument als **Papierblatt**: Briefkopf, Beleg-Stempel (EINGANG/GEPRÜFT/BESTANDEN),
   Vertrags-Unterschriftszeilen — mit hervorgehobenen Belegstellen im Layout und
   Metadaten (Pfad, Autor, Datum, Typ). Das Skin richtet sich automatisch nach `doc.type`.
-- **Module** — Wissen, Finanzen, Audit, HR, Verträge, Berichte, Einstellungen.
+- **Module** — Wissen, Finanzen, Audit, HR, Verträge, Berichte, **Team** (Mietplattform), Einstellungen.
+- **Team / Mietplattform** — digitale Mitarbeiter mieten wie Angestellte: Marktplatz mit 8 Spezialisten, Flotte (pausieren/kündigen), Abrechnung, Aufträge mit echten Demo-Lieferungen. Der Money-Shot „Agenten dazubuchen" schreibt in dieselbe Flotte.
 
 ## Beste Demo-Reihenfolge (8 Szenarien)
 
