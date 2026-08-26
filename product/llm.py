@@ -192,7 +192,7 @@ def call_stats() -> dict[str, int]:
         return dict(_stats)
 
 
-def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool:
+def allow_call(*, org_id: str | None = None, user_id: str | None = None, conn=None) -> bool:
     """Budget for paid/cloud calls. Exhausted budget → extractive fallback, not 429."""
     cfg = settings()
     if not cfg["ready"]:
@@ -205,7 +205,7 @@ def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool
         return _block("user")
     if org_id and rate_limited("llm-org:" + org_id, per_org):
         return _block("org")
-    if not _take_daily(org_id=org_id, user_id=user_id):
+    if not _take_daily(org_id=org_id, user_id=user_id, conn=conn):
         return _block("day")
     return True
 
@@ -224,7 +224,7 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
-def _take_daily(*, org_id: str | None, user_id: str | None) -> bool:
+def _take_daily(*, org_id: str | None, user_id: str | None, conn=None) -> bool:
     """Persist daily caps in SQLite so restarts do not reset spend. 0 = unlimited."""
     per_user = _int_env("AISTUDIO_LLM_PER_USER_DAY", 200)
     per_org = _int_env("AISTUDIO_LLM_PER_ORG_DAY", 800)
@@ -233,26 +233,34 @@ def _take_daily(*, org_id: str | None, user_id: str | None) -> bool:
     day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     from product import db
 
-    conn = db.connect()
+    own = conn is None
+    c = conn or db.connect()
     try:
-        db.init_db(conn)
-        if user_id and per_user > 0 and not _bump_usage(conn, day, "user", user_id, per_user):
-            conn.rollback()
-            return False
-        if org_id and per_org > 0 and not _bump_usage(conn, day, "org", org_id, per_org):
-            conn.rollback()
-            return False
-        conn.commit()
-        return True
+        db.init_db(c)
+        c.execute("SAVEPOINT llm_budget")
+        ok = True
+        if user_id and per_user > 0 and not _bump_usage(c, day, "user", user_id, per_user):
+            ok = False
+        elif org_id and per_org > 0 and not _bump_usage(c, day, "org", org_id, per_org):
+            ok = False
+        if ok:
+            c.execute("RELEASE SAVEPOINT llm_budget")
+            if own:
+                c.commit()
+            return True
+        c.execute("ROLLBACK TO SAVEPOINT llm_budget")
+        c.execute("RELEASE SAVEPOINT llm_budget")
+        return False
     except Exception:
         try:
-            conn.rollback()
+            c.execute("ROLLBACK TO SAVEPOINT llm_budget")
         except Exception:
             pass
         log.exception("llm daily budget check failed")
         return False
     finally:
-        conn.close()
+        if own:
+            c.close()
 
 
 def _bump_usage(conn, day: str, scope: str, key: str, limit: int) -> bool:

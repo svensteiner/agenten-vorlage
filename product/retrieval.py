@@ -235,7 +235,9 @@ def ask(
     via = "extractive"
     llm_meta: dict[str, Any] = {}
     if hits:
-        llm_text, llm_meta = _maybe_llm_answer(query, hits, org_id=org_id, user_id=user_id)
+        llm_text, llm_meta = _maybe_llm_answer(
+            query, hits, org_id=org_id, user_id=user_id, conn=conn
+        )
         if llm_text:
             text = llm_text
             via = "llm"
@@ -247,7 +249,7 @@ def ask(
             via = "extractive"
             if llm_meta.get("error") == "rate_limited":
                 reasoning.append(
-                    "Antwort extractiv auf der Instanz — Modell-Kontingent für diese Minute erschöpft."
+                    "Antwort extractiv auf der Instanz — Modell-Kontingent erschöpft."
                 )
             else:
                 reasoning.append(
@@ -308,12 +310,13 @@ def _maybe_llm_answer(
     *,
     org_id: str | None = None,
     user_id: str | None = None,
+    conn=None,
 ) -> tuple[str, dict[str, Any]]:
     """Formulate via the product gateway. Corpus stays local; only excerpts may leave."""
     from product import llm
 
     empty: dict[str, Any] = {}
-    if not llm.allow_call(org_id=org_id, user_id=user_id):
+    if not llm.allow_call(org_id=org_id, user_id=user_id, conn=conn):
         return "", {"error": "rate_limited"}
     excerpts = llm.excerpts_from_hits(hits, query, quote_fn=quote_from)
     if not excerpts:
