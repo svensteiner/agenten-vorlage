@@ -312,6 +312,8 @@ def quote_from(doc: dict[str, Any], query: str, n: int = 180) -> str:
     body = doc.get("body") or doc.get("snippet") or ""
     q = (query or "").lower()
     words = [w for w in re.findall(r"[A-Za-zÄÖÜäöüß0-9]{3,}", q)]
+    # Longer tokens first so "Reiserichtlinie" wins over "sind".
+    words = sorted(set(words), key=lambda w: (-len(w), words.index(w)))
     low = body.lower()
     idx = -1
     for w in words:

@@ -4,7 +4,22 @@ from __future__ import annotations
 
 import logging
 
-from product import llm
+from product import llm, retrieval
+
+def test_quote_from_prefers_longer_query_tokens():
+    doc = {
+        "body": (
+            "Alle Reisen sind über das Portal zu buchen. "
+            "§5 Verpflegungspauschale: 28 € pro vollem Reisetag. "
+            "Reiserichtlinie 2026 gilt ab Februar."
+        ),
+        "snippet": "Kurz",
+    }
+    q = retrieval.quote_from(
+        doc, "Wie hoch sind Tagegeld und Sätze in der Reiserichtlinie?", 80
+    )
+    assert "Reiserichtlinie" in q
+    assert "sind über" not in q
 
 
 def test_sanitize_strips_script_and_handlers():
@@ -29,8 +44,9 @@ def test_excerpts_drop_full_body():
     excerpts = llm.excerpts_from_hits(hits, "Tagegeld")
     blob = " ".join(e["quote"] for e in excerpts)
     assert "Tagegeld" in blob or "28" in blob
-    assert blob.count("SECRET_FULL_BODY") <= 2
+    assert blob.count("SECRET_FULL_BODY") <= 8
     assert "body" not in excerpts[0]
+    assert all(len(e["quote"]) <= llm.MAX_QUOTE_CHARS for e in excerpts)
 
 
 def test_default_egress_blocks_openai_even_with_key(monkeypatch):

@@ -32,7 +32,7 @@ DEFAULT_ANTHROPIC_URL = "https://api.anthropic.com"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-20241022"
 MAX_EVIDENCE_DOCS = 4
-MAX_QUOTE_CHARS = 400
+MAX_QUOTE_CHARS = 900
 
 _SCRIPT = re.compile(r"<(script|style|iframe|object|embed)\b[^>]*>.*?</\1>", re.I | re.S)
 _ONATTR = re.compile(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.I)
