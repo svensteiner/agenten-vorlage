@@ -126,6 +126,10 @@ def run_once(conn=None) -> dict:
             log.exception("orphan uploads skipped")
             out["orphan_uploads"] = 0
         config.harden_data_dir()
+        try:
+            c.execute("PRAGMA optimize")
+        except Exception:
+            log.exception("pragma optimize skipped")
         with _lock:
             global _last
             _last = {

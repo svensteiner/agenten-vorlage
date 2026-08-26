@@ -1371,6 +1371,18 @@
       `</p>`;
     box.appendChild(llmBox);
 
+    const backupBox = el("div", "upload-box");
+    const health = AISTUDIO.health || {};
+    const age = health.backup_age_hours;
+    const backupLine = (age == null || age === undefined)
+      ? "Noch keine Sicherung im Datenverzeichnis dieser Instanz."
+      : ("Letzte Sicherung vor " + escapeHtml(String(age)) + " Stunden.");
+    const backupOk = health.backup_ok
+      ? "Stand im Rahmen."
+      : "Bitte `./scripts/backup.sh` ausführen (optional `AISTUDIO_BACKUP_PASS`).";
+    backupBox.innerHTML = `<h3>Sicherung</h3><p>${backupLine} ${backupOk}</p>`;
+    box.appendChild(backupBox);
+
     const pwd = el("div", "upload-box");
     pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
     const oldP = el("input"); oldP.type = "password"; oldP.placeholder = "Aktuelles Passwort";

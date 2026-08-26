@@ -37,7 +37,16 @@ async def lifespan(_app: FastAPI):
         from product import tenancy
 
         try:
-            tenancy.bootstrap_if_empty(conn)
+            created = tenancy.bootstrap_if_empty(conn)
+            if created:
+                if config.consume_bootstrap_env():
+                    logging.getLogger("product").info(
+                        "Bootstrap-Zugang aus der Env-Datei entfernt."
+                    )
+                else:
+                    logging.getLogger("product").info(
+                        "Bootstrap-Zugang aus der Prozessumgebung entfernt."
+                    )
         except ValueError as exc:
             raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
         conn.commit()

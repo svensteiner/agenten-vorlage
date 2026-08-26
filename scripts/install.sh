@@ -56,12 +56,14 @@ if [[ -f "$ENV_FILE" ]]; then
   echo "$ENV_FILE existiert bereits — nichts überschrieben." >&2
 else
   SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  METRICS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
   {
     echo "AISTUDIO_ENV=production"
     echo "AISTUDIO_HOST=127.0.0.1"
     echo "AISTUDIO_PORT=8123"
     echo "AISTUDIO_DATA=$ROOT/data"
     echo "AISTUDIO_SECRET=$SECRET"
+    echo "AISTUDIO_METRICS_TOKEN=$METRICS"
     echo "AISTUDIO_ALLOW_DEMO_SEED=false"
     echo "AISTUDIO_ALLOW_REGISTER=false"
     echo "AISTUDIO_TRUST_PROXY=true"
@@ -91,6 +93,8 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
 fi
 
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
+echo "Nach dem ersten Start entfernt der Prozess AISTUDIO_BOOTSTRAP_* aus .env."
+echo "Metriken: Header X-Metrics-Token (Wert in .env)."
 echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS für AES-256)"
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"

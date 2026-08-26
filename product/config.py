@@ -26,7 +26,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.9"
+VERSION = "1.4.10"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -138,6 +138,110 @@ def org_upload_bytes(org_id: str) -> int:
         except OSError:
             continue
     return total
+
+
+BOOTSTRAP_KEYS = (
+    "AISTUDIO_BOOTSTRAP_ORG",
+    "AISTUDIO_BOOTSTRAP_EMAIL",
+    "AISTUDIO_BOOTSTRAP_PASSWORD",
+    "AISTUDIO_BOOTSTRAP_NAME",
+)
+
+
+def env_file() -> Path:
+    raw = (os.environ.get("AISTUDIO_ENV_FILE") or "").strip()
+    return Path(raw) if raw else ROOT / ".env"
+
+
+def consume_bootstrap_env(*, env_path: Path | None = None) -> bool:
+    """Drop first-tenant secrets from the process and from .env after success."""
+    for key in BOOTSTRAP_KEYS:
+        os.environ.pop(key, None)
+    explicit = env_path is not None or bool((os.environ.get("AISTUDIO_ENV_FILE") or "").strip())
+    if not explicit and not is_production():
+        return False
+    path = env_path or env_file()
+    if not path.is_file():
+        return False
+    try:
+        resolved = path.resolve()
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    # Never rewrite an unrelated path unless the caller named it.
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError:
+        if not explicit:
+            return False
+    lines: list[str] = []
+    changed = False
+    for line in text.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if any(stripped.startswith(key + "=") for key in BOOTSTRAP_KEYS):
+            changed = True
+            continue
+        lines.append(line)
+    if not changed:
+        return False
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        tmp.write_text("".join(lines), encoding="utf-8")
+        os.chmod(tmp, 0o600)
+        tmp.replace(path)
+        os.chmod(path, 0o600)
+    except OSError:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False
+    return True
+
+
+def backup_dir() -> Path:
+    raw = (os.environ.get("AISTUDIO_BACKUP_DIR") or "").strip()
+    return Path(raw) if raw else DATA_DIR / "backups"
+
+
+def latest_backup_age_hours() -> float | None:
+    """Hours since the newest SQLite backup. None if none found. No file contents."""
+    dest = backup_dir()
+    if not dest.is_dir():
+        return None
+    newest: float | None = None
+    try:
+        for path in dest.iterdir():
+            name = path.name
+            if not (name.endswith(".db") or name.endswith(".db.enc")):
+                continue
+            if not name.startswith("aistudio-"):
+                continue
+            if "-uploads." in name:
+                continue
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                continue
+            if newest is None or mtime > newest:
+                newest = mtime
+    except OSError:
+        return None
+    if newest is None:
+        return None
+    return round(max(0.0, (time.time() - newest) / 3600.0), 2)
+
+
+def backup_max_age_hours() -> float:
+    try:
+        n = float(os.environ.get("AISTUDIO_BACKUP_MAX_AGE_HOURS", "36"))
+    except ValueError:
+        n = 36.0
+    return max(1.0, min(n, 24 * 14))
+
+
+def require_backup_for_ready() -> bool:
+    return _flag("AISTUDIO_READY_REQUIRE_BACKUP", default=False)
 
 
 def validate_runtime() -> None:

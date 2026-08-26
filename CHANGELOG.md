@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.10 — 2026-08-26 — Bootstrap-Passwort, Metriken, Backup-Alter
+
+Nach erfolgreichem Erstmandant entfernt der Prozess `AISTUDIO_BOOTSTRAP_*` aus
+der Umgebung und aus `.env` — das Admin-Passwort bleibt nicht auf der Platte.
+`/api/metrics` ist in Produktion ohne Token 401 (`AISTUDIO_METRICS_TOKEN`, Install
+legt eines an). `/api/ready` und Metriken melden das Alter der letzten Sicherung
+(`backup_age_hours`, `backup_ok`; optional `AISTUDIO_READY_REQUIRE_BACKUP`).
+Housekeeping ruft `PRAGMA optimize` auf.
+
 ## Produktlaufzeit 1.4.9 — 2026-08-26 — Schutzschalter, Speicherlimit, Sitzungsruhe
 
 Nach wiederholten Modell-Ausfällen bleiben Antworten extractiv (`AISTUDIO_LLM_BREAKER_FAILS` /

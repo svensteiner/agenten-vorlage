@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from product import config
@@ -31,6 +33,8 @@ def test_ready(client):
     assert r.status_code == 200
     assert r.json()["db"] is True
     assert "disk_free_mb" in r.json()
+    assert "backup_age_hours" in r.json()
+    assert "backup_ok" in r.json()
     assert r.headers.get("x-content-type-options") == "nosniff"
     assert "script-src 'self'" in (r.headers.get("content-security-policy") or "")
     page = client.get("/")
@@ -406,6 +410,7 @@ def test_metrics_has_no_tenant_secrets(client):
     text = prom.text
     assert "aistudio_up 1" in text
     assert "aistudio_llm_budget_blocked_total" in text
+    assert "aistudio_backup_ok" in text
     assert "@meridian.example" not in text
 
 
@@ -446,6 +451,7 @@ def test_systemd_unit_rewrites_install_root():
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install
+    assert "AISTUDIO_METRICS_TOKEN" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
@@ -530,3 +536,72 @@ def test_production_hides_openapi_and_checks_hosts(monkeypatch):
         assert c.get("/docs").status_code == 404
     with TestClient(app, base_url="http://evil.example") as c:
         assert c.get("/ping").status_code == 400
+
+
+def test_production_metrics_require_token(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.delenv("AISTUDIO_METRICS_TOKEN", raising=False)
+    assert client.get("/api/metrics").status_code == 401
+
+
+def test_bootstrap_strips_password_from_env_file(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "AISTUDIO_SECRET=test-secret-not-for-production-use\n"
+        "AISTUDIO_BOOTSTRAP_ORG=Start GmbH\n"
+        "AISTUDIO_BOOTSTRAP_EMAIL=ada@start.example\n"
+        "AISTUDIO_BOOTSTRAP_PASSWORD=Startwerk2026!\n"
+        "AISTUDIO_BOOTSTRAP_NAME=Ada Admin\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "boot.db")
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    monkeypatch.setattr("product.config.SECRET", "test-secret-not-for-production-use")
+    monkeypatch.setenv("AISTUDIO_ENV_FILE", str(env_file))
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_ORG", "Start GmbH")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_EMAIL", "ada@start.example")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_PASSWORD", "Startwerk2026!")
+    monkeypatch.setenv("AISTUDIO_BOOTSTRAP_NAME", "Ada Admin")
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as c:
+        r = c.post(
+            "/api/auth/login",
+            json={"email": "ada@start.example", "password": "Startwerk2026!"},
+        )
+        assert r.status_code == 200, r.text
+    text = env_file.read_text(encoding="utf-8")
+    assert "AISTUDIO_BOOTSTRAP_PASSWORD" not in text
+    assert "Startwerk2026!" not in text
+    assert "AISTUDIO_SECRET=test-secret-not-for-production-use" in text
+    import os
+
+    assert os.environ.get("AISTUDIO_BOOTSTRAP_PASSWORD") is None
+
+
+def test_backup_age_from_dir(tmp_path, monkeypatch):
+    backups = tmp_path / "backups"
+    backups.mkdir()
+    stamp = backups / "aistudio-20200101T000000Z.db"
+    stamp.write_bytes(b"sqlite")
+    os.utime(stamp, (1_577_836_800, 1_577_836_800))
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    age = config.latest_backup_age_hours()
+    assert age is not None
+    assert age > 24
+    assert config.backup_max_age_hours() >= 1
+    monkeypatch.setenv("AISTUDIO_READY_REQUIRE_BACKUP", "true")
+    monkeypatch.setattr("product.auth._PBKDF_ROUNDS", 2)
+    monkeypatch.setattr("product.config.DB_PATH", tmp_path / "aistudio.db")
+    from fastapi.testclient import TestClient
+    from product.main import app
+
+    with TestClient(app) as c:
+        r = c.get("/api/ready")
+        assert r.status_code == 503
+        body = r.json()
+        assert body["backup_ok"] is False
+        assert body["ok"] is False

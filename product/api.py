@@ -136,6 +136,7 @@ def health() -> dict[str, Any]:
         demo = _demo_present(conn)
         from product import llm
 
+        age = config.latest_backup_age_hours()
         payload = {
             "ok": True,
             "product": "aistudio",
@@ -144,6 +145,8 @@ def health() -> dict[str, Any]:
             "demo": demo,
             "allow_register": config.allow_register(),
             "llm": llm.public_status(),
+            "backup_age_hours": age,
+            "backup_ok": age is not None and age <= config.backup_max_age_hours(),
         }
         if not config.is_production():
             payload["orgs"] = orgs
@@ -178,6 +181,9 @@ def ready() -> dict[str, Any]:
             free_mb = 0
         from product import llm
 
+        age = config.latest_backup_age_hours()
+        max_age = config.backup_max_age_hours()
+        backup_ok = age is not None and age <= max_age
         payload = {
             "ok": bool(writable),
             "db": True,
@@ -185,8 +191,14 @@ def ready() -> dict[str, Any]:
             "disk_free_mb": free_mb,
             "version": config.VERSION,
             "llm": llm.public_status(),
+            "backup_age_hours": age,
+            "backup_ok": backup_ok,
         }
         if not writable:
+            return JSONResponse(payload, status_code=503)
+        require_backup = config.require_backup_for_ready()
+        if require_backup and not backup_ok:
+            payload["ok"] = False
             return JSONResponse(payload, status_code=503)
         return payload
     finally:
@@ -204,6 +216,7 @@ def metrics(request: Request):
     """Ops snapshot: sizes and counters only — no tenant text, no keys.
 
     Optional ``AISTUDIO_METRICS_TOKEN`` (Header ``X-Metrics-Token`` or Bearer).
+    In Produktion ist das Token Pflicht.
     ``?format=prom`` yields Prometheus text.
     """
     if not metrics_authorized(request):
@@ -228,6 +241,7 @@ def _metrics_payload() -> dict[str, Any]:
     db_bytes = config.DB_PATH.stat().st_size if config.DB_PATH.is_file() else 0
     wal_path = Path(str(config.DB_PATH) + "-wal")
     wal_bytes = wal_path.stat().st_size if wal_path.is_file() else 0
+    age = config.latest_backup_age_hours()
     return {
         "ok": True,
         "product": "aistudio",
@@ -236,6 +250,8 @@ def _metrics_payload() -> dict[str, Any]:
         "disk_free_mb": free_mb,
         "db_bytes": db_bytes,
         "wal_bytes": wal_bytes,
+        "backup_age_hours": age,
+        "backup_ok": age is not None and age <= config.backup_max_age_hours(),
         "rate_limiter_keys": security.key_count(),
         "housekeeping": housekeeping.snapshot(),
         "llm": llm.public_status(),
@@ -267,6 +283,12 @@ def _metrics_prom(payload: dict[str, Any]) -> str:
         "aistudio_llm_budget_blocked_total %s" % calls.get("budget_blocked", 0),
         "# TYPE aistudio_llm_circuit_open_total counter",
         "aistudio_llm_circuit_open_total %s" % calls.get("circuit_open", 0),
+        "# TYPE aistudio_backup_ok gauge",
+        "aistudio_backup_ok %s" % (1 if payload.get("backup_ok") else 0),
+        "# TYPE aistudio_backup_age_hours gauge",
+        "aistudio_backup_age_hours %s" % (
+            payload["backup_age_hours"] if payload.get("backup_age_hours") is not None else -1
+        ),
     ]
     return "\n".join(lines) + "\n"
 

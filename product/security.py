@@ -172,10 +172,10 @@ def rate_limit_error():
 
 
 def metrics_authorized(request: Request) -> bool:
-    """If AISTUDIO_METRICS_TOKEN is set, require it (header or Bearer)."""
+    """Token required in production. Optional in development if unset."""
     expected = (os.environ.get("AISTUDIO_METRICS_TOKEN") or "").strip()
     if not expected:
-        return True
+        return not config.is_production()
     supplied = (request.headers.get("x-metrics-token") or "").strip()
     authz = request.headers.get("authorization") or ""
     if not supplied and authz.lower().startswith("bearer "):
