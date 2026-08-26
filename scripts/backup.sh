@@ -13,6 +13,13 @@ if [[ ! -f "$DB" ]]; then
 fi
 
 mkdir -p "$DEST"
+if command -v df >/dev/null 2>&1; then
+  FREE_KB="$(df -Pk "$DEST" | awk 'NR==2 {print $4}')"
+  if [[ -n "$FREE_KB" && "$FREE_KB" -lt 102400 ]]; then
+    echo "Zu wenig Speicher für Sicherung (<100 MB frei)." >&2
+    exit 1
+  fi
+fi
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$DEST/aistudio-$STAMP.db"
 

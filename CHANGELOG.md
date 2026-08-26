@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.5 — 2026-08-26 — Housekeeping, Metriken, Uploads
+
+Housekeeping läuft periodisch im Prozess (nicht nur beim Start), WAL-Checkpoint,
+verwaiste Upload-Dateien werden entfernt. Löschen eines Dokuments löscht die
+Datei. `/api/metrics` (Größen und Zähler, keine Mandantentexte). Backup bricht
+ab unter 100 MB frei. `data/` und die SQLite-Datei werden auf 0700/0600 gesetzt.
+
 ## Produktlaufzeit 1.4.4 — 2026-08-26 — Rate-Limiter, Restore, Compose-Prod
 
 Rate-Limiter vergisst idle Keys (kein unbegrenztes Wachstum). Restore prüft

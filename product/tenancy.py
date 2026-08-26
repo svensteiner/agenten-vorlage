@@ -427,3 +427,8 @@ def purge_org(conn, org_id: str) -> None:
         conn.execute(f"DELETE FROM {table} WHERE org_id = ?", (org_id,))
     conn.execute("DELETE FROM users WHERE org_id = ?", (org_id,))
     conn.execute("DELETE FROM orgs WHERE id = ?", (org_id,))
+    uploads = config.DATA_DIR / "uploads" / config.org_dir(org_id)
+    if uploads.is_dir():
+        import shutil
+
+        shutil.rmtree(uploads, ignore_errors=True)

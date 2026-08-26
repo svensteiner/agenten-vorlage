@@ -46,13 +46,15 @@ async def lifespan(_app: FastAPI):
             )
     finally:
         conn.close()
-    from product.housekeeping import prune
+    from product import housekeeping
 
     try:
-        prune()
+        housekeeping.run_once()
     except Exception:
         logging.getLogger("product.housekeeping").exception("housekeeping skipped")
+    housekeeping.start_loop()
     yield
+    housekeeping.stop_loop()
 
 
 _docs = None if config.is_production() else "/docs"

@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import threading
 import time
 from typing import Any
 from urllib.parse import urlparse
@@ -25,6 +26,9 @@ from urllib.parse import urlparse
 import httpx
 
 log = logging.getLogger("product.llm")
+
+_stats_lock = threading.Lock()
+_stats = {"complete_ok": 0, "complete_fail": 0, "budget_blocked": 0}
 
 CLOUD_HOSTS = ("api.openai.com", "api.anthropic.com")
 DEFAULT_OPENAI_URL = "https://api.openai.com/v1"
@@ -161,6 +165,8 @@ def settings() -> dict[str, Any]:
 def public_status() -> dict[str, Any]:
     """Health payload: never keys, never prompts, never host credentials."""
     cfg = settings()
+    per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
+    per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
     return {
         "provider": cfg["provider"],
         "kind": cfg["kind"],
@@ -170,7 +176,15 @@ def public_status() -> dict[str, Any]:
         "egress": cfg["egress"],
         "sends_excerpts": bool(cfg["ready"] and cfg["egress"] == "cloud"),
         "reason": cfg["reason"] or None,
+        "per_user": per_user,
+        "per_org": per_org,
     }
+
+
+def call_stats() -> dict[str, int]:
+    """Process-local counters for /api/metrics. No prompts, no tenant ids."""
+    with _stats_lock:
+        return dict(_stats)
 
 
 def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool:
@@ -183,9 +197,13 @@ def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool
     per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
     per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
     if user_id and rate_limited("llm-user:" + user_id, per_user):
+        with _stats_lock:
+            _stats["budget_blocked"] += 1
         log.info("llm budget exhausted scope=user")
         return False
     if org_id and rate_limited("llm-org:" + org_id, per_org):
+        with _stats_lock:
+            _stats["budget_blocked"] += 1
         log.info("llm budget exhausted scope=org")
         return False
     return True
@@ -312,6 +330,8 @@ def _fail(cfg: dict[str, Any], started: float, error: str) -> dict[str, Any]:
 
 
 def _log_complete(cfg: dict[str, Any], *, ok: bool, ms: int, error: str) -> None:
+    with _stats_lock:
+        _stats["complete_ok" if ok else "complete_fail"] += 1
     log.info(
         "llm complete provider=%s model=%s kind=%s egress=%s ok=%s ms=%s error=%s",
         cfg.get("provider"),

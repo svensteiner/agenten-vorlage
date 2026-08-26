@@ -43,6 +43,7 @@ else
     echo "AISTUDIO_LLM_EGRESS=in_boundary"
     echo "AISTUDIO_TOKEN_TTL=43200"
     echo "AISTUDIO_AUDIT_RETENTION_DAYS=365"
+    echo "AISTUDIO_HOUSEKEEPING_HOURS=24"
     if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
       echo "AISTUDIO_BOOTSTRAP_ORG=$ORG"
       echo "AISTUDIO_BOOTSTRAP_EMAIL=$EMAIL"
@@ -56,4 +57,5 @@ fi
 
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
 echo "Sicherung: ./scripts/backup.sh"
+echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"

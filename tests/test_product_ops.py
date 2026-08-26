@@ -203,7 +203,11 @@ def test_empty_kb_message_and_delete_doc(client):
     doc_id = up.json()["id"]
     found = client.post("/api/ask", json={"q": "Wartungsvertrag"}, headers=headers).json()
     assert found.get("sources") or "31.12.2026" in (found.get("text") or "")
+    me = client.get("/api/me", headers=headers).json()
+    dest = config.upload_path(me["org"]["id"], doc_id)
+    assert dest.is_file()
     assert client.delete(f"/api/docs/{doc_id}", headers=headers).status_code == 200
+    assert not dest.exists()
     gone = client.post("/api/ask", json={"q": "Wartungsvertrag"}, headers=headers).json()
     assert "leer" in gone["text"].lower() or not gone.get("sources")
 
@@ -380,3 +384,34 @@ def test_rate_limiter_drops_idle_keys():
     assert "fresh" in security._hits
     security._hits.clear()
     security._sweep = 0
+
+
+def test_metrics_has_no_tenant_secrets(client):
+    r = client.get("/api/metrics")
+    assert r.status_code == 200
+    body = r.json()
+    blob = str(body)
+    assert "sk-" not in blob.lower()
+    assert "@meridian.example" not in blob
+    assert body["ok"] is True
+    assert "uptime_s" in body
+    assert "disk_free_mb" in body
+    assert "llm_calls" in body
+    assert "budget_blocked" in body["llm_calls"]
+    assert body["llm"]["per_user"] >= 1
+    assert "password" not in blob.lower()
+
+
+def test_orphan_upload_pruned(client, tmp_path):
+    from product import db, housekeeping
+
+    orphan = tmp_path / "uploads" / "orgx" / "upload-gone.txt"
+    orphan.parent.mkdir(parents=True)
+    orphan.write_text("rest", encoding="utf-8")
+    conn = db.connect()
+    try:
+        removed = housekeeping.prune_orphan_uploads(conn)
+        assert removed >= 1
+        assert not orphan.exists()
+    finally:
+        conn.close()

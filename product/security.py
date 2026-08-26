@@ -146,5 +146,10 @@ class LimitRequestMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+def key_count() -> int:
+    with _lock:
+        return len(_hits)
+
+
 def too_many() -> JSONResponse:
     return JSONResponse({"detail": "Zu viele Anfragen. Bitte kurz warten."}, status_code=429)

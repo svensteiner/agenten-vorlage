@@ -1,14 +1,21 @@
-"""Expire sessions and drop old audit/job rows so production DBs stay bounded."""
+"""Expire sessions, drop old rows, checkpoint WAL, remove orphan uploads."""
 
 from __future__ import annotations
 
 import logging
 import os
+import threading
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
-from product import db
+from product import config, db
 
 log = logging.getLogger("product.housekeeping")
+
+_lock = threading.Lock()
+_stop = threading.Event()
+_thread: threading.Thread | None = None
+_last: dict = {}
 
 
 def _retention_days() -> int:
@@ -27,6 +34,11 @@ def _job_retention_days() -> int:
     except ValueError:
         days = 90
     return max(7, min(days, 730))
+
+
+def snapshot() -> dict:
+    with _lock:
+        return dict(_last)
 
 
 def prune(conn=None) -> dict[str, int]:
@@ -51,3 +63,108 @@ def prune(conn=None) -> dict[str, int]:
     c.commit()
     log.info("housekeeping sessions=%s audit=%s jobs=%s", sessions, audit, jobs)
     return {"sessions": sessions, "audit": audit, "jobs": jobs}
+
+
+def wal_checkpoint(conn=None) -> dict[str, int]:
+    c = conn or db.get_conn()
+    row = c.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+    return {
+        "busy": int(row[0] if row else 0),
+        "log": int(row[1] if row and row[1] is not None else 0),
+        "checkpointed": int(row[2] if row and row[2] is not None else 0),
+    }
+
+
+def prune_orphan_uploads(conn=None) -> int:
+    """Remove leftover upload files whose document row is gone."""
+    c = conn or db.get_conn()
+    ids = {r["id"] for r in c.execute("SELECT id FROM documents").fetchall()}
+    root = Path(config.DATA_DIR) / "uploads"
+    if not root.is_dir():
+        return 0
+    try:
+        root.resolve().relative_to(Path(config.DATA_DIR).resolve())
+    except ValueError:
+        return 0
+    removed = 0
+    for path in root.rglob("*.txt"):
+        if not path.name.startswith("upload-"):
+            continue
+        if path.stem in ids:
+            continue
+        try:
+            path.unlink()
+            removed += 1
+        except OSError:
+            continue
+    if removed:
+        log.info("housekeeping orphan_uploads=%s", removed)
+    return removed
+
+
+def run_once(conn=None) -> dict:
+    """Startup/cron unit of work. Never logs tenant contents."""
+    own = conn is None
+    c = conn or db.connect()
+    try:
+        db.init_db(c)
+        out: dict = prune(c)
+        try:
+            out["wal"] = wal_checkpoint(c)
+        except Exception:
+            log.exception("wal checkpoint skipped")
+            out["wal"] = {}
+        try:
+            out["orphan_uploads"] = prune_orphan_uploads(c)
+        except Exception:
+            log.exception("orphan uploads skipped")
+            out["orphan_uploads"] = 0
+        config.harden_data_dir()
+        with _lock:
+            global _last
+            _last = {
+                "at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                "runs": int((_last or {}).get("runs") or 0) + 1,
+                "sessions": out.get("sessions") or 0,
+                "audit": out.get("audit") or 0,
+                "jobs": out.get("jobs") or 0,
+                "orphan_uploads": out.get("orphan_uploads") or 0,
+            }
+        return out
+    finally:
+        if own:
+            c.close()
+
+
+def start_loop(interval_s: float | None = None) -> None:
+    """Periodic prune while the process stays up. interval_s<=0 disables."""
+    global _thread
+    if interval_s is None:
+        raw = os.environ.get("AISTUDIO_HOUSEKEEPING_HOURS", "24")
+        try:
+            hours = float(raw)
+        except ValueError:
+            hours = 24.0
+        interval_s = max(0.0, hours) * 3600.0
+    if interval_s <= 0:
+        return
+    if _thread is not None and _thread.is_alive():
+        return
+    _stop.clear()
+
+    def _run() -> None:
+        while not _stop.wait(interval_s):
+            try:
+                run_once()
+            except Exception:
+                log.exception("housekeeping loop skipped")
+
+    _thread = threading.Thread(target=_run, name="aistudio-housekeeping", daemon=True)
+    _thread.start()
+
+
+def stop_loop() -> None:
+    _stop.set()
+    t = _thread
+    if t is not None and t.is_alive():
+        t.join(timeout=2)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -25,7 +26,8 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.4"
+VERSION = "1.4.5"
+STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
 LOCKOUT_MINUTES = int(os.environ.get("AISTUDIO_LOCKOUT_MINUTES", "15"))
@@ -90,3 +92,26 @@ def validate_runtime() -> None:
             "Produktion verweigert den Start: AISTUDIO_SECRET muss gesetzt sein "
             "(mindestens 24 Zeichen, nicht der Demo-Wert)."
         )
+
+
+def org_dir(org_id: str) -> str:
+    return "".join(ch for ch in (org_id or "") if ch.isalnum() or ch in "-_")[:80] or "org"
+
+
+def upload_path(org_id: str, doc_id: str) -> Path:
+    safe_id = "".join(ch for ch in (doc_id or "") if ch.isalnum() or ch in "-_.")[:120]
+    return DATA_DIR / "uploads" / org_dir(org_id) / f"{safe_id}.txt"
+
+
+def harden_data_dir() -> None:
+    """Restrict data directory and SQLite file if the filesystem allows it."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(DATA_DIR, 0o700)
+    except OSError:
+        pass
+    if DB_PATH.exists():
+        try:
+            os.chmod(DB_PATH, 0o600)
+        except OSError:
+            pass

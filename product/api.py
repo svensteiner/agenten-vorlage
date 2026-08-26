@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
@@ -195,6 +196,37 @@ def ready() -> dict[str, Any]:
 def live() -> dict[str, Any]:
     """Process liveness — no database. Use /api/ready for traffic."""
     return {"ok": True, "product": "aistudio", "version": config.VERSION}
+
+
+@router.get("/metrics")
+def metrics() -> dict[str, Any]:
+    """Ops snapshot: sizes and counters only — no tenant text, no keys."""
+    import time
+
+    from product import housekeeping, llm, security
+
+    data = config.DATA_DIR
+    free_mb = 0
+    try:
+        free_mb = shutil.disk_usage(data).free // (1024 * 1024)
+    except OSError:
+        free_mb = 0
+    db_bytes = config.DB_PATH.stat().st_size if config.DB_PATH.is_file() else 0
+    wal_path = Path(str(config.DB_PATH) + "-wal")
+    wal_bytes = wal_path.stat().st_size if wal_path.is_file() else 0
+    return {
+        "ok": True,
+        "product": "aistudio",
+        "version": config.VERSION,
+        "uptime_s": int(time.time() - config.STARTED_AT),
+        "disk_free_mb": free_mb,
+        "db_bytes": db_bytes,
+        "wal_bytes": wal_bytes,
+        "rate_limiter_keys": security.key_count(),
+        "housekeeping": housekeeping.snapshot(),
+        "llm": llm.public_status(),
+        "llm_calls": llm.call_stats(),
+    }
 
 
 @router.post("/auth/register")
@@ -475,6 +507,8 @@ def remove_doc(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any
             raise HTTPException(404, "Dokument nicht gefunden.")
         db.audit(user["org_id"], user["email"], "doc_delete", doc_id, conn=conn)
         conn.commit()
+        dest = config.upload_path(user["org_id"], doc_id)
+        dest.unlink(missing_ok=True)
         return {"ok": True}
     finally:
         conn.close()
@@ -752,8 +786,7 @@ async def upload_doc(
     text = raw.decode("utf-8", errors="replace")
     stamp = db.now_iso()
     doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
-    org_key = "".join(ch for ch in user["org_id"] if ch.isalnum() or ch in "-_")[:80] or "org"
-    dest = config.DATA_DIR / "uploads" / org_key / f"{doc_id}.txt"
+    dest = config.upload_path(user["org_id"], doc_id)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(text, encoding="utf-8")
     conn = _conn()

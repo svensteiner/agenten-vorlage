@@ -275,3 +275,4 @@ def test_llm_budget_falls_back_without_second_call(tmp_path, monkeypatch):
         assert second.json()["via"] == "extractive"
         assert len(calls) == 1
         assert "Kontingent" in " ".join(second.json().get("reasoning") or [])
+        assert llm.call_stats()["budget_blocked"] >= 1
