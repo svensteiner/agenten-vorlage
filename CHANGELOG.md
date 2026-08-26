@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.11 — 2026-08-26 — Audit ohne Fragen, systemd nur data/
+
+Fragen und Auftrags-Texte stehen nicht mehr im Audit-Log (nur Zeichenlänge).
+systemd schreibt nur noch `data/` (nicht den Quellbaum); zusätzlich
+`CapabilityBoundingSet=` und `LimitCORE=0`.
+
 ## Produktlaufzeit 1.4.10 — 2026-08-26 — Bootstrap-Passwort, Metriken, Backup-Alter
 
 Nach erfolgreichem Erstmandant entfernt der Prozess `AISTUDIO_BOOTSTRAP_*` aus

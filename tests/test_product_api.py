@@ -172,3 +172,6 @@ def test_audit_for_cfo(client):
     actions = [e["action"] for e in r.json()["events"]]
     assert "ask" in actions
     assert "login" in actions
+    details = " ".join(str(e.get("detail") or "") for e in r.json()["events"])
+    assert "Reiserichtlinie" not in details
+    assert "chars=" in details

@@ -605,7 +605,13 @@ def ask(body: AskBody, user: dict = Depends(current_user)) -> dict[str, Any]:
         raise rate_limit_error()
     conn = _conn()
     try:
-        db.audit(user["org_id"], user["email"], "ask", body.q[:400], conn=conn)
+        db.audit(
+            user["org_id"],
+            user["email"],
+            "ask",
+            "chars=%s" % len(body.q or ""),
+            conn=conn,
+        )
         answer = retrieval.ask(
             user["org_id"], body.q, role=user["role"], conn=conn, user_id=user["id"]
         )
@@ -737,7 +743,7 @@ def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, An
             user["org_id"],
             user["email"],
             "agent_run",
-            f"{body.agent_id}: {body.task[:200]}",
+            "%s chars=%s" % (body.agent_id, len(body.task or "")),
             conn=conn,
         )
         conn.commit()

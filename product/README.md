@@ -42,7 +42,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
 - **Modell-Schicht** (`product/llm.py`): einziges Tor nach außen. Die Wissensbasis bleibt auf der Instanz. Standard `AISTUDIO_LLM_EGRESS=in_boundary` (extractiv oder lokales Modell). Erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — dann gehen nur freigegebene Kurzauszüge, nie der Bestand. Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + `AISTUDIO_LLM_BASE_URL`. Nach wiederholten Ausfällen Schutzschalter (extractiv, ohne weiteres Warten).
-- Audit-Log, Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis, Alter der letzten Sicherung), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
+- Audit-Log (ohne Fragen/Auftragstexte, nur Länge), Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis, Alter der letzten Sicherung), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
 - Housekeeping beim Start und alle `AISTUDIO_HOUSEKEEPING_HOURS` Stunden (Standard 24): abgelaufene Sitzungen, Audit, Aufträge, WAL-Checkpoint, verwaiste Uploads. Cron: `./scripts/housekeeping.sh`.
 - Erstmandant per `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist. Nach Erfolg entfernt der Prozess diese Variablen aus `.env`.
 - Sitzungsruhe (`AISTUDIO_SESSION_IDLE`), optional Host-Allowlist (`AISTUDIO_ALLOWED_HOSTS`)

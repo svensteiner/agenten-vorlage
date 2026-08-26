@@ -448,6 +448,11 @@ def test_systemd_unit_rewrites_install_root():
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
     assert "/opt/aistudio" not in rendered
     assert "MemoryMax=512M" in src
+    assert "ReadWritePaths=/opt/aistudio/data" in src
+    assert "ReadWritePaths=/opt/aistudio\n" not in src
+    assert "CapabilityBoundingSet=" in src
+    backup = (root / "scripts" / "aistudio-backup.service").read_text(encoding="utf-8")
+    assert "ReadWritePaths=/opt/aistudio/data" in backup
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install

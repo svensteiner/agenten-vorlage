@@ -28,10 +28,14 @@ LockPersonality=true
 SystemCallArchitectures=native
 UMask=0077
 LimitNOFILE=4096
+LimitCORE=0
 MemoryMax=512M
 MemorySwapMax=0
 TasksMax=128
-ReadWritePaths=/opt/aistudio
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/opt/aistudio/data
 
 [Install]
 WantedBy=multi-user.target
