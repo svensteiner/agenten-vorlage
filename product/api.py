@@ -613,11 +613,39 @@ def jobs(user: dict = Depends(current_user), limit: int = 20) -> dict[str, Any]:
     conn = _conn()
     try:
         rows = conn.execute(
-            "SELECT id, agent_id, task, status, created_at FROM jobs "
+            "SELECT id, agent_id, task, status, created_at, output_json FROM jobs "
             "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
             (user["org_id"], min(limit, 100)),
         ).fetchall()
-        return {"jobs": [dict(r) for r in rows]}
+        items = []
+        for r in rows:
+            extra = db.parse_json(r["output_json"], {})
+            raw = extra.get("text") or ""
+            cleaned = []
+            skip = False
+            for ch in raw:
+                if ch == "<":
+                    skip = True
+                    continue
+                if skip:
+                    if ch == ">":
+                        skip = False
+                        cleaned.append(" ")
+                    continue
+                cleaned.append(ch)
+            preview = " ".join("".join(cleaned).split())[:180]
+            items.append(
+                {
+                    "id": r["id"],
+                    "agent_id": r["agent_id"],
+                    "task": r["task"],
+                    "status": r["status"],
+                    "created_at": r["created_at"],
+                    "ok": extra.get("ok"),
+                    "preview": preview,
+                }
+            )
+        return {"jobs": items}
     finally:
         conn.close()
 

@@ -1546,7 +1546,7 @@
     jobsBox.appendChild(jobsList);
     AISTUDIO.request("/api/jobs?limit=15").then((data) => {
       jobsList.innerHTML = (data.jobs || []).map((j) =>
-        `<div class="audit-row"><span>${escapeHtml((j.created_at || "").replace("T", " ").slice(0, 16))}</span> <b>${escapeHtml(j.agent_id || "")}</b> ${escapeHtml(j.status || "")} — ${escapeHtml((j.task || "").slice(0, 90))}</div>`
+        `<div class="audit-row"><span>${escapeHtml((j.created_at || "").replace("T", " ").slice(0, 16))}</span> <b>${escapeHtml(j.agent_id || "")}</b> ${escapeHtml(j.status || "")} — ${escapeHtml((j.preview || j.task || "").slice(0, 90))}</div>`
       ).join("") || "Noch keine Aufträge.";
     }).catch((e) => { jobsList.textContent = e.message; });
     box.appendChild(jobsBox);
@@ -2150,28 +2150,26 @@
       `<span>Nächster Lauf <b>${escapeHtml(a.nextRun || "—")}</b></span>` +
       `</div>`;
     const actions = el("div", "rc-actions");
-    if (!a.included) {
-      const work = el("button", "btn primary", "Auftrag geben");
-      work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
-      actions.appendChild(work);
-      if (canMutateFleet()) {
-        const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
-        pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
-        const cancel = el("button", "btn warn", "Kündigen");
-        cancel.onclick = async () => {
-          if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
-          cancel.dataset.arm = "1";
-          cancel.textContent = "Wirklich kündigen?";
-          setTimeout(() => {
-            if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
-          }, 4000);
-        };
-        actions.append(pause, cancel);
-      }
-    } else {
+    const work = el("button", "btn primary", "Auftrag geben");
+    work.onclick = () => { teamUi.tab = "work"; teamUi.workId = a.id; teamUi.workOut = null; renderTeamView(); };
+    actions.appendChild(work);
+    if (a.included) {
       const go = el("button", "btn", "Im Chat fragen");
       go.onclick = () => selectModule("wissen");
       actions.appendChild(go);
+    } else if (canMutateFleet()) {
+      const pause = el("button", "btn ghost", paused ? "Fortsetzen" : "Pausieren");
+      pause.onclick = async () => { await togglePause(a.id); renderTeamView(); };
+      const cancel = el("button", "btn warn", "Kündigen");
+      cancel.onclick = async () => {
+        if (cancel.dataset.arm === "1") { await cancelAgent(a.id); renderTeamView(); return; }
+        cancel.dataset.arm = "1";
+        cancel.textContent = "Wirklich kündigen?";
+        setTimeout(() => {
+          if (cancel.dataset.arm === "1") { cancel.dataset.arm = ""; cancel.textContent = "Kündigen"; }
+        }, 4000);
+      };
+      actions.append(pause, cancel);
     }
     card.append(left, actions);
     return card;
@@ -2343,9 +2341,14 @@
     box.appendChild(pick);
 
     const agent = catalogById(teamUi.workId);
-    const tasks = (agent && agent.tasks) || [];
     const chips = el("div", "chips");
     chips.style.marginBottom = "16px";
+    const tasks = isProductTenant()
+      ? [
+          { label: "Fasse die Wissensbasis in Stichpunkten zusammen.", prompt: "Fasse die Wissensbasis in Stichpunkten zusammen." },
+          { label: "Welche Fristen und Beträge stehen in den Dokumenten?", prompt: "Welche Fristen und Beträge stehen in den Dokumenten?" },
+        ]
+      : ((agent && agent.tasks) || []);
     tasks.forEach((t) => {
       const b = el("button", "chip", "▶ " + t.label);
       b.onclick = () => runAgentTask(agent, t);
@@ -2353,32 +2356,58 @@
     });
     box.appendChild(chips);
 
+    if (isProductTenant()) {
+      const form = el("div", "work-form");
+      const ta = el("textarea");
+      ta.rows = 3;
+      ta.placeholder = "Auftrag in eigenen Worten, z. B. fasse die Reiserichtlinie für die Geschäftsführung zusammen.";
+      const go = el("button", "btn primary", "Auftrag starten");
+      go.onclick = () => {
+        const q = (ta.value || "").trim();
+        if (!q) { ta.focus(); return; }
+        runAgentTask(agent, { label: q, prompt: q });
+      };
+      form.append(ta, go);
+      box.appendChild(form);
+    }
+
     const out = el("div", "work-out");
     out.id = "workOut";
     if (teamUi.workOut) {
       out.innerHTML = teamUi.workOut;
     } else {
       out.appendChild(el("p", "work-empty",
-        agent && agent.included
-          ? "Der Auskunfts-Agent arbeitet im Modul Wissen. Stellen Sie dort eine Frage — oder mieten Sie einen Spezialisten für wiederkehrende Lieferungen."
-          : "Wählen Sie einen Auftrag. Der Agent liefert aus Ihrem Firmenwissen, mit derselben Beleg-Disziplin wie der Chat."));
+        isProductTenant()
+          ? "Beschreiben Sie den Auftrag oder wählen Sie eine Vorlage. Der Agent arbeitet nur mit der Wissensbasis dieses Mandanten."
+          : (agent && agent.included
+            ? "Der Auskunfts-Agent arbeitet im Modul Wissen. Stellen Sie dort eine Frage — oder mieten Sie einen Spezialisten für wiederkehrende Lieferungen."
+            : "Wählen Sie einen Auftrag. Der Agent liefert aus Ihrem Firmenwissen, mit derselben Beleg-Disziplin wie der Chat.")));
     }
     box.appendChild(out);
     return box;
   }
 
   async function runAgentTask(agent, task) {
-    if (task.jump === "wissen") { selectModule("wissen"); return; }
+    if (task.jump === "wissen" && !isProductTenant()) { selectModule("wissen"); return; }
     const host = $("#workOut");
     if (!host) return;
+    const prompt = (task.prompt || task.label || task.hint || "Auftrag").trim();
     host.innerHTML = `<div class="thinking"><span class="spinner"></span><span class="steps">${escapeHtml(agent.name)} arbeitet…</span></div>`;
     if (isLive()) {
       try {
-        const result = await AISTUDIO.runAgent(agent.id, task.label || task.hint || "Auftrag");
+        const result = await AISTUDIO.runAgent(agent.id, prompt);
+        const srcs = (result.sources || []).filter((s) => s.docId);
+        const srcHtml = srcs.length
+          ? `<div class="wo-src">Quellen: ${srcs.map((s) => escapeHtml(s.docId)).join(" · ")}</div>`
+          : "";
+        const jobHtml = result.job_id
+          ? `<div class="wo-kicker">Auftrag ${escapeHtml(result.job_id)}</div>`
+          : "";
         const html =
           `<div class="wo-kicker">${escapeHtml(agent.name)} · Live-Auftrag</div>` +
           `<h3>${escapeHtml(task.label || "Lieferung")}</h3>` +
-          `<div class="text">${result.text || ""}</div>`;
+          `<div class="text">${result.text || ""}</div>` +
+          srcHtml + jobHtml;
         teamUi.workOut = html;
         host.innerHTML = html;
       } catch (e) {
@@ -2435,7 +2464,9 @@
       `<ul class="rp-list">` +
       `<li>Start: <b>heute</b> — ${escapeHtml(a.firstDeliverable || "erste Lieferung folgt.")}</li>` +
       `<li>Arbeitet mit demselben Firmenwissen wie der Auskunfts-Agent.</li>` +
-      `<li>Nächste Lastschrift: <b>${nextInvoiceGerman()}</b> (Demo, keine echte Zahlung).</li>` +
+      (isProductTenant()
+        ? `<li>Nächste interne Abrechnung: <b>${nextInvoiceGerman()}</b> — Entwurf, keine echte Lastschrift.</li>`
+        : `<li>Nächste Lastschrift: <b>${nextInvoiceGerman()}</b> (Demo, keine echte Zahlung).</li>`) +
       `</ul>`;
     const foot = $("#rentFoot");
     foot.innerHTML = "";

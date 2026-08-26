@@ -142,6 +142,11 @@ def test_run_included_agent(client):
     data = r.json()
     assert data.get("job_id")
     assert "Reiserichtlinie" in data.get("text", "") or data.get("sources")
+    listed = client.get("/api/jobs", headers=headers)
+    assert listed.status_code == 200
+    jobs = listed.json()["jobs"]
+    assert jobs and jobs[0]["id"] == data["job_id"]
+    assert jobs[0].get("preview") is not None
 
 
 def test_upload_and_ask(client):
