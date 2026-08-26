@@ -2,6 +2,8 @@
 # First-run production files: .env with a fresh secret, data directory.
 # Optional first tenant:
 #   ./scripts/install.sh --org "Muster GmbH" --email admin@muster.example --password 'Mindestens10x'
+# Optional systemd units rewritten for this checkout:
+#   ./scripts/install.sh --systemd
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$ROOT/.env"
@@ -9,6 +11,7 @@ ORG=""
 EMAIL=""
 PASSWORD=""
 NAME=""
+SYSTEMD=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -16,16 +19,39 @@ while [[ $# -gt 0 ]]; do
     --email) EMAIL="$2"; shift 2 ;;
     --password) PASSWORD="$2"; shift 2 ;;
     --name) NAME="$2"; shift 2 ;;
+    --systemd) SYSTEMD=1; shift ;;
     -h|--help)
-      echo "usage: $0 [--org NAME --email EMAIL --password PASS --name NAME]"
+      echo "usage: $0 [--org NAME --email EMAIL --password PASS --name NAME] [--systemd]"
       exit 0
       ;;
     *) echo "unbekanntes Argument: $1" >&2; exit 1 ;;
   esac
 done
 
-mkdir -p "$ROOT/data"
+mkdir -p "$ROOT/data/backups"
 chmod 700 "$ROOT/data"
+
+render_systemd() {
+  local dest="$ROOT/data/systemd"
+  mkdir -p "$dest"
+  chmod 700 "$ROOT/data"
+  for unit in aistudio.service aistudio-backup.service aistudio-backup.timer; do
+    sed "s|/opt/aistudio|$ROOT|g" "$ROOT/scripts/$unit" > "$dest/$unit"
+  done
+  echo "systemd-Einheiten: $dest"
+  if [[ -w /etc/systemd/system ]]; then
+    cp "$dest/"*.service "$dest/"*.timer /etc/systemd/system/
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload
+      systemctl enable --now aistudio.service
+      systemctl enable --now aistudio-backup.timer
+      echo "systemd: aistudio.service und Backup-Timer aktiv"
+    fi
+  else
+    echo "Als root: cp $dest/* /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now aistudio.service aistudio-backup.timer"
+  fi
+}
+
 if [[ -f "$ENV_FILE" ]]; then
   echo "$ENV_FILE existiert bereits — nichts überschrieben." >&2
 else
@@ -55,7 +81,12 @@ else
   echo "geschrieben: $ENV_FILE"
 fi
 
+if [[ "$SYSTEMD" -eq 1 ]]; then
+  render_systemd
+fi
+
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
 echo "Sicherung: ./scripts/backup.sh"
 echo "Aufräumen: ./scripts/housekeeping.sh"
+echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"

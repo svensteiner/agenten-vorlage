@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from product import auth, catalog, config, db, retrieval, tenancy
 from product.runtime import run_agent_job
-from product.security import client_ip, rate_limited
+from product.security import client_ip, metrics_authorized, rate_limit_error, rate_limited
 from product.seed import delete_document, ensure_seeded, insert_document
 
 router = APIRouter()
@@ -199,8 +199,21 @@ def live() -> dict[str, Any]:
 
 
 @router.get("/metrics")
-def metrics() -> dict[str, Any]:
-    """Ops snapshot: sizes and counters only — no tenant text, no keys."""
+def metrics(request: Request):
+    """Ops snapshot: sizes and counters only — no tenant text, no keys.
+
+    Optional ``AISTUDIO_METRICS_TOKEN`` (Header ``X-Metrics-Token`` or Bearer).
+    ``?format=prom`` yields Prometheus text.
+    """
+    if not metrics_authorized(request):
+        raise HTTPException(401, "Metriken erfordern ein Token.")
+    payload = _metrics_payload()
+    if (request.query_params.get("format") or "").strip().lower() in {"prom", "prometheus"}:
+        return PlainTextResponse(_metrics_prom(payload), media_type="text/plain; version=0.0.4")
+    return payload
+
+
+def _metrics_payload() -> dict[str, Any]:
     import time
 
     from product import housekeeping, llm, security
@@ -229,12 +242,38 @@ def metrics() -> dict[str, Any]:
     }
 
 
+def _metrics_prom(payload: dict[str, Any]) -> str:
+    calls = payload.get("llm_calls") or {}
+    lines = [
+        "# HELP aistudio_up 1 if the process answers metrics.",
+        "# TYPE aistudio_up gauge",
+        "aistudio_up 1",
+        "# TYPE aistudio_uptime_seconds gauge",
+        "aistudio_uptime_seconds %s" % payload.get("uptime_s", 0),
+        "# TYPE aistudio_disk_free_megabytes gauge",
+        "aistudio_disk_free_megabytes %s" % payload.get("disk_free_mb", 0),
+        "# TYPE aistudio_db_bytes gauge",
+        "aistudio_db_bytes %s" % payload.get("db_bytes", 0),
+        "# TYPE aistudio_wal_bytes gauge",
+        "aistudio_wal_bytes %s" % payload.get("wal_bytes", 0),
+        "# TYPE aistudio_rate_limiter_keys gauge",
+        "aistudio_rate_limiter_keys %s" % payload.get("rate_limiter_keys", 0),
+        "# TYPE aistudio_llm_complete_ok_total counter",
+        "aistudio_llm_complete_ok_total %s" % calls.get("complete_ok", 0),
+        "# TYPE aistudio_llm_complete_fail_total counter",
+        "aistudio_llm_complete_fail_total %s" % calls.get("complete_fail", 0),
+        "# TYPE aistudio_llm_budget_blocked_total counter",
+        "aistudio_llm_budget_blocked_total %s" % calls.get("budget_blocked", 0),
+    ]
+    return "\n".join(lines) + "\n"
+
+
 @router.post("/auth/register")
 def register(body: RegisterBody, request: Request) -> dict[str, Any]:
     if not config.allow_register():
         raise HTTPException(403, "Registrierung ist auf dieser Instanz deaktiviert.")
     if rate_limited("reg:" + client_ip(request), 8):
-        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
+        raise rate_limit_error()
     conn = _conn()
     try:
         try:
@@ -264,7 +303,7 @@ def register(body: RegisterBody, request: Request) -> dict[str, Any]:
 @router.post("/auth/login")
 def login(body: LoginBody, request: Request) -> dict[str, Any]:
     if rate_limited("login:" + client_ip(request), 30):
-        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
+        raise rate_limit_error()
     conn = _conn()
     try:
         user = conn.execute(
@@ -532,7 +571,7 @@ def search(q: str, user: dict = Depends(current_user)) -> dict[str, Any]:
 @router.post("/ask")
 def ask(body: AskBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     if rate_limited("ask:" + user["id"], 120):
-        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
+        raise rate_limit_error()
     conn = _conn()
     try:
         db.audit(user["org_id"], user["email"], "ask", body.q[:400], conn=conn)
@@ -770,7 +809,7 @@ async def upload_doc(
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     if rate_limited("up:" + user["id"], 40):
-        raise HTTPException(429, "Zu viele Anfragen. Bitte kurz warten.")
+        raise rate_limit_error()
     raw = await file.read()
     if len(raw) > config.MAX_UPLOAD_BYTES:
         raise HTTPException(400, "Datei zu groß (max. 2 MB in dieser Instanz).")

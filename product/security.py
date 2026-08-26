@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hmac
 import json
 import logging
+import os
 import threading
 import time
 import uuid
@@ -152,4 +154,33 @@ def key_count() -> int:
 
 
 def too_many() -> JSONResponse:
-    return JSONResponse({"detail": "Zu viele Anfragen. Bitte kurz warten."}, status_code=429)
+    return JSONResponse(
+        {"detail": "Zu viele Anfragen. Bitte kurz warten.", "request_id": "-"},
+        status_code=429,
+        headers={"Retry-After": "60"},
+    )
+
+
+def rate_limit_error():
+    from fastapi import HTTPException
+
+    return HTTPException(
+        429,
+        "Zu viele Anfragen. Bitte kurz warten.",
+        headers={"Retry-After": "60"},
+    )
+
+
+def metrics_authorized(request: Request) -> bool:
+    """If AISTUDIO_METRICS_TOKEN is set, require it (header or Bearer)."""
+    expected = (os.environ.get("AISTUDIO_METRICS_TOKEN") or "").strip()
+    if not expected:
+        return True
+    supplied = (request.headers.get("x-metrics-token") or "").strip()
+    authz = request.headers.get("authorization") or ""
+    if not supplied and authz.lower().startswith("bearer "):
+        supplied = authz.split(" ", 1)[1].strip()
+    try:
+        return hmac.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8"))
+    except (TypeError, ValueError):
+        return False

@@ -400,6 +400,54 @@ def test_metrics_has_no_tenant_secrets(client):
     assert "budget_blocked" in body["llm_calls"]
     assert body["llm"]["per_user"] >= 1
     assert "password" not in blob.lower()
+    prom = client.get("/api/metrics?format=prom")
+    assert prom.status_code == 200
+    text = prom.text
+    assert "aistudio_up 1" in text
+    assert "aistudio_llm_budget_blocked_total" in text
+    assert "@meridian.example" not in text
+
+
+def test_metrics_token_required(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "metrics-test-token")
+    assert client.get("/api/metrics").status_code == 401
+    bad = client.get("/api/metrics", headers={"X-Metrics-Token": "wrong"})
+    assert bad.status_code == 401
+    ok = client.get("/api/metrics", headers={"X-Metrics-Token": "metrics-test-token"})
+    assert ok.status_code == 200
+    bearer = client.get(
+        "/api/metrics",
+        headers={"Authorization": "Bearer metrics-test-token"},
+    )
+    assert bearer.status_code == 200
+
+
+def test_login_rate_limit_sets_retry_after(client, monkeypatch):
+    monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
+    r = client.post(
+        "/api/auth/login",
+        json={"email": "a@b.example", "password": "x"},
+    )
+    assert r.status_code == 429
+    assert r.headers.get("retry-after") == "60"
+
+
+def test_systemd_unit_rewrites_install_root():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    src = (root / "scripts" / "aistudio.service").read_text(encoding="utf-8")
+    rendered = src.replace("/opt/aistudio", "/srv/studio")
+    assert "WorkingDirectory=/srv/studio" in rendered
+    assert "EnvironmentFile=-/srv/studio/.env" in rendered
+    assert "/opt/aistudio" not in rendered
+    install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
+    assert "--systemd" in install
+    nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
+    assert "ssl_certificate" not in nginx
+    assert "limit_req" in nginx
+    tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
+    assert "ssl_certificate" in tls
 
 
 def test_orphan_upload_pruned(client, tmp_path):

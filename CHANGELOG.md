@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.6 — 2026-08-26 — nginx, systemd, Metriken-Token
+
+nginx-HTTP-Conf startet ohne Zertifikat; TLS liegt in `nginx-aistudio.tls.conf`.
+Login am Proxy ist rate-begrenzt. `install.sh --systemd` schreibt Einheiten für
+dieses Checkout. 429 mit `Retry-After`. `/api/metrics` optional mit Token,
+Prometheus-Text über `?format=prom`.
+
 ## Produktlaufzeit 1.4.5 — 2026-08-26 — Housekeeping, Metriken, Uploads
 
 Housekeeping läuft periodisch im Prozess (nicht nur beim Start), WAL-Checkpoint,
