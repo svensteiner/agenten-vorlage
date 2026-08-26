@@ -17,6 +17,14 @@ services:
       AISTUDIO_LLM_API_KEY: ${AISTUDIO_LLM_API_KEY:-}
       AISTUDIO_LLM_EGRESS: ${AISTUDIO_LLM_EGRESS:-in_boundary}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      PYTHONDONTWRITEBYTECODE: "1"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - aistudio-data:/app/data
     healthcheck:

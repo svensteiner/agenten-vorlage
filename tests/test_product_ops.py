@@ -302,6 +302,32 @@ def test_bootstrap_creates_first_tenant(tmp_path, monkeypatch):
         assert r.json()["org"]["name"] == "Start GmbH"
 
 
+def test_static_rejects_hidden_and_serves_app_js(client):
+    assert client.get("/app.js").status_code == 200
+    assert client.get("/.env").status_code == 404
+    assert client.get("/../product/config.py").status_code == 404
+    assert client.get("/data/aistudio.db").status_code == 404
+
+
+def test_upload_strips_path_and_rejects_binary(client):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    up = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("../../etc/passwd.txt", "Nur Text aus der Richtlinie.", "text/plain")},
+    )
+    assert up.status_code == 200, up.text
+    listed = client.get("/api/docs", headers=headers).json()
+    titles = [d.get("title") for d in listed.get("docs") or []]
+    assert "passwd.txt" in titles
+    binary = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("note.txt", b"abc\x00def", "text/plain")},
+    )
+    assert binary.status_code == 400
+
+
 def test_live_and_error_includes_request_id(client):
     live = client.get("/api/live")
     assert live.status_code == 200

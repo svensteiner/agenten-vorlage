@@ -30,7 +30,7 @@ export AISTUDIO_CORS_ORIGINS=https://studio.example.com
 ./scripts/run_product.sh
 ```
 
-Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password '…'`. systemd: `scripts/aistudio.service`, tägliche Sicherung: `scripts/aistudio-backup.timer`. Reverse-Proxy: `scripts/nginx-aistudio.conf` (`AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung. Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh`. Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
+Ohne gültiges `AISTUDIO_SECRET` startet der Prozess nicht. OpenAPI (`/docs`) ist in Produktion aus. Ersteinrichtung: `./scripts/install.sh --org "Firma GmbH" --email admin@firma.example --password '…'`. systemd: `scripts/aistudio.service`, tägliche Sicherung: `scripts/aistudio-backup.timer`. Reverse-Proxy: `scripts/nginx-aistudio.conf` (`AISTUDIO_TRUST_PROXY=true`). Docker: `docker compose up --build` mit Secret in der Umgebung, Root-Dateisystem read-only. Sicherung/Restore: `./scripts/backup.sh` und `./scripts/restore.sh`. Qualität lokal (gleicher Stand wie CI): `./scripts/check.sh`.
 
 In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kommt über `AISTUDIO_BOOTSTRAP_*` (oder kurz `AISTUDIO_ALLOW_REGISTER=true`).
 

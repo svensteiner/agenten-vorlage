@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -39,6 +40,10 @@ async def lifespan(_app: FastAPI):
         except ValueError as exc:
             raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
         conn.commit()
+        if config.is_production() and config.allow_demo_seed():
+            logging.getLogger("product").warning(
+                "Produktion läuft mit Demo-Seed. AISTUDIO_ALLOW_DEMO_SEED=false setzen."
+            )
     finally:
         conn.close()
     from product.housekeeping import prune
@@ -105,6 +110,10 @@ async def unhandled_error(request: Request, exc: Exception):
     return JSONResponse({"detail": detail, "request_id": rid}, status_code=500)
 
 
+_STATIC_EXT = {".js", ".css", ".html", ".svg", ".png", ".ico", ".woff", ".woff2", ".map"}
+_STATIC_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+
+
 @app.get("/")
 def index():
     return FileResponse(PROTO / "index.html")
@@ -113,6 +122,14 @@ def index():
 @app.get("/{path:path}")
 def static_file(path: str):
     if path.startswith("api/") or path == "api":
+        raise HTTPException(404, "Not found")
+    if (
+        ".." in path
+        or path.startswith(".")
+        or not _STATIC_NAME.match(path)
+        or any(part.startswith(".") for part in path.split("/"))
+        or Path(path).suffix.lower() not in _STATIC_EXT
+    ):
         raise HTTPException(404, "Not found")
     dest = (PROTO / path).resolve()
     try:

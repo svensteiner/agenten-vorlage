@@ -739,13 +739,20 @@ async def upload_doc(
     raw = await file.read()
     if len(raw) > config.MAX_UPLOAD_BYTES:
         raise HTTPException(400, "Datei zu groß (max. 2 MB in dieser Instanz).")
-    name = (file.filename or "upload.txt").lower()
+    if b"\x00" in raw:
+        raise HTTPException(400, "Binärdateien werden nicht angenommen.")
+    given = (file.filename or "upload.txt").replace("\\", "/")
+    name = given.rsplit("/", 1)[-1].lower()
+    if not name or name.startswith(".") or ".." in name:
+        name = "upload.txt"
     if not name.endswith((".txt", ".md", ".csv", ".json", ".log")):
         raise HTTPException(400, "Nur Textformate (.txt, .md, .csv, .json).")
+    title = (file.filename or "Upload").replace("\\", "/").rsplit("/", 1)[-1][:180]
     text = raw.decode("utf-8", errors="replace")
     stamp = db.now_iso()
     doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
-    dest = config.DATA_DIR / "uploads" / user["org_id"] / f"{doc_id}.txt"
+    org_key = "".join(ch for ch in user["org_id"] if ch.isalnum() or ch in "-_")[:80] or "org"
+    dest = config.DATA_DIR / "uploads" / org_key / f"{doc_id}.txt"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(text, encoding="utf-8")
     conn = _conn()
@@ -755,10 +762,10 @@ async def upload_doc(
             user["org_id"],
             {
                 "id": doc_id,
-                "title": file.filename or "Upload",
+                "title": title or "Upload",
                 "type": "Upload",
                 "module": "wissen",
-                "path": f"Uploads › {file.filename or doc_id}",
+                "path": f"Uploads › {title or doc_id}",
                 "author": user["name"],
                 "date": stamp[:10],
                 "snippet": text[:180].replace("\n", " "),
@@ -767,7 +774,7 @@ async def upload_doc(
                 "locked": False,
             },
         )
-        db.audit(user["org_id"], user["email"], "upload", file.filename or doc_id, conn=conn)
+        db.audit(user["org_id"], user["email"], "upload", title or doc_id, conn=conn)
         conn.commit()
         return {"ok": True, "id": doc_id}
     finally:

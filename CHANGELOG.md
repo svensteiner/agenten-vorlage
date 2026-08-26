@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.3 — 2026-08-26 — Image und Dateiauslieferung
+
+`.dockerignore` lässt `.env`, Tests und `platform/` draußen. Statische Dateien nur
+mit erlaubter Endung, keine Hidden Files. Uploads ohne Pfadanteile, ohne NUL.
+Compose: read-only Root, `cap_drop: ALL`. nginx verweigert `/.…`.
+
 ## Produktlaufzeit 1.4.2 — 2026-08-26 — Fehler, Logs, Aufräumen
 
 Unhandled Errors in Produktion ohne Stacktrace, `request_id` in API-Fehlern,
