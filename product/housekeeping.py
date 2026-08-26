@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -108,6 +109,69 @@ def prune_orphan_uploads(conn=None) -> int:
     return removed
 
 
+def _restore_keep() -> int:
+    raw = os.environ.get("AISTUDIO_RESTORE_KEEP", "3")
+    try:
+        n = int(raw)
+    except ValueError:
+        n = 3
+    return max(1, min(n, 14))
+
+
+def prune_restore_leftovers() -> dict[str, int]:
+    """Keep the newest N pre-restore copies; drop older DB files and upload trees.
+
+    Never logs file contents. Paths must stay under the data dir or the DB parent.
+    """
+    keep = _restore_keep()
+    db_removed = 0
+    upload_removed = 0
+    db_path = Path(config.DB_PATH)
+    parent = db_path.parent
+    prefix = db_path.name + ".before-restore-"
+    try:
+        candidates = [
+            p
+            for p in parent.iterdir()
+            if p.is_file() and p.name.startswith(prefix) and ".." not in p.name
+        ]
+    except OSError:
+        candidates = []
+    candidates.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    for path in candidates[keep:]:
+        try:
+            path.resolve().relative_to(parent.resolve())
+            path.unlink()
+            db_removed += 1
+        except (OSError, ValueError):
+            continue
+    for path in candidates[:keep]:
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+    data = Path(config.DATA_DIR)
+    try:
+        dirs = [
+            p
+            for p in data.iterdir()
+            if p.is_dir() and p.name.startswith("uploads.before-restore-") and ".." not in p.name
+        ]
+    except OSError:
+        dirs = []
+    dirs.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    for path in dirs[keep:]:
+        try:
+            path.resolve().relative_to(data.resolve())
+            shutil.rmtree(path)
+            upload_removed += 1
+        except (OSError, ValueError):
+            continue
+    if db_removed or upload_removed:
+        log.info("housekeeping restore_leftovers db=%s uploads=%s", db_removed, upload_removed)
+    return {"db": db_removed, "uploads": upload_removed}
+
+
 def run_once(conn=None) -> dict:
     """Startup/cron unit of work. Never logs tenant contents."""
     own = conn is None
@@ -125,6 +189,11 @@ def run_once(conn=None) -> dict:
         except Exception:
             log.exception("orphan uploads skipped")
             out["orphan_uploads"] = 0
+        try:
+            out["restore_leftovers"] = prune_restore_leftovers()
+        except Exception:
+            log.exception("restore leftovers skipped")
+            out["restore_leftovers"] = {"db": 0, "uploads": 0}
         config.harden_data_dir()
         try:
             c.execute("PRAGMA optimize")
@@ -139,6 +208,7 @@ def run_once(conn=None) -> dict:
                 "audit": out.get("audit") or 0,
                 "jobs": out.get("jobs") or 0,
                 "orphan_uploads": out.get("orphan_uploads") or 0,
+                "restore_leftovers": out.get("restore_leftovers") or {},
             }
         return out
     finally:

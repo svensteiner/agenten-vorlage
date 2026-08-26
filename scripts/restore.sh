@@ -2,6 +2,7 @@
 # Restore a SQLite backup created by scripts/backup.sh onto AISTUDIO_DB.
 # Optional sibling archive aistudio-…-uploads.tar.gz is restored into AISTUDIO_DATA/uploads.
 # Encrypted files (*.enc) need AISTUDIO_BACKUP_PASS (openssl aes-256-cbc pbkdf2).
+# Pre-restore copies (*.before-restore-*, uploads.before-restore-*) stay at most 3.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"
@@ -56,6 +57,7 @@ mkdir -p "$(dirname "$DB")"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 if [[ -f "$DB" ]]; then
   cp "$DB" "$DB.before-restore-$STAMP"
+  chmod 600 "$DB.before-restore-$STAMP" 2>/dev/null || true
 fi
 
 rm -f "$DB" "$DB-wal" "$DB-shm"
@@ -106,9 +108,28 @@ if [[ -n "$UPLOADS_SRC" && -f "$UPLOADS_SRC" ]]; then
   else
     if [[ -d "$DATA/uploads" ]]; then
       mv "$DATA/uploads" "$DATA/uploads.before-restore-$STAMP"
+      chmod 700 "$DATA/uploads.before-restore-$STAMP" 2>/dev/null || true
     fi
     tar -C "$DATA" -xzf "$UPLOADS_SRC"
   fi
 fi
 
 echo "wiederhergestellt: $DB"
+
+# Nur die letzten 3 Vor-Restore-Kopien behalten (Datenbank und Uploads).
+# nullglob + explizites Array, damit ls nicht das Arbeitsverzeichnis listet.
+shopt -s nullglob
+_db_left=("$DB".before-restore-*)
+if ((${#_db_left[@]} > 3)); then
+  mapfile -t _db_sorted < <(ls -1t "${_db_left[@]}")
+  for old in "${_db_sorted[@]:3}"; do
+    rm -f "$old"
+  done
+fi
+_up_left=("$DATA"/uploads.before-restore-*)
+if ((${#_up_left[@]} > 3)); then
+  mapfile -t _up_sorted < <(ls -1td "${_up_left[@]}")
+  for old in "${_up_sorted[@]:3}"; do
+    rm -rf "$old"
+  done
+fi

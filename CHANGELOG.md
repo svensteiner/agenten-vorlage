@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.14 — 2026-08-26 — Restore-Kopien begrenzen
+
+`restore.sh` legt Vor-Restore-Kopien 0600/0700 an und behält nur die letzten drei
+(Datenbank und `uploads.before-restore-*`). Housekeeping räumt ältere Reste auf —
+sonst bleiben Mandantendateien nach einem Restore unbegrenzt auf der Platte.
+
 ## Produktlaufzeit 1.4.13 — 2026-08-26 — Bootstrap-Passwort unter data/, kein Demo-PREV
 
 `install.sh` schreibt den Erstmandant nach `data/bootstrap.env` (600), nicht nach `.env`.

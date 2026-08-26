@@ -78,6 +78,70 @@ def test_backup_restore_roundtrip_with_uploads(tmp_path):
     assert mode == 0o600
     dest_mode = stat.S_IMODE(dest.stat().st_mode)
     assert dest_mode == 0o700
+    pre = list(data.glob("aistudio.db.before-restore-*"))
+    assert pre
+    assert stat.S_IMODE(pre[0].stat().st_mode) == 0o600
+    upload_pre = list(data.glob("uploads.before-restore-*"))
+    assert upload_pre
+    assert (data / "uploads" / "org1" / "note.txt").is_file()
+
+
+def test_restore_keeps_only_three_preimages(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    for i in range(5):
+        _make_db(db, i)
+        r = subprocess.run(
+            [str(BACKUP), str(dest)],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert r.returncode == 0, r.stderr
+        backup = Path(r.stdout.strip())
+        r2 = subprocess.run(
+            [str(RESTORE), str(backup)],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert r2.returncode == 0, r2.stderr
+    leftovers = list(data.glob("aistudio.db.before-restore-*"))
+    assert len(leftovers) <= 3
+
+
+def test_housekeeping_prunes_restore_leftovers(tmp_path, monkeypatch):
+    from product import config, housekeeping
+
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "aistudio.db")
+    (tmp_path / "aistudio.db").write_bytes(b"live")
+    for i in range(5):
+        p = tmp_path / f"aistudio.db.before-restore-2020010{i}T000000Z"
+        p.write_bytes(b"old")
+        os.utime(p, (1_000_000 + i, 1_000_000 + i))
+        d = tmp_path / f"uploads.before-restore-2020010{i}T000000Z"
+        d.mkdir()
+        (d / "secret.txt").write_text("tenant", encoding="utf-8")
+        os.utime(d, (1_000_000 + i, 1_000_000 + i))
+    out = housekeeping.prune_restore_leftovers()
+    assert out["db"] == 2
+    assert out["uploads"] == 2
+    db_left = sorted(p.name for p in tmp_path.glob("aistudio.db.before-restore-*"))
+    up_left = sorted(p.name for p in tmp_path.glob("uploads.before-restore-*"))
+    assert len(db_left) == 3
+    assert len(up_left) == 3
+    assert (tmp_path / "aistudio.db").read_bytes() == b"live"
+    newest_up = tmp_path / "uploads.before-restore-20200104T000000Z"
+    assert (newest_up / "secret.txt").is_file()
 
 
 def test_restore_rejects_corrupt_source(tmp_path):

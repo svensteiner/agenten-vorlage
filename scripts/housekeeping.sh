@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# One-shot housekeeping: sessions, audit/jobs retention, WAL, orphan uploads.
+# One-shot housekeeping: sessions, audit/jobs retention, WAL, orphan uploads,
+# leftover restore copies (*.before-restore-*).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
