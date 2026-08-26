@@ -6,9 +6,10 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from product import config
 from product.api import router
@@ -40,6 +41,12 @@ async def lifespan(_app: FastAPI):
         conn.commit()
     finally:
         conn.close()
+    from product.housekeeping import prune
+
+    try:
+        prune()
+    except Exception:
+        logging.getLogger("product.housekeeping").exception("housekeeping skipped")
     yield
 
 
@@ -63,6 +70,39 @@ if origins:
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
 app.include_router(router, prefix="/api")
+
+
+def _request_id(request: Request) -> str:
+    return str(getattr(request.state, "request_id", "") or request.headers.get("x-request-id") or "-")
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    rid = _request_id(request)
+    if config.is_production():
+        return JSONResponse({"detail": "Anfrage ungültig.", "request_id": rid}, status_code=422)
+    return JSONResponse({"detail": exc.errors(), "request_id": rid}, status_code=422)
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    return JSONResponse(
+        {"detail": exc.detail, "request_id": _request_id(request)},
+        status_code=exc.status_code,
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error(request: Request, exc: Exception):
+    rid = _request_id(request)
+    logging.getLogger("product").exception("unhandled rid=%s", rid)
+    detail = (
+        str(exc)
+        if not config.is_production()
+        else "Interner Fehler. Bitte später erneut versuchen."
+    )
+    return JSONResponse({"detail": detail, "request_id": rid}, status_code=500)
 
 
 @app.get("/")
@@ -93,6 +133,7 @@ def run() -> None:
         host=config.HOST,
         port=config.PORT,
         reload=False,
+        access_log=False,
         proxy_headers=config.trust_proxy(),
         forwarded_allow_ips="*" if config.trust_proxy() else None,
         timeout_keep_alive=30,

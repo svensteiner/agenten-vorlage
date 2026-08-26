@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.2 — 2026-08-26 — Fehler, Logs, Aufräumen
+
+Unhandled Errors in Produktion ohne Stacktrace, `request_id` in API-Fehlern,
+JSON-Access-Log in Produktion, `/api/live` ohne Datenbank, Housekeeping
+(abgelaufene Sitzungen, alte Audit-/Auftragszeilen), härterer Backup-Timer,
+Install mit 12-Stunden-Sitzung.
+
 ## Produktlaufzeit 1.4.1 — 2026-08-26 — Produktionshärtung
 
 CSP, COOP/CORP, LLM-Kontingent (extractiver Fallback statt 429), Audit ohne Prompt,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -75,15 +76,32 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         if request.url.path.startswith("/api/"):
             ms = int((time.perf_counter() - start) * 1000)
-            log.info(
-                "method=%s path=%s status=%s ms=%s rid=%s ip=%s",
-                request.method,
-                request.url.path,
-                response.status_code,
-                ms,
-                getattr(request.state, "request_id", "-"),
-                client_ip(request),
-            )
+            rid = getattr(request.state, "request_id", "-")
+            ip = client_ip(request)
+            if config.is_production():
+                log.info(
+                    json.dumps(
+                        {
+                            "method": request.method,
+                            "path": request.url.path,
+                            "status": response.status_code,
+                            "ms": ms,
+                            "rid": rid,
+                            "ip": ip,
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+            else:
+                log.info(
+                    "method=%s path=%s status=%s ms=%s rid=%s ip=%s",
+                    request.method,
+                    request.url.path,
+                    response.status_code,
+                    ms,
+                    rid,
+                    ip,
+                )
         return response
 
 

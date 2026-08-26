@@ -42,7 +42,8 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
 - **Modell-Schicht** (`product/llm.py`): einziges Tor nach außen. Die Wissensbasis bleibt auf der Instanz. Standard `AISTUDIO_LLM_EGRESS=in_boundary` (extractiv oder lokales Modell). Erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — dann gehen nur freigegebene Kurzauszüge, nie der Bestand. Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + `AISTUDIO_LLM_BASE_URL`.
-- Audit-Log, Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis)
+- Audit-Log, Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis), `/api/live` (Prozess ohne DB)
+- Housekeeping beim Start: abgelaufene Sitzungen, Audit nach `AISTUDIO_AUDIT_RETENTION_DAYS`, Aufträge nach `AISTUDIO_JOB_RETENTION_DAYS`
 - Erstmandant per `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist
 
 ### Sprachmodell

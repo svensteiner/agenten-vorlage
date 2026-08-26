@@ -300,3 +300,37 @@ def test_bootstrap_creates_first_tenant(tmp_path, monkeypatch):
         assert r.status_code == 200, r.text
         assert r.json()["user"]["role"] == "admin"
         assert r.json()["org"]["name"] == "Start GmbH"
+
+
+def test_live_and_error_includes_request_id(client):
+    live = client.get("/api/live")
+    assert live.status_code == 200
+    assert live.json()["ok"] is True
+    assert live.json()["product"] == "aistudio"
+    r = client.post("/api/ask", json={"q": "Reiserichtlinie"})
+    assert r.status_code == 401
+    body = r.json()
+    assert body.get("request_id")
+    assert r.headers.get("x-request-id")
+
+
+def test_housekeeping_prunes_old_audit(client):
+    from product import db, housekeeping
+
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO audit_log (org_id, actor, action, detail, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            ("org-old", "system", "ask", "alt", "2020-01-01T00:00:00"),
+        )
+        conn.commit()
+        assert conn.execute(
+            "SELECT COUNT(*) AS n FROM audit_log WHERE created_at < '2021-01-01'"
+        ).fetchone()["n"] >= 1
+        housekeeping.prune(conn)
+        assert conn.execute(
+            "SELECT COUNT(*) AS n FROM audit_log WHERE created_at < '2021-01-01'"
+        ).fetchone()["n"] == 0
+    finally:
+        conn.close()

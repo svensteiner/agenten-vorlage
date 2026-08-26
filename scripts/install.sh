@@ -40,6 +40,8 @@ else
     echo "AISTUDIO_TRUST_PROXY=true"
     echo "AISTUDIO_LLM_PROVIDER=none"
     echo "AISTUDIO_LLM_EGRESS=in_boundary"
+    echo "AISTUDIO_TOKEN_TTL=43200"
+    echo "AISTUDIO_AUDIT_RETENTION_DAYS=365"
     if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
       echo "AISTUDIO_BOOTSTRAP_ORG=$ORG"
       echo "AISTUDIO_BOOTSTRAP_EMAIL=$EMAIL"

@@ -190,6 +190,12 @@ def ready() -> dict[str, Any]:
         conn.close()
 
 
+@router.get("/live")
+def live() -> dict[str, Any]:
+    """Process liveness — no database. Use /api/ready for traffic."""
+    return {"ok": True, "product": "aistudio", "version": config.VERSION}
+
+
 @router.post("/auth/register")
 def register(body: RegisterBody, request: Request) -> dict[str, Any]:
     if not config.allow_register():
