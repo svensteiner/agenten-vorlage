@@ -31,6 +31,9 @@ def test_health_and_index(client):
     body = h.json()
     assert body["ok"] is True
     assert body["documents"] >= 20
+    assert "llm" in body
+    assert body["llm"]["ready"] is False
+    assert "sk-" not in str(body).lower()
     page = client.get("/")
     assert page.status_code == 200
     assert "AI Studio" in page.text

@@ -745,6 +745,17 @@
       `</span>`;
   }
 
+  function viaBadge(answer) {
+    if (!answer || !answer.via) return "";
+    if (answer.via === "llm") {
+      return `<span class="via via-llm" title="Formuliert aus freigegebenen Kurzauszügen. Die Wissensbasis bleibt auf der Instanz.">formuliert</span>`;
+    }
+    if (answer.via === "extractive") {
+      return `<span class="via via-docs" title="Wörtlich aus Ihren Dokumenten auf dieser Instanz — ohne Cloud-Modell.">aus Belegen</span>`;
+    }
+    return "";
+  }
+
   // ---------- Antwort streamen ----------
   async function streamAnswer(wrap, answer) {
     const msg = el("div", "msg");
@@ -767,7 +778,7 @@
         `</span>${pop}</span>`
       : "";
     card.appendChild(el("div", "head",
-      `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` + viaBadge(answer) +
       `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">0,0 s</b></span>` +
       confHtml));
     const textEl = el("div", "text");
@@ -828,7 +839,7 @@
       : "";
     const secStr = String(secs).replace(".", ",");
     card.appendChild(el("div", "head",
-      `<span class="ai">✦</span><span class="who">AI Studio</span>` +
+      `<span class="ai">✦</span><span class="who">AI Studio</span>` + viaBadge(answer) +
       `<span class="speed" title="Antwortzeit">⚡ Beantwortet in <b class="sp-val">${secStr} s</b></span>` +
       confHtml));
     const textEl = el("div", "text");
@@ -1334,6 +1345,23 @@
     const user = AISTUDIO.user || {};
     const org = AISTUDIO.org || {};
     const canDocs = user.role === "admin" || user.role === "cfo";
+
+    const llm = (AISTUDIO.health && AISTUDIO.health.llm) || {};
+    const llmBox = el("div", "upload-box");
+    const kindLabel = llm.kind === "decentral" ? "lokal / dezentral"
+      : llm.kind === "api" ? "Cloud-API" : "kein Modell";
+    const egressLabel = llm.egress === "cloud"
+      ? "Cloud erlaubt — nur Kurzauszüge, nie die Wissensbasis"
+      : "in der Instanz — Auszüge verlassen den Server nicht";
+    const readyLabel = llm.ready ? "aktiv" : "nicht aktiv — Antworten aus Belegen auf der Instanz";
+    llmBox.innerHTML =
+      `<h3>Sprachmodell</h3>` +
+      `<p>Nur diese Schicht spricht mit einem Modell. Die Dokumente bleiben auf der Instanz. ` +
+      `Es gehen höchstens freigegebene Kurzauszüge, und nur wenn Cloud-Ausgang ausdrücklich erlaubt ist.</p>` +
+      `<p><b>${escapeHtml(llm.provider || "none")}</b>` +
+      (llm.model ? ` · ${escapeHtml(llm.model)}` : "") +
+      ` · ${escapeHtml(kindLabel)}<br>${escapeHtml(egressLabel)}<br>${escapeHtml(readyLabel)}</p>`;
+    box.appendChild(llmBox);
 
     const pwd = el("div", "upload-box");
     pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
@@ -2403,8 +2431,14 @@
         const jobHtml = result.job_id
           ? `<div class="wo-kicker">Auftrag ${escapeHtml(result.job_id)}</div>`
           : "";
+        const viaHtml = result.via === "llm"
+          ? `<div class="wo-kicker">formuliert aus freigegebenen Auszügen</div>`
+          : result.via === "extractive"
+            ? `<div class="wo-kicker">aus Ihren Belegen auf der Instanz</div>`
+            : "";
         const html =
           `<div class="wo-kicker">${escapeHtml(agent.name)} · Live-Auftrag</div>` +
+          viaHtml +
           `<h3>${escapeHtml(task.label || "Lieferung")}</h3>` +
           `<div class="text">${result.text || ""}</div>` +
           srcHtml + jobHtml;

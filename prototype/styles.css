@@ -176,6 +176,13 @@ body {
 .answer .head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .answer .head .ai { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: grid; place-items: center; color: #fff; font-size: 13px; flex: none; }
 .answer .head .who { font-weight: 700; font-size: 13.5px; }
+.answer .head .via {
+  font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--ink-soft); background: var(--bg); white-space: nowrap;
+}
+.answer .head .via-llm { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.answer .head .via-docs { color: var(--ink-soft); }
 /* Tempo-Signal „⚡ Beantwortet in X,X s" — schiebt sich mit der Konfidenz nach rechts. */
 .answer .head .speed { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
 .answer .head .speed .sp-val { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }

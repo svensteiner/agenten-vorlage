@@ -107,6 +107,7 @@ def run_agent_job(
         "confidence": answer.get("confidence") or (86 if result.success else 55),
         "related": answer.get("related") or [],
         "followups": answer.get("followups") or [],
+        "via": answer.get("via") or "extractive",
         "started_at": started,
         "finished_at": db.now_iso(),
         "run_success": bool(result.success),

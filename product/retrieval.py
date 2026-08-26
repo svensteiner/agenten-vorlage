@@ -227,12 +227,19 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
     text = ""
     via = "extractive"
     if hits:
-        text = _maybe_llm_answer(query, hits) or extractive_text(hits, query)
-        via = "llm" if text and not text.startswith("Ich habe <b>") else "extractive"
-        if via == "extractive":
-            reasoning.append("Antwort extractiv aus den Treffern formuliert (kein Modell konfiguriert oder Fallback).")
+        llm_text = _maybe_llm_answer(query, hits)
+        if llm_text:
+            text = llm_text
+            via = "llm"
+            reasoning.append(
+                "Antwort über die Modell-Schicht formuliert — nur freigegebene Kurzauszüge, nicht die Wissensbasis."
+            )
         else:
-            reasoning.append("Antwort mit dem konfigurierten Sprachmodell formuliert, nur aus den Treffern.")
+            text = extractive_text(hits, query)
+            via = "extractive"
+            reasoning.append(
+                "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
+            )
         confidence = min(94, 70 + len(hits) * 6)
     elif withheld_ui:
         text = (
@@ -281,25 +288,24 @@ def _followups(query: str) -> list[str]:
 
 
 def _maybe_llm_answer(query: str, hits: list[dict[str, Any]]) -> str:
-    try:
-        import brain
-    except Exception:
+    """Formulate via the product gateway. Corpus stays local; only excerpts may leave."""
+    from product import llm
+
+    excerpts = llm.excerpts_from_hits(hits, query, quote_fn=quote_from)
+    if not excerpts:
         return ""
-    evidence = []
-    for h in hits[:4]:
-        evidence.append(
-            f"[{h.get('title')}] ({h.get('path')})\n{quote_from(h, query, 400)}"
-        )
     system = (
         "Du bist der Auskunfts-Agent von AI Studio. Antworte auf Deutsch, knapp und belegt. "
         "Verwende nur die gelieferten Auszüge. Keine Erfindung. HTML erlaubt: <b>, <p>, <ul>, <li>."
     )
-    user = f"Frage: {query}\n\nAuszüge:\n\n" + "\n\n".join(evidence)
+    user = llm.build_user_prompt(query, excerpts)
     try:
-        text = brain.complete(system, user, temperature=0.2, max_tokens=700, use_fast=True)
+        result = llm.complete(system=system, user=user)
     except Exception:
         return ""
-    return (text or "").strip()
+    if not result.get("ok"):
+        return ""
+    return (result.get("text") or "").strip()
 
 
 def quote_from(doc: dict[str, Any], query: str, n: int = 180) -> str:

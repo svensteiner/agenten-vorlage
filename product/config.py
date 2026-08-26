@@ -5,7 +5,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parent.parent
+# Tests set AISTUDIO_LOAD_DOTENV=0 so a local .env cannot leak keys into pytest.
+if os.environ.get("AISTUDIO_LOAD_DOTENV", "1").strip().lower() not in {"0", "false", "no", "off"}:
+    load_dotenv(ROOT / ".env")
 DATA_DIR = Path(os.environ.get("AISTUDIO_DATA", ROOT / "data"))
 DB_PATH = Path(os.environ.get("AISTUDIO_DB", DATA_DIR / "aistudio.db"))
 SECRET = os.environ.get("AISTUDIO_SECRET", "dev-secret-change-me")
@@ -20,7 +25,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
 LOCKOUT_MINUTES = int(os.environ.get("AISTUDIO_LOCKOUT_MINUTES", "15"))

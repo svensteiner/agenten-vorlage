@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.0 — 2026-08-26 — Modell-Schicht, Daten bleiben auf der Instanz
+
+**Sprachmodell hinter einem Tor, nicht als Direktaufruf.** Additiv `product/llm.py`
+(`core/` und `platform/` unangetastet, kein `brain.py` mehr im Produktpfad):
+- Standard `AISTUDIO_LLM_EGRESS=in_boundary`: Cloud-APIs werden verweigert, Antworten extractiv lokal.
+- Opt-in erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — nur ACL-gefilterte Kurzauszüge, nie die Wissensbasis.
+- Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + lokale `AISTUDIO_LLM_BASE_URL`.
+- Prompts werden nicht geloggt. `/api/health` zeigt Provider/Modell ohne Schlüssel.
+- Antwortkarte: Badge „formuliert“ / „aus Belegen“. Betrieb zeigt die Schicht.
+
 ## Produktionslaufzeit — 2026-08-25 — Mandant anlegen, Sitzungen, Rollen, Betrieb
 
 **AI Studio als Werkzeug auf der eigenen Infrastruktur**, soweit ohne SSO/Zahlungsanbieter möglich.

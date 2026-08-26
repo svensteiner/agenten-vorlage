@@ -41,8 +41,22 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - Anmeldesperre nach Fehlversuchen, Rate-Limits, Access-Log, Security-Header, Größenlimit
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
+- **Modell-Schicht** (`product/llm.py`): einziges Tor nach außen. Die Wissensbasis bleibt auf der Instanz. Standard `AISTUDIO_LLM_EGRESS=in_boundary` (extractiv oder lokales Modell). Erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — dann gehen nur freigegebene Kurzauszüge, nie der Bestand. Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + `AISTUDIO_LLM_BASE_URL`.
 - Audit-Log, Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis)
 - Erstmandant per `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist
+
+### Sprachmodell
+
+`product/` spricht nicht mit `brain.py` und nicht direkt mit einem Vendor-SDK. Alle Formulierungen laufen über `product/llm.py`.
+
+| Variable | Wirkung |
+|---|---|
+| `AISTUDIO_LLM_EGRESS=in_boundary` | **Standard.** Cloud-APIs werden verweigert. Antworten bleiben auf der Instanz (extractiv oder lokales OpenAI-kompatibles Modell). |
+| `AISTUDIO_LLM_EGRESS=cloud` | OpenAI/Anthropic dürfen **Kurzauszüge** der Treffer sehen — nicht die Wissensbasis. |
+| `AISTUDIO_LLM_PROVIDER=openai` | Erste Produktstufe, Chat Completions. |
+| `AISTUDIO_LLM_PROVIDER=decentral` | Später: lokale Instanz, `AISTUDIO_LLM_BASE_URL` z. B. `http://127.0.0.1:11434/v1`. |
+
+Prompts werden nicht geloggt. `/api/health` zeigt `llm` ohne Schlüssel.
 
 ### Bewusst nicht in dieser Version
 

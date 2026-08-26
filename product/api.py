@@ -131,6 +131,8 @@ def health() -> dict[str, Any]:
         orgs = conn.execute("SELECT COUNT(*) AS n FROM orgs").fetchone()["n"]
         docs = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
         demo = _demo_present(conn)
+        from product import llm
+
         payload = {
             "ok": True,
             "product": "aistudio",
@@ -140,6 +142,7 @@ def health() -> dict[str, Any]:
             "allow_register": config.allow_register(),
             "orgs": orgs,
             "documents": docs,
+            "llm": llm.public_status(),
         }
         if demo and not config.is_production():
             payload["demo_email"] = config.DEMO_EMAIL
