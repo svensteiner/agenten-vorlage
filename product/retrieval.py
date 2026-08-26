@@ -209,7 +209,14 @@ def extractive_text(hits: list[dict[str, Any]], query: str) -> str:
     return "".join(parts)
 
 
-def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str, Any]:
+def ask(
+    org_id: str,
+    query: str,
+    *,
+    role: str = "member",
+    conn=None,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """Permission-faithful answer in the prototype answer-card shape."""
     hits, withheld = retrieve(org_id, query, role=role, limit=5, conn=conn)
     withheld_ui = withheld_payload(withheld)
@@ -226,8 +233,9 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
 
     text = ""
     via = "extractive"
+    llm_meta: dict[str, Any] = {}
     if hits:
-        llm_text = _maybe_llm_answer(query, hits)
+        llm_text, llm_meta = _maybe_llm_answer(query, hits, org_id=org_id, user_id=user_id)
         if llm_text:
             text = llm_text
             via = "llm"
@@ -237,9 +245,14 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
         else:
             text = extractive_text(hits, query)
             via = "extractive"
-            reasoning.append(
-                "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
-            )
+            if llm_meta.get("error") == "rate_limited":
+                reasoning.append(
+                    "Antwort extractiv auf der Instanz — Modell-Kontingent für diese Minute erschöpft."
+                )
+            else:
+                reasoning.append(
+                    "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
+                )
         confidence = min(94, 70 + len(hits) * 6)
     elif withheld_ui:
         text = (
@@ -275,6 +288,8 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
         "related": [h["id"] for h in hits[:4]],
         "followups": _followups(query),
         "via": via,
+        "llm_provider": llm_meta.get("provider") or None,
+        "llm_model": llm_meta.get("model") or None,
     }
 
 
@@ -287,13 +302,22 @@ def _followups(query: str) -> list[str]:
     ]
 
 
-def _maybe_llm_answer(query: str, hits: list[dict[str, Any]]) -> str:
+def _maybe_llm_answer(
+    query: str,
+    hits: list[dict[str, Any]],
+    *,
+    org_id: str | None = None,
+    user_id: str | None = None,
+) -> tuple[str, dict[str, Any]]:
     """Formulate via the product gateway. Corpus stays local; only excerpts may leave."""
     from product import llm
 
+    empty: dict[str, Any] = {}
+    if not llm.allow_call(org_id=org_id, user_id=user_id):
+        return "", {"error": "rate_limited"}
     excerpts = llm.excerpts_from_hits(hits, query, quote_fn=quote_from)
     if not excerpts:
-        return ""
+        return "", empty
     system = (
         "Du bist der Auskunfts-Agent von AI Studio. Antworte auf Deutsch, knapp und belegt. "
         "Verwende nur die gelieferten Auszüge. Keine Erfindung. HTML erlaubt: <b>, <p>, <ul>, <li>."
@@ -302,10 +326,15 @@ def _maybe_llm_answer(query: str, hits: list[dict[str, Any]]) -> str:
     try:
         result = llm.complete(system=system, user=user)
     except Exception:
-        return ""
+        return "", empty
+    meta = {
+        "provider": result.get("provider"),
+        "model": result.get("model"),
+        "error": result.get("error") or "",
+    }
     if not result.get("ok"):
-        return ""
-    return (result.get("text") or "").strip()
+        return "", meta
+    return (result.get("text") or "").strip(), meta
 
 
 def quote_from(doc: dict[str, Any], query: str, n: int = 180) -> str:

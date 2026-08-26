@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.1 — 2026-08-26 — Produktionshärtung
+
+CSP, COOP/CORP, LLM-Kontingent (extractiver Fallback statt 429), Audit ohne Prompt,
+systemd-Härtung, nginx HSTS, Backup mit `integrity_check`, Install-Default
+`AISTUDIO_LLM_EGRESS=in_boundary`. `/api/ready` meldet freien Speicher.
+
 ## Produktlaufzeit 1.4.0 — 2026-08-26 — Modell-Schicht, Daten bleiben auf der Instanz
 
 **Sprachmodell hinter einem Tor, nicht als Direktaufruf.** Additiv `product/llm.py`

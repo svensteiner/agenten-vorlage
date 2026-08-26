@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
@@ -167,12 +168,24 @@ def ready() -> dict[str, Any]:
             writable = True
         except OSError:
             writable = False
-        return {
-            "ok": True,
+        free_mb = 0
+        try:
+            free_mb = shutil.disk_usage(data).free // (1024 * 1024)
+        except OSError:
+            free_mb = 0
+        from product import llm
+
+        payload = {
+            "ok": bool(writable),
             "db": True,
             "writable": writable,
+            "disk_free_mb": free_mb,
             "version": config.VERSION,
+            "llm": llm.public_status(),
         }
+        if not writable:
+            return JSONResponse(payload, status_code=503)
+        return payload
     finally:
         conn.close()
 
@@ -482,8 +495,19 @@ def ask(body: AskBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     conn = _conn()
     try:
         db.audit(user["org_id"], user["email"], "ask", body.q[:400], conn=conn)
+        answer = retrieval.ask(
+            user["org_id"], body.q, role=user["role"], conn=conn, user_id=user["id"]
+        )
+        if answer.get("via") == "llm":
+            db.audit(
+                user["org_id"],
+                user["email"],
+                "llm",
+                "%s %s" % (answer.get("llm_provider") or "-", answer.get("llm_model") or "-"),
+                conn=conn,
+            )
         conn.commit()
-        return retrieval.ask(user["org_id"], body.q, role=user["role"], conn=conn)
+        return answer
     finally:
         conn.close()
 
@@ -580,6 +604,7 @@ def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, An
             role=user["role"],
             agent_id=body.agent_id,
             task=body.task,
+            user_id=user["id"],
         )
         conn.execute(
             "UPDATE jobs SET status = ?, output_json = ?, run_meta_json = ? WHERE id = ?",

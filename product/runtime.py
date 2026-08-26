@@ -63,6 +63,7 @@ def run_agent_job(
     role: str,
     agent_id: str,
     task: str,
+    user_id: str | None = None,
 ) -> dict[str, Any]:
     spec = catalog.by_id(agent_id)
     if not spec:
@@ -78,7 +79,7 @@ def run_agent_job(
     orchestrator = AgentOrchestrator(ROOT)
     result = orchestrator.run(task, tools=tools, tenant=org_id)
 
-    answer = retrieval.ask(org_id, task, role=role, conn=conn)
+    answer = retrieval.ask(org_id, task, role=role, conn=conn, user_id=user_id)
     outputs = []
     if result.metadata:
         outputs = list(result.metadata.get("outputs") or [])

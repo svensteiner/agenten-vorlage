@@ -30,7 +30,11 @@ def test_ready(client):
     r = client.get("/api/ready")
     assert r.status_code == 200
     assert r.json()["db"] is True
+    assert "disk_free_mb" in r.json()
     assert r.headers.get("x-content-type-options") == "nosniff"
+    assert "script-src 'self'" in (r.headers.get("content-security-policy") or "")
+    page = client.get("/")
+    assert page.headers.get("cross-origin-opener-policy") == "same-origin"
 
 
 def test_register_empty_tenant_and_upload(client):

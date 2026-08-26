@@ -56,7 +56,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 | `AISTUDIO_LLM_PROVIDER=openai` | Erste Produktstufe, Chat Completions. |
 | `AISTUDIO_LLM_PROVIDER=decentral` | Später: lokale Instanz, `AISTUDIO_LLM_BASE_URL` z. B. `http://127.0.0.1:11434/v1`. |
 
-Prompts werden nicht geloggt. `/api/health` zeigt `llm` ohne Schlüssel.
+Prompts werden nicht geloggt. `/api/health` zeigt `llm` ohne Schlüssel. Cloud-Aufrufe sind pro Nutzer/Mandant kontingentiert (`AISTUDIO_LLM_PER_USER` / `AISTUDIO_LLM_PER_ORG`); bei Ausschöpfung bleibt die Antwort extractiv auf der Instanz.
 
 ### Bewusst nicht in dieser Version
 
