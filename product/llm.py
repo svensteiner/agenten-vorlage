@@ -20,6 +20,7 @@ import os
 import re
 import threading
 import time
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
@@ -167,6 +168,8 @@ def public_status() -> dict[str, Any]:
     cfg = settings()
     per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
     per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
+    per_user_day = int(os.environ.get("AISTUDIO_LLM_PER_USER_DAY", "200"))
+    per_org_day = int(os.environ.get("AISTUDIO_LLM_PER_ORG_DAY", "800"))
     return {
         "provider": cfg["provider"],
         "kind": cfg["kind"],
@@ -178,6 +181,8 @@ def public_status() -> dict[str, Any]:
         "reason": cfg["reason"] or None,
         "per_user": per_user,
         "per_org": per_org,
+        "per_user_day": per_user_day,
+        "per_org_day": per_org_day,
     }
 
 
@@ -197,15 +202,72 @@ def allow_call(*, org_id: str | None = None, user_id: str | None = None) -> bool
     per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
     per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
     if user_id and rate_limited("llm-user:" + user_id, per_user):
-        with _stats_lock:
-            _stats["budget_blocked"] += 1
-        log.info("llm budget exhausted scope=user")
-        return False
+        return _block("user")
     if org_id and rate_limited("llm-org:" + org_id, per_org):
-        with _stats_lock:
-            _stats["budget_blocked"] += 1
-        log.info("llm budget exhausted scope=org")
+        return _block("org")
+    if not _take_daily(org_id=org_id, user_id=user_id):
+        return _block("day")
+    return True
+
+
+def _block(scope: str) -> bool:
+    with _stats_lock:
+        _stats["budget_blocked"] += 1
+    log.info("llm budget exhausted scope=%s", scope)
+    return False
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+def _take_daily(*, org_id: str | None, user_id: str | None) -> bool:
+    """Persist daily caps in SQLite so restarts do not reset spend. 0 = unlimited."""
+    per_user = _int_env("AISTUDIO_LLM_PER_USER_DAY", 200)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG_DAY", 800)
+    if per_user <= 0 and per_org <= 0:
+        return True
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from product import db
+
+    conn = db.connect()
+    try:
+        db.init_db(conn)
+        if user_id and per_user > 0 and not _bump_usage(conn, day, "user", user_id, per_user):
+            conn.rollback()
+            return False
+        if org_id and per_org > 0 and not _bump_usage(conn, day, "org", org_id, per_org):
+            conn.rollback()
+            return False
+        conn.commit()
+        return True
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.exception("llm daily budget check failed")
         return False
+    finally:
+        conn.close()
+
+
+def _bump_usage(conn, day: str, scope: str, key: str, limit: int) -> bool:
+    row = conn.execute(
+        "SELECT calls FROM llm_usage WHERE day = ? AND scope = ? AND key = ?",
+        (day, scope, key),
+    ).fetchone()
+    n = int(row["calls"]) if row else 0
+    if n >= limit:
+        return False
+    conn.execute(
+        """INSERT INTO llm_usage (day, scope, key, calls) VALUES (?, ?, ?, 1)
+           ON CONFLICT(day, scope, key) DO UPDATE SET calls = calls + 1""",
+        (day, scope, key),
+    )
     return True
 
 

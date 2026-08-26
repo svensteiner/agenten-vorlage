@@ -399,6 +399,7 @@ def test_metrics_has_no_tenant_secrets(client):
     assert "llm_calls" in body
     assert "budget_blocked" in body["llm_calls"]
     assert body["llm"]["per_user"] >= 1
+    assert body["llm"]["per_user_day"] >= 1
     assert "password" not in blob.lower()
     prom = client.get("/api/metrics?format=prom")
     assert prom.status_code == 200

@@ -1362,7 +1362,9 @@
       (llm.model ? ` · ${escapeHtml(llm.model)}` : "") +
       ` · ${escapeHtml(kindLabel)}<br>${escapeHtml(egressLabel)}<br>${escapeHtml(readyLabel)}` +
       `<br>Kontingent Cloud: ${escapeHtml(String(llm.per_user != null ? llm.per_user : 20))}/min je Nutzer, ` +
-      `${escapeHtml(String(llm.per_org != null ? llm.per_org : 60))}/min je Mandant — bei Ausschöpfung Antworten aus Belegen.</p>`;
+      `${escapeHtml(String(llm.per_org != null ? llm.per_org : 60))}/min je Mandant` +
+      ` · ${escapeHtml(String(llm.per_user_day != null ? llm.per_user_day : 200))}/Tag je Nutzer, ` +
+      `${escapeHtml(String(llm.per_org_day != null ? llm.per_org_day : 800))}/Tag je Mandant — bei Ausschöpfung Antworten aus Belegen.</p>`;
     box.appendChild(llmBox);
 
     const pwd = el("div", "upload-box");

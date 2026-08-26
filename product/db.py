@@ -122,6 +122,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS llm_usage (
+    day TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    key TEXT NOT NULL,
+    calls INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, scope, key)
+);
+
 CREATE INDEX IF NOT EXISTS idx_documents_org ON documents(org_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_org ON jobs(org_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log(org_id, created_at);

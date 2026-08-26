@@ -60,9 +60,15 @@ def prune(conn=None) -> dict[str, int]:
     jobs = c.execute(
         "DELETE FROM jobs WHERE created_at < ?", (job_cut,)
     ).rowcount
+    llm_cut = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+    llm_rows = 0
+    try:
+        llm_rows = c.execute("DELETE FROM llm_usage WHERE day < ?", (llm_cut,)).rowcount
+    except Exception:
+        llm_rows = 0
     c.commit()
-    log.info("housekeeping sessions=%s audit=%s jobs=%s", sessions, audit, jobs)
-    return {"sessions": sessions, "audit": audit, "jobs": jobs}
+    log.info("housekeeping sessions=%s audit=%s jobs=%s llm_usage=%s", sessions, audit, jobs, llm_rows)
+    return {"sessions": sessions, "audit": audit, "jobs": jobs, "llm_usage": llm_rows}
 
 
 def wal_checkpoint(conn=None) -> dict[str, int]:

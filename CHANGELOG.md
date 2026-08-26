@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.8 — 2026-08-26 — LLM-Tageskontingent
+
+Cloud-Aufrufe sind zusätzlich pro Kalendertag begrenzt (`AISTUDIO_LLM_PER_USER_DAY` /
+`AISTUDIO_LLM_PER_ORG_DAY`, Standard 200/800) und in SQLite persistiert — ein
+Neustart setzt das Tagesbudget nicht zurück. Bei Ausschöpfung weiter extractiv.
+
 ## Produktlaufzeit 1.4.7 — 2026-08-26 — Backup-Verschlüsselung, Compose localhost
 
 Sicherungen sind 0600, das Backup-Verzeichnis 0700. Mit `AISTUDIO_BACKUP_PASS`
