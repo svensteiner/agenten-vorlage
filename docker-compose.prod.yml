@@ -1,5 +1,6 @@
 # Production overlay. Secret is required:
 #   AISTUDIO_SECRET='…' docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+# Port bleibt 127.0.0.1:8123 (Basis-Compose) — nginx auf dem Host verbindet lokal.
 services:
   aistudio:
     environment:

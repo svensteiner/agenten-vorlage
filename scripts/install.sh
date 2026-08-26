@@ -86,7 +86,7 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
 fi
 
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
-echo "Sicherung: ./scripts/backup.sh"
+echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS für AES-256)"
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"

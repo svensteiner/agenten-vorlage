@@ -2,7 +2,7 @@ services:
   aistudio:
     build: .
     ports:
-      - "8123:8123"
+      - "127.0.0.1:8123:8123"
     environment:
       AISTUDIO_HOST: "0.0.0.0"
       AISTUDIO_PORT: "8123"

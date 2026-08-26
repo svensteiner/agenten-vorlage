@@ -73,6 +73,10 @@ def test_backup_restore_roundtrip_with_uploads(tmp_path):
     assert conn.execute("SELECT x FROM t").fetchone()[0] == 42
     conn.close()
     assert note.read_text(encoding="utf-8") == "original-body"
+    mode = stat.S_IMODE(backup.stat().st_mode)
+    assert mode == 0o600
+    dest_mode = stat.S_IMODE(dest.stat().st_mode)
+    assert dest_mode == 0o700
 
 
 def test_restore_rejects_corrupt_source(tmp_path):
@@ -109,3 +113,68 @@ def test_install_sets_data_mode(tmp_path, monkeypatch):
     assert script.is_file()
     text = script.read_text(encoding="utf-8")
     assert "chmod 700" in text
+
+
+@pytest.mark.skipif(
+    subprocess.call(["openssl", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0,
+    reason="openssl missing",
+)
+def test_encrypted_backup_roundtrip(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 11)
+    note = data / "uploads" / "org1" / "note.txt"
+    note.parent.mkdir(parents=True)
+    note.write_text("secret-body", encoding="utf-8")
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env["AISTUDIO_BACKUP_PASS"] = "unit-test-backup-pass"
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    assert backup.name.endswith(".enc")
+    assert backup.is_file()
+    raw = backup.read_bytes()
+    assert b"SQLite" not in raw
+    assert not any(dest.glob("*.db")) or all(p.suffix == ".enc" or p.name.endswith(".db.enc") for p in dest.iterdir())
+    _make_db(db, 99)
+    note.write_text("changed", encoding="utf-8")
+    denied = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=_env(data, db),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert denied.returncode != 0
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 99
+    conn.close()
+    ok = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert ok.returncode == 0, ok.stderr
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 11
+    conn.close()
+    assert note.read_text(encoding="utf-8") == "secret-body"
+
+
+def test_compose_publishes_localhost_only():
+    text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "127.0.0.1:8123:8123" in text
+    assert '"8123:8123"' not in text

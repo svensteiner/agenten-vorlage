@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, wenn sqlite3 vorhanden)
 # plus Uploads unter AISTUDIO_DATA/uploads.
+# Optional: AISTUDIO_BACKUP_PASS — dann AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"
@@ -13,6 +14,7 @@ if [[ ! -f "$DB" ]]; then
 fi
 
 mkdir -p "$DEST"
+chmod 700 "$DEST" 2>/dev/null || true
 if command -v df >/dev/null 2>&1; then
   FREE_KB="$(df -Pk "$DEST" | awk 'NR==2 {print $4}')"
   if [[ -n "$FREE_KB" && "$FREE_KB" -lt 102400 ]]; then
@@ -39,14 +41,49 @@ else
   fi
 fi
 
+chmod 600 "$OUT" 2>/dev/null || true
+
 if [[ -d "$DATA/uploads" ]] && command -v tar >/dev/null 2>&1; then
   tar -C "$DATA" -czf "$DEST/aistudio-$STAMP-uploads.tar.gz" uploads
+  chmod 600 "$DEST/aistudio-$STAMP-uploads.tar.gz" 2>/dev/null || true
 fi
 
-# Nur die letzten 14 Sicherungen behalten (Datenbank + zugehörige Uploads).
+encrypt_file() {
+  local src="$1"
+  local dest="$2"
+  openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+    -pass env:AISTUDIO_BACKUP_PASS -in "$src" -out "$dest"
+}
+
+if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "AISTUDIO_BACKUP_PASS gesetzt, aber openssl fehlt — keine Klartext-Sicherung." >&2
+    rm -f "$OUT" "$DEST/aistudio-$STAMP-uploads.tar.gz"
+    exit 1
+  fi
+  encrypt_file "$OUT" "$OUT.enc"
+  rm -f "$OUT"
+  OUT="$OUT.enc"
+  chmod 600 "$OUT" 2>/dev/null || true
+  if [[ -f "$DEST/aistudio-$STAMP-uploads.tar.gz" ]]; then
+    encrypt_file "$DEST/aistudio-$STAMP-uploads.tar.gz" "$DEST/aistudio-$STAMP-uploads.tar.gz.enc"
+    rm -f "$DEST/aistudio-$STAMP-uploads.tar.gz"
+    chmod 600 "$DEST/aistudio-$STAMP-uploads.tar.gz.enc" 2>/dev/null || true
+  fi
+fi
+
+# Nur die letzten 14 Sicherungen behalten (Klartext und .enc).
 while IFS= read -r old; do
   [[ -z "$old" ]] && continue
-  rm -f "$old" "${old%.db}-uploads.tar.gz"
-done < <(ls -1t "$DEST"/aistudio-*.db 2>/dev/null | tail -n +15)
+  rm -f "$old" "$old.enc" "${old%.db}-uploads.tar.gz" "${old%.db}-uploads.tar.gz.enc"
+done < <(
+  (
+    shopt -s nullglob
+    files=("$DEST"/aistudio-*.db "$DEST"/aistudio-*.db.enc)
+    if ((${#files[@]})); then
+      ls -1t "${files[@]}"
+    fi
+  ) | sed 's/\.enc$//' | awk '!seen[$0]++' | tail -n +15
+)
 
 echo "$OUT"

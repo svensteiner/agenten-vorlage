@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.7 — 2026-08-26 — Backup-Verschlüsselung, Compose localhost
+
+Sicherungen sind 0600, das Backup-Verzeichnis 0700. Mit `AISTUDIO_BACKUP_PASS`
+schreibt `backup.sh` AES-256 (openssl, pbkdf2) und lässt kein Klartext liegen.
+Compose veröffentlicht Port 8123 nur auf 127.0.0.1.
+
 ## Produktlaufzeit 1.4.6 — 2026-08-26 — nginx, systemd, Metriken-Token
 
 nginx-HTTP-Conf startet ohne Zertifikat; TLS liegt in `nginx-aistudio.tls.conf`.
