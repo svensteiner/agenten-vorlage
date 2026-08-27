@@ -645,6 +645,22 @@ def test_metrics_token_required(client, monkeypatch):
     assert bearer.status_code == 200
 
 
+def test_probe_and_metrics_rate_limited(client, monkeypatch):
+    monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
+    for path in ("/api/health", "/api/ready", "/api/live", "/api/metrics"):
+        r = client.get(path)
+        assert r.status_code == 429, path
+        assert r.headers.get("retry-after") == "60"
+
+
+def test_metrics_token_length_mismatch(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "metrics-test-token")
+    short = client.get("/api/metrics", headers={"X-Metrics-Token": "x"})
+    assert short.status_code == 401
+    long = client.get("/api/metrics", headers={"X-Metrics-Token": "x" * 200})
+    assert long.status_code == 401
+
+
 def test_login_rate_limit_sets_retry_after(client, monkeypatch):
     monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
     r = client.post(
@@ -789,11 +805,19 @@ def test_systemd_unit_rewrites_install_root():
     assert "ssl_certificate" not in nginx
     assert "limit_req" in nginx
     assert "/api/auth/(login|register)" in nginx
+    assert "zone=aistudio_api" in nginx
+    assert "location /api/" in nginx
+    assert "rate=20r/s" in nginx
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
     assert "/api/auth/(login|register)" in tls
     assert "ssl_protocols TLSv1.2 TLSv1.3" in tls
     assert "ssl_session_tickets off" in tls
+    assert "zone=aistudio_api" in tls
+    assert "location /api/" in tls
+    assert "rate=20r/s" in tls
+    main = (root / "product" / "main.py").read_text(encoding="utf-8")
+    assert "server_header=False" in main
 
 
 def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):

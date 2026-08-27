@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.35 — 2026-08-27 — Health/Ready begrenzen, Server-Header aus
+
+`/api/health` und `/api/ready` trafen SQLite ohne Limit. Jetzt 180/Minute
+pro IP (Docker-HEALTHCHECK bleibt bei 30s grün, Lastbalancer 1/s ebenso),
+`/api/live` 300, `/api/metrics` 60 vor dem Token. nginx drosselt `/api/`
+mit 20/s (Login/Register bleiben 10/Minute). uvicorn sendet kein
+`Server:` mehr. Metrics-Token wird vor `compare_digest` auf SHA-256
+gebracht — die Länge des Tokens ist kein Orakel. Live/Ready 2xx stehen
+nicht im Access-Log.
+
 ## Produktlaufzeit 1.4.34 — 2026-08-27 — PBKDF2-Pfade begrenzen, TLS 1.2+
 
 Nutzer anlegen, Admin-Passwort setzen und Mandant löschen hashen ohne Pause

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import logging
@@ -140,6 +141,9 @@ class AccessLogMiddleware:
         path = request.url.path
         if not path.startswith("/api/"):
             return
+        # Docker HEALTHCHECK and kubelet hit these often — do not fill the disk.
+        if path in {"/api/live", "/api/ready"} and status_holder["code"] < 400:
+            return
         ms = int((time.perf_counter() - start) * 1000)
         ip = client_ip(request)
         if config.is_production():
@@ -253,6 +257,11 @@ def rate_limit_error():
     )
 
 
+def _token_digest(value: str) -> bytes:
+    """Fixed-length digest so compare_digest cannot leak token size."""
+    return hashlib.sha256(value.encode("utf-8")).digest()
+
+
 def metrics_authorized(request: Request) -> bool:
     """Token required in production. Optional in development if unset."""
     expected = (os.environ.get("AISTUDIO_METRICS_TOKEN") or "").strip()
@@ -262,7 +271,9 @@ def metrics_authorized(request: Request) -> bool:
     authz = request.headers.get("authorization") or ""
     if not supplied and authz.lower().startswith("bearer "):
         supplied = authz.split(" ", 1)[1].strip()
+    if not supplied:
+        return False
     try:
-        return hmac.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8"))
+        return hmac.compare_digest(_token_digest(supplied), _token_digest(expected))
     except (TypeError, ValueError):
         return False

@@ -175,6 +175,7 @@ def run() -> None:
         port=config.PORT,
         reload=False,
         access_log=False,
+        server_header=False,
         proxy_headers=config.trust_proxy(),
         forwarded_allow_ips=config.uvicorn_forwarded_allow_ips(),
         timeout_keep_alive=30,

@@ -151,7 +151,10 @@ def _ops_status() -> dict[str, Any]:
 
 
 @router.get("/health")
-def health() -> dict[str, Any]:
+def health(request: Request) -> dict[str, Any]:
+    # 180/min ≈ 3/s — Docker HEALTHCHECK is 30s; a 1/s LB probe stays green.
+    if rate_limited("health:" + client_ip(request), 180):
+        raise rate_limit_error()
     conn = _conn()
     try:
         conn.execute("SELECT 1").fetchone()
@@ -179,7 +182,9 @@ def health() -> dict[str, Any]:
 
 
 @router.get("/ready")
-def ready() -> dict[str, Any]:
+def ready(request: Request) -> dict[str, Any]:
+    if rate_limited("ready:" + client_ip(request), 180):
+        raise rate_limit_error()
     conn = db.connect()
     try:
         db.init_db(conn)
@@ -227,8 +232,10 @@ def ready() -> dict[str, Any]:
 
 
 @router.get("/live")
-def live() -> dict[str, Any]:
+def live(request: Request) -> dict[str, Any]:
     """Process liveness — no database. Use /api/ready for traffic."""
+    if rate_limited("live:" + client_ip(request), 300):
+        raise rate_limit_error()
     return {"ok": True, "product": "aistudio", "version": config.VERSION}
 
 
@@ -240,6 +247,8 @@ def metrics(request: Request):
     In Produktion ist das Token Pflicht.
     ``?format=prom`` yields Prometheus text.
     """
+    if rate_limited("metrics:" + client_ip(request), 60):
+        raise rate_limit_error()
     if not metrics_authorized(request):
         raise HTTPException(401, "Metriken erfordern ein Token.")
     payload = _metrics_payload()
