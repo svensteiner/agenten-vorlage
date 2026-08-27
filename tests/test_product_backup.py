@@ -118,6 +118,90 @@ def test_restore_keeps_only_three_preimages(tmp_path):
     assert len(leftovers) <= 3
 
 
+def test_restore_refuses_live_pid(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env.pop("AISTUDIO_RESTORE_FORCE", None)
+    _make_db(db, 7)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    _make_db(db, 99)
+    (data / "aistudio.pid").write_text(str(os.getpid()), encoding="utf-8")
+    denied = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert denied.returncode != 0
+    assert "läuft" in (denied.stderr or "")
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 99
+    conn.close()
+    env["AISTUDIO_RESTORE_FORCE"] = "1"
+    forced = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert forced.returncode == 0, forced.stderr
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 7
+    conn.close()
+
+
+def test_restore_ignores_stale_pid(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env.pop("AISTUDIO_RESTORE_FORCE", None)
+    _make_db(db, 3)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    _make_db(db, 8)
+    (data / "aistudio.pid").write_text("999999999\n", encoding="utf-8")
+    ok = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert ok.returncode == 0, ok.stderr
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 3
+    conn.close()
+
+
 def test_housekeeping_prunes_restore_leftovers(tmp_path, monkeypatch):
     from product import config, housekeeping
 

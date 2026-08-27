@@ -205,6 +205,7 @@ echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
 echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in data/backup.env, AES-256; Restore braucht denselben Wert)"
+echo "Restore: Produkt zuerst stoppen — restore.sh bricht ab, solange data/aistudio.pid lebt."
 echo "Ältere Installs: Passwort wird aus .env nach data/backup.env verschoben — der Produktprozess sieht es nicht."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"

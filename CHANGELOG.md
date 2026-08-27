@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.19 — 2026-08-27 — Restore nicht über laufenden Prozess
+
+`restore.sh` bricht ab, solange `data/aistudio.pid` auf einen lebenden
+Produktprozess zeigt — sonst überschreibt die Rücksicherung eine offene WAL-Datei.
+`AISTUDIO_RESTORE_FORCE=1` bleibt der bewusste Ausweg.
+
 ## Produktlaufzeit 1.4.18 — 2026-08-27 — X-Forwarded-For nur vom Proxy
 
 `AISTUDIO_TRUST_PROXY=true` glaubt `X-Forwarded-For` nicht mehr von jedem Client

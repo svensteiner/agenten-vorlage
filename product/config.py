@@ -27,7 +27,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.18"
+VERSION = "1.4.19"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -392,6 +392,33 @@ def upload_path(org_id: str, doc_id: str) -> Path:
     return DATA_DIR / "uploads" / org_dir(org_id) / f"{safe_id}.txt"
 
 
+def pid_file() -> Path:
+    return Path(DATA_DIR) / "aistudio.pid"
+
+
+def write_pid_file() -> None:
+    """Record this process so restore.sh can refuse a live overwrite."""
+    path = pid_file()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("%s\n" % os.getpid(), encoding="utf-8")
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
+def clear_pid_file() -> None:
+    path = pid_file()
+    try:
+        if not path.is_file():
+            return
+        text = path.read_text(encoding="utf-8").strip()
+        if text == str(os.getpid()):
+            path.unlink()
+    except OSError:
+        pass
+
+
 def harden_data_dir() -> None:
     """Restrict data directory and SQLite file if the filesystem allows it."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -409,6 +436,12 @@ def harden_data_dir() -> None:
     if bakenv.is_file():
         try:
             os.chmod(bakenv, 0o600)
+        except OSError:
+            pass
+    pidf = pid_file()
+    if pidf.is_file():
+        try:
+            os.chmod(pidf, 0o600)
         except OSError:
             pass
     for extra in (DB_PATH, Path(str(DB_PATH) + "-wal"), Path(str(DB_PATH) + "-shm")):

@@ -28,7 +28,7 @@ def _login(client, email, password):
     return {"Authorization": "Bearer " + r.json()["token"]}
 
 
-def test_ready(client):
+def test_ready(client, tmp_path):
     r = client.get("/api/ready")
     assert r.status_code == 200
     assert r.json()["db"] is True
@@ -39,6 +39,9 @@ def test_ready(client):
     assert "script-src 'self'" in (r.headers.get("content-security-policy") or "")
     page = client.get("/")
     assert page.headers.get("cross-origin-opener-policy") == "same-origin"
+    pidf = tmp_path / "aistudio.pid"
+    assert pidf.is_file()
+    assert pidf.read_text(encoding="utf-8").strip().isdigit()
 
 
 def test_register_empty_tenant_and_upload(client):
@@ -483,7 +486,9 @@ def test_systemd_unit_rewrites_install_root():
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" not in src
     assert "AISTUDIO_PROXY_IPS" in install
     assert "--password-file" in install
+    assert "data/aistudio.pid" in install
     assert "data/bootstrap.env" in install
+    assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx

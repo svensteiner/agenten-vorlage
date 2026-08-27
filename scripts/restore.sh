@@ -35,6 +35,19 @@ if ! command -v sqlite3 >/dev/null 2>&1; then
   exit 1
 fi
 
+# Live-Prozess nicht überschreiben (WAL/offene Handles). Stale PID-Dateien ignorieren.
+if [[ -f "$DATA/aistudio.pid" ]]; then
+  _pid="$(tr -d ' \n\r' < "$DATA/aistudio.pid" 2>/dev/null || true)"
+  if [[ "$_pid" =~ ^[0-9]+$ ]] && kill -0 "$_pid" 2>/dev/null; then
+    if [[ "${AISTUDIO_RESTORE_FORCE:-}" == "1" ]]; then
+      echo "Hinweis: Restore trotz laufendem Produktprozess (PID $_pid, AISTUDIO_RESTORE_FORCE=1)." >&2
+    else
+      echo "Produktprozess läuft (PID $_pid) — Restore abgebrochen, Live-Datenbank unangetastet. Zuerst stoppen oder AISTUDIO_RESTORE_FORCE=1." >&2
+      exit 1
+    fi
+  fi
+fi
+
 WORK="$SRC"
 if [[ "$SRC" == *.enc ]]; then
   if [[ -z "${AISTUDIO_BACKUP_PASS:-}" ]]; then

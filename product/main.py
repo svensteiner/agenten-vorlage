@@ -64,8 +64,10 @@ async def lifespan(_app: FastAPI):
     except Exception:
         logging.getLogger("product.housekeeping").exception("housekeeping skipped")
     housekeeping.start_loop()
+    config.write_pid_file()
     yield
     housekeeping.stop_loop()
+    config.clear_pid_file()
 
 
 app = FastAPI(
