@@ -15,6 +15,9 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr("product.config.DB_PATH", tmp_path / "aistudio.db")
     monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
     monkeypatch.setattr("product.config.SECRET", "test-secret-not-for-production-use")
+    from product import security
+
+    security._hits.clear()
     from fastapi.testclient import TestClient
     from product.main import app
 

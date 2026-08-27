@@ -645,11 +645,11 @@ def test_compose_publishes_localhost_only():
     prod = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
     assert 'profiles: ["backup"]' in prod
     assert "network_mode: none" in prod
+    after = prod.split("backup:")[1]
+    before = prod.split("backup:")[0]
     assert "init: true" in after
     assert "pids_limit: 32" in after
     assert "/tmp:size=64M" in after
-    after = prod.split("backup:")[1]
-    before = prod.split("backup:")[0]
     assert "AISTUDIO_SECRET:" not in after
     assert "AISTUDIO_BACKUP_PASS:" not in after
     assert "AISTUDIO_BACKUP_ENV" in after
