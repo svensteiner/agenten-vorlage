@@ -499,8 +499,12 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
     echo "AISTUDIO_ALLOW_DEMO_SEED ist an — systemd nicht installiert (Produktion würde mit bekanntem Demo-Passwort starten). In $ENV_FILE auf false setzen." >&2
     exit 1
   fi
+  if env_flag_on "$ENV_FILE" AISTUDIO_ALLOW_REGISTER; then
+    echo "AISTUDIO_ALLOW_REGISTER ist an — systemd nicht installiert (öffentliche Mandantenanlage hinter nginx). In $ENV_FILE auf false setzen; erster Mandant über data/bootstrap.env." >&2
+    exit 1
+  fi
   if [[ ! -f "$ROOT/scripts/aistudio.systemd.env" ]]; then
-    echo "scripts/aistudio.systemd.env fehlt — systemd nicht installiert (Pin für production/Loopback/kein Demo-Seed)." >&2
+    echo "scripts/aistudio.systemd.env fehlt — systemd nicht installiert (Pin für production/Loopback/kein Demo-Seed/kein Register)." >&2
     exit 1
   fi
   if ! env_runs_as_production "$ENV_FILE"; then

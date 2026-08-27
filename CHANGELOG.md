@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.63 — 2026-08-27 — systemd ohne öffentliche Registrierung
+
+1.4.62 hat `development` in der `.env` überschrieben, nicht aber
+`AISTUDIO_ALLOW_REGISTER=true` (Standard in `.env.example`). Die Pin-Datei
+setzt jetzt `false`; `--systemd` bricht ab, wenn das Flag an ist. Erster
+Mandant bleibt `data/bootstrap.env`.
+
 ## Produktlaufzeit 1.4.62 — 2026-08-27 — systemd-Pin nach der .env
 
 `Environment=AISTUDIO_ENV=production` in der Unit gilt nicht, sobald
