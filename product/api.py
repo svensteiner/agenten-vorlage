@@ -691,6 +691,8 @@ def billing(user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.post("/agents/run")
 def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("job:" + user["id"], 20):
+        raise rate_limit_error()
     conn = _conn()
     try:
         spec = catalog.by_id(body.agent_id)
@@ -815,6 +817,8 @@ def audit(user: dict = Depends(current_user), limit: int = 50) -> dict[str, Any]
 @router.get("/export")
 def export(user: dict = Depends(current_user)) -> JSONResponse:
     _require(tenancy.can_export(user["role"]), "Kein Export-Recht.")
+    if rate_limited("export:" + user["id"], 6):
+        raise rate_limit_error()
     conn = _conn()
     try:
         payload = tenancy.export_tenant(conn, user["org_id"], user["role"])

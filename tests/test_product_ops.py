@@ -605,6 +605,20 @@ def test_login_rate_limit_sets_retry_after(client, monkeypatch):
     assert r.headers.get("retry-after") == "60"
 
 
+def test_job_and_export_rate_limited(client, monkeypatch):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
+    job = client.post(
+        "/api/agents/run",
+        headers=headers,
+        json={"agent_id": "reporting", "task": "Bitte die Lage kurz zusammenfassen."},
+    )
+    assert job.status_code == 429
+    assert job.headers.get("retry-after") == "60"
+    exp = client.get("/api/export", headers=headers)
+    assert exp.status_code == 429
+
+
 def test_systemd_unit_rewrites_install_root():
     from pathlib import Path
 

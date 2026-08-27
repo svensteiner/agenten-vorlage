@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.25 — 2026-08-27 — Aufträge und Export begrenzen
+
+`/api/agents/run` war unbegrenzt (Orchestrator plus Wissenssuche). Pro Nutzer
+20 Aufträge/Minute, Export 6/Minute — sonst kann ein angemeldetes Konto CPU
+und Modellkontingent leer ziehen.
+
 ## Produktlaufzeit 1.4.24 — 2026-08-27 — Login ohne E-Mail-Orakel
 
 Unbekannte Adressen haben PBKDF2 übersprungen — die Antwortzeit verriet, ob
