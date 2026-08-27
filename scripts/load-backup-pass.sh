@@ -1,7 +1,8 @@
 # Shared by backup.sh and restore.sh. Do not execute directly.
-# Loads AISTUDIO_BACKUP_PASS from data/backup.env (preferred), then from the
-# checkout .env only when AISTUDIO_DATA is this checkout's data/ — so a test
-# tmpdir never reads the workspace .env. Never prints the value.
+# Loads AISTUDIO_BACKUP_PASS from checkout/backup.env (preferred, outside data/),
+# then data/backup.env (Docker volume / older installs), then from the checkout
+# .env only when AISTUDIO_DATA is this checkout's data/ — so a test tmpdir never
+# reads the workspace .env. Never prints the value.
 
 aistudio_extract_backup_pass() {
   local file="$1"
@@ -20,11 +21,18 @@ aistudio_extract_backup_pass() {
   return 0
 }
 
+aistudio_data_is_under_root() {
+  local root="$1" data="$2" parent
+  [[ -n "$root" && -n "$data" ]] || return 1
+  parent="$(cd "$data/.." && pwd 2>/dev/null || true)"
+  [[ -n "$parent" && "$parent" == "$root" ]]
+}
+
 aistudio_load_backup_pass() {
   if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
     return 0
   fi
-  local root data parent
+  local root data
   root="${AISTUDIO_ROOT:-${ROOT:-}}"
   data="${AISTUDIO_DATA:-}"
   if [[ -z "$data" && -n "$root" ]]; then
@@ -32,11 +40,12 @@ aistudio_load_backup_pass() {
   fi
   if [[ -n "$data" ]]; then
     aistudio_extract_backup_pass "$data/backup.env" && return 0
-    parent="$(cd "$data/.." && pwd 2>/dev/null || true)"
-    if [[ -n "$root" && -n "$parent" && "$parent" == "$root" ]]; then
+    if aistudio_data_is_under_root "$root" "$data"; then
+      aistudio_extract_backup_pass "$root/backup.env" && return 0
       aistudio_extract_backup_pass "$root/.env" && return 0
     fi
   elif [[ -n "$root" ]]; then
+    aistudio_extract_backup_pass "$root/backup.env" && return 0
     aistudio_extract_backup_pass "$root/data/backup.env" && return 0
     aistudio_extract_backup_pass "$root/.env" && return 0
   fi
@@ -44,25 +53,38 @@ aistudio_load_backup_pass() {
 }
 
 aistudio_ensure_backup_pass() {
-  # Production only: create data/backup.env once so Docker backups encrypt
-  # without install.sh. Never prints the value. No-op in development.
+  # Production only: create backup.env once so Docker backups encrypt
+  # without install.sh. Prefer checkout/backup.env when that directory is
+  # writable; otherwise data/backup.env (read-only Docker root). Never prints
+  # the value. No-op in development.
   if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
     return 0
   fi
-  local envn data pass
+  local envn data root dest pass
   envn="$(printf '%s' "${AISTUDIO_ENV:-}" | tr '[:upper:]' '[:lower:]')"
   if [[ "$envn" != "production" && "$envn" != "prod" ]]; then
     return 0
   fi
+  root="${AISTUDIO_ROOT:-${ROOT:-}}"
   data="${AISTUDIO_DATA:-${DATA:-}}"
   if [[ -z "$data" ]]; then
     return 0
   fi
-  if ! command -v openssl >/dev/null 2>&1; then
-    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. openssl fehlt; ./scripts/install.sh schreibt data/backup.env." >&2
+  if aistudio_extract_backup_pass "$data/backup.env"; then
     return 0
   fi
-  mkdir -p "$data"
+  if aistudio_data_is_under_root "$root" "$data" && aistudio_extract_backup_pass "$root/backup.env"; then
+    return 0
+  fi
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. openssl fehlt; ./scripts/install.sh schreibt backup.env." >&2
+    return 0
+  fi
+  dest="$data/backup.env"
+  if aistudio_data_is_under_root "$root" "$data" && [[ -w "$root" ]]; then
+    dest="$root/backup.env"
+  fi
+  mkdir -p "$(dirname "$dest")"
   chmod 700 "$data" 2>/dev/null || true
   if command -v python3 >/dev/null 2>&1; then
     pass="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
@@ -75,8 +97,8 @@ aistudio_ensure_backup_pass() {
     echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt." >&2
     return 0
   fi
-  printf 'AISTUDIO_BACKUP_PASS=%s\n' "$pass" > "$data/backup.env"
-  chmod 600 "$data/backup.env" 2>/dev/null || true
+  printf 'AISTUDIO_BACKUP_PASS=%s\n' "$pass" > "$dest"
+  chmod 600 "$dest" 2>/dev/null || true
   export AISTUDIO_BACKUP_PASS="$pass"
-  echo "geschrieben: $data/backup.env (AES-256). Wert bleibt außerhalb der Produkt-Umgebung." >&2
+  echo "geschrieben: $dest (AES-256). Wert bleibt außerhalb der Produkt-Umgebung." >&2
 }

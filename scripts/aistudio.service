@@ -40,6 +40,8 @@ CapabilityBoundingSet=
 AmbientCapabilities=
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadWritePaths=/opt/aistudio/data
+# Backup-Passwort: systemd lädt es nicht; der Prozess darf die Datei nicht lesen.
+InaccessiblePaths=-/opt/aistudio/backup.env -/opt/aistudio/data/backup.env
 
 [Install]
 WantedBy=multi-user.target

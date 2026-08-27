@@ -2,7 +2,8 @@
 # SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, wenn sqlite3 vorhanden)
 # plus Uploads unter AISTUDIO_DATA/uploads.
 # AISTUDIO_BACKUP_PASS — AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
-# Passwort liegt in data/backup.env (nicht in der Produkt-Umgebung).
+# Passwort liegt in backup.env neben .env (nicht in der Produkt-Umgebung;
+# systemd: InaccessiblePaths). Docker: data/backup.env auf dem Volume.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"

@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.31 — 2026-08-27 — Backup-Passwort nicht im Produktprozess
+
+`backup.env` lag unter `data/` — derselbe Dienstbenutzer konnte die Datei
+lesen. Jetzt neben `.env` (außerhalb von `ReadWritePaths`). Die Produkt-Unit
+blendet beide Pfade per `InaccessiblePaths` aus. Die Backup-Unit lädt die
+Datei. Docker schreibt weiter `data/backup.env` auf dem Volume (Root ist
+read-only).
+
 ## Produktlaufzeit 1.4.30 — 2026-08-27 — systemd nicht als root
 
 Docker läuft schon als `aistudio` (uid 10001). Die systemd-Einheiten

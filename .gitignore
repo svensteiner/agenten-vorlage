@@ -2,6 +2,7 @@
 state/
 logs/
 .env
+backup.env
 tasks.json
 .claude/
 data/

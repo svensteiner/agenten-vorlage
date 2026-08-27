@@ -2,7 +2,7 @@
 # Restore a SQLite backup created by scripts/backup.sh onto AISTUDIO_DB.
 # Optional sibling archive aistudio-…-uploads.tar.gz is restored into AISTUDIO_DATA/uploads.
 # Encrypted files (*.enc) need AISTUDIO_BACKUP_PASS (openssl aes-256-cbc pbkdf2),
-# from the environment or data/backup.env (not from the product process).
+# from the environment or backup.env next to .env (not from the product process).
 # Pre-restore copies (*.before-restore-*, uploads.before-restore-*) stay at most 3.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -1,6 +1,6 @@
 [Unit]
 Description=AI Studio SQLite backup
-# Kein Netz — diese Unit lädt AISTUDIO_BACKUP_PASS aus data/backup.env.
+# Kein Netz — diese Unit lädt AISTUDIO_BACKUP_PASS (nicht der Produktprozess).
 
 [Service]
 Type=oneshot
@@ -8,6 +8,7 @@ User=aistudio
 Group=aistudio
 WorkingDirectory=/opt/aistudio
 EnvironmentFile=-/opt/aistudio/.env
+EnvironmentFile=-/opt/aistudio/backup.env
 EnvironmentFile=-/opt/aistudio/data/backup.env
 ExecStart=/opt/aistudio/scripts/backup.sh
 NoNewPrivileges=true

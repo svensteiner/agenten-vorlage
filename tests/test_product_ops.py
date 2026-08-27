@@ -674,6 +674,7 @@ def test_systemd_unit_rewrites_install_root():
     rendered = src.replace("/opt/aistudio", "/srv/studio")
     assert "WorkingDirectory=/srv/studio" in rendered
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
+    assert "InaccessiblePaths=-/srv/studio/backup.env -/srv/studio/data/backup.env" in rendered
     assert "/opt/aistudio" not in rendered
     assert "MemoryMax=512M" in src
     assert "User=aistudio" in src.splitlines()
@@ -691,9 +692,14 @@ def test_systemd_unit_rewrites_install_root():
     assert "CapabilityBoundingSet=" in src
     assert "StartLimitBurst=5" in src
     backup = (root / "scripts" / "aistudio-backup.service").read_text(encoding="utf-8")
-    assert "User=aistudio" in backup
-    assert "Group=aistudio" in backup
+    assert "User=aistudio" in backup.splitlines()
+    assert "Group=aistudio" in backup.splitlines()
     assert "ReadWritePaths=/opt/aistudio/data" in backup
+    assert "InaccessiblePaths=-/opt/aistudio/backup.env -/opt/aistudio/data/backup.env" in src
+    assert "InaccessiblePaths" not in backup
+    assert "EnvironmentFile=-/opt/aistudio/backup.env" in backup
+    assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
+    assert "EnvironmentFile=-/opt/aistudio/backup.env" not in src
     assert "PrivateNetwork=true" in backup
     assert "RestrictAddressFamilies=none" in backup
     assert "MemoryMax=256M" in backup
@@ -990,7 +996,8 @@ def test_harden_data_dir_chmod_wal(tmp_path, monkeypatch):
     assert (db_path.stat().st_mode & 0o777) == 0o600
     assert (wal.stat().st_mode & 0o777) == 0o600
     assert (shm.stat().st_mode & 0o777) == 0o600
-    assert (bakenv.stat().st_mode & 0o777) == 0o600
+    assert (bakenv.stat().st_mode & 0o777) == 0o644
+    assert bakenv.read_text(encoding="utf-8") == "AISTUDIO_BACKUP_PASS=not-read-by-product\n"
     assert (tmp_path.stat().st_mode & 0o777) == 0o700
 
 

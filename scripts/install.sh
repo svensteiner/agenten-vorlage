@@ -100,6 +100,10 @@ fix_runtime_ownership() {
     chown root:aistudio "$ENV_FILE"
     chmod 640 "$ENV_FILE"
   fi
+  if [[ -f "$ROOT/backup.env" ]]; then
+    chown aistudio:aistudio "$ROOT/backup.env"
+    chmod 600 "$ROOT/backup.env"
+  fi
   if [[ -f "$ROOT/data/backup.env" ]]; then
     chown aistudio:aistudio "$ROOT/data/backup.env"
     chmod 600 "$ROOT/data/backup.env"
@@ -167,14 +171,27 @@ p.write_text("".join(lines), encoding="utf-8")
 }
 
 ensure_backup_pass() {
-  # Encryption key lives in data/backup.env so the product process (EnvironmentFile=.env)
-  # never sees it. Existing .env values are moved, not regenerated.
+  # Encryption key lives in checkout/backup.env (outside data/) so systemd
+  # InaccessiblePaths can hide it from the product process. Existing .env or
+  # data/backup.env values are moved, not regenerated.
   local envf="$1"
-  local bakenv="$ROOT/data/backup.env"
+  local bakenv="$ROOT/backup.env"
+  local legacy="$ROOT/data/backup.env"
   mkdir -p "$ROOT/data"
   chmod 700 "$ROOT/data" 2>/dev/null || true
   if grep -q '^[[:space:]]*AISTUDIO_BACKUP_PASS=.' "$bakenv" 2>/dev/null; then
     strip_backup_pass_from_env "$envf"
+    if [[ -f "$legacy" ]]; then
+      rm -f "$legacy"
+      echo "entfernt: $legacy (Passwort liegt in $bakenv)."
+    fi
+    return 0
+  fi
+  if grep -q '^[[:space:]]*AISTUDIO_BACKUP_PASS=.' "$legacy" 2>/dev/null; then
+    mv "$legacy" "$bakenv"
+    chmod 600 "$bakenv"
+    strip_backup_pass_from_env "$envf"
+    echo "verschoben: $legacy nach $bakenv (außerhalb von data/)."
     return 0
   fi
   local pass=""
@@ -276,9 +293,9 @@ echo "systemd (--systemd): User=aistudio, nicht root. data/ gehört aistudio, .e
 echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann data/ schreiben)."
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
-echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in data/backup.env, AES-256; Restore braucht denselben Wert)"
+echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in backup.env neben .env, AES-256; Restore braucht denselben Wert)"
 echo "Restore: Produkt zuerst stoppen — restore.sh bricht ab, solange data/aistudio.pid lebt."
-echo "Ältere Installs: Passwort wird aus .env nach data/backup.env verschoben — der Produktprozess sieht es nicht."
+echo "Ältere Installs: Passwort wird aus .env oder data/backup.env nach backup.env verschoben — der Produktprozess sieht die Datei nicht (InaccessiblePaths)."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."

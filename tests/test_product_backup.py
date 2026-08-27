@@ -454,14 +454,15 @@ def test_install_appends_missing_backup_pass(tmp_path):
     text = envf.read_text(encoding="utf-8")
     assert "AISTUDIO_SECRET=keep-this-secret-value-xx" in text
     assert "AISTUDIO_BACKUP_PASS=" not in text
-    bakenv = tmp_path / "data" / "backup.env"
+    bakenv = tmp_path / "backup.env"
     assert bakenv.is_file()
     lines = [ln for ln in bakenv.read_text(encoding="utf-8").splitlines() if ln.startswith("AISTUDIO_BACKUP_PASS=")]
     assert len(lines) == 1
     assert len(lines[0].split("=", 1)[1].strip()) >= 20
     assert stat.S_IMODE(bakenv.stat().st_mode) == 0o600
+    assert not (tmp_path / "data" / "backup.env").exists()
     assert "nachgetragen" in (r.stdout + r.stderr)
-    assert "data/backup.env" in (r.stdout + r.stderr)
+    assert "backup.env" in (r.stdout + r.stderr)
 
 
 def test_install_moves_backup_pass_out_of_dotenv(tmp_path):
@@ -487,9 +488,65 @@ def test_install_moves_backup_pass_out_of_dotenv(tmp_path):
     text = envf.read_text(encoding="utf-8")
     assert "AISTUDIO_SECRET=keep-this-secret-value-xx" in text
     assert "AISTUDIO_BACKUP_PASS=" not in text
-    bakenv = tmp_path / "data" / "backup.env"
+    bakenv = tmp_path / "backup.env"
     assert bakenv.read_text(encoding="utf-8").strip() == "AISTUDIO_BACKUP_PASS=existing-backup-pass-value"
+    assert not (tmp_path / "data" / "backup.env").exists()
     assert "verschoben" in (r.stdout + r.stderr)
+
+
+def test_install_migrates_legacy_data_backup_env(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text("AISTUDIO_SECRET=keep-this-secret-value-xx\n", encoding="utf-8")
+    os.chmod(envf, 0o600)
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "backup.env").write_text("AISTUDIO_BACKUP_PASS=legacy-data-backup-pass\n", encoding="utf-8")
+    os.chmod(data / "backup.env", 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    bakenv = tmp_path / "backup.env"
+    assert bakenv.read_text(encoding="utf-8").strip() == "AISTUDIO_BACKUP_PASS=legacy-data-backup-pass"
+    assert not (data / "backup.env").exists()
+    assert "verschoben" in (r.stdout + r.stderr)
+
+
+@pytest.mark.skipif(
+    subprocess.call(["openssl", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0,
+    reason="openssl missing",
+)
+def test_backup_reads_pass_from_checkout_backup_env(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 17)
+    (tmp_path / "backup.env").write_text("AISTUDIO_BACKUP_PASS=checkout-backup-pass-xx\n", encoding="utf-8")
+    os.chmod(tmp_path / "backup.env", 0o600)
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env["AISTUDIO_ROOT"] = str(tmp_path)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    assert backup.name.endswith(".enc")
+    assert b"SQLite" not in backup.read_bytes()
 
 
 def test_compose_publishes_localhost_only():
