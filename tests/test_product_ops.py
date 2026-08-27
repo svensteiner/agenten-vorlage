@@ -706,6 +706,24 @@ def test_live_and_error_includes_request_id(client):
     assert r.headers.get("x-request-id")
 
 
+def test_healthy_probes_skip_access_log(client, caplog):
+    import logging
+
+    caplog.set_level(logging.INFO, logger="aistudio.access")
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/live").status_code == 200
+    assert client.get("/api/ready").status_code == 200
+    assert client.get("/api/metrics").status_code == 200
+    blob = caplog.text
+    assert "/api/health" not in blob
+    assert "/api/live" not in blob
+    assert "/api/ready" not in blob
+    assert "/api/metrics" not in blob
+    denied = client.post("/api/ask", json={"q": "Reiserichtlinie"})
+    assert denied.status_code == 401
+    assert "/api/ask" in caplog.text
+
+
 def test_huge_request_id_is_replaced(client):
     huge = "A" * 4000
     live = client.get("/api/live", headers={"X-Request-ID": huge})

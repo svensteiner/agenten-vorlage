@@ -141,8 +141,8 @@ class AccessLogMiddleware:
         path = request.url.path
         if not path.startswith("/api/"):
             return
-        # Docker HEALTHCHECK and kubelet hit these often — do not fill the disk.
-        if path in {"/api/live", "/api/ready"} and status_holder["code"] < 400:
+        # Probes and scrapes hit these often — do not fill the disk.
+        if path in {"/api/live", "/api/ready", "/api/health", "/api/metrics"} and status_holder["code"] < 400:
             return
         ms = int((time.perf_counter() - start) * 1000)
         ip = client_ip(request)

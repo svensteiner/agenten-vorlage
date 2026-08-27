@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.51 — 2026-08-27 — Health/Metriken nicht ins Access-Log
+
+Live/Ready 2xx standen seit 1.4.35 nicht im Access-Log. `/api/health` und
+`/api/metrics` (Prometheus alle 15 s) füllten die Platte weiter. Jetzt 2xx
+dieser vier Sonden ohne Zeile; 4xx/429 bleiben (fehlendes Token, Überlast).
+
 ## Produktlaufzeit 1.4.50 — 2026-08-27 — Leeres Metrik-Token nachtragen
 
 Nach 1.4.49 startet Produktion nicht mit `AISTUDIO_METRICS_TOKEN=`.
