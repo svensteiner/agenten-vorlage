@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Requ
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
-from product import auth, catalog, config, db, retrieval, tenancy
+from product import auth, catalog, config, db, housekeeping, retrieval, tenancy
 from product.runtime import run_agent_job
 from product.security import client_ip, metrics_authorized, rate_limit_error, rate_limited
 from product.seed import delete_document, ensure_seeded, insert_document
@@ -801,6 +801,22 @@ def billing(user: dict = Depends(current_user)) -> dict[str, Any]:
         conn.close()
 
 
+def _mark_job_failed(conn, job_id: str) -> None:
+    """Leave no leftover 'running' row if the worker raises."""
+    try:
+        conn.execute(
+            "UPDATE jobs SET status = 'error', output_json = ?, run_meta_json = ? WHERE id = ?",
+            (
+                json.dumps({"ok": False, "error": "job_failed"}, ensure_ascii=False),
+                json.dumps({"finished_at": db.now_iso()}, ensure_ascii=False),
+                job_id,
+            ),
+        )
+        conn.commit()
+    except Exception:
+        pass
+
+
 @router.post("/agents/run")
 def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     if rate_limited("job:" + user["id"], 20):
@@ -818,6 +834,18 @@ def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, An
             raise HTTPException(403, "Agent ist nicht gemietet.")
         if lease and lease["status"] == "paused":
             raise HTTPException(400, "Agent ist pausiert. Setzen Sie ihn fort, um Aufträge zu starten.")
+        housekeeping.fail_stale_jobs(conn, user["org_id"])
+        cap = config.org_max_running()
+        running = conn.execute(
+            "SELECT COUNT(*) AS n FROM jobs WHERE org_id = ? AND status = 'running'",
+            (user["org_id"],),
+        ).fetchone()["n"]
+        if int(running) >= cap:
+            raise HTTPException(
+                429,
+                "Zu viele parallele Aufträge. Warten Sie, bis ein laufender Auftrag fertig ist.",
+                headers={"Retry-After": "30"},
+            )
         job_id = "job-" + db.now_iso().replace(":", "").replace("-", "") + "-" + body.agent_id
         conn.execute(
             "INSERT INTO jobs (id, org_id, agent_id, task, status, output_json, run_meta_json, created_at) "
@@ -832,14 +860,18 @@ def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, An
             ),
         )
         conn.commit()
-        result = run_agent_job(
-            conn,
-            org_id=user["org_id"],
-            role=user["role"],
-            agent_id=body.agent_id,
-            task=body.task,
-            user_id=user["id"],
-        )
+        try:
+            result = run_agent_job(
+                conn,
+                org_id=user["org_id"],
+                role=user["role"],
+                agent_id=body.agent_id,
+                task=body.task,
+                user_id=user["id"],
+            )
+        except Exception:
+            _mark_job_failed(conn, job_id)
+            raise HTTPException(500, "Auftrag fehlgeschlagen.")
         conn.execute(
             "UPDATE jobs SET status = ?, output_json = ?, run_meta_json = ? WHERE id = ?",
             (

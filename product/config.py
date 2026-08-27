@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.47"
+VERSION = "1.4.48"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -329,6 +329,19 @@ def org_upload_limit_bytes() -> int:
 def org_max_docs() -> int:
     """Per-tenant document count. Stops GET /api/docs from dumping an unbounded list."""
     return _int_env("AISTUDIO_ORG_MAX_DOCS", 500, lo=20, hi=5000)
+
+
+def org_max_running() -> int:
+    """How many agent jobs may be 'running' at once per tenant. Default 2."""
+    return _int_env("AISTUDIO_ORG_MAX_RUNNING", 2, lo=1, hi=8)
+
+
+def job_stale_seconds() -> int:
+    """Running jobs older than this are marked error (crash leftover). Default 180s.
+
+    Must stay above the LLM timeout (max 60s) so a live job is not swept mid-flight.
+    """
+    return _int_env("AISTUDIO_JOB_STALE_SECONDS", 180, lo=30, hi=3600)
 
 
 def export_jobs_limit() -> int:

@@ -730,6 +730,108 @@ def test_housekeeping_prunes_old_audit(client):
         conn.close()
 
 
+def test_stale_running_jobs_marked_error(client, monkeypatch):
+    from product import db, housekeeping
+
+    monkeypatch.setenv("AISTUDIO_JOB_STALE_SECONDS", "60")
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO jobs (id, org_id, agent_id, task, status, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "job-stale-running",
+                "org-meridian",
+                "auskunft",
+                "Hängender Auftrag.",
+                "running",
+                "2020-01-01T00:00:00+00:00",
+            ),
+        )
+        conn.execute(
+            "INSERT INTO jobs (id, org_id, agent_id, task, status, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "job-fresh-running",
+                "org-meridian",
+                "auskunft",
+                "Läuft noch.",
+                "running",
+                db.now_iso(),
+            ),
+        )
+        conn.commit()
+        n = housekeeping.fail_stale_jobs(conn, "org-meridian")
+        assert n == 1
+        stale = conn.execute(
+            "SELECT status, output_json FROM jobs WHERE id = ?", ("job-stale-running",)
+        ).fetchone()
+        fresh = conn.execute(
+            "SELECT status FROM jobs WHERE id = ?", ("job-fresh-running",)
+        ).fetchone()
+        assert stale["status"] == "error"
+        assert "stale" in (stale["output_json"] or "")
+        assert "Hängender Auftrag" not in (stale["output_json"] or "")
+        assert fresh["status"] == "running"
+    finally:
+        conn.close()
+
+
+def test_org_running_job_cap(client, monkeypatch):
+    from product import db
+
+    monkeypatch.setenv("AISTUDIO_ORG_MAX_RUNNING", "1")
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO jobs (id, org_id, agent_id, task, status, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "job-cap-running",
+                "org-meridian",
+                "auskunft",
+                "Blockiert die Kappe.",
+                "running",
+                db.now_iso(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    r = client.post(
+        "/api/agents/run",
+        headers=headers,
+        json={"agent_id": "auskunft", "task": "Fasse die Reiserichtlinie zusammen"},
+    )
+    assert r.status_code == 429, r.text
+    assert r.headers.get("retry-after") == "30"
+    assert "simulated" not in r.text
+    assert "parallelen" in r.json()["detail"] or "parallele" in r.json()["detail"]
+
+
+def test_run_agent_exception_marks_job_error(client, monkeypatch):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+
+    def boom(*_a, **_k):
+        raise RuntimeError("simulated-worker-crash")
+
+    monkeypatch.setattr("product.api.run_agent_job", boom)
+    r = client.post(
+        "/api/agents/run",
+        headers=headers,
+        json={"agent_id": "auskunft", "task": "Fasse die Reiserichtlinie zusammen"},
+    )
+    assert r.status_code == 500, r.text
+    assert "simulated-worker-crash" not in r.text
+    listed = client.get("/api/jobs", headers=headers)
+    assert listed.status_code == 200
+    jobs = listed.json()["jobs"]
+    assert jobs
+    assert jobs[0]["status"] == "error"
+    assert jobs[0]["ok"] is False
+
+
 def test_rate_limiter_drops_idle_keys():
     import time
     from collections import deque
@@ -1178,6 +1280,14 @@ def test_production_listen_host_loopback_and_clamped_ints(monkeypatch):
     monkeypatch.setenv("AISTUDIO_MAX_REQUEST_BYTES", "abc")
     assert config.max_request_bytes() <= 10_000_000
     assert config.max_request_bytes() >= 8_000_001
+    monkeypatch.setenv("AISTUDIO_ORG_MAX_RUNNING", "0")
+    assert config.org_max_running() == 1
+    monkeypatch.setenv("AISTUDIO_ORG_MAX_RUNNING", "99")
+    assert config.org_max_running() == 8
+    monkeypatch.setenv("AISTUDIO_JOB_STALE_SECONDS", "5")
+    assert config.job_stale_seconds() == 30
+    monkeypatch.setenv("AISTUDIO_JOB_STALE_SECONDS", "99999")
+    assert config.job_stale_seconds() == 3600
 
 
 def test_production_cors_drops_wildcard(monkeypatch):

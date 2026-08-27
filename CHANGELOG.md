@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.48 — 2026-08-27 — Parallele Aufträge kappen, hängende Jobs
+
+`POST /api/agents/run` ist synchron und ließ `running`-Zeilen stehen, wenn der
+Worker abstürzt — der nächste Auftrag und SQLite bleiben blockiert. Pro Mandant
+höchstens 2 parallele Aufträge (`AISTUDIO_ORG_MAX_RUNNING`, 1–8), sonst 429.
+Eine Exception setzt den Auftrag auf `error` (ohne Trace). Housekeeping und der
+nächste Start räumen `running` älter als 180 s ab (`AISTUDIO_JOB_STALE_SECONDS`).
+
 ## Produktlaufzeit 1.4.47 — 2026-08-27 — Auftragsliste ohne vollen Task
 
 `GET /api/jobs` lieferte bis zu 100 Aufträge à 4000 Zeichen Task plus

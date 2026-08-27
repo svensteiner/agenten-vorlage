@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -58,6 +59,7 @@ def prune(conn=None) -> dict[str, int]:
     audit = c.execute(
         "DELETE FROM audit_log WHERE created_at < ?", (audit_cut,)
     ).rowcount
+    stale = fail_stale_jobs(c)
     jobs = c.execute(
         "DELETE FROM jobs WHERE created_at < ?", (job_cut,)
     ).rowcount
@@ -68,8 +70,50 @@ def prune(conn=None) -> dict[str, int]:
     except Exception:
         llm_rows = 0
     c.commit()
-    log.info("housekeeping sessions=%s audit=%s jobs=%s llm_usage=%s", sessions, audit, jobs, llm_rows)
-    return {"sessions": sessions, "audit": audit, "jobs": jobs, "llm_usage": llm_rows}
+    log.info(
+        "housekeeping sessions=%s audit=%s jobs=%s stale_jobs=%s llm_usage=%s",
+        sessions,
+        audit,
+        jobs,
+        stale,
+        llm_rows,
+    )
+    return {
+        "sessions": sessions,
+        "audit": audit,
+        "jobs": jobs,
+        "stale_jobs": stale,
+        "llm_usage": llm_rows,
+    }
+
+
+def fail_stale_jobs(conn=None, org_id: str | None = None) -> int:
+    """Mark leftover 'running' jobs as error so a crash cannot block the org cap.
+
+    Never writes task text. Live jobs newer than ``job_stale_seconds`` stay running.
+    """
+    c = conn or db.get_conn()
+    cut = (
+        datetime.now(timezone.utc) - timedelta(seconds=config.job_stale_seconds())
+    ).replace(microsecond=0).isoformat()
+    payload = json.dumps({"ok": False, "error": "stale"}, ensure_ascii=False)
+    if org_id:
+        cur = c.execute(
+            "UPDATE jobs SET status = 'error', output_json = ? "
+            "WHERE org_id = ? AND status = 'running' AND created_at < ?",
+            (payload, org_id, cut),
+        )
+    else:
+        cur = c.execute(
+            "UPDATE jobs SET status = 'error', output_json = ? "
+            "WHERE status = 'running' AND created_at < ?",
+            (payload, cut),
+        )
+    n = int(cur.rowcount or 0)
+    if n:
+        c.commit()
+        log.info("housekeeping stale_jobs=%s", n)
+    return n
 
 
 def wal_checkpoint(conn=None) -> dict[str, int]:
@@ -207,6 +251,7 @@ def run_once(conn=None) -> dict:
                 "sessions": out.get("sessions") or 0,
                 "audit": out.get("audit") or 0,
                 "jobs": out.get("jobs") or 0,
+                "stale_jobs": out.get("stale_jobs") or 0,
                 "orphan_uploads": out.get("orphan_uploads") or 0,
                 "restore_leftovers": out.get("restore_leftovers") or {},
             }
