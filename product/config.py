@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.49"
+VERSION = "1.4.50"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -409,6 +409,12 @@ def org_upload_bytes(org_id: str, *, fresh: bool = False) -> int:
 def invalidate_org_upload_bytes(org_id: str) -> None:
     with _bytes_lock:
         _bytes_cache.pop(org_dir(org_id), None)
+
+
+def clear_org_upload_bytes_cache() -> None:
+    """Drop every cached upload sum (housekeeping deleted files we no longer know about)."""
+    with _bytes_lock:
+        _bytes_cache.clear()
 
 
 BOOTSTRAP_KEYS = (

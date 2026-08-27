@@ -516,6 +516,58 @@ def test_install_appends_missing_backup_pass(tmp_path):
     assert "nachgetragen: AISTUDIO_METRICS_TOKEN" in (r.stdout + r.stderr)
 
 
+def test_install_replaces_empty_metrics_token(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_SECRET=keep-this-secret-value-xx\n"
+        "AISTUDIO_METRICS_TOKEN=\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    text = envf.read_text(encoding="utf-8")
+    metrics = [ln for ln in text.splitlines() if ln.startswith("AISTUDIO_METRICS_TOKEN=")]
+    assert len(metrics) == 1
+    assert len(metrics[0].split("=", 1)[1].strip()) >= 16
+    assert "war leer oder zu kurz" in (r.stdout + r.stderr)
+
+
+def test_install_keeps_existing_metrics_token(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_SECRET=keep-this-secret-value-xx\n"
+        "AISTUDIO_METRICS_TOKEN=keep-this-metrics-token-xx\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    text = envf.read_text(encoding="utf-8")
+    assert "AISTUDIO_METRICS_TOKEN=keep-this-metrics-token-xx" in text
+    assert text.count("AISTUDIO_METRICS_TOKEN=") == 1
+
+
 def test_install_moves_backup_pass_out_of_dotenv(tmp_path):
     scripts = tmp_path / "scripts"
     scripts.mkdir()

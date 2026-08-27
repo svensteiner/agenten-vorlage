@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.50 — 2026-08-27 — Leeres Metrik-Token nachtragen
+
+Nach 1.4.49 startet Produktion nicht mit `AISTUDIO_METRICS_TOKEN=`.
+`install.sh` hat nur fehlende Keys ergänzt, nicht leere. Jetzt wird ein zu
+kurzer Wert ersetzt, ein gesetzter bleibt. Logout 20/Minute.
+Housekeeping leert den Upload-Cache nach gelöschten Waisen.
+
 ## Produktlaufzeit 1.4.49 — 2026-08-27 — Metrik-Token beim Start, Schreib-APIs kappen
 
 Produktion startete ohne `AISTUDIO_METRICS_TOKEN` — `/api/metrics` war 401,

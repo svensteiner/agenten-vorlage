@@ -422,6 +422,8 @@ def login(body: LoginBody, request: Request) -> dict[str, Any]:
 
 @router.post("/auth/logout")
 def logout(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("sessionw:" + user["id"], 20):
+        raise rate_limit_error()
     conn = _conn()
     try:
         tenancy.revoke_session(conn, user.get("_jti") or "")

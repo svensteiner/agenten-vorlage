@@ -965,6 +965,8 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert docdel.status_code == 429
     revoke = client.post("/api/sessions/revoke-others", headers=headers)
     assert revoke.status_code == 429
+    logout = client.post("/api/auth/logout", headers=headers)
+    assert logout.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -1162,11 +1164,14 @@ def test_orphan_upload_pruned(client, tmp_path):
     orphan = tmp_path / "uploads" / "orgx" / "upload-gone.txt"
     orphan.parent.mkdir(parents=True)
     orphan.write_text("rest", encoding="utf-8")
+    used = config.org_upload_bytes("orgx", fresh=True)
+    assert used > 0
     conn = db.connect()
     try:
         removed = housekeeping.prune_orphan_uploads(conn)
         assert removed >= 1
         assert not orphan.exists()
+        assert config.org_upload_bytes("orgx") == 0
     finally:
         conn.close()
 

@@ -150,6 +150,7 @@ def prune_orphan_uploads(conn=None) -> int:
             continue
     if removed:
         log.info("housekeeping orphan_uploads=%s", removed)
+        config.clear_org_upload_bytes_cache()
     return removed
 
 

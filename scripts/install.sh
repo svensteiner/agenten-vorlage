@@ -175,6 +175,69 @@ env_has_key() {
   grep -qE "^[[:space:]]*${key}=" "$envf" 2>/dev/null
 }
 
+env_value_too_short() {
+  # Exit 0 (true) when missing, empty, or shorter than $3 characters.
+  local envf="$1" key="$2" min="$3"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+try:
+    min_n = int(sys.argv[3])
+except ValueError:
+    min_n = 16
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(0)
+val = ""
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == key:
+        val = v.strip()
+        break
+raise SystemExit(0 if len(val) < min_n else 1)
+' "$envf" "$key" "$min"
+}
+
+replace_env_value() {
+  local envf="$1" key="$2" val="$3" mode
+  mode="$(stat -c '%a' "$envf" 2>/dev/null || echo 600)"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+val = sys.argv[3]
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(0)
+out = []
+found = False
+for ln in text.splitlines(keepends=True):
+    s = ln.lstrip()
+    if s.startswith("#") or "=" not in ln:
+        out.append(ln)
+        continue
+    k, _, _rest = ln.partition("=")
+    if k.strip() == key:
+        if not found:
+            out.append("%s=%s\n" % (key, val))
+            found = True
+        continue
+    out.append(ln)
+if not found:
+    if out and not out[-1].endswith("\n"):
+        out.append("\n")
+    out.append("%s=%s\n" % (key, val))
+p.write_text("".join(out), encoding="utf-8")
+' "$envf" "$key" "$val"
+  chmod "$mode" "$envf" 2>/dev/null || true
+}
+
 append_env_line() {
   local envf="$1" line="$2" mode
   mode="$(stat -c '%a' "$envf" 2>/dev/null || echo 600)"
@@ -183,7 +246,8 @@ append_env_line() {
 }
 
 backfill_runtime_env() {
-  # Existing .env from older installs: append missing keys, never overwrite.
+  # Existing .env from older installs: append missing keys, never overwrite
+  # a non-empty value. Empty/short AISTUDIO_METRICS_TOKEN is replaced (1.4.49 boot).
   local envf="$1"
   [[ -f "$envf" ]] || return 0
   if ! env_has_key "$envf" AISTUDIO_HOST; then
@@ -194,11 +258,16 @@ backfill_runtime_env() {
     append_env_line "$envf" "AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost"
     echo "nachgetragen: AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost (Produktion prüft den Host; hinter nginx den öffentlichen Namen ergänzen)."
   fi
-  if ! env_has_key "$envf" AISTUDIO_METRICS_TOKEN; then
+  if ! env_has_key "$envf" AISTUDIO_METRICS_TOKEN || env_value_too_short "$envf" AISTUDIO_METRICS_TOKEN 16; then
     local tok
     tok="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
-    append_env_line "$envf" "AISTUDIO_METRICS_TOKEN=$tok"
-    echo "nachgetragen: AISTUDIO_METRICS_TOKEN (Header X-Metrics-Token)."
+    if env_has_key "$envf" AISTUDIO_METRICS_TOKEN; then
+      replace_env_value "$envf" AISTUDIO_METRICS_TOKEN "$tok"
+      echo "nachgetragen: AISTUDIO_METRICS_TOKEN (war leer oder zu kurz; Header X-Metrics-Token)."
+    else
+      append_env_line "$envf" "AISTUDIO_METRICS_TOKEN=$tok"
+      echo "nachgetragen: AISTUDIO_METRICS_TOKEN (Header X-Metrics-Token)."
+    fi
   fi
   if ! env_has_key "$envf" AISTUDIO_PROXY_IPS; then
     append_env_line "$envf" "AISTUDIO_PROXY_IPS=127.0.0.1,::1"
