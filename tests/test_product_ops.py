@@ -723,6 +723,10 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert search.status_code == 429
     docs = client.get("/api/docs", headers=headers)
     assert docs.status_code == 429
+    jobs = client.get("/api/jobs", headers=headers)
+    assert jobs.status_code == 429
+    audit = client.get("/api/audit", headers=headers)
+    assert audit.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -851,6 +855,9 @@ def test_systemd_unit_rewrites_install_root():
     assert "limit_req" in nginx
     assert "/api/auth/(login|register)" in nginx
     assert "zone=aistudio_api" in nginx
+    assert "zone=aistudio_conn" in nginx
+    assert "limit_conn aistudio_conn 32" in nginx
+    assert "limit_conn_status 429" in nginx
     assert "location /api/" in nginx
     assert "rate=20r/s" in nginx
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
@@ -859,12 +866,16 @@ def test_systemd_unit_rewrites_install_root():
     assert "ssl_protocols TLSv1.2 TLSv1.3" in tls
     assert "ssl_session_tickets off" in tls
     assert "zone=aistudio_api" in tls
+    assert "zone=aistudio_conn" in tls
+    assert "limit_conn aistudio_conn 32" in tls
+    assert "limit_conn_status 429" in tls
     assert "location /api/" in tls
     assert "rate=20r/s" in tls
     main = (root / "product" / "main.py").read_text(encoding="utf-8")
     assert "server_header=False" in main
     assert "listen_host()" in main
     assert "listen_port()" in main
+    assert "proxy_xff_unreachable()" in main
 
 
 def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):
@@ -1082,6 +1093,33 @@ def test_proxy_hosts_need_public_name(monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "development")
     monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
     assert config.proxy_hosts_need_public_name() is False
+
+
+def test_proxy_xff_unreachable(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    monkeypatch.setenv("AISTUDIO_HOST", "0.0.0.0")
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,::1")
+    assert config.proxy_xff_unreachable() is True
+    monkeypatch.setenv("AISTUDIO_HOST", "127.0.0.1")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_HOST", "0.0.0.0")
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "172.17.0.1")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,172.17.0.1")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "*")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,::1")
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "false")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    assert config.proxy_xff_unreachable() is False
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_HOST", "::")
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "::1")
+    assert config.proxy_xff_unreachable() is True
 
 
 def test_production_metrics_require_token(client, monkeypatch):

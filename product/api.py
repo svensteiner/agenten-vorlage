@@ -819,6 +819,8 @@ def jobs(
     user: dict = Depends(current_user),
     limit: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
+    if rate_limited("jobs:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         rows = conn.execute(
@@ -865,6 +867,8 @@ def audit(
     limit: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     _require(tenancy.can_see_audit(user["role"]), "Kein Zugriff auf das Audit-Log.")
+    if rate_limited("audit:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         rows = conn.execute(

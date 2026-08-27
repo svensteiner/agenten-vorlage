@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.43 — 2026-08-27 — Docker-XFF, nginx-Verbindungen, Jobs/Audit
+
+Docker-Produktion bindet `0.0.0.0`, der TCP-Peer ist die Bridge — nicht
+`127.0.0.1`. `AISTUDIO_PROXY_IPS=127.0.0.1,::1` ließ X-Forwarded-For
+ins Leere laufen, alle Nutzer teilten ein Rate-Limit. Start warnt; die
+Gateway-IP setzen, nicht `172.16.0.0/12`. nginx begrenzt 32 parallele
+Verbindungen pro IP (`limit_conn`). `GET /api/jobs` und `GET /api/audit`
+60/Minute je Nutzer (SQLite mit Auftragstext).
+
 ## Produktlaufzeit 1.4.42 — 2026-08-27 — Export kappen, Docker-init
 
 DSGVO-Export lud alle Aufträge und das ganze Audit — bei 20 Aufträgen/Minute

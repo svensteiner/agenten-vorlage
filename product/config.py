@@ -22,7 +22,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.42"
+VERSION = "1.4.43"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -268,6 +268,33 @@ def proxy_hosts_need_public_name() -> bool:
         return False
     extra = set(allowed_hosts() or []) - {"127.0.0.1", "localhost", "::1"}
     return not extra
+
+
+def _binds_all_interfaces(host: str) -> bool:
+    text = (host or "").strip().lower().strip("[]")
+    return text in {"0.0.0.0", "::", "*"}
+
+
+def _net_is_loopback_only(net: ipaddress.IPv4Network | ipaddress.IPv6Network) -> bool:
+    loop = ipaddress.ip_network("127.0.0.0/8") if net.version == 4 else ipaddress.ip_network("::1/128")
+    return bool(net.subnet_of(loop))
+
+
+def proxy_xff_unreachable() -> bool:
+    """True when production trusts XFF but the TCP peer cannot match PROXY_IPS.
+
+    Host nginx to 127.0.0.1:8123 is fine (listen_host is loopback). Docker binds
+    0.0.0.0 inside the container; the peer is the bridge gateway, not 127.0.0.1.
+    Do not auto-trust 172.16.0.0/12 — any container could spoof X-Forwarded-For.
+    """
+    if not is_production() or not trust_proxy():
+        return False
+    if not _binds_all_interfaces(listen_host()):
+        return False
+    nets = proxy_ip_networks()
+    if nets is None:
+        return False
+    return all(_net_is_loopback_only(n) for n in nets)
 
 
 def docs_kwargs() -> dict:

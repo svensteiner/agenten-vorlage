@@ -1,6 +1,12 @@
 # Production overlay. Secret is required:
 #   AISTUDIO_SECRET='…' docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 # Port bleibt 127.0.0.1:8123 (Basis-Compose) — nginx auf dem Host verbindet lokal.
+# X-Forwarded-For: Standard PROXY_IPS=127.0.0.1,::1 gilt nur, wenn nginx
+# denselben Loopback wie der Prozess sieht. Im Container ist der TCP-Peer die
+# Docker-Bridge (oft 172.17.0.1), nicht 127.0.0.1 — Limits fallen sonst auf
+# eine Gateway-IP. AISTUDIO_PROXY_IPS auf diese Gateway-Adresse setzen
+# (docker network inspect … Gateway). Nicht 172.16.0.0/12: jeder Container
+# könnte X-Forwarded-For setzen. Der Prozess warnt beim Start.
 # Sicherung (openssl im Image; Passwort auf Volume aistudio-backup-secret, nicht im Produkt-Container):
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile backup run --rm backup
 services:

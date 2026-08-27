@@ -41,6 +41,12 @@ async def lifespan(_app: FastAPI):
             "Produktion hinter Proxy: AISTUDIO_ALLOWED_HOSTS um den öffentlichen "
             "Hostnamen ergänzen, sonst 400."
         )
+    if config.proxy_xff_unreachable():
+        logging.getLogger("product").warning(
+            "Produktion an 0.0.0.0 mit AISTUDIO_PROXY_IPS nur Loopback: "
+            "X-Forwarded-For greift nicht (Peer ist die Docker-Bridge). "
+            "Gateway-IP setzen, nicht 172.16.0.0/12."
+        )
     conn = connect()
     try:
         ensure_seeded(conn)
