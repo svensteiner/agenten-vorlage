@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.30 — 2026-08-27 — systemd nicht als root
+
+Docker läuft schon als `aistudio` (uid 10001). Die systemd-Einheiten
+waren ohne `User=` — `install.sh --systemd` als root startete den
+Produktprozess und die Sicherung mit uid 0. Jetzt `User=aistudio` /
+`Group=aistudio`; `install.sh --systemd` legt den Systembenutzer an,
+`data/` gehört ihm, `.env` ist `640 root:aistudio` (lesen, nicht
+überschreiben). Ohne root schreibt die Einheit den aktuellen Nutzer.
+
 ## Produktlaufzeit 1.4.29 — 2026-08-27 — Mandant/Flotte kappen, Passwortwechsel begrenzen
 
 Name, Slogan, Agent-ID und Aktionen waren unbegrenzt und landeten in SQLite

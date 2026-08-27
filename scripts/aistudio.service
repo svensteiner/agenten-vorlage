@@ -6,6 +6,8 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
+User=aistudio
+Group=aistudio
 WorkingDirectory=/opt/aistudio
 Environment=PYTHONPATH=/opt/aistudio
 Environment=AISTUDIO_ENV=production

@@ -58,12 +58,83 @@ fi
 mkdir -p "$ROOT/data/backups"
 chmod 700 "$ROOT/data"
 
+nologin_shell() {
+  local s
+  for s in /usr/sbin/nologin /sbin/nologin /bin/false; do
+    if [[ -x "$s" ]]; then
+      printf '%s\n' "$s"
+      return 0
+    fi
+  done
+  printf '%s\n' /bin/false
+}
+
+ensure_aistudio_user() {
+  # Product and backup units use User=aistudio — never uid 0.
+  if ! getent group aistudio >/dev/null 2>&1; then
+    if command -v groupadd >/dev/null 2>&1; then
+      groupadd --system aistudio
+    else
+      echo "Kein groupadd — Gruppe aistudio fehlt." >&2
+      return 1
+    fi
+  fi
+  if ! getent passwd aistudio >/dev/null 2>&1; then
+    local shell
+    shell="$(nologin_shell)"
+    if command -v useradd >/dev/null 2>&1; then
+      useradd --system --gid aistudio --home-dir "$ROOT" --no-create-home --shell "$shell" --comment "AI Studio" aistudio
+    elif command -v adduser >/dev/null 2>&1; then
+      adduser --system --ingroup aistudio --home "$ROOT" --no-create-home --shell "$shell" aistudio
+    else
+      echo "Kein useradd — Dienstbenutzer aistudio fehlt." >&2
+      return 1
+    fi
+  fi
+}
+
+fix_runtime_ownership() {
+  chown -R aistudio:aistudio "$ROOT/data" 2>/dev/null || true
+  chmod 700 "$ROOT/data" 2>/dev/null || true
+  if [[ -f "$ENV_FILE" ]]; then
+    chown root:aistudio "$ENV_FILE"
+    chmod 640 "$ENV_FILE"
+  fi
+  if [[ -f "$ROOT/data/backup.env" ]]; then
+    chown aistudio:aistudio "$ROOT/data/backup.env"
+    chmod 600 "$ROOT/data/backup.env"
+  fi
+  if [[ -f "$ROOT/data/bootstrap.env" ]]; then
+    chown aistudio:aistudio "$ROOT/data/bootstrap.env"
+    chmod 600 "$ROOT/data/bootstrap.env"
+  fi
+}
+
 render_systemd() {
   local dest="$ROOT/data/systemd"
+  local unit_user="aistudio"
+  local unit_group="aistudio"
   mkdir -p "$dest"
   chmod 700 "$ROOT/data"
+  if [[ "$(id -u)" -eq 0 ]]; then
+    if ensure_aistudio_user; then
+      fix_runtime_ownership
+      echo "Dienstbenutzer: aistudio (nicht root)"
+    else
+      echo "Hinweis: Benutzer aistudio anlegen, sonst startet die Einheit nicht." >&2
+    fi
+  else
+    unit_user="$(id -un)"
+    unit_group="$(id -gn)"
+    echo "Kein root — Einheiten mit User=$unit_user (nicht aistudio)."
+  fi
+  local unit
   for unit in aistudio.service aistudio-backup.service aistudio-backup.timer; do
-    sed "s|/opt/aistudio|$ROOT|g" "$ROOT/scripts/$unit" > "$dest/$unit"
+    sed \
+      -e "s|/opt/aistudio|$ROOT|g" \
+      -e "s|^User=aistudio\$|User=$unit_user|" \
+      -e "s|^Group=aistudio\$|Group=$unit_group|" \
+      "$ROOT/scripts/$unit" > "$dest/$unit"
   done
   echo "systemd-Einheiten: $dest"
   if [[ -w /etc/systemd/system ]]; then
@@ -201,6 +272,7 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
 fi
 
 echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
+echo "systemd (--systemd): User=aistudio, nicht root. data/ gehört aistudio, .env ist 640 root:aistudio."
 echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann data/ schreiben)."
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."

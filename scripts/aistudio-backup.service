@@ -4,6 +4,8 @@ Description=AI Studio SQLite backup
 
 [Service]
 Type=oneshot
+User=aistudio
+Group=aistudio
 WorkingDirectory=/opt/aistudio
 EnvironmentFile=-/opt/aistudio/.env
 EnvironmentFile=-/opt/aistudio/data/backup.env

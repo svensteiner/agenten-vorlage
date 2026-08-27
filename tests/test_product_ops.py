@@ -676,17 +676,32 @@ def test_systemd_unit_rewrites_install_root():
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
     assert "/opt/aistudio" not in rendered
     assert "MemoryMax=512M" in src
+    assert "User=aistudio" in src.splitlines()
+    assert "Group=aistudio" in src.splitlines()
+    rewritten = src
+    rewritten = "\n".join(
+        "User=deploy" if line == "User=aistudio" else
+        "Group=deploy" if line == "Group=aistudio" else line
+        for line in rewritten.splitlines()
+    )
+    assert "User=deploy" in rewritten.splitlines()
+    assert "User=aistudio" not in rewritten.splitlines()
     assert "ReadWritePaths=/opt/aistudio/data" in src
     assert "ReadWritePaths=/opt/aistudio\n" not in src
     assert "CapabilityBoundingSet=" in src
     assert "StartLimitBurst=5" in src
     backup = (root / "scripts" / "aistudio-backup.service").read_text(encoding="utf-8")
+    assert "User=aistudio" in backup
+    assert "Group=aistudio" in backup
     assert "ReadWritePaths=/opt/aistudio/data" in backup
     assert "PrivateNetwork=true" in backup
     assert "RestrictAddressFamilies=none" in backup
     assert "MemoryMax=256M" in backup
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
+    assert "Dienstbenutzer: aistudio" in install
+    assert "useradd --system" in install
+    assert "640" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "AISTUDIO_BACKUP_PASS" in install
