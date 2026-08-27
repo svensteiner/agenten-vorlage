@@ -413,6 +413,11 @@ def test_production_requires_metrics_token(monkeypatch):
         config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "metrics-token-16ch")
     config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "true")
+    with pytest.raises(RuntimeError, match="DEMO_SEED"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    config.validate_runtime()
 
 
 def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):
@@ -1187,6 +1192,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "flock fehlt" in install
     assert "env_secret_unusable" in install
     assert "Crash-Loop" in install
+    assert "env_flag_on" in install
+    assert "ALLOW_DEMO_SEED" in install
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     restore = (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert ".backup.lock" in restore

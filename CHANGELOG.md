@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.61 — 2026-08-27 — Produktion ohne Demo-Mandant
+
+`AISTUDIO_ALLOW_DEMO_SEED=true` in Produktion hat den Meridian-Mandanten
+mit bekanntem Passwort angelegt — bisher nur eine Log-Warnung. Start
+bricht jetzt ab. `install.sh --systemd` ebenso, bevor Einheiten
+geschrieben werden. Neuinstallation setzt weiter `false`.
+
 ## Produktlaufzeit 1.4.60 — 2026-08-27 — Restore nimmt die Prozess-Sperre
 
 Restore prüfte nur `data/aistudio.pid`. Die Datei kann fehlen (Schreibfehler,

@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.60"
+VERSION = "1.4.61"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -550,7 +550,11 @@ def require_backup_for_ready() -> bool:
 
 
 def validate_runtime() -> None:
-    """Refuse a weak HMAC secret in production, or on all interfaces anywhere."""
+    """Refuse a weak HMAC secret in production, or on all interfaces anywhere.
+
+    Production also refuses a missing metrics token and an explicit demo seed
+    (published Meridian password).
+    """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
     if is_production() and weak:
@@ -572,6 +576,11 @@ def validate_runtime() -> None:
             "Produktion verweigert den Start: AISTUDIO_METRICS_TOKEN muss gesetzt sein "
             "(mindestens 16 Zeichen). install.sh trägt einen Wert nach; "
             "Header X-Metrics-Token für /api/metrics."
+        )
+    if allow_demo_seed():
+        raise RuntimeError(
+            "Produktion verweigert den Start: AISTUDIO_ALLOW_DEMO_SEED ist an "
+            "(bekanntes Demo-Passwort). AISTUDIO_ALLOW_DEMO_SEED=false setzen."
         )
 
 

@@ -754,6 +754,34 @@ def test_install_systemd_refuses_demo_secret(tmp_path):
     assert not (tmp_path / "data" / "systemd").exists()
 
 
+def test_install_systemd_refuses_demo_seed(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_ENV=production\n"
+        "AISTUDIO_SECRET=keep-this-secret-value-xx\n"
+        "AISTUDIO_ALLOW_DEMO_SEED=true\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh"), "--systemd"],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    err = (r.stderr or "") + (r.stdout or "")
+    assert "ALLOW_DEMO_SEED" in err
+    assert "Meridian2026" not in err
+    assert "AISTUDIO_ALLOW_DEMO_SEED=true" in envf.read_text(encoding="utf-8")
+    assert not (tmp_path / "data" / "systemd").exists()
+
+
 def test_install_systemd_refuses_short_secret(tmp_path):
     scripts = tmp_path / "scripts"
     scripts.mkdir()

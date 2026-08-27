@@ -23,7 +23,7 @@ def load_seed() -> dict:
 def ensure_seeded(conn=None) -> dict:
     """Idempotent: creates the demo org once, then no-ops.
 
-    In Produktion (AISTUDIO_ALLOW_DEMO_SEED=false) nur Schema, kein Meridian.
+    In Produktion (AISTUDIO_ALLOW_DEMO_SEED=false, Pflicht) nur Schema, kein Meridian.
     """
     c = conn or db.get_conn()
     db.init_db(c)

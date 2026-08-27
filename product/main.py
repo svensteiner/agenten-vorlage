@@ -70,10 +70,6 @@ async def lifespan(_app: FastAPI):
             except ValueError as exc:
                 raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
             conn.commit()
-            if config.is_production() and config.allow_demo_seed():
-                logging.getLogger("product").warning(
-                    "Produktion läuft mit Demo-Seed. AISTUDIO_ALLOW_DEMO_SEED=false setzen."
-                )
         finally:
             conn.close()
         from product import housekeeping

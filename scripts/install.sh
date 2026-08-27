@@ -227,6 +227,54 @@ raise SystemExit(0 if (not val or val == demo or len(val) < 24) else 1)
 ' "$envf"
 }
 
+env_flag_on() {
+  # Exit 0 when the key is 1/true/yes/on. Missing or other values → 1 (off).
+  local envf="$1" key="$2"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(1)
+val = ""
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == key:
+        val = v.strip()
+raise SystemExit(0 if val.lower() in {"1", "true", "yes", "on"} else 1)
+' "$envf" "$key"
+}
+
+env_runs_as_production() {
+  # systemd unit sets AISTUDIO_ENV=production; EnvironmentFile overrides.
+  # Missing key → production. Last assignment wins.
+  local envf="$1"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(0)
+val = None
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == "AISTUDIO_ENV":
+        val = v.strip().lower()
+if val is None:
+    raise SystemExit(0)
+raise SystemExit(0 if val in {"production", "prod"} else 1)
+' "$envf"
+}
+
 replace_env_value() {
   local envf="$1" key="$2" val="$3" mode
   mode="$(stat -c '%a' "$envf" 2>/dev/null || echo 600)"
@@ -443,6 +491,10 @@ fi
 if [[ "$SYSTEMD" -eq 1 ]]; then
   if env_secret_unusable "$ENV_FILE"; then
     echo "AISTUDIO_SECRET ist der Demo-Wert, fehlt oder kürzer als 24 Zeichen — systemd nicht installiert (sonst Crash-Loop). Eigenes Secret in $ENV_FILE setzen (mindestens 24 Zeichen) oder .env entfernen und install.sh erneut ausführen." >&2
+    exit 1
+  fi
+  if env_runs_as_production "$ENV_FILE" && env_flag_on "$ENV_FILE" AISTUDIO_ALLOW_DEMO_SEED; then
+    echo "AISTUDIO_ALLOW_DEMO_SEED ist an — systemd nicht installiert (Produktion würde mit bekanntem Demo-Passwort starten). In $ENV_FILE auf false setzen." >&2
     exit 1
   fi
   render_systemd
