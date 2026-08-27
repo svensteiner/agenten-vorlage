@@ -601,3 +601,7 @@ def test_compose_publishes_localhost_only():
     assert "target: /app/data/backup.env" in before
     assert "backup.env" in prod
     assert "8123" not in after
+    ignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
+    assert "backup.env" in ignore
+    assert ".env" in ignore
+    assert "bootstrap.env" in ignore

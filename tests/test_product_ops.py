@@ -683,6 +683,8 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert job.headers.get("retry-after") == "60"
     exp = client.get("/api/export", headers=headers)
     assert exp.status_code == 429
+    search = client.get("/api/search", headers=headers, params={"q": "Reise"})
+    assert search.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):

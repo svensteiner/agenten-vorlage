@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.36 — 2026-08-27 — backup.env nicht ins Image, Suche begrenzen
+
+`backup.env` liegt seit 1.4.31 neben `.env`. `.dockerignore` ließ die Datei
+durch — `COPY . .` hätte `AISTUDIO_BACKUP_PASS` ins Image gebacken. Jetzt
+ausgeschlossen, ebenso `bootstrap.env`. `GET /api/search` wie Ask
+120/Minute je Nutzer (FTS auf SQLite), sonst 429.
+
 ## Produktlaufzeit 1.4.35 — 2026-08-27 — Health/Ready begrenzen, Server-Header aus
 
 `/api/health` und `/api/ready` trafen SQLite ohne Limit. Jetzt 180/Minute

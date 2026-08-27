@@ -632,6 +632,8 @@ def search(
     user: dict = Depends(current_user),
     q: str = Query(..., min_length=1, max_length=4000),
 ) -> dict[str, Any]:
+    if rate_limited("search:" + user["id"], 120):
+        raise rate_limit_error()
     conn = _conn()
     try:
         hits, withheld = retrieval.retrieve(
