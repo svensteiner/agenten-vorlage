@@ -27,7 +27,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.37"
+VERSION = "1.4.38"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -183,11 +183,19 @@ def cors_origins() -> list[str]:
 
 
 def allowed_hosts() -> list[str] | None:
-    """Host-Header allowlist. None = do not enforce (development / unset)."""
+    """Host-Header allowlist. None = do not enforce (development / unset).
+
+    Production always enforces: ``*`` or empty is loopback only, never allow-all.
+    """
     raw = os.environ.get("AISTUDIO_ALLOWED_HOSTS")
+    text = (raw or "").strip()
+    if is_production():
+        if not text or text == "*":
+            return ["127.0.0.1", "localhost"]
+        hosts = [p.strip() for p in text.split(",") if p.strip() and p.strip() != "*"]
+        return hosts or ["127.0.0.1", "localhost"]
     if raw is None:
         return None
-    text = raw.strip()
     if not text or text == "*":
         return None
     hosts = [p.strip() for p in text.split(",") if p.strip()]

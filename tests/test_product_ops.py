@@ -934,6 +934,23 @@ def test_production_hides_openapi_and_checks_hosts(monkeypatch):
         assert c.get("/ping").status_code == 400
 
 
+def test_production_allowed_hosts_never_wildcard(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.delenv("AISTUDIO_ALLOWED_HOSTS", raising=False)
+    assert config.allowed_hosts() == ["127.0.0.1", "localhost"]
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "*")
+    assert config.allowed_hosts() == ["127.0.0.1", "localhost"]
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "")
+    assert config.allowed_hosts() == ["127.0.0.1", "localhost"]
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "studio.example.com")
+    assert config.allowed_hosts() == ["studio.example.com"]
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    monkeypatch.delenv("AISTUDIO_ALLOWED_HOSTS", raising=False)
+    assert config.allowed_hosts() is None
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "*")
+    assert config.allowed_hosts() is None
+
+
 def test_production_metrics_require_token(client, monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     monkeypatch.delenv("AISTUDIO_METRICS_TOKEN", raising=False)

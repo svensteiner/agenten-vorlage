@@ -45,7 +45,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - Audit-Log (ohne Fragen/Auftragstexte, nur Länge), Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis; Sicherungslage in Produktion nicht öffentlich), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
 - Housekeeping beim Start und alle `AISTUDIO_HOUSEKEEPING_HOURS` Stunden (Standard 24): abgelaufene Sitzungen, Audit, Aufträge, WAL-Checkpoint, verwaiste Uploads, Vor-Restore-Kopien (letzte 3). Cron: `./scripts/housekeeping.sh`. Restore bricht ab, solange der Produktprozess läuft (`data/aistudio.pid`; `AISTUDIO_RESTORE_FORCE=1` überschreibt bewusst).
 - Erstmandant per `data/bootstrap.env` bzw. `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist. Nach Erfolg löscht der Prozess die Datei und entfernt die Variablen aus der Umgebung (und aus `.env`, falls sie dort noch stehen). systemd schreibt nur `data/` — deshalb liegt das Bootstrap-Passwort nicht mehr in `.env`.
-- Sitzungsruhe (`AISTUDIO_SESSION_IDLE`), optional Host-Allowlist (`AISTUDIO_ALLOWED_HOSTS`)
+- Sitzungsruhe (`AISTUDIO_SESSION_IDLE`), Host-Allowlist (`AISTUDIO_ALLOWED_HOSTS`; in Produktion immer an, `*` ist Loopback statt alles)
 
 ### Sprachmodell
 

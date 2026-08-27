@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.38 — 2026-08-27 — Host-Allowlist in Produktion immer an
+
+`AISTUDIO_ALLOWED_HOSTS=*` oder leer hat TrustedHost ausgeschaltet. In
+Produktion gilt immer eine Liste: ohne Angabe oder mit `*` nur
+`127.0.0.1` und `localhost`. Hinter nginx den öffentlichen Namen setzen.
+
 ## Produktlaufzeit 1.4.37 — 2026-08-27 — Modell ohne Proxy-Leck, Timeout kappen
 
 httpx folgt sonst `HTTP_PROXY`. Bei `in_boundary` würden Kurzauszüge über
