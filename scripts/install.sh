@@ -430,7 +430,7 @@ echo "Restore: Produkt zuerst stoppen — restore.sh bricht ab, solange data/ais
 echo "Ältere Installs: Passwort wird aus .env oder data/backup.env nach backup.env verschoben — der Produktprozess sieht die Datei nicht (InaccessiblePaths)."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
-echo "Produktion ohne AISTUDIO_HOST bindet 127.0.0.1 (nginx lokal). Docker setzt 0.0.0.0 im Container."
+echo "Ohne AISTUDIO_HOST bindet die Instanz 127.0.0.1. Docker setzt 0.0.0.0 im Container und braucht dann ein eigenes Secret."
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."
 echo "X-Forwarded-For nur von AISTUDIO_PROXY_IPS (Standard 127.0.0.1,::1), nicht von jedem Client."
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"

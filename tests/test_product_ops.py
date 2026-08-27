@@ -415,6 +415,21 @@ def test_production_requires_metrics_token(monkeypatch):
     config.validate_runtime()
 
 
+def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    monkeypatch.setenv("AISTUDIO_HOST", "0.0.0.0")
+    monkeypatch.delenv("AISTUDIO_SECRET", raising=False)
+    monkeypatch.setattr(config, "SECRET", "dev-secret-change-me")
+    with pytest.raises(RuntimeError, match="alle Interfaces"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_HOST", "127.0.0.1")
+    config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_HOST", "0.0.0.0")
+    monkeypatch.setenv("AISTUDIO_SECRET", "docker-secret-not-the-demo-xx")
+    monkeypatch.setattr(config, "SECRET", "docker-secret-not-the-demo-xx")
+    config.validate_runtime()
+
+
 def test_secret_prev_accepts_old_tokens(monkeypatch):
     from product import auth
 
@@ -1355,7 +1370,7 @@ def test_production_listen_host_loopback_and_clamped_ints(monkeypatch):
     assert config.listen_host() == "0.0.0.0"
     monkeypatch.setenv("AISTUDIO_ENV", "development")
     monkeypatch.delenv("AISTUDIO_HOST", raising=False)
-    assert config.listen_host() == "0.0.0.0"
+    assert config.listen_host() == "127.0.0.1"
 
     monkeypatch.setenv("AISTUDIO_PORT", "not-a-port")
     assert config.listen_port() == 8123

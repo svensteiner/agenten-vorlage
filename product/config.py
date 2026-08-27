@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.53"
+VERSION = "1.4.54"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -55,15 +55,16 @@ def _int_env(name: str, default: int, *, lo: int, hi: int) -> int:
 
 
 def listen_host() -> str:
-    """Bind address. Production without AISTUDIO_HOST is loopback (nginx on the host).
+    """Bind address. Without AISTUDIO_HOST: loopback (local demo or host nginx).
 
-    Docker sets ``AISTUDIO_HOST=0.0.0.0`` inside the container; the published port
-    stays 127.0.0.1 on the host.
+    Docker sets ``AISTUDIO_HOST=0.0.0.0`` inside the container; the published
+    port stays 127.0.0.1 on the host. Binding all interfaces with the demo
+    secret is refused in ``validate_runtime``.
     """
     raw = (os.environ.get("AISTUDIO_HOST") or "").strip()
     if raw:
         return raw[:253]
-    return "127.0.0.1" if is_production() else "0.0.0.0"
+    return "127.0.0.1"
 
 
 def listen_port() -> int:
@@ -549,15 +550,22 @@ def require_backup_for_ready() -> bool:
 
 
 def validate_runtime() -> None:
-    """Refuse to boot a production process with the bundled demo secret."""
-    if not is_production():
-        return
-    secret = os.environ.get("AISTUDIO_SECRET") or SECRET
-    if not secret or secret == DEFAULT_SECRET or len(secret) < 24:
+    """Refuse a weak HMAC secret in production, or on all interfaces anywhere."""
+    secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
+    weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
+    if is_production() and weak:
         raise RuntimeError(
             "Produktion verweigert den Start: AISTUDIO_SECRET muss gesetzt sein "
             "(mindestens 24 Zeichen, nicht der Demo-Wert)."
         )
+    if weak and _binds_all_interfaces(listen_host()):
+        raise RuntimeError(
+            "Start verweigert: Bind an alle Interfaces mit dem Demo-Secret. "
+            "AISTUDIO_HOST=127.0.0.1 oder ein eigenes AISTUDIO_SECRET "
+            "(mindestens 24 Zeichen, nicht der Demo-Wert)."
+        )
+    if not is_production():
+        return
     token = (os.environ.get("AISTUDIO_METRICS_TOKEN") or "").strip()
     if not token or len(token) < 16:
         raise RuntimeError(

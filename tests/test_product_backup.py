@@ -760,6 +760,8 @@ def test_compose_publishes_localhost_only():
     text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "127.0.0.1:8123:8123" in text
     assert '"8123:8123"' not in text
+    assert "${AISTUDIO_SECRET:?" in text
+    assert "dev-secret-change-me" not in text
     assert "init: true" in text
     assert "pids_limit: 128" in text
     assert "/tmp:size=64M" in text

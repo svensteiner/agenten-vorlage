@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.54 — 2026-08-27 — Demo-Secret nicht auf allen Interfaces
+
+Entwicklung band ohne `AISTUDIO_HOST` auf `0.0.0.0` mit dem bekannten
+Demo-HMAC. Im LAN und im Docker-Netz konnte jeder Tokens fälschen.
+Jetzt ist der Standard immer Loopback. Bind `0.0.0.0`/`::` mit dem
+Demo-Wert oder unter 24 Zeichen bricht den Start ab — lokal und in
+Docker. `docker compose up` verlangt `AISTUDIO_SECRET` wie die
+Produktions-Overlay.
+
 ## Produktlaufzeit 1.4.53 — 2026-08-27 — Sicherung mit Sperre, ohne Dateikopie
 
 Zwei parallele `backup.sh` (Timer plus Hand) konnten die Aufbewahrung
