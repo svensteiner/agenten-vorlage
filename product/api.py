@@ -847,7 +847,7 @@ async def upload_doc(
 ) -> dict[str, Any]:
     if rate_limited("up:" + user["id"], 40):
         raise rate_limit_error()
-    raw = await file.read()
+    raw = await file.read(config.MAX_UPLOAD_BYTES + 1)
     if len(raw) > config.MAX_UPLOAD_BYTES:
         raise HTTPException(400, "Datei zu groß (max. 2 MB in dieser Instanz).")
     if b"\x00" in raw:

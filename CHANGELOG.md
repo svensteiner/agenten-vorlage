@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.22 — 2026-08-27 — Anfragekörper begrenzen, nicht nur den Header
+
+`Content-Length` allein reicht nicht: ein chunked POST umgeht das Limit, und
+Access-Log (BaseHTTPMiddleware) puffert den Körper vorher. Das Limit sitzt
+jetzt außen und zählt die echten Bytes. Uploads lesen höchstens
+`AISTUDIO_MAX_UPLOAD_BYTES + 1`.
+
 ## Produktlaufzeit 1.4.21 — 2026-08-27 — Erste Produktionssicherung legt backup.env an
 
 Fehlt `AISTUDIO_BACKUP_PASS` in Produktion, schreibt `backup.sh` einmal

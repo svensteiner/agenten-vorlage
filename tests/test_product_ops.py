@@ -270,6 +270,71 @@ def test_oversize_request_rejected(client):
     assert r.status_code == 413
 
 
+def test_oversize_chunked_body_rejected(monkeypatch):
+    """Chunked POST has no Content-Length — the cap must still hold."""
+    monkeypatch.setattr(config, "MAX_REQUEST_BYTES", 32)
+    from product.security import LimitRequestMiddleware
+
+    captured = {}
+
+    async def inner(scope, receive, send):
+        msg = await receive()
+        captured["n"] = len(msg.get("body") or b"")
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [(b"content-type", b"text/plain")],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"ok"})
+
+    app = LimitRequestMiddleware(inner)
+
+    async def _call(chunks):
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/",
+            "raw_path": b"/",
+            "query_string": b"",
+            "headers": [(b"host", b"test")],
+            "client": ("127.0.0.1", 1),
+            "server": ("test", 80),
+        }
+        state = {"i": 0}
+        sent = []
+
+        async def receive():
+            i = state["i"]
+            if i >= len(chunks):
+                return {"type": "http.disconnect"}
+            body = chunks[i]
+            state["i"] += 1
+            return {
+                "type": "http.request",
+                "body": body,
+                "more_body": i + 1 < len(chunks),
+            }
+
+        async def send(message):
+            sent.append(message)
+
+        await app(scope, receive, send)
+        start = next(m for m in sent if m["type"] == "http.response.start")
+        return start["status"]
+
+    import asyncio
+
+    assert asyncio.run(_call([b"a" * 20, b"b" * 20])) == 413
+    assert "n" not in captured
+    assert asyncio.run(_call([b"ok"])) == 200
+    assert captured["n"] == 2
+
+
 def test_admin_sets_member_password(client):
     reg = client.post(
         "/api/auth/register",

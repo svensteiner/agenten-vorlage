@@ -102,52 +102,122 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class AccessLogMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+class AccessLogMiddleware:
+    """ASGI access log — does not buffer the body (BaseHTTPMiddleware would)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
         start = time.perf_counter()
-        response = await call_next(request)
-        if request.url.path.startswith("/api/"):
-            ms = int((time.perf_counter() - start) * 1000)
-            rid = getattr(request.state, "request_id", "-")
-            ip = client_ip(request)
-            if config.is_production():
-                log.info(
-                    json.dumps(
-                        {
-                            "method": request.method,
-                            "path": request.url.path,
-                            "status": response.status_code,
-                            "ms": ms,
-                            "rid": rid,
-                            "ip": ip,
-                        },
-                        ensure_ascii=False,
-                    )
+        request = Request(scope)
+        status_holder = {"code": 0}
+        rid = "-"
+
+        async def send_wrap(message):
+            nonlocal rid
+            if message["type"] == "http.response.start":
+                status_holder["code"] = int(message.get("status") or 0)
+                for key, value in message.get("headers") or ():
+                    if key.lower() == b"x-request-id":
+                        rid = value.decode("latin-1", errors="replace")
+            await send(message)
+
+        await self.app(scope, receive, send_wrap)
+        path = request.url.path
+        if not path.startswith("/api/"):
+            return
+        ms = int((time.perf_counter() - start) * 1000)
+        ip = client_ip(request)
+        if config.is_production():
+            log.info(
+                json.dumps(
+                    {
+                        "method": request.method,
+                        "path": path,
+                        "status": status_holder["code"],
+                        "ms": ms,
+                        "rid": rid,
+                        "ip": ip,
+                    },
+                    ensure_ascii=False,
                 )
-            else:
-                log.info(
-                    "method=%s path=%s status=%s ms=%s rid=%s ip=%s",
-                    request.method,
-                    request.url.path,
-                    response.status_code,
-                    ms,
-                    rid,
-                    ip,
-                )
-        return response
+            )
+            return
+        log.info(
+            "method=%s path=%s status=%s ms=%s rid=%s ip=%s",
+            request.method,
+            path,
+            status_holder["code"],
+            ms,
+            rid,
+            ip,
+        )
 
 
-class LimitRequestMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        raw = request.headers.get("content-length")
-        if raw:
-            try:
-                size = int(raw)
-            except ValueError:
-                size = 0
-            if size > config.MAX_REQUEST_BYTES:
-                return JSONResponse({"detail": "Anfrage zu groß."}, status_code=413)
-        return await call_next(request)
+def too_large() -> JSONResponse:
+    response = JSONResponse({"detail": "Anfrage zu groß."}, status_code=413)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+class LimitRequestMiddleware:
+    """Cap the real body, not only Content-Length (chunked POST would otherwise skip the limit).
+
+    Must sit outside SecurityHeadersMiddleware (BaseHTTPMiddleware buffers the body).
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        max_bytes = int(config.MAX_REQUEST_BYTES)
+        declared = None
+        for key, value in scope.get("headers") or ():
+            if key == b"content-length":
+                try:
+                    declared = int(value)
+                except (TypeError, ValueError):
+                    declared = None
+                break
+        if declared is not None and (declared < 0 or declared > max_bytes):
+            await too_large()(scope, receive, send)
+            return
+
+        body = bytearray()
+        while True:
+            message = await receive()
+            mtype = message.get("type")
+            if mtype == "http.disconnect":
+                return
+            if mtype != "http.request":
+                continue
+            chunk = message.get("body") or b""
+            if len(body) + len(chunk) > max_bytes:
+                await too_large()(scope, receive, send)
+                return
+            body.extend(chunk)
+            if not message.get("more_body"):
+                break
+
+        replayed = False
+
+        async def replay():
+            nonlocal replayed
+            if replayed:
+                return {"type": "http.disconnect"}
+            replayed = True
+            return {"type": "http.request", "body": bytes(body), "more_body": False}
+
+        await self.app(scope, replay, send)
 
 
 def key_count() -> int:
