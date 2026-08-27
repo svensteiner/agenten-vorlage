@@ -683,6 +683,73 @@ def test_install_keeps_existing_metrics_token(tmp_path):
     assert text.count("AISTUDIO_METRICS_TOKEN=") == 1
 
 
+def test_install_systemd_refuses_demo_secret(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_ENV=production\nAISTUDIO_SECRET=dev-secret-change-me\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh"), "--systemd"],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    err = (r.stderr or "") + (r.stdout or "")
+    assert "Crash-Loop" in err
+    assert "AISTUDIO_SECRET" in err
+    assert "dev-secret-change-me" not in err
+    assert envf.read_text(encoding="utf-8").count("AISTUDIO_SECRET=dev-secret-change-me") == 1
+    assert not (tmp_path / "data" / "systemd").exists()
+
+
+def test_install_systemd_refuses_short_secret(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text("AISTUDIO_SECRET=tooshort\n", encoding="utf-8")
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh"), "--systemd"],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    assert "Crash-Loop" in ((r.stderr or "") + (r.stdout or ""))
+    assert "tooshort" not in ((r.stderr or "") + (r.stdout or ""))
+    assert not (tmp_path / "data" / "systemd").exists()
+
+
+def test_install_without_systemd_keeps_demo_secret(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text("AISTUDIO_SECRET=dev-secret-change-me\n", encoding="utf-8")
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "AISTUDIO_SECRET=dev-secret-change-me" in envf.read_text(encoding="utf-8")
+
+
 def test_install_moves_backup_pass_out_of_dotenv(tmp_path):
     scripts = tmp_path / "scripts"
     scripts.mkdir()

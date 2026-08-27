@@ -1185,6 +1185,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "data/bootstrap.env" in install
     assert "sqlite3 fehlt" in install
     assert "flock fehlt" in install
+    assert "env_secret_unusable" in install
+    assert "Crash-Loop" in install
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     restore = (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert ".backup.lock" in restore

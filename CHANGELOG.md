@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.59 — 2026-08-27 — systemd nicht mit Demo-Secret
+
+`install.sh --systemd` hat Einheiten geschrieben, auch wenn `.env` noch
+`dev-secret-change-me` oder unter 24 Zeichen hatte. Die Unit setzt
+`AISTUDIO_ENV=production` — Start bricht dann in einer Crash-Loop ab.
+Jetzt Abbruch vor dem Kopieren der Units. Das Secret wird nicht
+still ersetzt (sonst ungültige Sitzungen). Neuinstallation schreibt
+weiter ein langes Secret.
+
 ## Produktlaufzeit 1.4.58 — 2026-08-27 — Sitzung nicht bei jedem GET schreiben
 
 Jede angemeldete Anfrage hat `sessions.last_seen_at` aktualisiert und

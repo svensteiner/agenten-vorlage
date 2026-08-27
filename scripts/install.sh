@@ -203,6 +203,30 @@ raise SystemExit(0 if len(val) < min_n else 1)
 ' "$envf" "$key" "$min"
 }
 
+env_secret_unusable() {
+  # Exit 0 (true) when AISTUDIO_SECRET is missing, the published demo value, or <24 chars.
+  # Last assignment wins (systemd EnvironmentFile). Never prints the value.
+  local envf="$1"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+demo = "dev-secret-change-me"
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(0)
+val = ""
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == "AISTUDIO_SECRET":
+        val = v.strip()
+raise SystemExit(0 if (not val or val == demo or len(val) < 24) else 1)
+' "$envf"
+}
+
 replace_env_value() {
   local envf="$1" key="$2" val="$3" mode
   mode="$(stat -c '%a' "$envf" 2>/dev/null || echo 600)"
@@ -417,6 +441,10 @@ if ! command -v flock >/dev/null 2>&1; then
 fi
 
 if [[ "$SYSTEMD" -eq 1 ]]; then
+  if env_secret_unusable "$ENV_FILE"; then
+    echo "AISTUDIO_SECRET ist der Demo-Wert, fehlt oder kürzer als 24 Zeichen — systemd nicht installiert (sonst Crash-Loop). Eigenes Secret in $ENV_FILE setzen (mindestens 24 Zeichen) oder .env entfernen und install.sh erneut ausführen." >&2
+    exit 1
+  fi
   render_systemd
 fi
 
