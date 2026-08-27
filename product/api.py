@@ -335,21 +335,24 @@ def login(body: LoginBody, request: Request) -> dict[str, Any]:
             "SELECT * FROM users WHERE email = ?",
             (body.email.strip().lower(),),
         ).fetchone()
-        if not user:
-            db.audit("anon", body.email, "login_failed", body.email, conn=conn)
+        stored = user["password_hash"] if user else None
+        password_ok = auth.verify_password(body.password, stored)
+        if not user or not password_ok:
+            if user:
+                user_d = db.row_dict(user)
+                assert user_d is not None
+                tenancy.record_login_failure(conn, user_d)
+                db.audit(user["org_id"], body.email, "login_failed", body.email, conn=conn)
+            else:
+                db.audit("anon", body.email, "login_failed", body.email, conn=conn)
             conn.commit()
             raise HTTPException(401, "E-Mail oder Passwort falsch.")
         user_d = db.row_dict(user)
         assert user_d is not None
         if not user_d.get("active", 1):
-            raise HTTPException(401, "Konto deaktiviert.")
+            raise HTTPException(401, "E-Mail oder Passwort falsch.")
         if tenancy.is_locked(user_d):
             raise HTTPException(423, "Konto vorübergehend gesperrt. Bitte später erneut versuchen.")
-        if not auth.verify_password(body.password, user["password_hash"]):
-            tenancy.record_login_failure(conn, user_d)
-            db.audit(user["org_id"], body.email, "login_failed", body.email, conn=conn)
-            conn.commit()
-            raise HTTPException(401, "E-Mail oder Passwort falsch.")
         tenancy.record_login_success(conn, user_d)
         token = tenancy.open_session(
             conn, user_d, ip=client_ip(request), user_agent=request.headers.get("user-agent", "")

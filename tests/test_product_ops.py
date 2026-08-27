@@ -140,6 +140,62 @@ def test_lockout(client, monkeypatch):
     assert locked.status_code in {401, 423}
 
 
+def test_login_unknown_email_still_hashes(client, monkeypatch):
+    from product import auth
+
+    monkeypatch.setattr(auth, "_PBKDF_ROUNDS", 2)
+    auth._DUMMY_HASH = None
+    assert auth.verify_password("wrong-password-1", None) is False
+    assert auth._DUMMY_HASH
+    unknown = client.post(
+        "/api/auth/login",
+        json={"email": "nobody@not-a-tenant.example", "password": "Meridian2026!"},
+    )
+    assert unknown.status_code == 401
+    assert unknown.json()["detail"] == "E-Mail oder Passwort falsch."
+    wrong = client.post(
+        "/api/auth/login",
+        json={"email": "katharina.vogel@meridian.example", "password": "definitely-wrong-1"},
+    )
+    assert wrong.status_code == 401
+    assert wrong.json()["detail"] == "E-Mail oder Passwort falsch."
+    reg = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Inaktiv GmbH",
+            "name": "Ada Admin",
+            "email": "ada@inaktiv.example",
+            "password": "InaktivWerk26",
+        },
+    )
+    assert reg.status_code == 200, reg.text
+    admin_h = {"Authorization": "Bearer " + reg.json()["token"]}
+    added = client.post(
+        "/api/users",
+        headers=admin_h,
+        json={
+            "email": "member@inaktiv.example",
+            "name": "Max Member",
+            "role": "member",
+            "password": "InaktivWerk26",
+        },
+    )
+    assert added.status_code == 200, added.text
+    uid = added.json()["user"]["id"]
+    patch = client.patch(
+        f"/api/users/{uid}",
+        headers=admin_h,
+        json={"active": False},
+    )
+    assert patch.status_code == 200, patch.text
+    inactive = client.post(
+        "/api/auth/login",
+        json={"email": "member@inaktiv.example", "password": "InaktivWerk26"},
+    )
+    assert inactive.status_code == 401
+    assert inactive.json()["detail"] == "E-Mail oder Passwort falsch."
+
+
 def test_weak_password_rejected(client):
     r = client.post(
         "/api/auth/register",

@@ -17,6 +17,7 @@ from . import config
 _PBKDF_ROUNDS = 120_000
 MAX_PASSWORD_CHARS = 256
 MAX_EMAIL_CHARS = 254
+_DUMMY_HASH = None
 
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
@@ -25,17 +26,32 @@ def hash_password(password: str, salt: bytes | None = None) -> str:
     return "pbkdf2$%s$%s" % (base64.b64encode(salt).decode("ascii"), base64.b64encode(dk).decode("ascii"))
 
 
-def verify_password(password: str, stored: str) -> bool:
+def _dummy_hash() -> str:
+    """Stable stand-in so unknown emails still pay PBKDF2. Not a real password."""
+    global _DUMMY_HASH
+    if _DUMMY_HASH is None:
+        _DUMMY_HASH = hash_password("timing-dummy", salt=bytes(16))
+    return _DUMMY_HASH
+
+
+def verify_password(password: str, stored: str | None) -> bool:
+    """Always run PBKDF2 so missing users are not cheaper to probe."""
+    real = bool(stored) and stored.startswith("pbkdf2$")
+    target = stored if real else _dummy_hash()
     try:
-        kind, salt_b64, hash_b64 = stored.split("$", 2)
-    except ValueError:
-        return False
-    if kind != "pbkdf2":
-        return False
-    salt = base64.b64decode(salt_b64)
-    expected = base64.b64decode(hash_b64)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PBKDF_ROUNDS)
-    return hmac.compare_digest(dk, expected)
+        kind, salt_b64, hash_b64 = target.split("$", 2)
+        if kind != "pbkdf2":
+            raise ValueError("not pbkdf2")
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(hash_b64)
+    except (TypeError, ValueError):
+        kind, salt_b64, hash_b64 = _dummy_hash().split("$", 2)
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(hash_b64)
+        real = False
+    dk = hashlib.pbkdf2_hmac("sha256", (password or "").encode("utf-8"), salt, _PBKDF_ROUNDS)
+    ok = hmac.compare_digest(dk, expected)
+    return bool(real and ok)
 
 
 def _b64url(data: bytes) -> str:

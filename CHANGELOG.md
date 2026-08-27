@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.24 — 2026-08-27 — Login ohne E-Mail-Orakel
+
+Unbekannte Adressen haben PBKDF2 übersprungen — die Antwortzeit verriet, ob
+das Konto existiert. Login hasht immer (Dummy-Hash). Deaktiviert und falsch
+liefern dieselbe 401; Sperre (423) nur nach richtigem Passwort.
+
 ## Produktlaufzeit 1.4.23 — 2026-08-27 — Passwortlänge vor PBKDF2 kappen
 
 Login, Register und Passwortwechsel nehmen kein unbegrenztes Passwort mehr
