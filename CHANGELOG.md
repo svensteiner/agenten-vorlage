@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.29 — 2026-08-27 — Mandant/Flotte kappen, Passwortwechsel begrenzen
+
+Name, Slogan, Agent-ID und Aktionen waren unbegrenzt und landeten in SQLite
+bis zur Körpergrenze. Jetzt feste Höchstlängen (422). Passwortwechsel
+höchstens 10/Minute — sonst PBKDF2 ohne Pause.
+
 ## Produktlaufzeit 1.4.28 — 2026-08-27 — Modell ohne Redirect, Backup ohne Netz
 
 httpx folgt keinem 302 mehr — sonst wandern Kurzauszüge auf einen fremden Host.

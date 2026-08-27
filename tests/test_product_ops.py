@@ -643,6 +643,29 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert exp.status_code == 429
 
 
+def test_password_change_rate_limited(client, monkeypatch):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
+    r = client.post(
+        "/api/auth/password",
+        headers=headers,
+        json={"old_password": "Meridian2026!", "new_password": "NeuesWerk2026!"},
+    )
+    assert r.status_code == 429
+
+
+def test_org_and_fleet_reject_huge_fields(client):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    org = client.patch("/api/org", headers=headers, json={"name": "N" * 200})
+    assert org.status_code == 422
+    fleet = client.post(
+        "/api/fleet",
+        headers=headers,
+        json={"agent_id": "a" * 120, "action": "rent"},
+    )
+    assert fleet.status_code == 422
+
+
 def test_systemd_unit_rewrites_install_root():
     from pathlib import Path
 

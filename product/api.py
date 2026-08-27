@@ -93,17 +93,17 @@ class RegisterBody(BaseModel):
 
 class AskBody(BaseModel):
     q: str = Field(min_length=1, max_length=4000)
-    module: str | None = None
+    module: str | None = Field(default=None, max_length=40)
 
 
 class FleetBody(BaseModel):
-    agent_id: str = ""
-    action: str
-    reason: str | None = None
+    agent_id: str = Field(default="", max_length=80)
+    action: str = Field(max_length=40)
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class RunBody(BaseModel):
-    agent_id: str
+    agent_id: str = Field(max_length=80)
     task: str = Field(min_length=3, max_length=4000)
 
 
@@ -124,14 +124,14 @@ class UserPasswordBody(BaseModel):
 
 
 class UserPatchBody(BaseModel):
-    role: str | None = None
+    role: str | None = Field(default=None, max_length=32)
     active: bool | None = None
 
 
 class OrgPatchBody(BaseModel):
-    name: str | None = None
-    tagline: str | None = None
-    billing_email: str | None = None
+    name: str | None = Field(default=None, max_length=120)
+    tagline: str | None = Field(default=None, max_length=240)
+    billing_email: str | None = Field(default=None, max_length=auth.MAX_EMAIL_CHARS)
 
 
 class PurgeBody(BaseModel):
@@ -394,6 +394,8 @@ def logout(user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.post("/auth/password")
 def password(body: PasswordBody, user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("pwd:" + user["id"], 10):
+        raise rate_limit_error()
     conn = _conn()
     try:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
