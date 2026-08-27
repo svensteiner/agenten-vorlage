@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.40 — 2026-08-27 — Loopback-Bind, Zahlen kappen, CORS-Stern aus
+
+Produktion ohne `AISTUDIO_HOST` band `0.0.0.0` — nginx TLS und Limits
+waren umgehbar. Jetzt Loopback, Docker setzt weiter `0.0.0.0` im Container.
+`install.sh` trägt `AISTUDIO_HOST=127.0.0.1` nach. Unsinnige
+`PORT`/`TOKEN_TTL`/`LOCKOUT_*`/`MAX_UPLOAD` stürzen den Import nicht mehr
+ab und werden gekappt (Upload höchstens 8 MB, Request 10 MB, Token 60 s–30 Tage).
+`AISTUDIO_CORS_ORIGINS=*` in Produktion wird ignoriert. `GET /api/docs`
+(volle Wissensbasis) 60/Minute je Nutzer.
+
 ## Produktlaufzeit 1.4.39 — 2026-08-27 — Install trägt Host-Allowlist nach
 
 Bestehende `.env` blieb unverändert. Nach 1.4.38 prüft Produktion den

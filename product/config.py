@@ -17,23 +17,14 @@ DATA_DIR = Path(os.environ.get("AISTUDIO_DATA", ROOT / "data"))
 DB_PATH = Path(os.environ.get("AISTUDIO_DB", DATA_DIR / "aistudio.db"))
 SECRET = os.environ.get("AISTUDIO_SECRET", "dev-secret-change-me")
 SEED_PATH = Path(__file__).resolve().parent / "seed.json"
-TOKEN_TTL_SECONDS = int(os.environ.get("AISTUDIO_TOKEN_TTL", str(7 * 24 * 3600)))
-
 DEMO_EMAIL = os.environ.get("AISTUDIO_DEMO_EMAIL", "katharina.vogel@meridian.example")
 DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
-PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
-
-VERSION = "1.4.39"
+VERSION = "1.4.40"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
-LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
-LOCKOUT_MINUTES = int(os.environ.get("AISTUDIO_LOCKOUT_MINUTES", "15"))
-MAX_UPLOAD_BYTES = int(os.environ.get("AISTUDIO_MAX_UPLOAD_BYTES", str(2_000_000)))
-MAX_REQUEST_BYTES = int(os.environ.get("AISTUDIO_MAX_REQUEST_BYTES", str(MAX_UPLOAD_BYTES + 200_000)))
 
 
 def _flag(name: str, default: bool) -> bool:
@@ -49,6 +40,67 @@ def env_name() -> str:
 
 def is_production() -> bool:
     return env_name() in {"production", "prod"}
+
+
+def _int_env(name: str, default: int, *, lo: int, hi: int) -> int:
+    """Parse an int from the environment. Garbage and infinities fall back; then clamp."""
+    raw = os.environ.get(name)
+    try:
+        n = int(str(raw).strip()) if raw is not None and str(raw).strip() else default
+    except (TypeError, ValueError):
+        n = default
+    return max(lo, min(n, hi))
+
+
+def listen_host() -> str:
+    """Bind address. Production without AISTUDIO_HOST is loopback (nginx on the host).
+
+    Docker sets ``AISTUDIO_HOST=0.0.0.0`` inside the container; the published port
+    stays 127.0.0.1 on the host.
+    """
+    raw = (os.environ.get("AISTUDIO_HOST") or "").strip()
+    if raw:
+        return raw[:253]
+    return "127.0.0.1" if is_production() else "0.0.0.0"
+
+
+def listen_port() -> int:
+    return _int_env("AISTUDIO_PORT", 8123, lo=1, hi=65535)
+
+
+def token_ttl_seconds() -> int:
+    """Signed token lifetime. 60s–30 days; default 7 days (install writes 12h)."""
+    return _int_env("AISTUDIO_TOKEN_TTL", 7 * 24 * 3600, lo=60, hi=30 * 24 * 3600)
+
+
+def lockout_after() -> int:
+    return _int_env("AISTUDIO_LOCKOUT_AFTER", 8, lo=3, hi=100)
+
+
+def lockout_minutes() -> int:
+    return _int_env("AISTUDIO_LOCKOUT_MINUTES", 15, lo=1, hi=24 * 60)
+
+
+def max_upload_bytes() -> int:
+    return _int_env("AISTUDIO_MAX_UPLOAD_BYTES", 2_000_000, lo=10_000, hi=8_000_000)
+
+
+def max_request_bytes() -> int:
+    upload = max_upload_bytes()
+    default = min(upload + 200_000, 10_000_000)
+    n = _int_env("AISTUDIO_MAX_REQUEST_BYTES", default, lo=64_000, hi=10_000_000)
+    return max(n, min(upload + 1, 10_000_000))
+
+
+# Import-time snapshots — uvicorn and tests may read these; prefer the functions
+# above when the environment can change (pytest monkeypatch).
+HOST = listen_host()
+PORT = listen_port()
+TOKEN_TTL_SECONDS = token_ttl_seconds()
+LOCKOUT_AFTER = lockout_after()
+LOCKOUT_MINUTES = lockout_minutes()
+MAX_UPLOAD_BYTES = max_upload_bytes()
+MAX_REQUEST_BYTES = max_request_bytes()
 
 
 def allow_demo_seed() -> bool:
@@ -174,12 +226,20 @@ def has_bootstrap_residue() -> bool:
 
 
 def cors_origins() -> list[str]:
+    """Browser origins. Production never honors ``*`` (same-origin is enough)."""
     raw = os.environ.get("AISTUDIO_CORS_ORIGINS")
-    if raw:
-        return [p.strip() for p in raw.split(",") if p.strip()]
-    if is_production():
-        return []
-    return ["*"]
+    if not raw or not raw.strip():
+        return [] if is_production() else ["*"]
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    if not is_production():
+        return parts
+    kept: list[str] = []
+    for part in parts:
+        if part == "*":
+            continue
+        if part.startswith("https://") or part.startswith("http://"):
+            kept.append(part.rstrip("/"))
+    return kept
 
 
 def allowed_hosts() -> list[str] | None:

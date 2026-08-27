@@ -602,6 +602,8 @@ def admin_password(user_id: str, body: UserPasswordBody, user: dict = Depends(cu
 
 @router.get("/docs")
 def docs(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("docs:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         items = retrieval.list_documents(conn=conn, org_id=user["org_id"], role=user["role"])

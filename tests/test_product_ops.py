@@ -685,6 +685,8 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert exp.status_code == 429
     search = client.get("/api/search", headers=headers, params={"q": "Reise"})
     assert search.status_code == 429
+    docs = client.get("/api/docs", headers=headers)
+    assert docs.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -795,6 +797,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_BACKUP_PASS" in install
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
     assert "backfill_runtime_env" in install
+    assert "AISTUDIO_HOST=127.0.0.1" in install
+    assert "nachgetragen: AISTUDIO_HOST" in install
     assert "nachgetragen: AISTUDIO_ALLOWED_HOSTS" in install
     assert "data/backup.env" in install
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
@@ -822,6 +826,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "rate=20r/s" in tls
     main = (root / "product" / "main.py").read_text(encoding="utf-8")
     assert "server_header=False" in main
+    assert "listen_host()" in main
+    assert "listen_port()" in main
 
 
 def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):
@@ -934,6 +940,44 @@ def test_production_hides_openapi_and_checks_hosts(monkeypatch):
         assert c.get("/docs").status_code == 404
     with TestClient(app, base_url="http://evil.example") as c:
         assert c.get("/ping").status_code == 400
+
+
+def test_production_listen_host_loopback_and_clamped_ints(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.delenv("AISTUDIO_HOST", raising=False)
+    assert config.listen_host() == "127.0.0.1"
+    monkeypatch.setenv("AISTUDIO_HOST", "0.0.0.0")
+    assert config.listen_host() == "0.0.0.0"
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    monkeypatch.delenv("AISTUDIO_HOST", raising=False)
+    assert config.listen_host() == "0.0.0.0"
+
+    monkeypatch.setenv("AISTUDIO_PORT", "not-a-port")
+    assert config.listen_port() == 8123
+    monkeypatch.setenv("AISTUDIO_PORT", "99999")
+    assert config.listen_port() == 65535
+    monkeypatch.setenv("AISTUDIO_TOKEN_TTL", "5")
+    assert config.token_ttl_seconds() == 60
+    monkeypatch.setenv("AISTUDIO_TOKEN_TTL", "999999999")
+    assert config.token_ttl_seconds() == 30 * 24 * 3600
+    monkeypatch.setenv("AISTUDIO_MAX_UPLOAD_BYTES", "500000000")
+    assert config.max_upload_bytes() == 8_000_000
+    monkeypatch.setenv("AISTUDIO_MAX_REQUEST_BYTES", "abc")
+    assert config.max_request_bytes() <= 10_000_000
+    assert config.max_request_bytes() >= 8_000_001
+
+
+def test_production_cors_drops_wildcard(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.delenv("AISTUDIO_CORS_ORIGINS", raising=False)
+    assert config.cors_origins() == []
+    monkeypatch.setenv("AISTUDIO_CORS_ORIGINS", "*")
+    assert config.cors_origins() == []
+    monkeypatch.setenv("AISTUDIO_CORS_ORIGINS", "*,https://studio.example.com")
+    assert config.cors_origins() == ["https://studio.example.com"]
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    monkeypatch.delenv("AISTUDIO_CORS_ORIGINS", raising=False)
+    assert config.cors_origins() == ["*"]
 
 
 def test_production_allowed_hosts_never_wildcard(monkeypatch):

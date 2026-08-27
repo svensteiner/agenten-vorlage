@@ -176,8 +176,8 @@ def run() -> None:
     config.validate_runtime()
     uvicorn.run(
         "product.main:app",
-        host=config.HOST,
-        port=config.PORT,
+        host=config.listen_host(),
+        port=config.listen_port(),
         reload=False,
         access_log=False,
         server_header=False,

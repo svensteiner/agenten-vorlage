@@ -186,6 +186,10 @@ backfill_runtime_env() {
   # Existing .env from older installs: append missing keys, never overwrite.
   local envf="$1"
   [[ -f "$envf" ]] || return 0
+  if ! env_has_key "$envf" AISTUDIO_HOST; then
+    append_env_line "$envf" "AISTUDIO_HOST=127.0.0.1"
+    echo "nachgetragen: AISTUDIO_HOST=127.0.0.1 (nicht alle Interfaces; Docker setzt 0.0.0.0 im Container)."
+  fi
   if ! env_has_key "$envf" AISTUDIO_ALLOWED_HOSTS; then
     append_env_line "$envf" "AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost"
     echo "nachgetragen: AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost (Produktion prüft den Host; hinter nginx den öffentlichen Namen ergänzen)."
@@ -343,6 +347,7 @@ echo "Restore: Produkt zuerst stoppen — restore.sh bricht ab, solange data/ais
 echo "Ältere Installs: Passwort wird aus .env oder data/backup.env nach backup.env verschoben — der Produktprozess sieht die Datei nicht (InaccessiblePaths)."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
+echo "Produktion ohne AISTUDIO_HOST bindet 127.0.0.1 (nginx lokal). Docker setzt 0.0.0.0 im Container."
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."
 echo "X-Forwarded-For nur von AISTUDIO_PROXY_IPS (Standard 127.0.0.1,::1), nicht von jedem Client."
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"
