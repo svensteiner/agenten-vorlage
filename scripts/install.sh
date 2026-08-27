@@ -170,6 +170,50 @@ p.write_text("".join(lines), encoding="utf-8")
   chmod 600 "$envf"
 }
 
+env_has_key() {
+  local envf="$1" key="$2"
+  grep -qE "^[[:space:]]*${key}=" "$envf" 2>/dev/null
+}
+
+append_env_line() {
+  local envf="$1" line="$2" mode
+  mode="$(stat -c '%a' "$envf" 2>/dev/null || echo 600)"
+  printf '%s\n' "$line" >> "$envf"
+  chmod "$mode" "$envf" 2>/dev/null || true
+}
+
+backfill_runtime_env() {
+  # Existing .env from older installs: append missing keys, never overwrite.
+  local envf="$1"
+  [[ -f "$envf" ]] || return 0
+  if ! env_has_key "$envf" AISTUDIO_ALLOWED_HOSTS; then
+    append_env_line "$envf" "AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost"
+    echo "nachgetragen: AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost (Produktion prüft den Host; hinter nginx den öffentlichen Namen ergänzen)."
+  fi
+  if ! env_has_key "$envf" AISTUDIO_METRICS_TOKEN; then
+    local tok
+    tok="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+    append_env_line "$envf" "AISTUDIO_METRICS_TOKEN=$tok"
+    echo "nachgetragen: AISTUDIO_METRICS_TOKEN (Header X-Metrics-Token)."
+  fi
+  if ! env_has_key "$envf" AISTUDIO_PROXY_IPS; then
+    append_env_line "$envf" "AISTUDIO_PROXY_IPS=127.0.0.1,::1"
+    echo "nachgetragen: AISTUDIO_PROXY_IPS=127.0.0.1,::1"
+  fi
+  if ! env_has_key "$envf" AISTUDIO_TRUST_PROXY; then
+    append_env_line "$envf" "AISTUDIO_TRUST_PROXY=true"
+    echo "nachgetragen: AISTUDIO_TRUST_PROXY=true"
+  fi
+  if ! env_has_key "$envf" AISTUDIO_SESSION_IDLE; then
+    append_env_line "$envf" "AISTUDIO_SESSION_IDLE=14400"
+    echo "nachgetragen: AISTUDIO_SESSION_IDLE=14400"
+  fi
+  if ! env_has_key "$envf" AISTUDIO_LLM_EGRESS; then
+    append_env_line "$envf" "AISTUDIO_LLM_EGRESS=in_boundary"
+    echo "nachgetragen: AISTUDIO_LLM_EGRESS=in_boundary"
+  fi
+}
+
 ensure_backup_pass() {
   # Encryption key lives in checkout/backup.env (outside data/) so systemd
   # InaccessiblePaths can hide it from the product process. Existing .env or
@@ -238,6 +282,7 @@ if found:
 if [[ -f "$ENV_FILE" ]]; then
   echo "$ENV_FILE existiert bereits — nichts überschrieben." >&2
   ensure_backup_pass "$ENV_FILE"
+  backfill_runtime_env "$ENV_FILE"
 else
   SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   METRICS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"

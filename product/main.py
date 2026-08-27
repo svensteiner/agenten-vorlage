@@ -36,6 +36,11 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     config.validate_runtime()
+    if config.proxy_hosts_need_public_name():
+        logging.getLogger("product").warning(
+            "Produktion hinter Proxy: AISTUDIO_ALLOWED_HOSTS um den öffentlichen "
+            "Hostnamen ergänzen, sonst 400."
+        )
     conn = connect()
     try:
         ensure_seeded(conn)

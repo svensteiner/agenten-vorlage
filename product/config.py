@@ -27,7 +27,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.38"
+VERSION = "1.4.39"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -200,6 +200,14 @@ def allowed_hosts() -> list[str] | None:
         return None
     hosts = [p.strip() for p in text.split(",") if p.strip()]
     return hosts or None
+
+
+def proxy_hosts_need_public_name() -> bool:
+    """True when production trusts a reverse proxy but Host allowlist is loopback-only."""
+    if not is_production() or not trust_proxy():
+        return False
+    extra = set(allowed_hosts() or []) - {"127.0.0.1", "localhost", "::1"}
+    return not extra
 
 
 def docs_kwargs() -> dict:

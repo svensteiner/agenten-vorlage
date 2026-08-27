@@ -463,6 +463,16 @@ def test_install_appends_missing_backup_pass(tmp_path):
     assert not (tmp_path / "data" / "backup.env").exists()
     assert "nachgetragen" in (r.stdout + r.stderr)
     assert "backup.env" in (r.stdout + r.stderr)
+    assert "AISTUDIO_ALLOWED_HOSTS=127.0.0.1,localhost" in text
+    assert "AISTUDIO_TRUST_PROXY=true" in text
+    assert "AISTUDIO_PROXY_IPS=127.0.0.1,::1" in text
+    assert "AISTUDIO_SESSION_IDLE=14400" in text
+    assert "AISTUDIO_LLM_EGRESS=in_boundary" in text
+    metrics = [ln for ln in text.splitlines() if ln.startswith("AISTUDIO_METRICS_TOKEN=")]
+    assert len(metrics) == 1
+    assert len(metrics[0].split("=", 1)[1].strip()) >= 16
+    assert "nachgetragen: AISTUDIO_ALLOWED_HOSTS" in (r.stdout + r.stderr)
+    assert "nachgetragen: AISTUDIO_METRICS_TOKEN" in (r.stdout + r.stderr)
 
 
 def test_install_moves_backup_pass_out_of_dotenv(tmp_path):

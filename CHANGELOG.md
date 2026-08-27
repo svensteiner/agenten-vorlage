@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.39 — 2026-08-27 — Install trägt Host-Allowlist nach
+
+Bestehende `.env` blieb unverändert. Nach 1.4.38 prüft Produktion den
+Host — hinter nginx 400, bis `AISTUDIO_ALLOWED_HOSTS` den öffentlichen
+Namen enthält. `install.sh` schreibt fehlende Keys nach (Allowlist,
+Metrik-Token, Proxy, Sitzungsruhe, LLM-Egress), ohne vorhandene Werte
+zu überschreiben. Start warnt, wenn nur Loopback hinter einem Proxy steht.
+
 ## Produktlaufzeit 1.4.38 — 2026-08-27 — Host-Allowlist in Produktion immer an
 
 `AISTUDIO_ALLOWED_HOSTS=*` oder leer hat TrustedHost ausgeschaltet. In

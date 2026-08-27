@@ -794,6 +794,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "AISTUDIO_BACKUP_PASS" in install
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
+    assert "backfill_runtime_env" in install
+    assert "nachgetragen: AISTUDIO_ALLOWED_HOSTS" in install
     assert "data/backup.env" in install
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" not in src
@@ -949,6 +951,23 @@ def test_production_allowed_hosts_never_wildcard(monkeypatch):
     assert config.allowed_hosts() is None
     monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "*")
     assert config.allowed_hosts() is None
+
+
+def test_proxy_hosts_need_public_name(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    monkeypatch.delenv("AISTUDIO_ALLOWED_HOSTS", raising=False)
+    assert config.proxy_hosts_need_public_name() is True
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+    assert config.proxy_hosts_need_public_name() is True
+    monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "127.0.0.1,localhost,studio.example.com")
+    assert config.proxy_hosts_need_public_name() is False
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "false")
+    monkeypatch.delenv("AISTUDIO_ALLOWED_HOSTS", raising=False)
+    assert config.proxy_hosts_need_public_name() is False
+    monkeypatch.setenv("AISTUDIO_ENV", "development")
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    assert config.proxy_hosts_need_public_name() is False
 
 
 def test_production_metrics_require_token(client, monkeypatch):
