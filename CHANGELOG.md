@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.58 — 2026-08-27 — Sitzung nicht bei jedem GET schreiben
+
+Jede angemeldete Anfrage hat `sessions.last_seen_at` aktualisiert und
+committet — nach 1.4.52 der verbliebene Schreib-Hot-Path. Die Oberfläche
+ruft `/api/me` und Listen oft auf; die WAL wächst neben der Sicherung.
+Jetzt höchstens einmal pro Minute (bzw. ein Viertel der Sitzungsruhe).
+Abgelaufene Sitzungen werden weiter sofort erkannt.
+
 ## Produktlaufzeit 1.4.57 — 2026-08-27 — Docker mit RAM-Deckel
 
 systemd begrenzt den Produktprozess auf 512 MB (`MemoryMax`, ohne Swap).

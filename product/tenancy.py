@@ -252,19 +252,29 @@ def session_ok(conn, jti: str, user_id: str) -> bool:
     exp = _parse_ts(row["expires_at"])
     if exp is None or exp < now:
         return False
+    seen = _parse_ts(row["last_seen_at"] if "last_seen_at" in row.keys() else None) or _parse_ts(
+        row["created_at"]
+    )
     idle = config.session_idle_seconds()
     if idle > 0:
-        seen = _parse_ts(row["last_seen_at"] if "last_seen_at" in row.keys() else None) or _parse_ts(
-            row["created_at"]
-        )
         if seen is None or (now - seen).total_seconds() > idle:
             revoke_session(conn, jti)
             return False
-    conn.execute(
-        "UPDATE sessions SET last_seen_at = ? WHERE jti = ? AND revoked_at IS NULL",
-        (db.now_iso(), jti),
-    )
+    # Idle is hours; writing last_seen on every GET filled the WAL (backup, disk).
+    elapsed = (now - seen).total_seconds() if seen is not None else 1e9
+    if elapsed >= _session_touch_seconds(idle):
+        conn.execute(
+            "UPDATE sessions SET last_seen_at = ? WHERE jti = ? AND revoked_at IS NULL",
+            (db.now_iso(), jti),
+        )
     return True
+
+
+def _session_touch_seconds(idle: int) -> int:
+    """How often last_seen may be written. Always well below the idle window."""
+    if idle <= 0:
+        return 60
+    return max(5, min(60, idle // 4))
 
 
 def revoke_session(conn, jti: str) -> None:

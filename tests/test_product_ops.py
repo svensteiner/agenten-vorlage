@@ -1362,6 +1362,25 @@ def test_idle_session_revoked(client, monkeypatch):
     assert client.get("/api/me", headers=headers).status_code == 401
 
 
+def test_session_last_seen_not_written_every_request(client):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    from product import db
+
+    conn = db.connect()
+    try:
+        first = conn.execute("SELECT last_seen_at FROM sessions").fetchone()[0]
+    finally:
+        conn.close()
+    assert client.get("/api/me", headers=headers).status_code == 200
+    assert client.get("/api/docs", headers=headers).status_code == 200
+    conn = db.connect()
+    try:
+        second = conn.execute("SELECT last_seen_at FROM sessions").fetchone()[0]
+    finally:
+        conn.close()
+    assert second == first
+
+
 def test_production_hides_openapi_and_checks_hosts(monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     monkeypatch.setenv("AISTUDIO_ALLOWED_HOSTS", "studio.example.com")
