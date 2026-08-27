@@ -22,7 +22,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.41"
+VERSION = "1.4.42"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -300,6 +300,19 @@ def org_upload_limit_bytes() -> int:
 def org_max_docs() -> int:
     """Per-tenant document count. Stops GET /api/docs from dumping an unbounded list."""
     return _int_env("AISTUDIO_ORG_MAX_DOCS", 500, lo=20, hi=5000)
+
+
+def export_jobs_limit() -> int:
+    """Newest jobs in a tenant export. Housekeeping still prunes; this stops one GET from OOM."""
+    return _int_env("AISTUDIO_EXPORT_JOBS", 2000, lo=20, hi=10_000)
+
+
+def export_audit_limit() -> int:
+    return _int_env("AISTUDIO_EXPORT_AUDIT", 5000, lo=50, hi=20_000)
+
+
+def export_invoices_limit() -> int:
+    return _int_env("AISTUDIO_EXPORT_INVOICES", 500, lo=12, hi=2000)
 
 
 def org_upload_bytes(org_id: str) -> int:

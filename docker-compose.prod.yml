@@ -31,8 +31,10 @@ services:
     user: "10001:10001"
     network_mode: none
     read_only: true
+    init: true
+    pids_limit: 32
     tmpfs:
-      - /tmp
+      - /tmp:size=64M
     cap_drop:
       - ALL
     security_opt:

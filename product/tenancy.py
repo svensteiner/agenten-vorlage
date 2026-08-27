@@ -409,6 +409,9 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
         ).fetchall()
     ]
     cap = config.org_max_docs()
+    n_docs = conn.execute(
+        "SELECT COUNT(*) AS n FROM documents WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     docs = [
         retrieval.to_frontend_doc(d)
         for d in retrieval.list_documents(org_id, role, conn=conn, limit=cap)
@@ -423,17 +426,32 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
     visible_ids = {d["id"] for d in docs if not d.get("denied")}
     for d in docs:
         d["body"] = bodies.get(d["id"], "") if d["id"] in visible_ids else ""
+    job_cap = config.export_jobs_limit()
+    n_jobs = conn.execute(
+        "SELECT COUNT(*) AS n FROM jobs WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     jobs = [dict(r) for r in conn.execute(
-        "SELECT id, agent_id, task, status, created_at FROM jobs WHERE org_id = ? ORDER BY created_at",
-        (org_id,),
+        "SELECT id, agent_id, task, status, created_at FROM jobs "
+        "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, job_cap),
     ).fetchall()]
+    audit_cap = config.export_audit_limit()
+    n_audit = conn.execute(
+        "SELECT COUNT(*) AS n FROM audit_log WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     audit = [dict(r) for r in conn.execute(
-        "SELECT actor, action, detail, created_at FROM audit_log WHERE org_id = ? ORDER BY created_at",
-        (org_id,),
+        "SELECT actor, action, detail, created_at FROM audit_log "
+        "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, audit_cap),
     ).fetchall()]
+    inv_cap = config.export_invoices_limit()
+    n_inv = conn.execute(
+        "SELECT COUNT(*) AS n FROM invoices WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     invoices = [dict(r) for r in conn.execute(
-        "SELECT id, period, amount_cents, currency, status, lines_json, created_at FROM invoices WHERE org_id = ?",
-        (org_id,),
+        "SELECT id, period, amount_cents, currency, status, lines_json, created_at "
+        "FROM invoices WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, inv_cap),
     ).fetchall()]
     return {
         "exported_at": db.now_iso(),
@@ -446,6 +464,18 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
         "jobs": jobs,
         "invoices": invoices,
         "audit": audit,
+        "truncated": {
+            "documents": int(n_docs) > cap,
+            "jobs": int(n_jobs) > job_cap,
+            "audit": int(n_audit) > audit_cap,
+            "invoices": int(n_inv) > inv_cap,
+        },
+        "totals": {
+            "documents": int(n_docs),
+            "jobs": int(n_jobs),
+            "audit": int(n_audit),
+            "invoices": int(n_inv),
+        },
     }
 
 

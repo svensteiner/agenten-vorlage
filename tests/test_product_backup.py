@@ -636,12 +636,18 @@ def test_compose_publishes_localhost_only():
     text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "127.0.0.1:8123:8123" in text
     assert '"8123:8123"' not in text
+    assert "init: true" in text
+    assert "pids_limit: 128" in text
+    assert "/tmp:size=64M" in text
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "sqlite3" in dockerfile
     assert "openssl" in dockerfile
     prod = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
     assert 'profiles: ["backup"]' in prod
     assert "network_mode: none" in prod
+    assert "init: true" in after
+    assert "pids_limit: 32" in after
+    assert "/tmp:size=64M" in after
     after = prod.split("backup:")[1]
     before = prod.split("backup:")[0]
     assert "AISTUDIO_SECRET:" not in after

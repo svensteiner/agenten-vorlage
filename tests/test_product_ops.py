@@ -131,6 +131,39 @@ def test_export_and_invoice_snapshot(client):
     payload = exp.json()
     assert payload["org"]["slug"] == "meridian"
     assert "users" in payload and "documents" in payload
+    assert "truncated" in payload and "totals" in payload
+    assert payload["truncated"]["jobs"] is False
+
+
+def test_export_caps_jobs(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_EXPORT_JOBS", "20")
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    from product import db
+
+    conn = db.connect()
+    try:
+        for i in range(25):
+            conn.execute(
+                "INSERT INTO jobs (id, org_id, agent_id, task, status, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    "job-cap-%s" % i,
+                    "org-meridian",
+                    "auskunft",
+                    "Kurzbericht.",
+                    "done",
+                    "2026-01-01T00:00:00+00:00",
+                ),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    exp = client.get("/api/export", headers=headers)
+    assert exp.status_code == 200, exp.text
+    payload = exp.json()
+    assert len(payload["jobs"]) == 20
+    assert payload["truncated"]["jobs"] is True
+    assert payload["totals"]["jobs"] >= 25
 
 
 def test_jobs_and_audit_reject_negative_limit(client):

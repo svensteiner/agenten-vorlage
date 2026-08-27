@@ -19,8 +19,10 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       PYTHONDONTWRITEBYTECODE: "1"
     read_only: true
+    init: true
+    pids_limit: 128
     tmpfs:
-      - /tmp
+      - /tmp:size=64M
     security_opt:
       - no-new-privileges:true
     cap_drop:

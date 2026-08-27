@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.42 — 2026-08-27 — Export kappen, Docker-init
+
+DSGVO-Export lud alle Aufträge und das ganze Audit — bei 20 Aufträgen/Minute
+über 90 Tage ein Prozess-OOM. Jetzt die neuesten 2000 Jobs, 5000 Audit-Zeilen,
+500 Rechnungen (`AISTUDIO_EXPORT_*`), mit `truncated`/`totals`. Docker startet
+mit `init: true` (Zombie-Reaping), `pids_limit` und `/tmp` 64 MB.
+
 ## Produktlaufzeit 1.4.41 — 2026-08-27 — Sicherung ohne Klartext-Rest, Dokumentenzahl
 
 Mit gesetztem `AISTUDIO_BACKUP_PASS` blieb bei fehlgeschlagenem openssl die
