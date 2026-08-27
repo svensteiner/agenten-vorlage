@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.41 — 2026-08-27 — Sicherung ohne Klartext-Rest, Dokumentenzahl
+
+Mit gesetztem `AISTUDIO_BACKUP_PASS` blieb bei fehlgeschlagenem openssl die
+Klartext-`.db` (und das Uploads-tar) im Backup-Ordner. Jetzt wird der Klartext
+bei Fehler mitgelöscht. Pro Mandant höchstens 500 Dokumente
+(`AISTUDIO_ORG_MAX_DOCS`, 20–5000) — Upload 413, Liste und Export nicht
+unbegrenzt.
+
 ## Produktlaufzeit 1.4.40 — 2026-08-27 — Loopback-Bind, Zahlen kappen, CORS-Stern aus
 
 Produktion ohne `AISTUDIO_HOST` band `0.0.0.0` — nginx TLS und Limits

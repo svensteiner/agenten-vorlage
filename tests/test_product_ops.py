@@ -792,7 +792,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "Dienstbenutzer: aistudio" in install
     assert "useradd --system" in install
     assert "640" in install
-    assert "AISTUDIO_ALLOWED_HOSTS" in install
+    assert "AISTUDIO_ORG_UPLOAD_MB" in install
+    assert "AISTUDIO_ORG_MAX_DOCS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "AISTUDIO_BACKUP_PASS" in install
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
@@ -897,6 +898,39 @@ def test_org_upload_quota(client, monkeypatch):
     me = client.get("/api/me", headers=headers).json()
     assert me["storage"]["limit_bytes"] == 1024 * 1024
     assert me["storage"]["used_bytes"] >= 600_000
+    assert me["storage"]["docs"] >= 1
+    assert me["storage"]["docs_limit"] >= 20
+
+
+def test_org_doc_count_cap(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ORG_MAX_DOCS", "20")
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Doccap GmbH",
+            "name": "Lea Doccap",
+            "email": "lea@doccap.example",
+            "password": "Doccap2026!",
+        },
+    )
+    assert r.status_code == 200, r.text
+    headers = {"Authorization": "Bearer " + r.json()["token"]}
+    for i in range(20):
+        up = client.post(
+            "/api/docs/upload",
+            headers=headers,
+            files={"file": (f"n{i}.txt", f"Notiz {i} zur Richtlinie.", "text/plain")},
+        )
+        assert up.status_code == 200, up.text
+    extra = client.post(
+        "/api/docs/upload",
+        headers=headers,
+        files={"file": ("overflow.txt", "Noch eine Datei.", "text/plain")},
+    )
+    assert extra.status_code == 413
+    listed = client.get("/api/docs", headers=headers).json()
+    assert listed["limit"] == 20
+    assert len(listed["docs"]) == 20
 
 
 def test_idle_session_revoked(client, monkeypatch):

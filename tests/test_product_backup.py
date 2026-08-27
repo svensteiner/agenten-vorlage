@@ -323,6 +323,44 @@ def test_encrypted_backup_roundtrip(tmp_path):
     assert note.read_text(encoding="utf-8") == "secret-body"
 
 
+def test_backup_script_drops_plaintext_if_encrypt_fails():
+    text = BACKUP.read_text(encoding="utf-8")
+    assert "Klartext nicht behalten" in text
+    assert 'rm -f "$src" "$dest"' in text
+
+
+def test_encrypted_backup_scrubs_plaintext_when_openssl_fails(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 7)
+    note = data / "uploads" / "org1" / "note.txt"
+    note.parent.mkdir(parents=True)
+    note.write_text("must-not-linger", encoding="utf-8")
+    dest = tmp_path / "backups"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "openssl"
+    fake.write_text("#!/bin/bash\nexit 1\n", encoding="utf-8")
+    os.chmod(fake, 0o755)
+    env = _env(data, db)
+    env["AISTUDIO_BACKUP_PASS"] = "unit-test-backup-pass"
+    env["PATH"] = str(bin_dir) + os.pathsep + env.get("PATH", "")
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    assert "Klartext nicht behalten" in (r.stderr + r.stdout)
+    leftovers = list(dest.glob("*")) if dest.is_dir() else []
+    assert not any(p.name.endswith(".db") and not p.name.endswith(".enc") for p in leftovers)
+    assert not any(p.name.endswith(".tar.gz") for p in leftovers)
+
+
 @pytest.mark.skipif(
     subprocess.call(["openssl", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0,
     reason="openssl missing",

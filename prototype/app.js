@@ -1449,8 +1449,13 @@
     const quotaLine = limitMb
       ? ` Derzeit ${escapeHtml(String(usedMb))} MB von ${escapeHtml(String(limitMb))} MB für diesen Mandanten.`
       : "";
+    const docsN = storage.docs != null ? String(storage.docs) : "";
+    const docsCap = storage.docs_limit ? String(storage.docs_limit) : "";
+    const docsLine = docsCap
+      ? ` ${escapeHtml(docsN || "0")} von ${escapeHtml(docsCap)} Dokumenten.`
+      : "";
     up.innerHTML = `<h3>Wissensbasis</h3>` +
-      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.${quotaLine}</p>`;
+      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.${quotaLine}${docsLine}</p>`;
     const docList = el("div", "doc-admin-list");
     const input = el("input");
     input.type = "file";

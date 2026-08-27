@@ -475,6 +475,9 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
         used = config.org_upload_bytes(user["org_id"])
         limit = config.org_upload_limit_bytes()
+        docs_n = conn.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE org_id = ?", (user["org_id"],)
+        ).fetchone()["n"]
         ops = _ops_status()
         return {
             "user": tenancy.public_user(user),
@@ -483,6 +486,8 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
             "storage": {
                 "used_bytes": used,
                 "limit_bytes": limit,
+                "docs": int(docs_n),
+                "docs_limit": config.org_max_docs(),
             },
             "llm": ops["llm"],
             "backup_age_hours": ops["backup_age_hours"],
@@ -606,8 +611,11 @@ def docs(user: dict = Depends(current_user)) -> dict[str, Any]:
         raise rate_limit_error()
     conn = _conn()
     try:
-        items = retrieval.list_documents(conn=conn, org_id=user["org_id"], role=user["role"])
-        return {"docs": [retrieval.to_frontend_doc(d) for d in items]}
+        cap = config.org_max_docs()
+        items = retrieval.list_documents(
+            conn=conn, org_id=user["org_id"], role=user["role"], limit=cap
+        )
+        return {"docs": [retrieval.to_frontend_doc(d) for d in items], "limit": cap}
     finally:
         conn.close()
 
@@ -920,24 +928,33 @@ async def upload_doc(
         name = "upload.txt"
     if not name.endswith((".txt", ".md", ".csv", ".json", ".log")):
         raise HTTPException(400, "Nur Textformate (.txt, .md, .csv, .json).")
-    limit = config.org_upload_limit_bytes()
-    if limit:
-        used = config.org_upload_bytes(user["org_id"])
-        if used + len(raw) > limit:
-            mb = max(1, limit // (1024 * 1024))
-            raise HTTPException(
-                413,
-                "Speicherlimit des Mandanten erreicht (%s MB)." % mb,
-            )
-    title = (file.filename or "Upload").replace("\\", "/").rsplit("/", 1)[-1][:180]
-    text = raw.decode("utf-8", errors="replace")
-    stamp = db.now_iso()
-    doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
-    dest = config.upload_path(user["org_id"], doc_id)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(text, encoding="utf-8")
     conn = _conn()
     try:
+        n_docs = conn.execute(
+            "SELECT COUNT(*) AS n FROM documents WHERE org_id = ?", (user["org_id"],)
+        ).fetchone()["n"]
+        cap = config.org_max_docs()
+        if n_docs >= cap:
+            raise HTTPException(
+                413,
+                "Dokumentenlimit des Mandanten erreicht (%s Dateien)." % cap,
+            )
+        limit = config.org_upload_limit_bytes()
+        if limit:
+            used = config.org_upload_bytes(user["org_id"])
+            if used + len(raw) > limit:
+                mb = max(1, limit // (1024 * 1024))
+                raise HTTPException(
+                    413,
+                    "Speicherlimit des Mandanten erreicht (%s MB)." % mb,
+                )
+        title = (file.filename or "Upload").replace("\\", "/").rsplit("/", 1)[-1][:180]
+        text = raw.decode("utf-8", errors="replace")
+        stamp = db.now_iso()
+        doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
+        dest = config.upload_path(user["org_id"], doc_id)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text, encoding="utf-8")
         insert_document(
             conn,
             user["org_id"],

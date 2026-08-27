@@ -126,10 +126,16 @@ def get_document(org_id: str, doc_id: str, role: str, conn=None) -> dict[str, An
     return item
 
 
-def list_documents(org_id: str, role: str, conn=None) -> list[dict[str, Any]]:
+def list_documents(org_id: str, role: str, conn=None, *, limit: int = 500) -> list[dict[str, Any]]:
     c = conn or db.get_conn()
+    try:
+        cap = int(limit)
+    except (TypeError, ValueError):
+        cap = 500
+    cap = max(1, min(cap, 5000))
     rows = c.execute(
-        "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title", (org_id,)
+        "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
+        (org_id, cap),
     ).fetchall()
     out = []
     for row in rows:

@@ -408,10 +408,17 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
             "SELECT * FROM users WHERE org_id = ? ORDER BY email", (org_id,)
         ).fetchall()
     ]
-    docs = [retrieval.to_frontend_doc(d) for d in retrieval.list_documents(org_id, role, conn=conn)]
+    cap = config.org_max_docs()
+    docs = [
+        retrieval.to_frontend_doc(d)
+        for d in retrieval.list_documents(org_id, role, conn=conn, limit=cap)
+    ]
     bodies = {
         r["id"]: r["body"]
-        for r in conn.execute("SELECT id, body FROM documents WHERE org_id = ?", (org_id,)).fetchall()
+        for r in conn.execute(
+            "SELECT id, body FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
     }
     visible_ids = {d["id"] for d in docs if not d.get("denied")}
     for d in docs:

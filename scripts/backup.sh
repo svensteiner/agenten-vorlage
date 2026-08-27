@@ -2,6 +2,7 @@
 # SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, wenn sqlite3 vorhanden)
 # plus Uploads unter AISTUDIO_DATA/uploads.
 # AISTUDIO_BACKUP_PASS — AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
+# Schlägt openssl fehl, wird der Klartext mitgelöscht.
 # Passwort liegt in backup.env neben .env (nicht in der Produkt-Umgebung;
 # systemd: InaccessiblePaths). Docker: data/backup.env auf dem Volume.
 set -euo pipefail
@@ -55,10 +56,18 @@ if [[ -d "$DATA/uploads" ]] && command -v tar >/dev/null 2>&1; then
 fi
 
 encrypt_file() {
+  # Success: drop plaintext. Failure: drop plaintext and any partial .enc.
   local src="$1"
   local dest="$2"
-  openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
-    -pass env:AISTUDIO_BACKUP_PASS -in "$src" -out "$dest"
+  if openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+    -pass env:AISTUDIO_BACKUP_PASS -in "$src" -out "$dest"; then
+    rm -f "$src"
+    chmod 600 "$dest" 2>/dev/null || true
+    return 0
+  fi
+  rm -f "$src" "$dest"
+  echo "Verschlüsselung fehlgeschlagen — Klartext nicht behalten." >&2
+  return 1
 }
 
 if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
@@ -67,14 +76,10 @@ if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
     rm -f "$OUT" "$DEST/aistudio-$STAMP-uploads.tar.gz"
     exit 1
   fi
-  encrypt_file "$OUT" "$OUT.enc"
-  rm -f "$OUT"
+  encrypt_file "$OUT" "$OUT.enc" || exit 1
   OUT="$OUT.enc"
-  chmod 600 "$OUT" 2>/dev/null || true
   if [[ -f "$DEST/aistudio-$STAMP-uploads.tar.gz" ]]; then
-    encrypt_file "$DEST/aistudio-$STAMP-uploads.tar.gz" "$DEST/aistudio-$STAMP-uploads.tar.gz.enc"
-    rm -f "$DEST/aistudio-$STAMP-uploads.tar.gz"
-    chmod 600 "$DEST/aistudio-$STAMP-uploads.tar.gz.enc" 2>/dev/null || true
+    encrypt_file "$DEST/aistudio-$STAMP-uploads.tar.gz" "$DEST/aistudio-$STAMP-uploads.tar.gz.enc" || exit 1
   fi
 fi
 
