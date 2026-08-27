@@ -807,6 +807,8 @@ def test_compose_publishes_localhost_only():
     assert "dev-secret-change-me" not in text
     assert "init: true" in text
     assert "pids_limit: 128" in text
+    assert "mem_limit: 512m" in text
+    assert "memswap_limit: 512m" in text
     assert "/tmp:size=64M" in text
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "sqlite3" in dockerfile
@@ -819,6 +821,8 @@ def test_compose_publishes_localhost_only():
     before = prod.split("backup:")[0]
     assert "init: true" in after
     assert "pids_limit: 32" in after
+    assert "mem_limit: 256m" in after
+    assert "memswap_limit: 256m" in after
     assert "/tmp:size=64M" in after
     assert "AISTUDIO_SECRET:" not in after
     assert "AISTUDIO_BACKUP_PASS:" not in after

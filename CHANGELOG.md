@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.57 — 2026-08-27 — Docker mit RAM-Deckel
+
+systemd begrenzt den Produktprozess auf 512 MB (`MemoryMax`, ohne Swap).
+Compose hatte `pids_limit` und `/tmp`, aber keinen Speicher — ein Ausreißer
+im Container konnte den Host füllen. Jetzt `mem_limit`/`memswap_limit`
+512 MB (Produkt) und 256 MB (Backup-Profil), wie die Units.
+
 ## Produktlaufzeit 1.4.56 — 2026-08-27 — Housekeeping lässt die Sicherung durch
 
 `PRAGMA wal_checkpoint(TRUNCATE)` lief parallel zu `sqlite3 .backup`.
