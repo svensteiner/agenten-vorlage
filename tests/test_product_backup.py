@@ -167,6 +167,50 @@ def test_restore_refuses_live_pid(tmp_path):
     conn.close()
 
 
+def test_restore_refuses_when_instance_lock_held(tmp_path):
+    import fcntl
+
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env["AISTUDIO_RESTORE_FORCE"] = "1"
+    _make_db(db, 11)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    _make_db(db, 44)
+    lock = data / "aistudio.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        denied = subprocess.run(
+            [str(RESTORE), str(backup)],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert denied.returncode != 0
+        assert "aistudio.lock" in (denied.stderr or "")
+        conn = sqlite3.connect(db)
+        assert conn.execute("SELECT x FROM t").fetchone()[0] == 44
+        conn.close()
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
 def test_restore_ignores_stale_pid(tmp_path):
     data = tmp_path / "data"
     data.mkdir()

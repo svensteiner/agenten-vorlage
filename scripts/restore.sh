@@ -6,6 +6,7 @@
 # Pre-restore copies (*.before-restore-*, uploads.before-restore-*) stay at most 3.
 # Teilt data/.backup.lock mit backup.sh — sonst schreibt die Timer-Sicherung
 # während des Restore eine zerrissene Kopie.
+# Nimmt data/aistudio.lock, damit kein Produktprozess während des Restore startet.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"
@@ -50,7 +51,17 @@ if ! flock -n 9; then
   exit 1
 fi
 
-# Live-Prozess nicht überschreiben (WAL/offene Handles). Stale PID-Dateien ignorieren.
+# Live-Prozess nicht überschreiben (WAL/offene Handles).
+# data/aistudio.lock ist die Quelle (flock, fällt mit dem Prozess weg).
+# data/aistudio.pid kann fehlen — write_pid_file schluckt Fehler.
+# AISTUDIO_RESTORE_FORCE umgeht nur eine lebende PID-Datei, nicht die Sperre.
+INSTLOCK="$DATA/aistudio.lock"
+exec 8>>"$INSTLOCK"
+chmod 600 "$INSTLOCK" 2>/dev/null || true
+if ! flock -n 8; then
+  echo "Produktprozess läuft (data/aistudio.lock) — Restore abgebrochen, Live-Datenbank unangetastet. Zuerst stoppen." >&2
+  exit 1
+fi
 if [[ -f "$DATA/aistudio.pid" ]]; then
   _pid="$(tr -d ' \n\r' < "$DATA/aistudio.pid" 2>/dev/null || true)"
   if [[ "$_pid" =~ ^[0-9]+$ ]] && kill -0 "$_pid" 2>/dev/null; then

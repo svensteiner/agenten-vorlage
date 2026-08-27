@@ -1181,7 +1181,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" not in src
     assert "AISTUDIO_PROXY_IPS" in install
     assert "--password-file" in install
-    assert "data/aistudio.pid" in install
+    assert "data/aistudio.lock" in install
     assert "data/bootstrap.env" in install
     assert "sqlite3 fehlt" in install
     assert "flock fehlt" in install
@@ -1191,6 +1191,8 @@ def test_systemd_unit_rewrites_install_root():
     restore = (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert ".backup.lock" in restore
     assert "flock -n 9" in restore
+    assert "aistudio.lock" in restore
+    assert "flock -n 8" in restore
     assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx

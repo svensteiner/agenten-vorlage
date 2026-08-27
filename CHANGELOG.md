@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.60 — 2026-08-27 — Restore nimmt die Prozess-Sperre
+
+Restore prüfte nur `data/aistudio.pid`. Die Datei kann fehlen (Schreibfehler,
+manuell gelöscht), während der Prozess `data/aistudio.lock` hält — dann
+wurde die offene WAL überschrieben. Jetzt nicht-blockierendes `flock` auf
+dieselbe Sperre wie der Start; gehalten bis Restore endet, damit kein
+zweiter Prozess dazwischenkommt. `AISTUDIO_RESTORE_FORCE=1` umgeht nur
+eine PID-Datei, nicht die Sperre.
+
 ## Produktlaufzeit 1.4.59 — 2026-08-27 — systemd nicht mit Demo-Secret
 
 `install.sh --systemd` hat Einheiten geschrieben, auch wenn `.env` noch
