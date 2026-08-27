@@ -146,6 +146,15 @@ def test_jobs_and_audit_reject_negative_limit(client):
     assert ok.status_code == 200
 
 
+def test_search_rejects_huge_query(client):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    huge = client.get("/api/search", params={"q": "x" * 5000}, headers=headers)
+    assert huge.status_code == 422
+    ok = client.get("/api/search", params={"q": "Reiserichtlinie"}, headers=headers)
+    assert ok.status_code == 200
+    assert "hits" in ok.json()
+
+
 def test_lockout(client, monkeypatch):
     monkeypatch.setattr("product.config.LOCKOUT_AFTER", 2)
     email = "katharina.vogel@meridian.example"

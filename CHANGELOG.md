@@ -2,6 +2,11 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.27 — 2026-08-27 — Suche wie Ask auf 4000 Zeichen
+
+`GET /api/search?q=` war unbegrenzt, `/api/ask` schon 4000. Eine lange Query
+läuft durch FTS-Regex — jetzt dieselbe Kappe, sonst 422.
+
 ## Produktlaufzeit 1.4.26 — 2026-08-27 — Listen nicht mit LIMIT -1 leeren
 
 SQLite behandelt negatives `LIMIT` als unbegrenzt. `GET /api/jobs?limit=-1`

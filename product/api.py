@@ -599,7 +599,10 @@ def remove_doc(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any
 
 
 @router.get("/search")
-def search(q: str, user: dict = Depends(current_user)) -> dict[str, Any]:
+def search(
+    user: dict = Depends(current_user),
+    q: str = Query(..., min_length=1, max_length=4000),
+) -> dict[str, Any]:
     conn = _conn()
     try:
         hits, withheld = retrieval.retrieve(
