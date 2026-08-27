@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.62 — 2026-08-27 — systemd-Pin nach der .env
+
+`Environment=AISTUDIO_ENV=production` in der Unit gilt nicht, sobald
+`.env` geladen wird — systemd lässt EnvironmentFile immer gewinnen.
+Eine alte Laptop-`.env` mit `development` startete den Dienst hinter
+nginx mit Demo-Mandant und Register-Standard. Zweite EnvironmentFile
+(`scripts/aistudio.systemd.env`) nach `.env` setzt production, Loopback
+und `ALLOW_DEMO_SEED=false`. `--systemd` bricht bei gesetztem Demo-Seed
+auch ohne `AISTUDIO_ENV=production` in der `.env` ab.
+
 ## Produktlaufzeit 1.4.61 — 2026-08-27 — Produktion ohne Demo-Mandant
 
 `AISTUDIO_ALLOW_DEMO_SEED=true` in Produktion hat den Meridian-Mandanten

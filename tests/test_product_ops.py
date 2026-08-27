@@ -1138,6 +1138,14 @@ def test_systemd_unit_rewrites_install_root():
     rendered = src.replace("/opt/aistudio", "/srv/studio")
     assert "WorkingDirectory=/srv/studio" in rendered
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
+    assert "EnvironmentFile=-/srv/studio/scripts/aistudio.systemd.env" in rendered
+    env_idx = src.index("EnvironmentFile=-/opt/aistudio/.env")
+    pin_idx = src.index("EnvironmentFile=-/opt/aistudio/scripts/aistudio.systemd.env")
+    assert env_idx < pin_idx
+    pin = (root / "scripts" / "aistudio.systemd.env").read_text(encoding="utf-8")
+    assert "AISTUDIO_ENV=production" in pin
+    assert "AISTUDIO_HOST=127.0.0.1" in pin
+    assert "AISTUDIO_ALLOW_DEMO_SEED=false" in pin
     assert "InaccessiblePaths=-/srv/studio/backup.env -/srv/studio/data/backup.env" in rendered
     assert "/opt/aistudio" not in rendered
     assert "MemoryMax=512M" in src
@@ -1194,6 +1202,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "Crash-Loop" in install
     assert "env_flag_on" in install
     assert "ALLOW_DEMO_SEED" in install
+    assert "aistudio.systemd.env" in install
+    assert "aistudio.systemd.env" in src
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     restore = (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert ".backup.lock" in restore

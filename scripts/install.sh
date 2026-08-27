@@ -251,8 +251,9 @@ raise SystemExit(0 if val.lower() in {"1", "true", "yes", "on"} else 1)
 }
 
 env_runs_as_production() {
-  # systemd unit sets AISTUDIO_ENV=production; EnvironmentFile overrides.
-  # Missing key → production. Last assignment wins.
+  # .env last assignment. Missing key → production (unit + pin file).
+  # systemd EnvironmentFile overrides Environment=; the pin file after
+  # .env restores production even when this helper sees development.
   local envf="$1"
   python3 -c '
 import pathlib, sys
@@ -493,9 +494,17 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
     echo "AISTUDIO_SECRET ist der Demo-Wert, fehlt oder kürzer als 24 Zeichen — systemd nicht installiert (sonst Crash-Loop). Eigenes Secret in $ENV_FILE setzen (mindestens 24 Zeichen) oder .env entfernen und install.sh erneut ausführen." >&2
     exit 1
   fi
-  if env_runs_as_production "$ENV_FILE" && env_flag_on "$ENV_FILE" AISTUDIO_ALLOW_DEMO_SEED; then
+  # Unit always pins production; leftover development .env must not skip this.
+  if env_flag_on "$ENV_FILE" AISTUDIO_ALLOW_DEMO_SEED; then
     echo "AISTUDIO_ALLOW_DEMO_SEED ist an — systemd nicht installiert (Produktion würde mit bekanntem Demo-Passwort starten). In $ENV_FILE auf false setzen." >&2
     exit 1
+  fi
+  if [[ ! -f "$ROOT/scripts/aistudio.systemd.env" ]]; then
+    echo "scripts/aistudio.systemd.env fehlt — systemd nicht installiert (Pin für production/Loopback/kein Demo-Seed)." >&2
+    exit 1
+  fi
+  if ! env_runs_as_production "$ENV_FILE"; then
+    echo "Hinweis: AISTUDIO_ENV in $ENV_FILE ist nicht production — die Unit setzt production nach der .env (scripts/aistudio.systemd.env)." >&2
   fi
   render_systemd
 fi
