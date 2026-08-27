@@ -463,3 +463,14 @@ def test_compose_publishes_localhost_only():
     text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "127.0.0.1:8123:8123" in text
     assert '"8123:8123"' not in text
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert "sqlite3" in dockerfile
+    assert "openssl" in dockerfile
+    prod = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
+    assert 'profiles: ["backup"]' in prod
+    assert "network_mode: none" in prod
+    after = prod.split("backup:")[1]
+    assert "AISTUDIO_SECRET:" not in after
+    assert "AISTUDIO_BACKUP_PASS:" not in after
+    assert "backup.env" in prod
+    assert "8123" not in after

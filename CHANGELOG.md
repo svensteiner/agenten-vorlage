@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.20 — 2026-08-27 — Docker-Sicherung mit openssl
+
+Das Image enthält `openssl` (AES-256). `docker-compose.prod.yml` hat ein
+One-Shot-Profil `backup` ohne Secret in der Umgebung — das Passwort kommt aus
+`data/backup.env` auf dem Volume. Läuft nicht mit `up`, nur mit
+`--profile backup run --rm backup`.
+
 ## Produktlaufzeit 1.4.19 — 2026-08-27 — Restore nicht über laufenden Prozess
 
 `restore.sh` bricht ab, solange `data/aistudio.pid` auf einen lebenden
