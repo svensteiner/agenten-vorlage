@@ -42,7 +42,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 - Private Wissensbasis (FTS5), Upload, Löschen, DSGVO-Export
 - Agenten mieten (Admin/CFO), interne Rechnungsentwürfe, Aufträge über `core.orchestrator`
 - **Modell-Schicht** (`product/llm.py`): einziges Tor nach außen. Die Wissensbasis bleibt auf der Instanz. Standard `AISTUDIO_LLM_EGRESS=in_boundary` (extractiv oder lokales Modell). Erste Stufe: OpenAI mit `AISTUDIO_LLM_EGRESS=cloud` — dann gehen nur freigegebene Kurzauszüge, nie der Bestand. Später derselbe Vertrag auf `AISTUDIO_LLM_PROVIDER=decentral` + `AISTUDIO_LLM_BASE_URL`. Nach wiederholten Ausfällen Schutzschalter (extractiv, ohne weiteres Warten).
-- Audit-Log (ohne Fragen/Auftragstexte, nur Länge), Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis, Alter der letzten Sicherung), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
+- Audit-Log (ohne Fragen/Auftragstexte, nur Länge), Auftragsliste, `/api/ready` (Datenbank + beschreibbares Datenverzeichnis; Sicherungslage in Produktion nicht öffentlich), `/api/live` (Prozess ohne DB), `/api/metrics` (Größen/Zähler; in Produktion `AISTUDIO_METRICS_TOKEN` Pflicht, `?format=prom`)
 - Housekeeping beim Start und alle `AISTUDIO_HOUSEKEEPING_HOURS` Stunden (Standard 24): abgelaufene Sitzungen, Audit, Aufträge, WAL-Checkpoint, verwaiste Uploads, Vor-Restore-Kopien (letzte 3). Cron: `./scripts/housekeeping.sh`. Restore bricht ab, solange der Produktprozess läuft (`data/aistudio.pid`; `AISTUDIO_RESTORE_FORCE=1` überschreibt bewusst).
 - Erstmandant per `data/bootstrap.env` bzw. `AISTUDIO_BOOTSTRAP_*`, wenn die Datenbank leer ist. Nach Erfolg löscht der Prozess die Datei und entfernt die Variablen aus der Umgebung (und aus `.env`, falls sie dort noch stehen). systemd schreibt nur `data/` — deshalb liegt das Bootstrap-Passwort nicht mehr in `.env`.
 - Sitzungsruhe (`AISTUDIO_SESSION_IDLE`), optional Host-Allowlist (`AISTUDIO_ALLOWED_HOSTS`)
@@ -58,7 +58,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 | `AISTUDIO_LLM_PROVIDER=openai` | Erste Produktstufe, Chat Completions. |
 | `AISTUDIO_LLM_PROVIDER=decentral` | Später: lokale Instanz, `AISTUDIO_LLM_BASE_URL` z. B. `http://127.0.0.1:11434/v1`. |
 
-Prompts werden nicht geloggt. `/api/health` zeigt `llm` ohne Schlüssel. Cloud-Aufrufe sind pro Nutzer/Mandant kontingentiert (`AISTUDIO_LLM_PER_USER` / `AISTUDIO_LLM_PER_ORG` pro Minute, `AISTUDIO_LLM_PER_USER_DAY` / `AISTUDIO_LLM_PER_ORG_DAY` pro Kalendertag, persistiert); bei Ausschöpfung bleibt die Antwort extractiv auf der Instanz. Nach `AISTUDIO_LLM_BREAKER_FAILS` Ausfällen (Standard 5) bleibt der Ausgang `AISTUDIO_LLM_BREAKER_SECONDS` Sekunden (Standard 300) geschlossen.
+Prompts werden nicht geloggt. Entwicklung: `/api/health` zeigt `llm` ohne Schlüssel. Produktion: dieselbe Lage nach Login auf `/api/me` und auf `/api/metrics`. Cloud-Aufrufe sind pro Nutzer/Mandant kontingentiert (`AISTUDIO_LLM_PER_USER` / `AISTUDIO_LLM_PER_ORG` pro Minute, `AISTUDIO_LLM_PER_USER_DAY` / `AISTUDIO_LLM_PER_ORG_DAY` pro Kalendertag, persistiert); bei Ausschöpfung bleibt die Antwort extractiv auf der Instanz. Nach `AISTUDIO_LLM_BREAKER_FAILS` Ausfällen (Standard 5) bleibt der Ausgang `AISTUDIO_LLM_BREAKER_SECONDS` Sekunden (Standard 300) geschlossen.
 
 ### Bewusst nicht in dieser Version
 

@@ -138,32 +138,41 @@ class PurgeBody(BaseModel):
     password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
+def _ops_status() -> dict[str, Any]:
+    """LLM/backup snapshot for authenticated callers and development health."""
+    from product import llm
+
+    age = config.latest_backup_age_hours()
+    return {
+        "llm": llm.public_status(),
+        "backup_age_hours": age,
+        "backup_ok": age is not None and age <= config.backup_max_age_hours(),
+    }
+
+
 @router.get("/health")
 def health() -> dict[str, Any]:
     conn = _conn()
     try:
-        orgs = conn.execute("SELECT COUNT(*) AS n FROM orgs").fetchone()["n"]
-        docs = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
-        demo = _demo_present(conn)
-        from product import llm
-
-        age = config.latest_backup_age_hours()
+        conn.execute("SELECT 1").fetchone()
         payload = {
             "ok": True,
             "product": "aistudio",
             "version": config.VERSION,
             "env": config.env_name(),
-            "demo": demo,
             "allow_register": config.allow_register(),
-            "llm": llm.public_status(),
-            "backup_age_hours": age,
-            "backup_ok": age is not None and age <= config.backup_max_age_hours(),
         }
-        if not config.is_production():
-            payload["orgs"] = orgs
-            payload["documents"] = docs
-            if demo:
-                payload["demo_email"] = config.DEMO_EMAIL
+        if config.is_production():
+            return payload
+        demo = _demo_present(conn)
+        orgs = conn.execute("SELECT COUNT(*) AS n FROM orgs").fetchone()["n"]
+        docs = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
+        payload.update(_ops_status())
+        payload["demo"] = demo
+        payload["orgs"] = orgs
+        payload["documents"] = docs
+        if demo:
+            payload["demo_email"] = config.DEMO_EMAIL
         return payload
     finally:
         conn.close()
@@ -190,8 +199,6 @@ def ready() -> dict[str, Any]:
             free_mb = shutil.disk_usage(data).free // (1024 * 1024)
         except OSError:
             free_mb = 0
-        from product import llm
-
         age = config.latest_backup_age_hours()
         max_age = config.backup_max_age_hours()
         backup_ok = age is not None and age <= max_age
@@ -201,10 +208,13 @@ def ready() -> dict[str, Any]:
             "writable": writable,
             "disk_free_mb": free_mb,
             "version": config.VERSION,
-            "llm": llm.public_status(),
-            "backup_age_hours": age,
-            "backup_ok": backup_ok,
         }
+        if not config.is_production():
+            from product import llm
+
+            payload["llm"] = llm.public_status()
+            payload["backup_age_hours"] = age
+            payload["backup_ok"] = backup_ok
         if not writable:
             return JSONResponse(payload, status_code=503)
         require_backup = config.require_backup_for_ready()
@@ -456,6 +466,7 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
         used = config.org_upload_bytes(user["org_id"])
         limit = config.org_upload_limit_bytes()
+        ops = _ops_status()
         return {
             "user": tenancy.public_user(user),
             "org": db.row_dict(org) if org else None,
@@ -464,6 +475,9 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
                 "used_bytes": used,
                 "limit_bytes": limit,
             },
+            "llm": ops["llm"],
+            "backup_age_hours": ops["backup_age_hours"],
+            "backup_ok": ops["backup_ok"],
         }
     finally:
         conn.close()

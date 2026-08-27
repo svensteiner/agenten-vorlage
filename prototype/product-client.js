@@ -220,6 +220,12 @@
       this.org = me.org;
       this.tenantDemo = !!me.demo;
       this.storage = me.storage || null;
+      this.health = Object.assign({}, this.health || {}, {
+        demo: !!me.demo,
+        llm: me.llm || (this.health && this.health.llm) || {},
+        backup_age_hours: me.backup_age_hours,
+        backup_ok: me.backup_ok,
+      });
       const docs = await this.request("/api/docs");
       this.applyDocs(docs.docs || []);
       this.fleet = await this.request("/api/fleet");

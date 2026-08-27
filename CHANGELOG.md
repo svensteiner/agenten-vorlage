@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.32 — 2026-08-27 — Health ohne LLM- und Backup-Lage
+
+`/api/health` und `/api/ready` waren unauthentifiziert und zeigten Demo-Flag,
+Modell, Kontingent und Backup-Alter. In Produktion nur noch Prozess/DB
+(`allow_register` bleibt für den Login-Dialog). Lage nach der Anmeldung auf
+`/api/me` und hinter Token auf `/api/metrics`.
+
 ## Produktlaufzeit 1.4.31 — 2026-08-27 — Backup-Passwort nicht im Produktprozess
 
 `backup.env` lag unter `data/` — derselbe Dienstbenutzer konnte die Datei

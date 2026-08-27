@@ -61,6 +61,8 @@ def test_register_empty_tenant_and_upload(client):
     me = client.get("/api/me", headers=headers).json()
     assert me["org"]["name"] == "Nordstahl GmbH"
     assert me["demo"] is False
+    assert "llm" in me
+    assert "backup_ok" in me
 
     ask = client.post("/api/ask", json={"q": "Reiserichtlinie"}, headers=headers)
     assert ask.status_code == 200
@@ -279,14 +281,23 @@ def test_secret_prev_accepts_old_tokens(monkeypatch):
     assert body["sub"] == "user-rotate"
 
 
-def test_health_hides_demo_email_in_production(client, monkeypatch):
+def test_health_hides_ops_in_production(client, monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     h = client.get("/api/health").json()
     assert h.get("env") == "production"
+    assert h.get("ok") is True
     assert "demo_email" not in h
+    assert "demo" not in h
     assert "orgs" not in h
     assert "documents" not in h
-    assert "llm" in h
+    assert "llm" not in h
+    assert "backup_age_hours" not in h
+    assert "backup_ok" not in h
+    assert "allow_register" in h
+    ready = client.get("/api/ready").json()
+    assert ready.get("ok") is True
+    assert "llm" not in ready
+    assert "backup_age_hours" not in ready
 
 
 def test_sessions_list_and_revoke_others(client):
