@@ -106,7 +106,7 @@ def test_openai_compat_sends_excerpts_only(monkeypatch):
 
     class FakeClient:
         def __init__(self, *a, **k):
-            pass
+            captured["client_kwargs"] = k
 
         def __enter__(self):
             return self
@@ -129,6 +129,7 @@ def test_openai_compat_sends_excerpts_only(monkeypatch):
     assert "140" in result["text"]
     assert "script" not in result["text"].lower()
     assert captured["url"].endswith("/chat/completions")
+    assert captured["client_kwargs"].get("follow_redirects") is False
     assert captured["json"]["model"] == "gpt-4o-mini"
     user = captured["json"]["messages"][1]["content"]
     assert "Auszüge" in user

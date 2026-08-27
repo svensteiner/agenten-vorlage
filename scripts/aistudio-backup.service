@@ -1,6 +1,6 @@
 [Unit]
 Description=AI Studio SQLite backup
-After=network.target
+# Kein Netz — diese Unit lädt AISTUDIO_BACKUP_PASS aus data/backup.env.
 
 [Service]
 Type=oneshot
@@ -10,12 +10,26 @@ EnvironmentFile=-/opt/aistudio/data/backup.env
 ExecStart=/opt/aistudio/scripts/backup.sh
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateNetwork=true
 ProtectSystem=strict
 ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
 ProtectKernelLogs=true
+ProtectHostname=true
 PrivateDevices=true
-ReadWritePaths=/opt/aistudio/data
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
 UMask=0077
 LimitCORE=0
+MemoryMax=256M
+MemorySwapMax=0
+TasksMax=32
 CapabilityBoundingSet=
 AmbientCapabilities=
+RestrictAddressFamilies=none
+ReadWritePaths=/opt/aistudio/data

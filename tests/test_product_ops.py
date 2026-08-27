@@ -659,6 +659,9 @@ def test_systemd_unit_rewrites_install_root():
     assert "StartLimitBurst=5" in src
     backup = (root / "scripts" / "aistudio-backup.service").read_text(encoding="utf-8")
     assert "ReadWritePaths=/opt/aistudio/data" in backup
+    assert "PrivateNetwork=true" in backup
+    assert "RestrictAddressFamilies=none" in backup
+    assert "MemoryMax=256M" in backup
     install = (root / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "--systemd" in install
     assert "AISTUDIO_ALLOWED_HOSTS" in install

@@ -404,7 +404,7 @@ def _openai_compat(cfg: dict[str, Any], system: str, user: str, max_tokens: int)
             {"role": "user", "content": user},
         ],
     }
-    with httpx.Client(timeout=cfg["timeout"]) as client:
+    with httpx.Client(timeout=cfg["timeout"], follow_redirects=False) as client:
         response = client.post(_chat_url(cfg["base_url"]), headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
@@ -429,7 +429,7 @@ def _anthropic(cfg: dict[str, Any], system: str, user: str, max_tokens: int) -> 
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
-    with httpx.Client(timeout=cfg["timeout"]) as client:
+    with httpx.Client(timeout=cfg["timeout"], follow_redirects=False) as client:
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()

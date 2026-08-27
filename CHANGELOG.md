@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.28 — 2026-08-27 — Modell ohne Redirect, Backup ohne Netz
+
+httpx folgt keinem 302 mehr — sonst wandern Kurzauszüge auf einen fremden Host.
+Die Backup-Unit (hält `AISTUDIO_BACKUP_PASS`) läuft ohne Netzwerk
+(`PrivateNetwork`, `RestrictAddressFamilies=none`).
+
 ## Produktlaufzeit 1.4.27 — 2026-08-27 — Suche wie Ask auf 4000 Zeichen
 
 `GET /api/search?q=` war unbegrenzt, `/api/ask` schon 4000. Eine lange Query
