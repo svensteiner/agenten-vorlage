@@ -1150,6 +1150,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "--password-file" in install
     assert "data/aistudio.pid" in install
     assert "data/bootstrap.env" in install
+    assert "sqlite3 fehlt" in install
+    assert "flock fehlt" in install
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")

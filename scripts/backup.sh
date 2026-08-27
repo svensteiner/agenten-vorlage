@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, wenn sqlite3 vorhanden)
+# SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, sqlite3 Pflicht)
 # plus Uploads unter AISTUDIO_DATA/uploads.
+# Eine Sicherung gleichzeitig (flock auf data/.backup.lock) — sonst löscht
+# die Aufbewahrung die gerade geschriebene Datei der anderen Runde.
 # AISTUDIO_BACKUP_PASS — AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
 # Schlägt openssl fehl, wird der Klartext mitgelöscht.
 # Passwort liegt in backup.env neben .env (nicht in der Produkt-Umgebung;
@@ -20,8 +22,24 @@ if [[ ! -f "$DB" ]]; then
   exit 1
 fi
 
-mkdir -p "$DEST"
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "sqlite3 fehlt — Sicherung abgebrochen, Live-Datenbank unangetastet." >&2
+  exit 1
+fi
+if ! command -v flock >/dev/null 2>&1; then
+  echo "flock fehlt — Sicherung abgebrochen (überlappende Läufe würden Kopien löschen)." >&2
+  exit 1
+fi
+
+mkdir -p "$DATA" "$DEST"
 chmod 700 "$DEST" 2>/dev/null || true
+LOCK="$DATA/.backup.lock"
+exec 9>"$LOCK"
+chmod 600 "$LOCK" 2>/dev/null || true
+if ! flock -n 9; then
+  echo "Eine andere Sicherung läuft bereits." >&2
+  exit 1
+fi
 if command -v df >/dev/null 2>&1; then
   FREE_KB="$(df -Pk "$DEST" | awk 'NR==2 {print $4}')"
   if [[ -n "$FREE_KB" && "$FREE_KB" -lt 102400 ]]; then
@@ -32,20 +50,12 @@ fi
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$DEST/aistudio-$STAMP.db"
 
-if command -v sqlite3 >/dev/null 2>&1; then
-  sqlite3 "$DB" ".backup '$OUT'"
-  CHECK="$(sqlite3 "$OUT" "PRAGMA integrity_check;" 2>/dev/null || true)"
-  if [[ "$CHECK" != "ok" ]]; then
-    echo "Sicherung beschädigt ($CHECK) — $OUT verworfen." >&2
-    rm -f "$OUT"
-    exit 1
-  fi
-else
-  echo "Hinweis: sqlite3 fehlt — Dateikopie, nicht WAL-sicher." >&2
-  cp "$DB" "$OUT"
-  if [[ -f "$DB-wal" ]]; then
-    cp "$DB-wal" "$OUT-wal"
-  fi
+sqlite3 "$DB" ".backup '$OUT'"
+CHECK="$(sqlite3 "$OUT" "PRAGMA integrity_check;" 2>/dev/null || true)"
+if [[ "$CHECK" != "ok" ]]; then
+  echo "Sicherung beschädigt ($CHECK) — $OUT verworfen." >&2
+  rm -f "$OUT"
+  exit 1
 fi
 
 chmod 600 "$OUT" 2>/dev/null || true

@@ -403,6 +403,19 @@ if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
   fi
 fi
 
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  echo "sqlite3 fehlt — ./scripts/backup.sh bricht ab. Paket sqlite3 installieren." >&2
+  if [[ "$SYSTEMD" -eq 1 ]]; then
+    exit 1
+  fi
+fi
+if ! command -v flock >/dev/null 2>&1; then
+  echo "flock fehlt — überlappende Sicherungen sind unsicher. Paket util-linux installieren." >&2
+  if [[ "$SYSTEMD" -eq 1 ]]; then
+    exit 1
+  fi
+fi
+
 if [[ "$SYSTEMD" -eq 1 ]]; then
   render_systemd
 fi

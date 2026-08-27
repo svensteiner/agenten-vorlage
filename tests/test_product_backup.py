@@ -327,6 +327,78 @@ def test_backup_script_drops_plaintext_if_encrypt_fails():
     text = BACKUP.read_text(encoding="utf-8")
     assert "Klartext nicht behalten" in text
     assert 'rm -f "$src" "$dest"' in text
+    assert "Dateikopie" not in text
+    assert "flock -n 9" in text
+    assert ".backup.lock" in text
+
+
+def test_backup_refuses_without_sqlite3(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 1)
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for folder in ("/bin", "/usr/bin", "/usr/sbin"):
+        base = Path(folder)
+        if not base.is_dir():
+            continue
+        for src in base.iterdir():
+            if src.name == "sqlite3" or not src.is_file():
+                continue
+            target = bin_dir / src.name
+            if target.exists():
+                continue
+            try:
+                os.symlink(src, target)
+            except OSError:
+                continue
+    env["PATH"] = str(bin_dir)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    assert "sqlite3 fehlt" in (r.stderr or "")
+    assert not list(dest.glob("aistudio-*.db")) if dest.is_dir() else True
+
+
+def test_backup_refuses_when_locked(tmp_path):
+    import fcntl
+
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 2)
+    dest = tmp_path / "backups"
+    dest.mkdir()
+    lock = data / ".backup.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        env = _env(data, db)
+        env.pop("AISTUDIO_BACKUP_PASS", None)
+        r = subprocess.run(
+            [str(BACKUP), str(dest)],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert r.returncode != 0
+        assert "läuft bereits" in (r.stderr or "")
+        assert not list(dest.glob("aistudio-*.db"))
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
 
 
 def test_encrypted_backup_scrubs_plaintext_when_openssl_fails(tmp_path):
@@ -694,6 +766,7 @@ def test_compose_publishes_localhost_only():
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "sqlite3" in dockerfile
     assert "openssl" in dockerfile
+    assert "util-linux" in dockerfile
     prod = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
     assert 'profiles: ["backup"]' in prod
     assert "network_mode: none" in prod

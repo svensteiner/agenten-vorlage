@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.53 — 2026-08-27 — Sicherung mit Sperre, ohne Dateikopie
+
+Zwei parallele `backup.sh` (Timer plus Hand) konnten die Aufbewahrung
+durcheinanderbringen — die zweite Runde löschte die Datei der ersten.
+Jetzt `flock` auf `data/.backup.lock` (nicht blockierend). Ohne `sqlite3`
+kein Fallback mehr auf `cp` der WAL (zerrissene Kopie). Restore war schon
+so streng. `install.sh --systemd` bricht ohne `sqlite3`/`flock` ab.
+
 ## Produktlaufzeit 1.4.52 — 2026-08-27 — Schema nicht auf dem Hot-Path
 
 Jede Anfrage (Health, Ready, Login, Ask) hat `CREATE TABLE IF NOT EXISTS`
