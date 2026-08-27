@@ -471,6 +471,8 @@ def delete_session(session_id: str, user: dict = Depends(current_user)) -> dict[
 
 @router.get("/me")
 def me(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("me:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
@@ -654,6 +656,7 @@ def remove_doc(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any
         conn.commit()
         dest = config.upload_path(user["org_id"], doc_id)
         dest.unlink(missing_ok=True)
+        config.invalidate_org_upload_bytes(user["org_id"])
         return {"ok": True}
     finally:
         conn.close()
@@ -967,7 +970,7 @@ async def upload_doc(
             )
         limit = config.org_upload_limit_bytes()
         if limit:
-            used = config.org_upload_bytes(user["org_id"])
+            used = config.org_upload_bytes(user["org_id"], fresh=True)
             if used + len(raw) > limit:
                 mb = max(1, limit // (1024 * 1024))
                 raise HTTPException(
@@ -1000,6 +1003,7 @@ async def upload_doc(
         )
         db.audit(user["org_id"], user["email"], "upload", title or doc_id, conn=conn)
         conn.commit()
+        config.invalidate_org_upload_bytes(user["org_id"])
         return {"ok": True, "id": doc_id}
     finally:
         conn.close()

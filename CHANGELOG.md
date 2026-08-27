@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.46 — 2026-08-27 — /api/me begrenzen, Speichergröße cachen
+
+`GET /api/me` lief ohne Limit und zählte bei jedem Aufruf alle Upload-Dateien
+(`rglob`). Jetzt 60/Minute je Nutzer; die Summe liegt 15 s im Speicher.
+Quota-Prüfung und Upload/Löschen lesen frisch bzw. leeren den Cache.
+
 ## Produktlaufzeit 1.4.45 — 2026-08-27 — Ein Prozess je Datenverzeichnis
 
 Zwei Produktprozesse auf derselben SQLite (zweiter `run_product`, doppeltes

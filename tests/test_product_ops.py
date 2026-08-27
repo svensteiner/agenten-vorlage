@@ -780,6 +780,8 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert jobs.status_code == 429
     audit = client.get("/api/audit", headers=headers)
     assert audit.status_code == 429
+    me = client.get("/api/me", headers=headers)
+    assert me.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -1001,6 +1003,22 @@ def test_org_upload_quota(client, monkeypatch):
     assert me["storage"]["used_bytes"] >= 600_000
     assert me["storage"]["docs"] >= 1
     assert me["storage"]["docs_limit"] >= 20
+
+
+def test_org_upload_bytes_cached(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    org = "org-cache-1"
+    root = tmp_path / "uploads" / org
+    root.mkdir(parents=True)
+    (root / "a.txt").write_bytes(b"x" * 100)
+    first = config.org_upload_bytes(org, fresh=True)
+    assert first == 100
+    (root / "b.txt").write_bytes(b"y" * 50)
+    assert config.org_upload_bytes(org) == 100
+    config.invalidate_org_upload_bytes(org)
+    assert config.org_upload_bytes(org) == 150
+    (root / "c.txt").write_bytes(b"z" * 20)
+    assert config.org_upload_bytes(org, fresh=True) == 170
 
 
 def test_org_doc_count_cap(client, monkeypatch):

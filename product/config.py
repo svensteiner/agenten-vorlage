@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import ipaddress
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -23,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.45"
+VERSION = "1.4.46"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -343,7 +344,13 @@ def export_invoices_limit() -> int:
     return _int_env("AISTUDIO_EXPORT_INVOICES", 500, lo=12, hi=2000)
 
 
-def org_upload_bytes(org_id: str) -> int:
+_bytes_lock = threading.Lock()
+_bytes_cache: dict[str, tuple[float, int]] = {}
+_BYTES_TTL = 15.0
+_BYTES_MAX = 400
+
+
+def _scan_org_upload_bytes(org_id: str) -> int:
     root = DATA_DIR / "uploads" / org_dir(org_id)
     if not root.is_dir():
         return 0
@@ -360,6 +367,35 @@ def org_upload_bytes(org_id: str) -> int:
         except OSError:
             continue
     return total
+
+
+def org_upload_bytes(org_id: str, *, fresh: bool = False) -> int:
+    """Sum of tenant upload files. Cached 15s; quota checks pass fresh=True."""
+    key = org_dir(org_id)
+    now = time.time()
+    if not fresh:
+        with _bytes_lock:
+            hit = _bytes_cache.get(key)
+            if hit and now - hit[0] < _BYTES_TTL:
+                return hit[1]
+    total = _scan_org_upload_bytes(org_id)
+    with _bytes_lock:
+        _bytes_cache[key] = (now, total)
+        if len(_bytes_cache) > _BYTES_MAX:
+            stale = [k for k, (t, _) in _bytes_cache.items() if now - t > _BYTES_TTL]
+            for k in stale:
+                del _bytes_cache[k]
+            extra = len(_bytes_cache) - _BYTES_MAX
+            if extra > 0:
+                oldest = sorted(_bytes_cache.items(), key=lambda kv: kv[1][0])
+                for k, _ in oldest[:extra]:
+                    del _bytes_cache[k]
+    return total
+
+
+def invalidate_org_upload_bytes(org_id: str) -> None:
+    with _bytes_lock:
+        _bytes_cache.pop(org_dir(org_id), None)
 
 
 BOOTSTRAP_KEYS = (
