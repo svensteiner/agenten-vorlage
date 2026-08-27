@@ -652,6 +652,7 @@ def test_compose_publishes_localhost_only():
     assert "/tmp:size=64M" in after
     assert "AISTUDIO_SECRET:" not in after
     assert "AISTUDIO_BACKUP_PASS:" not in after
+    assert "${AISTUDIO_METRICS_TOKEN:?" in before
     assert "AISTUDIO_BACKUP_ENV" in after
     assert "aistudio-backup-secret:/app/backup-secret" in after
     assert "aistudio-backup-secret:/app/backup-secret" not in before

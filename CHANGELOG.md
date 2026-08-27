@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.49 — 2026-08-27 — Metrik-Token beim Start, Schreib-APIs kappen
+
+Produktion startete ohne `AISTUDIO_METRICS_TOKEN` — `/api/metrics` war 401,
+der Prozess aber grün. Jetzt Start verweigert (mindestens 16 Zeichen);
+Compose-Produktion verlangt die Variable wie das Secret. `POST /api/fleet`,
+`PATCH /org` und `/users/{id}`, `DELETE /docs/{id}` und Sitzungs-Widerruf
+haben Limits (30/20/20/30/20 je Minute).
+
 ## Produktlaufzeit 1.4.48 — 2026-08-27 — Parallele Aufträge kappen, hängende Jobs
 
 `POST /api/agents/run` ist synchron und ließ `running`-Zeilen stehen, wenn der

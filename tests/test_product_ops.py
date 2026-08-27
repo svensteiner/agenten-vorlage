@@ -402,6 +402,19 @@ def test_production_requires_secret(monkeypatch):
         config.validate_runtime()
 
 
+def test_production_requires_metrics_token(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+    monkeypatch.setenv("AISTUDIO_SECRET", "production-secret-not-demo-xx")
+    monkeypatch.delenv("AISTUDIO_METRICS_TOKEN", raising=False)
+    with pytest.raises(RuntimeError, match="METRICS_TOKEN"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "short")
+    with pytest.raises(RuntimeError, match="METRICS_TOKEN"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "metrics-token-16ch")
+    config.validate_runtime()
+
+
 def test_secret_prev_accepts_old_tokens(monkeypatch):
     from product import auth
 
@@ -942,6 +955,16 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert agents.status_code == 429
     sessions = client.get("/api/sessions", headers=headers)
     assert sessions.status_code == 429
+    fleet_w = client.post(
+        "/api/fleet",
+        headers=headers,
+        json={"agent_id": "reporting", "action": "rent"},
+    )
+    assert fleet_w.status_code == 429
+    docdel = client.delete("/api/docs/reiserichtlinie-2026", headers=headers)
+    assert docdel.status_code == 429
+    revoke = client.post("/api/sessions/revoke-others", headers=headers)
+    assert revoke.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -981,6 +1004,10 @@ def test_admin_hashing_routes_rate_limited(client, monkeypatch):
     assert add.status_code == 429
     listed = client.get("/api/users", headers=headers)
     assert listed.status_code == 429
+    org = client.patch("/api/org", headers=headers, json={"name": "Hashlimit AG"})
+    assert org.status_code == 429
+    patch = client.patch("/api/users/user-x", headers=headers, json={"role": "member"})
+    assert patch.status_code == 429
     pwd = client.post(
         "/api/users/user-x/password",
         headers=headers,

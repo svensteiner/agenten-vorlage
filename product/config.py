@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.48"
+VERSION = "1.4.49"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -551,6 +551,13 @@ def validate_runtime() -> None:
         raise RuntimeError(
             "Produktion verweigert den Start: AISTUDIO_SECRET muss gesetzt sein "
             "(mindestens 24 Zeichen, nicht der Demo-Wert)."
+        )
+    token = (os.environ.get("AISTUDIO_METRICS_TOKEN") or "").strip()
+    if not token or len(token) < 16:
+        raise RuntimeError(
+            "Produktion verweigert den Start: AISTUDIO_METRICS_TOKEN muss gesetzt sein "
+            "(mindestens 16 Zeichen). install.sh trägt einen Wert nach; "
+            "Header X-Metrics-Token für /api/metrics."
         )
 
 

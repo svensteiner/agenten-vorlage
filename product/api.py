@@ -265,7 +265,7 @@ def metrics(request: Request):
     """Ops snapshot: sizes and counters only — no tenant text, no keys.
 
     Optional ``AISTUDIO_METRICS_TOKEN`` (Header ``X-Metrics-Token`` or Bearer).
-    In Produktion ist das Token Pflicht.
+    In Produktion ist das Token Pflicht — ohne Token startet der Prozess nicht.
     ``?format=prom`` yields Prometheus text.
     """
     if rate_limited("metrics:" + client_ip(request), 60):
@@ -464,6 +464,8 @@ def sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.post("/sessions/revoke-others")
 def revoke_other_sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("sessionw:" + user["id"], 20):
+        raise rate_limit_error()
     conn = _conn()
     try:
         tenancy.revoke_user_sessions(conn, user["id"], keep_jti=user.get("_jti"))
@@ -476,6 +478,8 @@ def revoke_other_sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("sessionw:" + user["id"], 20):
+        raise rate_limit_error()
     conn = _conn()
     try:
         try:
@@ -525,6 +529,8 @@ def me(user: dict = Depends(current_user)) -> dict[str, Any]:
 @router.patch("/org")
 def patch_org(body: OrgPatchBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("org:" + user["id"], 20):
+        raise rate_limit_error()
     conn = _conn()
     try:
         org = conn.execute("SELECT * FROM orgs WHERE id = ?", (user["org_id"],)).fetchone()
@@ -590,6 +596,8 @@ def add_user(body: UserAddBody, user: dict = Depends(current_user)) -> dict[str,
 @router.patch("/users/{user_id}")
 def patch_user(user_id: str, body: UserPatchBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("userpatch:" + user["id"], 20):
+        raise rate_limit_error()
     if user_id == user["id"] and body.active is False:
         raise HTTPException(400, "Sie können sich nicht selbst deaktivieren.")
     conn = _conn()
@@ -673,6 +681,8 @@ def doc_one(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
 @router.delete("/docs/{doc_id}")
 def remove_doc(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_delete_docs(user["role"]))
+    if rate_limited("docdel:" + user["id"], 30):
+        raise rate_limit_error()
     conn = _conn()
     try:
         ok = delete_document(conn, user["org_id"], doc_id)
@@ -759,6 +769,8 @@ def get_fleet(user: dict = Depends(current_user)) -> dict[str, Any]:
 @router.post("/fleet")
 def mutate_fleet(body: FleetBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_mutate_fleet(user["role"]), "Nur Admin oder CFO dürfen die Flotte ändern.")
+    if rate_limited("fleetw:" + user["id"], 30):
+        raise rate_limit_error()
     conn = _conn()
     try:
         try:
