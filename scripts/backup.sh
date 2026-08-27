@@ -11,6 +11,7 @@ DEST="${1:-$DATA/backups}"
 # shellcheck source=load-backup-pass.sh
 . "$(cd "$(dirname "$0")" && pwd)/load-backup-pass.sh"
 aistudio_load_backup_pass
+aistudio_ensure_backup_pass
 
 if [[ ! -f "$DB" ]]; then
   echo "Keine Datenbank unter $DB" >&2
@@ -58,13 +59,6 @@ encrypt_file() {
   openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
     -pass env:AISTUDIO_BACKUP_PASS -in "$src" -out "$dest"
 }
-
-if [[ -z "${AISTUDIO_BACKUP_PASS:-}" ]]; then
-  envn="$(printf '%s' "${AISTUDIO_ENV:-}" | tr '[:upper:]' '[:lower:]')"
-  if [[ "$envn" == "production" || "$envn" == "prod" ]]; then
-    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. ./scripts/install.sh schreibt data/backup.env." >&2
-  fi
-fi
 
 if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
   if ! command -v openssl >/dev/null 2>&1; then

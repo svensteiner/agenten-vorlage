@@ -378,7 +378,11 @@ def test_backup_reads_pass_from_data_backup_env(tmp_path):
     conn.close()
 
 
-def test_backup_warns_without_pass_in_production(tmp_path):
+@pytest.mark.skipif(
+    subprocess.call(["openssl", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0,
+    reason="openssl missing",
+)
+def test_backup_inits_pass_in_production(tmp_path):
     data = tmp_path / "data"
     data.mkdir()
     db = data / "aistudio.db"
@@ -396,10 +400,39 @@ def test_backup_warns_without_pass_in_production(tmp_path):
         check=False,
     )
     assert r.returncode == 0, r.stderr
-    assert "unverschlüsselt" in (r.stderr or "")
+    assert "geschrieben" in (r.stderr or "")
+    bakenv = data / "backup.env"
+    assert bakenv.is_file()
+    assert stat.S_IMODE(bakenv.stat().st_mode) == 0o600
+    first = bakenv.read_text(encoding="utf-8")
+    assert first.startswith("AISTUDIO_BACKUP_PASS=")
     backup = Path(r.stdout.strip())
-    assert backup.is_file()
-    assert not str(backup).endswith(".enc")
+    assert backup.name.endswith(".enc")
+    assert b"SQLite" not in backup.read_bytes()
+    r2 = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r2.returncode == 0, r2.stderr
+    assert "geschrieben" not in (r2.stderr or "")
+    assert bakenv.read_text(encoding="utf-8") == first
+    _make_db(db, 99)
+    ok = subprocess.run(
+        [str(RESTORE), str(backup)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert ok.returncode == 0, ok.stderr
+    conn = sqlite3.connect(db)
+    assert conn.execute("SELECT x FROM t").fetchone()[0] == 3
+    conn.close()
 
 
 def test_install_appends_missing_backup_pass(tmp_path):

@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.21 — 2026-08-27 — Erste Produktionssicherung legt backup.env an
+
+Fehlt `AISTUDIO_BACKUP_PASS` in Produktion, schreibt `backup.sh` einmal
+`data/backup.env` und verschlüsselt — Docker braucht dafür nicht `install.sh`.
+Ohne openssl bleibt der bisherige Klartext-Hinweis. Der Schlüssel wird nicht
+neu gewürfelt, wenn die Datei schon da ist.
+
 ## Produktlaufzeit 1.4.20 — 2026-08-27 — Docker-Sicherung mit openssl
 
 Das Image enthält `openssl` (AES-256). `docker-compose.prod.yml` hat ein
