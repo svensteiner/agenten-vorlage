@@ -6,6 +6,7 @@ After=network.target
 Type=oneshot
 WorkingDirectory=/opt/aistudio
 EnvironmentFile=-/opt/aistudio/.env
+EnvironmentFile=-/opt/aistudio/data/backup.env
 ExecStart=/opt/aistudio/scripts/backup.sh
 NoNewPrivileges=true
 PrivateTmp=true

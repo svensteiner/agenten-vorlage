@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.17 — 2026-08-27 — Backup-Passwort außerhalb der Produkt-Umgebung
+
+`AISTUDIO_BACKUP_PASS` liegt in `data/backup.env` (600), nicht in `.env`. Der
+Produktprozess (systemd `EnvironmentFile=.env`) sieht den Schlüssel nicht;
+Backup-Timer und `backup.sh`/`restore.sh` laden ihn selbst. Bestehende Werte
+werden aus `.env` verschoben, nicht neu gewürfelt. Manuelles `./scripts/backup.sh`
+verschlüsselt auch ohne vorheriges `source .env`.
+
 ## Produktlaufzeit 1.4.16 — 2026-08-27 — Backup-Passwort nachtragen
 
 `install.sh` hängt `AISTUDIO_BACKUP_PASS` an eine bestehende `.env`, wenn der Wert

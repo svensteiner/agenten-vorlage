@@ -478,6 +478,9 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "AISTUDIO_BACKUP_PASS" in install
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
+    assert "data/backup.env" in install
+    assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
+    assert "EnvironmentFile=-/opt/aistudio/data/backup.env" not in src
     assert "--password-file" in install
     assert "data/bootstrap.env" in install
     assert "chmod 600 oder 400" in install
@@ -714,12 +717,16 @@ def test_harden_data_dir_chmod_wal(tmp_path, monkeypatch):
     os.chmod(db_path, 0o644)
     os.chmod(wal, 0o644)
     os.chmod(shm, 0o644)
+    bakenv = tmp_path / "backup.env"
+    bakenv.write_text("AISTUDIO_BACKUP_PASS=not-read-by-product\n", encoding="utf-8")
+    os.chmod(bakenv, 0o644)
     monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
     monkeypatch.setattr("product.config.DB_PATH", db_path)
     config.harden_data_dir()
     assert (db_path.stat().st_mode & 0o777) == 0o600
     assert (wal.stat().st_mode & 0o777) == 0o600
     assert (shm.stat().st_mode & 0o777) == 0o600
+    assert (bakenv.stat().st_mode & 0o777) == 0o600
     assert (tmp_path.stat().st_mode & 0o777) == 0o700
 
 

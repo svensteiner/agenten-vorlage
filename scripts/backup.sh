@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # SQLite-Sicherung der Produkt-Datenbank (WAL-sicher, wenn sqlite3 vorhanden)
 # plus Uploads unter AISTUDIO_DATA/uploads.
-# Optional: AISTUDIO_BACKUP_PASS — dann AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
+# AISTUDIO_BACKUP_PASS — AES-256 (openssl, pbkdf2), kein Klartext auf Platte.
+# Passwort liegt in data/backup.env (nicht in der Produkt-Umgebung).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"
 DB="${AISTUDIO_DB:-$DATA/aistudio.db}"
 DEST="${1:-$DATA/backups}"
+# shellcheck source=load-backup-pass.sh
+. "$(cd "$(dirname "$0")" && pwd)/load-backup-pass.sh"
+aistudio_load_backup_pass
 
 if [[ ! -f "$DB" ]]; then
   echo "Keine Datenbank unter $DB" >&2
@@ -58,7 +62,7 @@ encrypt_file() {
 if [[ -z "${AISTUDIO_BACKUP_PASS:-}" ]]; then
   envn="$(printf '%s' "${AISTUDIO_ENV:-}" | tr '[:upper:]' '[:lower:]')"
   if [[ "$envn" == "production" || "$envn" == "prod" ]]; then
-    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. ./scripts/install.sh nachtragen oder Wert in .env setzen." >&2
+    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. ./scripts/install.sh schreibt data/backup.env." >&2
   fi
 fi
 

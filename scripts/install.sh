@@ -79,14 +79,12 @@ render_systemd() {
   fi
 }
 
-ensure_backup_pass() {
+strip_backup_pass_from_env() {
   local envf="$1"
   [[ -f "$envf" ]] || return 0
-  if grep -q '^AISTUDIO_BACKUP_PASS=.' "$envf" 2>/dev/null; then
+  if ! grep -q '^[[:space:]]*AISTUDIO_BACKUP_PASS=' "$envf" 2>/dev/null; then
     return 0
   fi
-  local pass
-  pass="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   python3 -c '
 import pathlib, sys
 p = pathlib.Path(sys.argv[1])
@@ -94,9 +92,56 @@ text = p.read_text(encoding="utf-8")
 lines = [ln for ln in text.splitlines(keepends=True) if not ln.lstrip().startswith("AISTUDIO_BACKUP_PASS=")]
 p.write_text("".join(lines), encoding="utf-8")
 ' "$envf"
-  printf '\nAISTUDIO_BACKUP_PASS=%s\n' "$pass" >> "$envf"
   chmod 600 "$envf"
-  echo "nachgetragen: AISTUDIO_BACKUP_PASS in $envf (AES-256 für Sicherungen)."
+}
+
+ensure_backup_pass() {
+  # Encryption key lives in data/backup.env so the product process (EnvironmentFile=.env)
+  # never sees it. Existing .env values are moved, not regenerated.
+  local envf="$1"
+  local bakenv="$ROOT/data/backup.env"
+  mkdir -p "$ROOT/data"
+  chmod 700 "$ROOT/data" 2>/dev/null || true
+  if grep -q '^[[:space:]]*AISTUDIO_BACKUP_PASS=.' "$bakenv" 2>/dev/null; then
+    strip_backup_pass_from_env "$envf"
+    return 0
+  fi
+  local pass=""
+  if [[ -f "$envf" ]]; then
+    pass="$(python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(0)
+found = ""
+for line in text.splitlines():
+    s = line.strip()
+    if s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() != "AISTUDIO_BACKUP_PASS":
+        continue
+    found = v.strip()
+if found:
+    print(found, end="")
+' "$envf")"
+  fi
+  local moved=0
+  if [[ -n "$pass" ]]; then
+    moved=1
+  else
+    pass="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  fi
+  printf 'AISTUDIO_BACKUP_PASS=%s\n' "$pass" > "$bakenv"
+  chmod 600 "$bakenv"
+  strip_backup_pass_from_env "$envf"
+  if [[ "$moved" -eq 1 ]]; then
+    echo "verschoben: AISTUDIO_BACKUP_PASS nach $bakenv (nicht mehr in der Produkt-Umgebung)."
+  else
+    echo "nachgetragen: AISTUDIO_BACKUP_PASS in $bakenv (AES-256 für Sicherungen)."
+  fi
   if ! command -v openssl >/dev/null 2>&1; then
     echo "Hinweis: openssl fehlt — Sicherungen bleiben unverschlüsselt, bis openssl da ist." >&2
   fi
@@ -108,7 +153,6 @@ if [[ -f "$ENV_FILE" ]]; then
 else
   SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   METRICS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
-  BACKUP_PASS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   {
     echo "AISTUDIO_ENV=production"
     echo "AISTUDIO_HOST=127.0.0.1"
@@ -116,7 +160,6 @@ else
     echo "AISTUDIO_DATA=$ROOT/data"
     echo "AISTUDIO_SECRET=$SECRET"
     echo "AISTUDIO_METRICS_TOKEN=$METRICS"
-    echo "AISTUDIO_BACKUP_PASS=$BACKUP_PASS"
     echo "AISTUDIO_ALLOW_DEMO_SEED=false"
     echo "AISTUDIO_ALLOW_REGISTER=false"
     echo "AISTUDIO_TRUST_PROXY=true"
@@ -133,9 +176,7 @@ else
   } > "$ENV_FILE"
   chmod 600 "$ENV_FILE"
   echo "geschrieben: $ENV_FILE"
-  if ! command -v openssl >/dev/null 2>&1; then
-    echo "Hinweis: openssl fehlt — der Backup-Timer schreibt dann keine Sicherung (AISTUDIO_BACKUP_PASS ist gesetzt). openssl installieren." >&2
-  fi
+  ensure_backup_pass "$ENV_FILE"
 fi
 
 if [[ -n "$ORG" && -n "$EMAIL" && -n "$PASSWORD" ]]; then
@@ -162,8 +203,8 @@ echo "Start: set -a && source $ENV_FILE && set +a && ./scripts/run_product.sh"
 echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann data/ schreiben)."
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
-echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in .env, AES-256; Restore braucht denselben Wert)"
-echo "Fehlt der Wert in einer älteren .env, trägt dieses Skript ihn nach."
+echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in data/backup.env, AES-256; Restore braucht denselben Wert)"
+echo "Ältere Installs: Passwort wird aus .env nach data/backup.env verschoben — der Produktprozess sieht es nicht."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."
