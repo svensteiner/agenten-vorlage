@@ -163,6 +163,7 @@ echo "Nach dem ersten Start löscht der Prozess data/bootstrap.env (systemd kann
 echo "Ältere Installs: AISTUDIO_BOOTSTRAP_* aus .env entfernen, falls noch vorhanden."
 echo "Metriken: Header X-Metrics-Token (Wert in .env)."
 echo "Sicherung: ./scripts/backup.sh  (AISTUDIO_BACKUP_PASS in .env, AES-256; Restore braucht denselben Wert)"
+echo "Fehlt der Wert in einer älteren .env, trägt dieses Skript ihn nach."
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."
