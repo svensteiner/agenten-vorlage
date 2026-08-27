@@ -80,6 +80,26 @@ def _page_limit(limit: int, *, cap: int, default: int) -> int:
     return min(n, cap)
 
 
+JOB_LIST_PREVIEW_CHARS = 180
+
+
+def _plain_preview(text: str, n: int = JOB_LIST_PREVIEW_CHARS) -> str:
+    """Strip tags and collapse whitespace so list rows never carry HTML or bodies."""
+    cleaned: list[str] = []
+    skip = False
+    for ch in text or "":
+        if ch == "<":
+            skip = True
+            continue
+        if skip:
+            if ch == ">":
+                skip = False
+                cleaned.append(" ")
+            continue
+        cleaned.append(ch)
+    return " ".join("".join(cleaned).split())[:n]
+
+
 class LoginBody(BaseModel):
     email: str = Field(max_length=auth.MAX_EMAIL_CHARS)
     password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
@@ -432,6 +452,8 @@ def password(body: PasswordBody, user: dict = Depends(current_user)) -> dict[str
 
 @router.get("/sessions")
 def sessions(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("sessions:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         items = tenancy.list_user_sessions(conn, user["id"], user.get("_jti") or "")
@@ -526,10 +548,14 @@ def patch_org(body: OrgPatchBody, user: dict = Depends(current_user)) -> dict[st
 @router.get("/users")
 def list_users(user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("users:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         rows = conn.execute(
-            "SELECT * FROM users WHERE org_id = ? ORDER BY email", (user["org_id"],)
+            "SELECT id, email, name, role, active, last_login_at FROM users "
+            "WHERE org_id = ? ORDER BY email",
+            (user["org_id"],),
         ).fetchall()
         return {"users": [tenancy.public_user(r) for r in rows]}
     finally:
@@ -714,11 +740,15 @@ def ask(body: AskBody, user: dict = Depends(current_user)) -> dict[str, Any]:
 
 @router.get("/agents")
 def agents(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("agents:" + user["id"], 60):
+        raise rate_limit_error()
     return {"agents": catalog.catalog()}
 
 
 @router.get("/fleet")
 def get_fleet(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("fleet:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         return catalog.fleet_state(user["org_id"], conn=conn)
@@ -755,6 +785,8 @@ def mutate_fleet(body: FleetBody, user: dict = Depends(current_user)) -> dict[st
 
 @router.get("/billing")
 def billing(user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("billing:" + user["id"], 60):
+        raise rate_limit_error()
     conn = _conn()
     try:
         payload = catalog.billing_payload(user["org_id"], conn=conn)
@@ -847,37 +879,32 @@ def jobs(
         raise rate_limit_error()
     conn = _conn()
     try:
+        preview_n = JOB_LIST_PREVIEW_CHARS
+        text_n = preview_n * 8
         rows = conn.execute(
-            "SELECT id, agent_id, task, status, created_at, output_json FROM jobs "
-            "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
-            (user["org_id"], _page_limit(limit, cap=100, default=20)),
+            "SELECT id, agent_id, substr(task, 1, ?) AS task, status, created_at, "
+            "json_extract(output_json, '$.ok') AS ok, "
+            "substr(COALESCE(json_extract(output_json, '$.text'), ''), 1, ?) AS text "
+            "FROM jobs WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+            (
+                preview_n,
+                text_n,
+                user["org_id"],
+                _page_limit(limit, cap=100, default=20),
+            ),
         ).fetchall()
         items = []
         for r in rows:
-            extra = db.parse_json(r["output_json"], {})
-            raw = extra.get("text") or ""
-            cleaned = []
-            skip = False
-            for ch in raw:
-                if ch == "<":
-                    skip = True
-                    continue
-                if skip:
-                    if ch == ">":
-                        skip = False
-                        cleaned.append(" ")
-                    continue
-                cleaned.append(ch)
-            preview = " ".join("".join(cleaned).split())[:180]
+            ok_raw = r["ok"]
             items.append(
                 {
                     "id": r["id"],
                     "agent_id": r["agent_id"],
-                    "task": r["task"],
+                    "task": (r["task"] or "")[:preview_n],
                     "status": r["status"],
                     "created_at": r["created_at"],
-                    "ok": extra.get("ok"),
-                    "preview": preview,
+                    "ok": None if ok_raw is None else bool(ok_raw),
+                    "preview": _plain_preview(r["text"] or "", preview_n),
                 }
             )
         return {"jobs": items}

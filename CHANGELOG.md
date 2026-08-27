@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.47 — 2026-08-27 — Auftragsliste ohne vollen Task
+
+`GET /api/jobs` lieferte bis zu 100 Aufträge à 4000 Zeichen Task plus
+`output_json`. Die Oberfläche braucht nur `preview`. Jetzt Task und
+Antworttext je 180 Zeichen, ohne Quellen; SQLite liest `substr`/`json_extract`.
+Export bleibt vollständig. Nutzerliste ohne Passwort-Hash-Spalten.
+`/api/fleet`, `/billing`, `/agents`, `/sessions`, `/users` 60/Minute.
+
 ## Produktlaufzeit 1.4.46 — 2026-08-27 — /api/me begrenzen, Speichergröße cachen
 
 `GET /api/me` lief ohne Limit und zählte bei jedem Aufruf alle Upload-Dateien

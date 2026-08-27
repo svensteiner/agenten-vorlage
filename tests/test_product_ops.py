@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 import pytest
@@ -201,6 +202,55 @@ def test_jobs_and_audit_reject_negative_limit(client):
     assert audit.status_code == 422
     ok = client.get("/api/jobs?limit=5", headers=headers)
     assert ok.status_code == 200
+
+
+def test_jobs_list_truncates_task_and_skips_output_json(client):
+    from product import db
+    from product.api import JOB_LIST_PREVIEW_CHARS
+
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    secret = "GEHEIM-AUFTRAG-" + ("X" * 500)
+    blob = json.dumps(
+        {
+            "ok": True,
+            "text": "<p>" + ("Antwort " * 80) + "</p>",
+            "sources": [{"docId": "doc-secret", "snippet": "nicht in der Liste"}],
+        },
+        ensure_ascii=False,
+    )
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO jobs (id, org_id, agent_id, task, status, output_json, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                "job-long-task",
+                "org-meridian",
+                "auskunft",
+                secret,
+                "done",
+                blob,
+                "2026-08-27T12:00:00+00:00",
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    listed = client.get("/api/jobs", headers=headers)
+    assert listed.status_code == 200, listed.text
+    job = next(j for j in listed.json()["jobs"] if j["id"] == "job-long-task")
+    assert "output_json" not in job
+    assert "sources" not in job
+    assert job["ok"] is True
+    assert len(job["task"]) == JOB_LIST_PREVIEW_CHARS
+    assert secret not in job["task"]
+    assert "GEHEIM-AUFTRAG-" in job["task"]
+    assert "<p>" not in (job.get("preview") or "")
+    assert "nicht in der Liste" not in json.dumps(job)
+    exp = client.get("/api/export", headers=headers)
+    assert exp.status_code == 200
+    exported = next(j for j in exp.json()["jobs"] if j["id"] == "job-long-task")
+    assert exported["task"] == secret
 
 
 def test_search_rejects_huge_query(client):
@@ -782,6 +832,14 @@ def test_job_and_export_rate_limited(client, monkeypatch):
     assert audit.status_code == 429
     me = client.get("/api/me", headers=headers)
     assert me.status_code == 429
+    fleet = client.get("/api/fleet", headers=headers)
+    assert fleet.status_code == 429
+    billing = client.get("/api/billing", headers=headers)
+    assert billing.status_code == 429
+    agents = client.get("/api/agents", headers=headers)
+    assert agents.status_code == 429
+    sessions = client.get("/api/sessions", headers=headers)
+    assert sessions.status_code == 429
 
 
 def test_password_change_rate_limited(client, monkeypatch):
@@ -819,6 +877,8 @@ def test_admin_hashing_routes_rate_limited(client, monkeypatch):
         },
     )
     assert add.status_code == 429
+    listed = client.get("/api/users", headers=headers)
+    assert listed.status_code == 429
     pwd = client.post(
         "/api/users/user-x/password",
         headers=headers,
