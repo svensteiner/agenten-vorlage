@@ -166,7 +166,7 @@ def run() -> None:
         reload=False,
         access_log=False,
         proxy_headers=config.trust_proxy(),
-        forwarded_allow_ips="*" if config.trust_proxy() else None,
+        forwarded_allow_ips=config.uvicorn_forwarded_allow_ips(),
         timeout_keep_alive=30,
     )
 

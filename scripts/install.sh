@@ -163,6 +163,7 @@ else
     echo "AISTUDIO_ALLOW_DEMO_SEED=false"
     echo "AISTUDIO_ALLOW_REGISTER=false"
     echo "AISTUDIO_TRUST_PROXY=true"
+    echo "AISTUDIO_PROXY_IPS=127.0.0.1,::1"
     echo "AISTUDIO_LLM_PROVIDER=none"
     echo "AISTUDIO_LLM_EGRESS=in_boundary"
     echo "AISTUDIO_TOKEN_TTL=43200"
@@ -208,4 +209,5 @@ echo "Ältere Installs: Passwort wird aus .env nach data/backup.env verschoben �
 echo "Aufräumen: ./scripts/housekeeping.sh"
 echo "Proxy HTTP: scripts/nginx-aistudio.conf — TLS: scripts/nginx-aistudio.tls.conf"
 echo "Hinter nginx AISTUDIO_ALLOWED_HOSTS um den öffentlichen Hostnamen ergänzen."
+echo "X-Forwarded-For nur von AISTUDIO_PROXY_IPS (Standard 127.0.0.1,::1), nicht von jedem Client."
 echo "Qualität (lokal, ohne GitHub Actions): ./scripts/check.sh"

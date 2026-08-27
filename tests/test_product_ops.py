@@ -481,6 +481,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "data/backup.env" in install
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" not in src
+    assert "AISTUDIO_PROXY_IPS" in install
     assert "--password-file" in install
     assert "data/bootstrap.env" in install
     assert "chmod 600 oder 400" in install
@@ -491,6 +492,39 @@ def test_systemd_unit_rewrites_install_root():
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
     assert "/api/auth/(login|register)" in tls
+
+
+def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):
+    from types import SimpleNamespace
+
+    from product.security import client_ip
+
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    monkeypatch.delenv("AISTUDIO_PROXY_IPS", raising=False)
+
+    def req(peer: str, xff: str | None = "203.0.113.9"):
+        headers = {"x-forwarded-for": xff} if xff else {}
+        return SimpleNamespace(client=SimpleNamespace(host=peer), headers=headers)
+
+    assert client_ip(req("203.0.113.10")) == "203.0.113.10"
+    assert client_ip(req("testclient")) == "testclient"
+    assert client_ip(req("127.0.0.1")) == "203.0.113.9"
+    assert client_ip(req("::1")) == "203.0.113.9"
+    assert client_ip(req("::ffff:127.0.0.1")) == "203.0.113.9"
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "10.0.0.0/8")
+    assert client_ip(req("10.8.0.4")) == "203.0.113.9"
+    assert client_ip(req("11.0.0.1")) == "11.0.0.1"
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "*")
+    assert client_ip(req("198.51.100.2")) == "203.0.113.9"
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "false")
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "*")
+    assert client_ip(req("127.0.0.1")) == "127.0.0.1"
+    assert config.uvicorn_forwarded_allow_ips() is None
+    monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,::1")
+    assert config.uvicorn_forwarded_allow_ips() == "127.0.0.1,::1"
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "*")
+    assert config.uvicorn_forwarded_allow_ips() == "*"
 
 
 def test_orphan_upload_pruned(client, tmp_path):

@@ -27,13 +27,15 @@ _MAX_KEYS = 8000
 
 
 def client_ip(request: Request) -> str:
-    if config.trust_proxy():
+    """Client address for rate limits. X-Forwarded-For only from a trusted proxy."""
+    peer = "unknown"
+    if request.client:
+        peer = (request.client.host or "unknown")[:80]
+    if config.peer_is_trusted_proxy(peer):
         forwarded = request.headers.get("x-forwarded-for") or ""
         if forwarded:
-            return forwarded.split(",")[0].strip()[:80]
-    if request.client:
-        return request.client.host or "unknown"
-    return "unknown"
+            return forwarded.split(",")[0].strip()[:80] or peer
+    return peer
 
 
 def rate_limited(key: str, limit: int, window_s: int = 60) -> bool:

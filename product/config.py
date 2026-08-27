@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import time
 from pathlib import Path
@@ -26,7 +27,7 @@ DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 HOST = os.environ.get("AISTUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AISTUDIO_PORT", "8123"))
 
-VERSION = "1.4.17"
+VERSION = "1.4.18"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 LOCKOUT_AFTER = int(os.environ.get("AISTUDIO_LOCKOUT_AFTER", "8"))
@@ -60,6 +61,73 @@ def allow_register() -> bool:
 
 def trust_proxy() -> bool:
     return _flag("AISTUDIO_TRUST_PROXY", default=False)
+
+
+def proxy_ip_networks():
+    """Peers allowed to set X-Forwarded-For. Default loopback. '*' = any (opt-in)."""
+    raw = (os.environ.get("AISTUDIO_PROXY_IPS") or "127.0.0.1,::1").strip()
+    if raw.lower() in {"*", "any"}:
+        return None
+    nets: list = []
+    for part in raw.split(","):
+        text = part.strip()
+        if not text:
+            continue
+        if text.lower() == "localhost":
+            nets.append(ipaddress.ip_network("127.0.0.1/32"))
+            nets.append(ipaddress.ip_network("::1/128"))
+            continue
+        try:
+            if "/" in text:
+                nets.append(ipaddress.ip_network(text, strict=False))
+            else:
+                addr = ipaddress.ip_address(text)
+                nets.append(ipaddress.ip_network(f"{addr}/{addr.max_prefixlen}"))
+        except ValueError:
+            continue
+    return nets or [
+        ipaddress.ip_network("127.0.0.1/32"),
+        ipaddress.ip_network("::1/128"),
+    ]
+
+
+def peer_is_trusted_proxy(peer: str) -> bool:
+    """True if this TCP peer may supply X-Forwarded-For."""
+    if not trust_proxy():
+        return False
+    nets = proxy_ip_networks()
+    if nets is None:
+        return True
+    text = (peer or "").strip()
+    if not text:
+        return False
+    try:
+        addr = ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    mapped = getattr(addr, "ipv4_mapped", None)
+    if mapped is not None:
+        addr = mapped
+    return any(addr in net for net in nets)
+
+
+def uvicorn_forwarded_allow_ips() -> str | None:
+    """Uvicorn compares exact IPs, not CIDR. Never '*' unless operators set it."""
+    if not trust_proxy():
+        return None
+    raw = (os.environ.get("AISTUDIO_PROXY_IPS") or "127.0.0.1,::1").strip()
+    if raw.lower() in {"*", "any"}:
+        return "*"
+    exact: list[str] = []
+    for part in raw.split(","):
+        text = part.strip()
+        if not text or "/" in text:
+            continue
+        if text.lower() == "localhost":
+            exact.extend(["127.0.0.1", "::1"])
+            continue
+        exact.append(text)
+    return ",".join(dict.fromkeys(exact)) if exact else "127.0.0.1"
 
 
 def bootstrap_file() -> Path:

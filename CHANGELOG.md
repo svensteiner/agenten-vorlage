@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.18 — 2026-08-27 — X-Forwarded-For nur vom Proxy
+
+`AISTUDIO_TRUST_PROXY=true` glaubt `X-Forwarded-For` nicht mehr von jedem Client
+(sonst sind Anmeldelimits umgehbar). Standard-Peers: `127.0.0.1` und `::1`
+(`AISTUDIO_PROXY_IPS`, CIDR erlaubt). `*` nur bewusst.
+
 ## Produktlaufzeit 1.4.17 — 2026-08-27 — Backup-Passwort außerhalb der Produkt-Umgebung
 
 `AISTUDIO_BACKUP_PASS` liegt in `data/backup.env` (600), nicht in `.env`. Der
