@@ -37,7 +37,7 @@ LOCK="$DATA/.backup.lock"
 exec 9>"$LOCK"
 chmod 600 "$LOCK" 2>/dev/null || true
 if ! flock -n 9; then
-  echo "Eine andere Sicherung läuft bereits." >&2
+  echo "Eine Sicherung oder ein Restore läuft bereits." >&2
   exit 1
 fi
 if command -v df >/dev/null 2>&1; then

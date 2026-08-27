@@ -4,6 +4,8 @@
 # Encrypted files (*.enc) need AISTUDIO_BACKUP_PASS (openssl aes-256-cbc pbkdf2),
 # from the environment or backup.env next to .env (not from the product process).
 # Pre-restore copies (*.before-restore-*, uploads.before-restore-*) stay at most 3.
+# Teilt data/.backup.lock mit backup.sh — sonst schreibt die Timer-Sicherung
+# während des Restore eine zerrissene Kopie.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${AISTUDIO_DATA:-$ROOT/data}"
@@ -32,6 +34,19 @@ fi
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
   echo "sqlite3 fehlt — Restore abgebrochen, Live-Datenbank unangetastet." >&2
+  exit 1
+fi
+if ! command -v flock >/dev/null 2>&1; then
+  echo "flock fehlt — Restore abgebrochen (eine laufende Sicherung würde die Live-Datei zerschneiden)." >&2
+  exit 1
+fi
+
+mkdir -p "$DATA"
+LOCK="$DATA/.backup.lock"
+exec 9>"$LOCK"
+chmod 600 "$LOCK" 2>/dev/null || true
+if ! flock -n 9; then
+  echo "Eine Sicherung oder ein Restore läuft bereits." >&2
   exit 1
 fi
 

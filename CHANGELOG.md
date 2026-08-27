@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.55 — 2026-08-27 — nginx 10 MB, Restore teilt die Sperre
+
+nginx `client_max_body_size 4m` hat Uploads vor der App abgewiesen,
+sobald `AISTUDIO_MAX_UPLOAD_BYTES` über 4 MB lag (erlaubt bis 8 MB,
+Request bis 10 MB). Jetzt 10m — die App antwortet 413 als JSON.
+
+Restore nahm `data/.backup.lock` nicht. Eine Timer-Sicherung während
+des Restore konnte eine zerrissene Kopie schreiben. Dieselbe Sperre
+wie `backup.sh`.
+
 ## Produktlaufzeit 1.4.54 — 2026-08-27 — Demo-Secret nicht auf allen Interfaces
 
 Entwicklung band ohne `AISTUDIO_HOST` auf `0.0.0.0` mit dem bekannten

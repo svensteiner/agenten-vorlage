@@ -1168,6 +1168,9 @@ def test_systemd_unit_rewrites_install_root():
     assert "sqlite3 fehlt" in install
     assert "flock fehlt" in install
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
+    restore = (root / "scripts" / "restore.sh").read_text(encoding="utf-8")
+    assert ".backup.lock" in restore
+    assert "flock -n 9" in restore
     assert "chmod 600 oder 400" in install
     nginx = (root / "scripts" / "nginx-aistudio.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" not in nginx
@@ -1179,6 +1182,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "limit_conn_status 429" in nginx
     assert "location /api/" in nginx
     assert "rate=20r/s" in nginx
+    assert "client_max_body_size 10m" in nginx
+    assert "client_max_body_size 4m" not in nginx
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
     assert "/api/auth/(login|register)" in tls
@@ -1190,6 +1195,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "limit_conn_status 429" in tls
     assert "location /api/" in tls
     assert "rate=20r/s" in tls
+    assert "client_max_body_size 10m" in tls
+    assert "client_max_body_size 4m" not in tls
     main = (root / "product" / "main.py").read_text(encoding="utf-8")
     assert "server_header=False" in main
     assert "listen_host()" in main

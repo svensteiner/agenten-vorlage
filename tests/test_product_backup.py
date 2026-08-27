@@ -401,6 +401,49 @@ def test_backup_refuses_when_locked(tmp_path):
         os.close(fd)
 
 
+def test_restore_refuses_when_backup_locked(tmp_path):
+    import fcntl
+
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 5)
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    _make_db(db, 99)
+    lock = data / ".backup.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        denied = subprocess.run(
+            [str(RESTORE), str(backup)],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert denied.returncode != 0
+        assert "läuft bereits" in (denied.stderr or "")
+        conn = sqlite3.connect(db)
+        assert conn.execute("SELECT x FROM t").fetchone()[0] == 99
+        conn.close()
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
 def test_encrypted_backup_scrubs_plaintext_when_openssl_fails(tmp_path):
     data = tmp_path / "data"
     data.mkdir()
