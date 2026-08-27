@@ -16,7 +16,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from product import config
 from product.api import router
 from product.db import connect
-from product.security import AccessLogMiddleware, LimitRequestMiddleware, SecurityHeadersMiddleware
+from product.security import (
+    AccessLogMiddleware,
+    LimitRequestMiddleware,
+    SecurityHeadersMiddleware,
+    normalize_request_id,
+)
 from product.seed import ensure_seeded
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -94,7 +99,10 @@ app.include_router(router, prefix="/api")
 
 
 def _request_id(request: Request) -> str:
-    return str(getattr(request.state, "request_id", "") or request.headers.get("x-request-id") or "-")
+    rid = getattr(request.state, "request_id", None)
+    if rid:
+        return str(rid)[:64]
+    return normalize_request_id(request.headers.get("x-request-id"))
 
 
 @app.exception_handler(RequestValidationError)

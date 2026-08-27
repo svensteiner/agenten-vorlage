@@ -549,6 +549,38 @@ def test_backup_reads_pass_from_checkout_backup_env(tmp_path):
     assert b"SQLite" not in backup.read_bytes()
 
 
+@pytest.mark.skipif(
+    subprocess.call(["openssl", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0,
+    reason="openssl missing",
+)
+def test_backup_reads_pass_from_backup_env_path(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 19)
+    secret = tmp_path / "secret" / "backup.env"
+    secret.parent.mkdir()
+    secret.write_text("AISTUDIO_BACKUP_PASS=dedicated-volume-backup-pass\n", encoding="utf-8")
+    os.chmod(secret, 0o600)
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env["AISTUDIO_BACKUP_ENV"] = str(secret)
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    backup = Path(r.stdout.strip())
+    assert backup.name.endswith(".enc")
+    assert b"SQLite" not in backup.read_bytes()
+    assert not (data / "backup.env").exists()
+
+
 def test_compose_publishes_localhost_only():
     text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "127.0.0.1:8123:8123" in text
@@ -560,7 +592,12 @@ def test_compose_publishes_localhost_only():
     assert 'profiles: ["backup"]' in prod
     assert "network_mode: none" in prod
     after = prod.split("backup:")[1]
+    before = prod.split("backup:")[0]
     assert "AISTUDIO_SECRET:" not in after
     assert "AISTUDIO_BACKUP_PASS:" not in after
+    assert "AISTUDIO_BACKUP_ENV" in after
+    assert "aistudio-backup-secret:/app/backup-secret" in after
+    assert "aistudio-backup-secret:/app/backup-secret" not in before
+    assert "target: /app/data/backup.env" in before
     assert "backup.env" in prod
     assert "8123" not in after

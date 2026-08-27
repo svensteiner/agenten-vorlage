@@ -554,6 +554,21 @@ def test_live_and_error_includes_request_id(client):
     assert r.headers.get("x-request-id")
 
 
+def test_huge_request_id_is_replaced(client):
+    huge = "A" * 4000
+    live = client.get("/api/live", headers={"X-Request-ID": huge})
+    rid = live.headers.get("x-request-id") or ""
+    assert live.status_code == 200
+    assert 8 <= len(rid) <= 64
+    assert huge not in rid
+    err = client.post("/api/ask", json={"q": "x"}, headers={"X-Request-ID": huge})
+    body_rid = err.json().get("request_id") or ""
+    assert len(body_rid) <= 64
+    assert huge not in body_rid
+    ok = client.get("/api/live", headers={"X-Request-ID": "trace-ops-9f3a2c10"})
+    assert ok.headers.get("x-request-id") == "trace-ops-9f3a2c10"
+
+
 def test_housekeeping_prunes_old_audit(client):
     from product import db, housekeeping
 

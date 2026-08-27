@@ -6,6 +6,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import threading
 import time
 import uuid
@@ -24,6 +25,15 @@ _lock = threading.Lock()
 _hits: dict[str, deque[float]] = defaultdict(deque)
 _sweep = 0
 _MAX_KEYS = 8000
+_REQ_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
+
+
+def normalize_request_id(raw: str | None) -> str:
+    """Accept a short correlator; ignore oversized or odd client values."""
+    text = (raw or "").strip()
+    if _REQ_ID.fullmatch(text):
+        return text
+    return uuid.uuid4().hex[:16]
 
 
 def client_ip(request: Request) -> str:
@@ -79,7 +89,7 @@ def _sweep_idle(now: float) -> None:
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        request_id = request.headers.get("x-request-id") or uuid.uuid4().hex[:16]
+        request_id = normalize_request_id(request.headers.get("x-request-id"))
         request.state.request_id = request_id
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id

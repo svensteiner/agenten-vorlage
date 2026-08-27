@@ -1,7 +1,7 @@
 # Production overlay. Secret is required:
 #   AISTUDIO_SECRET='…' docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 # Port bleibt 127.0.0.1:8123 (Basis-Compose) — nginx auf dem Host verbindet lokal.
-# Sicherung (openssl im Image; fehlt backup.env, legt der erste Lauf data/backup.env auf dem Volume an):
+# Sicherung (openssl im Image; Passwort auf Volume aistudio-backup-secret, nicht im Produkt-Container):
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile backup run --rm backup
 services:
   aistudio:
@@ -19,6 +19,11 @@ services:
       AISTUDIO_ORG_UPLOAD_MB: ${AISTUDIO_ORG_UPLOAD_MB:-200}
       AISTUDIO_ALLOWED_HOSTS: ${AISTUDIO_ALLOWED_HOSTS:-127.0.0.1,localhost}
       AISTUDIO_METRICS_TOKEN: ${AISTUDIO_METRICS_TOKEN:-}
+    volumes:
+      - aistudio-data:/app/data
+      # Blendet eine etwaige data/backup.env auf dem Daten-Volume aus (älterer Stand).
+      - type: volume
+        target: /app/data/backup.env
   backup:
     profiles: ["backup"]
     build: .
@@ -34,8 +39,11 @@ services:
     environment:
       AISTUDIO_DATA: /app/data
       AISTUDIO_ENV: production
+      AISTUDIO_BACKUP_ENV: /app/backup-secret/backup.env
     volumes:
       - aistudio-data:/app/data
+      - aistudio-backup-secret:/app/backup-secret
     entrypoint: ["/bin/bash", "/app/scripts/backup.sh"]
-    # Passwort nicht hier — backup.env neben .env (Host) bzw. data/backup.env auf dem Volume.
-    # Der Produkt-Container kann die Volume-Datei lesen; systemd blendet sie per InaccessiblePaths aus.
+    # Passwort nicht in der Compose-Umgebung — eigenes Volume, nicht im Produkt-Container.
+volumes:
+  aistudio-backup-secret:

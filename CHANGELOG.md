@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.33 — 2026-08-27 — Request-ID kappen, Docker-backup.env weg vom Produkt
+
+Client-`X-Request-ID` war unbegrenzt und landete in JSON und Access-Log.
+Jetzt nur 8–64 Zeichen `[A-Za-z0-9._-]`, sonst eine neue ID. Docker: das
+Backup-Passwort liegt auf Volume `aistudio-backup-secret` (nicht im
+Produkt-Container); eine alte `data/backup.env` wird dort überdeckt.
+
 ## Produktlaufzeit 1.4.32 — 2026-08-27 — Health ohne LLM- und Backup-Lage
 
 `/api/health` und `/api/ready` waren unauthentifiziert und zeigten Demo-Flag,

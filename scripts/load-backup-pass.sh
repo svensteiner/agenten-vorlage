@@ -1,6 +1,6 @@
 # Shared by backup.sh and restore.sh. Do not execute directly.
-# Loads AISTUDIO_BACKUP_PASS from checkout/backup.env (preferred, outside data/),
-# then data/backup.env (Docker volume / older installs), then from the checkout
+# Loads AISTUDIO_BACKUP_PASS from AISTUDIO_BACKUP_ENV (Docker secret volume),
+# then checkout/backup.env, then data/backup.env, then from the checkout
 # .env only when AISTUDIO_DATA is this checkout's data/ — so a test tmpdir never
 # reads the workspace .env. Never prints the value.
 
@@ -31,6 +31,9 @@ aistudio_data_is_under_root() {
 aistudio_load_backup_pass() {
   if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
     return 0
+  fi
+  if [[ -n "${AISTUDIO_BACKUP_ENV:-}" ]]; then
+    aistudio_extract_backup_pass "$AISTUDIO_BACKUP_ENV" && return 0
   fi
   local root data
   root="${AISTUDIO_ROOT:-${ROOT:-}}"
@@ -70,10 +73,14 @@ aistudio_ensure_backup_pass() {
   if [[ -z "$data" ]]; then
     return 0
   fi
-  if aistudio_extract_backup_pass "$data/backup.env"; then
+  if [[ -n "${AISTUDIO_BACKUP_ENV:-}" ]]; then
+    if aistudio_extract_backup_pass "$AISTUDIO_BACKUP_ENV"; then
+      return 0
+    fi
+  elif aistudio_extract_backup_pass "$data/backup.env"; then
     return 0
   fi
-  if aistudio_data_is_under_root "$root" "$data" && aistudio_extract_backup_pass "$root/backup.env"; then
+  if [[ -z "${AISTUDIO_BACKUP_ENV:-}" ]] && aistudio_data_is_under_root "$root" "$data" && aistudio_extract_backup_pass "$root/backup.env"; then
     return 0
   fi
   if ! command -v openssl >/dev/null 2>&1; then
@@ -81,7 +88,9 @@ aistudio_ensure_backup_pass() {
     return 0
   fi
   dest="$data/backup.env"
-  if aistudio_data_is_under_root "$root" "$data" && [[ -w "$root" ]]; then
+  if [[ -n "${AISTUDIO_BACKUP_ENV:-}" ]]; then
+    dest="$AISTUDIO_BACKUP_ENV"
+  elif aistudio_data_is_under_root "$root" "$data" && [[ -w "$root" ]]; then
     dest="$root/backup.env"
   fi
   mkdir -p "$(dirname "$dest")"
