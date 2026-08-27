@@ -148,6 +148,31 @@ def test_weak_password_rejected(client):
     assert r.status_code == 400
 
 
+def test_oversize_password_rejected(client):
+    """PBKDF2 must not run on a megabyte-scale password (unauthenticated login)."""
+    from product import auth
+
+    huge = "Aa1" + ("x" * 400)
+    assert auth.validate_password(huge) is not None
+    login = client.post(
+        "/api/auth/login",
+        json={"email": "katharina.vogel@meridian.example", "password": huge},
+    )
+    assert login.status_code == 422
+    reg = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Lang GmbH",
+            "name": "Lang Name",
+            "email": "lang@lang.example",
+            "password": huge,
+        },
+    )
+    assert reg.status_code == 422
+    ok = auth.validate_password("GutesPasswort12")
+    assert ok is None
+
+
 def test_production_requires_secret(monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     monkeypatch.delenv("AISTUDIO_SECRET", raising=False)

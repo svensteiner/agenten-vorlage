@@ -69,15 +69,15 @@ def _require(role_ok: bool, message: str = "Keine Berechtigung.") -> None:
 
 
 class LoginBody(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=auth.MAX_EMAIL_CHARS)
+    password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 class RegisterBody(BaseModel):
     org_name: str = Field(min_length=2, max_length=120)
     name: str = Field(min_length=1, max_length=120)
-    email: str
-    password: str
+    email: str = Field(max_length=auth.MAX_EMAIL_CHARS)
+    password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 class AskBody(BaseModel):
@@ -97,19 +97,19 @@ class RunBody(BaseModel):
 
 
 class PasswordBody(BaseModel):
-    old_password: str
-    new_password: str
+    old_password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
+    new_password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 class UserAddBody(BaseModel):
-    email: str
-    name: str
+    email: str = Field(max_length=auth.MAX_EMAIL_CHARS)
+    name: str = Field(min_length=1, max_length=120)
     role: str = "member"
-    password: str
+    password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 class UserPasswordBody(BaseModel):
-    password: str
+    password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 class UserPatchBody(BaseModel):
@@ -124,7 +124,7 @@ class OrgPatchBody(BaseModel):
 
 
 class PurgeBody(BaseModel):
-    password: str
+    password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
 @router.get("/health")

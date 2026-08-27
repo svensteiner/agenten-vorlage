@@ -15,6 +15,8 @@ import re
 from . import config
 
 _PBKDF_ROUNDS = 120_000
+MAX_PASSWORD_CHARS = 256
+MAX_EMAIL_CHARS = 254
 
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
@@ -49,6 +51,8 @@ def validate_password(password: str, email: str = "") -> str | None:
     """Return an error message, or None if the password is acceptable."""
     if len(password or "") < 10:
         return "Passwort mindestens 10 Zeichen."
+    if len(password or "") > MAX_PASSWORD_CHARS:
+        return "Passwort höchstens %s Zeichen." % MAX_PASSWORD_CHARS
     if email and password.strip().lower() == email.strip().lower():
         return "Passwort darf nicht der E-Mail entsprechen."
     if not re.search(r"[A-Za-zÄÖÜäöüß]", password) or not re.search(r"[0-9]", password):

@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.23 — 2026-08-27 — Passwortlänge vor PBKDF2 kappen
+
+Login, Register und Passwortwechsel nehmen kein unbegrenztes Passwort mehr
+(sonst rechnet PBKDF2 auf Megabytes). Höchstens 256 Zeichen, E-Mail 254.
+Zu lang ist 422, nicht 120 000 Iterationen.
+
 ## Produktlaufzeit 1.4.22 — 2026-08-27 — Anfragekörper begrenzen, nicht nur den Header
 
 `Content-Length` allein reicht nicht: ein chunked POST umgeht das Limit, und
