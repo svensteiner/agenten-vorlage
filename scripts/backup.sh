@@ -76,7 +76,10 @@ if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
     rm -f "$OUT" "$DEST/aistudio-$STAMP-uploads.tar.gz"
     exit 1
   fi
-  encrypt_file "$OUT" "$OUT.enc" || exit 1
+  if ! encrypt_file "$OUT" "$OUT.enc"; then
+    rm -f "$DEST/aistudio-$STAMP-uploads.tar.gz"
+    exit 1
+  fi
   OUT="$OUT.enc"
   if [[ -f "$DEST/aistudio-$STAMP-uploads.tar.gz" ]]; then
     encrypt_file "$DEST/aistudio-$STAMP-uploads.tar.gz" "$DEST/aistudio-$STAMP-uploads.tar.gz.enc" || exit 1

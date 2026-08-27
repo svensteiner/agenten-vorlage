@@ -359,6 +359,7 @@ def test_encrypted_backup_scrubs_plaintext_when_openssl_fails(tmp_path):
     leftovers = list(dest.glob("*")) if dest.is_dir() else []
     assert not any(p.name.endswith(".db") and not p.name.endswith(".enc") for p in leftovers)
     assert not any(p.name.endswith(".tar.gz") for p in leftovers)
+    assert not any("SQLite" in p.read_bytes()[:32] for p in leftovers if p.is_file())
 
 
 @pytest.mark.skipif(

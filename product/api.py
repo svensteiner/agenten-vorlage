@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import shutil
 from pathlib import Path
 from typing import Any
@@ -951,7 +952,7 @@ async def upload_doc(
         title = (file.filename or "Upload").replace("\\", "/").rsplit("/", 1)[-1][:180]
         text = raw.decode("utf-8", errors="replace")
         stamp = db.now_iso()
-        doc_id = "upload-" + stamp.replace(":", "").replace("-", "")
+        doc_id = "upload-" + stamp.replace(":", "").replace("-", "") + "-" + secrets.token_hex(4)
         dest = config.upload_path(user["org_id"], doc_id)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(text, encoding="utf-8")
