@@ -452,6 +452,44 @@ def test_health_hides_ops_in_production(client, monkeypatch):
     assert "backup_age_hours" not in ready
 
 
+def test_hot_path_skips_schema_and_seed(client, monkeypatch):
+    """Lifespan already seeded. Probes and /api/me must not CREATE TABLE + COMMIT."""
+    inits: list[int] = []
+    seeds: list[int] = []
+
+    def _init(*_a, **_k):
+        inits.append(1)
+
+    def _seed(*_a, **_k):
+        seeds.append(1)
+
+    monkeypatch.setattr("product.db.init_db", _init)
+    monkeypatch.setattr("product.seed.ensure_seeded", _seed)
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/ready").status_code == 200
+    assert client.get("/api/live").status_code == 200
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    me = client.get("/api/me", headers=headers)
+    assert me.status_code == 200
+    assert inits == []
+    assert seeds == []
+
+
+def test_production_health_skips_sqlite(client, monkeypatch):
+    monkeypatch.setenv("AISTUDIO_ENV", "production")
+
+    def boom(*_a, **_k):
+        raise RuntimeError("production health must not open sqlite")
+
+    monkeypatch.setattr("product.db.connect", boom)
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body.get("ok") is True
+    assert "allow_register" in body
+    assert "demo" not in body
+
+
 def test_sessions_list_and_revoke_others(client):
     first = client.post(
         "/api/auth/login",

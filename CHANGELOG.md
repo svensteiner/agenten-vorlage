@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.52 — 2026-08-27 — Schema nicht auf dem Hot-Path
+
+Jede Anfrage (Health, Ready, Login, Ask) hat `CREATE TABLE IF NOT EXISTS`
+plus Migration und `COMMIT` ausgeführt — Lastbalancer 1/s und Backup
+teilen sich die WAL. Schema und Demo-Seed laufen nur noch im Start
+(Lifespan). Produktion `/api/health` öffnet SQLite nicht (`allow_register`
+bleibt für den Login-Dialog). `/api/ready` prüft `SELECT 1` ohne
+`init_db`. `chmod` auf `data/` nur noch beim Start und in der Housekeeping,
+nicht bei jeder Verbindung.
+
 ## Produktlaufzeit 1.4.51 — 2026-08-27 — Health/Metriken nicht ins Access-Log
 
 Live/Ready 2xx standen seit 1.4.35 nicht im Access-Log. `/api/health` und

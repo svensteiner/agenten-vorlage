@@ -310,7 +310,6 @@ def _take_daily(*, org_id: str | None, user_id: str | None, conn=None) -> bool:
     own = conn is None
     c = conn or db.connect()
     try:
-        db.init_db(c)
         c.execute("SAVEPOINT llm_budget")
         ok = True
         if user_id and per_user > 0 and not _bump_usage(c, day, "user", user_id, per_user):

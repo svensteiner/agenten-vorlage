@@ -15,15 +15,14 @@ from pydantic import BaseModel, Field
 from product import auth, catalog, config, db, housekeeping, retrieval, tenancy
 from product.runtime import run_agent_job
 from product.security import client_ip, metrics_authorized, rate_limit_error, rate_limited
-from product.seed import delete_document, ensure_seeded, insert_document
+from product.seed import delete_document, insert_document
 
 router = APIRouter()
 
 
 def _conn():
-    conn = db.connect()
-    ensure_seeded(conn)
-    return conn
+    """Open SQLite. Schema and seed run once in lifespan, not on every request."""
+    return db.connect()
 
 
 def _demo_present(conn) -> bool:
@@ -176,18 +175,19 @@ def health(request: Request) -> dict[str, Any]:
     # 180/min ≈ 3/s — Docker HEALTHCHECK is 30s; a 1/s LB probe stays green.
     if rate_limited("health:" + client_ip(request), 180):
         raise rate_limit_error()
-    conn = _conn()
+    payload = {
+        "ok": True,
+        "product": "aistudio",
+        "version": config.VERSION,
+        "env": config.env_name(),
+        "allow_register": config.allow_register(),
+    }
+    if config.is_production():
+        # Login dialog needs allow_register. DB lives on /api/ready — no WAL write.
+        return payload
+    conn = db.connect()
     try:
         conn.execute("SELECT 1").fetchone()
-        payload = {
-            "ok": True,
-            "product": "aistudio",
-            "version": config.VERSION,
-            "env": config.env_name(),
-            "allow_register": config.allow_register(),
-        }
-        if config.is_production():
-            return payload
         demo = _demo_present(conn)
         orgs = conn.execute("SELECT COUNT(*) AS n FROM orgs").fetchone()["n"]
         docs = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
@@ -208,7 +208,6 @@ def ready(request: Request) -> dict[str, Any]:
         raise rate_limit_error()
     conn = db.connect()
     try:
-        db.init_db(conn)
         conn.execute("SELECT 1").fetchone()
         data = config.DATA_DIR
         data.mkdir(parents=True, exist_ok=True)

@@ -49,6 +49,7 @@ async def lifespan(_app: FastAPI):
         )
     config.acquire_instance_lock()
     try:
+        config.harden_data_dir()
         conn = connect()
         try:
             ensure_seeded(conn)
