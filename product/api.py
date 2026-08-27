@@ -115,7 +115,7 @@ class PasswordBody(BaseModel):
 class UserAddBody(BaseModel):
     email: str = Field(max_length=auth.MAX_EMAIL_CHARS)
     name: str = Field(min_length=1, max_length=120)
-    role: str = "member"
+    role: str = Field(default="member", max_length=32)
     password: str = Field(max_length=auth.MAX_PASSWORD_CHARS)
 
 
@@ -522,6 +522,8 @@ def list_users(user: dict = Depends(current_user)) -> dict[str, Any]:
 @router.post("/users")
 def add_user(body: UserAddBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("useradd:" + user["id"], 8):
+        raise rate_limit_error()
     conn = _conn()
     try:
         try:
@@ -571,6 +573,8 @@ def patch_user(user_id: str, body: UserPatchBody, user: dict = Depends(current_u
 @router.post("/users/{user_id}/password")
 def admin_password(user_id: str, body: UserPasswordBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("adminpwd:" + user["id"], 10):
+        raise rate_limit_error()
     conn = _conn()
     try:
         try:
@@ -871,6 +875,8 @@ def export(user: dict = Depends(current_user)) -> JSONResponse:
 @router.post("/org/purge")
 def purge(body: PurgeBody, user: dict = Depends(current_user)) -> dict[str, Any]:
     _require(tenancy.can_manage_users(user["role"]))
+    if rate_limited("purge:" + user["id"], 8):
+        raise rate_limit_error()
     conn = _conn()
     try:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()

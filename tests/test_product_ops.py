@@ -680,6 +680,44 @@ def test_password_change_rate_limited(client, monkeypatch):
     assert r.status_code == 429
 
 
+def test_admin_hashing_routes_rate_limited(client, monkeypatch):
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "org_name": "Hashlimit GmbH",
+            "name": "Hanna Hash",
+            "email": "hanna@hashlimit.example",
+            "password": "Hashlimit2026!",
+        },
+    )
+    assert r.status_code == 200, r.text
+    headers = {"Authorization": "Bearer " + r.json()["token"]}
+    monkeypatch.setattr("product.api.rate_limited", lambda *a, **k: True)
+    add = client.post(
+        "/api/users",
+        headers=headers,
+        json={
+            "email": "neu@hashlimit.example",
+            "name": "Neu",
+            "role": "member",
+            "password": "Hashlimit2026!",
+        },
+    )
+    assert add.status_code == 429
+    pwd = client.post(
+        "/api/users/user-x/password",
+        headers=headers,
+        json={"password": "Hashlimit2026!"},
+    )
+    assert pwd.status_code == 429
+    purge = client.post(
+        "/api/org/purge",
+        headers=headers,
+        json={"password": "Hashlimit2026!"},
+    )
+    assert purge.status_code == 429
+
+
 def test_org_and_fleet_reject_huge_fields(client):
     headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
     org = client.patch("/api/org", headers=headers, json={"name": "N" * 200})
@@ -754,6 +792,8 @@ def test_systemd_unit_rewrites_install_root():
     tls = (root / "scripts" / "nginx-aistudio.tls.conf").read_text(encoding="utf-8")
     assert "ssl_certificate" in tls
     assert "/api/auth/(login|register)" in tls
+    assert "ssl_protocols TLSv1.2 TLSv1.3" in tls
+    assert "ssl_session_tickets off" in tls
 
 
 def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):

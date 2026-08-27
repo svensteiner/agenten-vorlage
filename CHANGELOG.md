@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.34 — 2026-08-27 — PBKDF2-Pfade begrenzen, TLS 1.2+
+
+Nutzer anlegen, Admin-Passwort setzen und Mandant löschen hashen ohne Pause
+(120 000 Iterationen). Jetzt 8 bzw. 10/Minute, sonst 429. nginx-TLS nur
+TLSv1.2/1.3, Session-Tickets aus.
+
 ## Produktlaufzeit 1.4.33 — 2026-08-27 — Request-ID kappen, Docker-backup.env weg vom Produkt
 
 Client-`X-Request-ID` war unbegrenzt und landete in JSON und Access-Log.
