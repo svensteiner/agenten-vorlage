@@ -58,7 +58,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 | `AISTUDIO_LLM_PROVIDER=openai` | Erste Produktstufe, Chat Completions. |
 | `AISTUDIO_LLM_PROVIDER=decentral` | Später: lokale Instanz, `AISTUDIO_LLM_BASE_URL` z. B. `http://127.0.0.1:11434/v1`. |
 
-Prompts werden nicht geloggt. Entwicklung: `/api/health` zeigt `llm` ohne Schlüssel. Produktion: dieselbe Lage nach Login auf `/api/me` und auf `/api/metrics`. Cloud-Aufrufe sind pro Nutzer/Mandant kontingentiert (`AISTUDIO_LLM_PER_USER` / `AISTUDIO_LLM_PER_ORG` pro Minute, `AISTUDIO_LLM_PER_USER_DAY` / `AISTUDIO_LLM_PER_ORG_DAY` pro Kalendertag, persistiert); bei Ausschöpfung bleibt die Antwort extractiv auf der Instanz. Nach `AISTUDIO_LLM_BREAKER_FAILS` Ausfällen (Standard 5) bleibt der Ausgang `AISTUDIO_LLM_BREAKER_SECONDS` Sekunden (Standard 300) geschlossen.
+Prompts werden nicht geloggt. Entwicklung: `/api/health` zeigt `llm` ohne Schlüssel. Produktion: dieselbe Lage nach Login auf `/api/me` und auf `/api/metrics`. Cloud-Aufrufe sind pro Nutzer/Mandant kontingentiert (`AISTUDIO_LLM_PER_USER` / `AISTUDIO_LLM_PER_ORG` pro Minute, `AISTUDIO_LLM_PER_USER_DAY` / `AISTUDIO_LLM_PER_ORG_DAY` pro Kalendertag, persistiert); bei Ausschöpfung bleibt die Antwort extractiv auf der Instanz. Nach `AISTUDIO_LLM_BREAKER_FAILS` Ausfällen (Standard 5) bleibt der Ausgang `AISTUDIO_LLM_BREAKER_SECONDS` Sekunden (Standard 300) geschlossen. Timeout höchstens 60s. `in_boundary` ignoriert `HTTP_PROXY` (Auszüge bleiben auf der Instanz); Cloud darf den Proxy nutzen. Basis-URL nur http/https.
 
 ### Bewusst nicht in dieser Version
 

@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.37 — 2026-08-27 — Modell ohne Proxy-Leck, Timeout kappen
+
+httpx folgt sonst `HTTP_PROXY`. Bei `in_boundary` würden Kurzauszüge über
+einen Firmen-Proxy die Instanz verlassen. Jetzt `trust_env` nur bei
+`egress=cloud`. Timeout 1–60s, `max_tokens` 16–4096; unsinnige Zahlen
+werfen `/api/me` nicht um. Nur http(s)-Basis-URLs.
+
 ## Produktlaufzeit 1.4.36 — 2026-08-27 — backup.env nicht ins Image, Suche begrenzen
 
 `backup.env` liegt seit 1.4.31 neben `.env`. `.dockerignore` ließ die Datei

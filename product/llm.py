@@ -45,6 +45,32 @@ _ONATTR = re.compile(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.I)
 _JSURL = re.compile(r"javascript:", re.I)
 
 
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _float_env(name: str, default: float, lo: float, hi: float) -> float:
+    raw = os.environ.get(name)
+    try:
+        n = float(raw) if raw is not None and str(raw).strip() else default
+    except (TypeError, ValueError):
+        n = default
+    if n != n or n in (float("inf"), float("-inf")):
+        n = default
+    return max(lo, min(n, hi))
+
+
+def _http_url(url: str) -> bool:
+    """Only http(s) hosts — never file://, unix://, or a bare path."""
+    parsed = urlparse(url or "")
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    return bool((parsed.hostname or "").strip())
+
+
 def sanitize_html(text: str) -> str:
     """Drop script/style and inline handlers from model HTML. Keep simple markup."""
     cleaned = _SCRIPT.sub("", text or "")
@@ -97,8 +123,8 @@ def settings() -> dict[str, Any]:
     anthropic_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
     if provider == "anthropic" and os.environ.get("AISTUDIO_LLM_API_KEY"):
         anthropic_key = os.environ.get("AISTUDIO_LLM_API_KEY", "").strip() or anthropic_key
-    timeout = float(os.environ.get("AISTUDIO_LLM_TIMEOUT", "20"))
-    max_tokens = int(os.environ.get("AISTUDIO_LLM_MAX_TOKENS", "700"))
+    timeout = _float_env("AISTUDIO_LLM_TIMEOUT", 20.0, 1.0, 60.0)
+    max_tokens = max(16, min(_int_env("AISTUDIO_LLM_MAX_TOKENS", 700), 4096))
     egress = (os.environ.get("AISTUDIO_LLM_EGRESS") or "in_boundary").strip().lower()
     if egress not in {"cloud", "in_boundary"}:
         egress = "in_boundary"
@@ -136,12 +162,21 @@ def settings() -> dict[str, Any]:
 
     cloud = _is_cloud(provider, base_url)
     blocked = bool(cloud and egress == "in_boundary")
-    ready = bool(provider != "none" and not blocked and (api_key or kind == "decentral") and (kind != "decentral" or base_url))
+    bad_url = bool(base_url) and not _http_url(base_url)
+    ready = bool(
+        provider != "none"
+        and not blocked
+        and not bad_url
+        and (api_key or kind == "decentral")
+        and (kind != "decentral" or base_url)
+    )
     reason = ""
     if provider == "none":
         reason = "not_configured"
     elif blocked:
         reason = "egress_blocked"
+    elif bad_url:
+        reason = "bad_base_url"
     elif kind == "decentral" and not base_url:
         reason = "missing_base_url"
         ready = False
@@ -167,10 +202,10 @@ def settings() -> dict[str, Any]:
 def public_status() -> dict[str, Any]:
     """Health payload: never keys, never prompts, never host credentials."""
     cfg = settings()
-    per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
-    per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
-    per_user_day = int(os.environ.get("AISTUDIO_LLM_PER_USER_DAY", "200"))
-    per_org_day = int(os.environ.get("AISTUDIO_LLM_PER_ORG_DAY", "800"))
+    per_user = _int_env("AISTUDIO_LLM_PER_USER", 20)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG", 60)
+    per_user_day = _int_env("AISTUDIO_LLM_PER_USER_DAY", 200)
+    per_org_day = _int_env("AISTUDIO_LLM_PER_ORG_DAY", 800)
     brk = breaker_status()
     return {
         "provider": cfg["provider"],
@@ -245,11 +280,11 @@ def allow_call(*, org_id: str | None = None, user_id: str | None = None, conn=No
         return True
     from product.security import rate_limited
 
-    per_user = int(os.environ.get("AISTUDIO_LLM_PER_USER", "20"))
-    per_org = int(os.environ.get("AISTUDIO_LLM_PER_ORG", "60"))
-    if user_id and rate_limited("llm-user:" + user_id, per_user):
+    per_user = _int_env("AISTUDIO_LLM_PER_USER", 20)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG", 60)
+    if user_id and per_user > 0 and rate_limited("llm-user:" + user_id, per_user):
         return _block("user")
-    if org_id and rate_limited("llm-org:" + org_id, per_org):
+    if org_id and per_org > 0 and rate_limited("llm-org:" + org_id, per_org):
         return _block("org")
     if not _take_daily(org_id=org_id, user_id=user_id, conn=conn):
         return _block("day")
@@ -261,13 +296,6 @@ def _block(scope: str) -> bool:
         _stats["budget_blocked"] += 1
     log.info("llm budget exhausted scope=%s", scope)
     return False
-
-
-def _int_env(name: str, default: int) -> int:
-    try:
-        return int(os.environ.get(name, str(default)))
-    except ValueError:
-        return default
 
 
 def _take_daily(*, org_id: str | None, user_id: str | None, conn=None) -> bool:
@@ -345,7 +373,7 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
         _log_complete(cfg, ok=False, ms=0, error="circuit_open", circuit=True)
         empty["error"] = "circuit_open"
         return empty
-    tokens = int(max_tokens or cfg["max_tokens"])
+    tokens = max(16, min(int(max_tokens or cfg["max_tokens"]), 4096))
     try:
         if cfg["provider"] == "anthropic":
             text = _anthropic(cfg, system, user, tokens)
@@ -391,6 +419,15 @@ def _chat_url(base_url: str) -> str:
     return url + "/chat/completions"
 
 
+def _httpx_client(cfg: dict[str, Any]) -> httpx.Client:
+    """Cloud may use HTTP(S)_PROXY. in_boundary must not leak excerpts via a proxy."""
+    return httpx.Client(
+        timeout=cfg["timeout"],
+        follow_redirects=False,
+        trust_env=cfg.get("egress") == "cloud",
+    )
+
+
 def _openai_compat(cfg: dict[str, Any], system: str, user: str, max_tokens: int) -> str:
     headers = {"Content-Type": "application/json"}
     if cfg["api_key"]:
@@ -404,7 +441,7 @@ def _openai_compat(cfg: dict[str, Any], system: str, user: str, max_tokens: int)
             {"role": "user", "content": user},
         ],
     }
-    with httpx.Client(timeout=cfg["timeout"], follow_redirects=False) as client:
+    with _httpx_client(cfg) as client:
         response = client.post(_chat_url(cfg["base_url"]), headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
@@ -429,7 +466,7 @@ def _anthropic(cfg: dict[str, Any], system: str, user: str, max_tokens: int) -> 
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
-    with httpx.Client(timeout=cfg["timeout"], follow_redirects=False) as client:
+    with _httpx_client(cfg) as client:
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()

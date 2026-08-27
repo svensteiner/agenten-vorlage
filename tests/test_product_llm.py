@@ -130,6 +130,7 @@ def test_openai_compat_sends_excerpts_only(monkeypatch):
     assert "script" not in result["text"].lower()
     assert captured["url"].endswith("/chat/completions")
     assert captured["client_kwargs"].get("follow_redirects") is False
+    assert captured["client_kwargs"].get("trust_env") is True
     assert captured["json"]["model"] == "gpt-4o-mini"
     user = captured["json"]["messages"][1]["content"]
     assert "Auszüge" in user
@@ -367,3 +368,72 @@ def test_llm_circuit_opens_without_further_calls(monkeypatch):
     with llm._stats_lock:
         llm._breaker["fails"] = 0
         llm._breaker["open_until"] = 0.0
+
+
+def test_in_boundary_does_not_use_env_proxy(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "decentral")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "http://127.0.0.1:11434/v1")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    monkeypatch.setenv("AISTUDIO_LLM_MODEL", "llama3.1")
+    monkeypatch.delenv("AISTUDIO_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    captured = {}
+
+    class FakeResp:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"choices": [{"message": {"content": "<p>ok</p>"}}]}
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            captured["client_kwargs"] = k
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            return FakeResp()
+
+    monkeypatch.setattr(llm.httpx, "Client", FakeClient)
+    result = llm.complete(system="sys", user="Frage: intern")
+    assert result["ok"] is True
+    assert captured["client_kwargs"].get("follow_redirects") is False
+    assert captured["client_kwargs"].get("trust_env") is False
+
+
+def test_garbage_llm_env_does_not_crash_status(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_TIMEOUT", "nope")
+    monkeypatch.setenv("AISTUDIO_LLM_MAX_TOKENS", "abc")
+    monkeypatch.setenv("AISTUDIO_LLM_PER_USER", "x")
+    monkeypatch.setenv("AISTUDIO_LLM_PER_ORG_DAY", "")
+    status = llm.public_status()
+    assert status["per_user"] == 20
+    assert status["per_org_day"] == 800
+    cfg = llm.settings()
+    assert cfg["timeout"] == 20.0
+    assert cfg["max_tokens"] == 700
+
+
+def test_llm_timeout_and_tokens_clamped(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_TIMEOUT", "3600")
+    monkeypatch.setenv("AISTUDIO_LLM_MAX_TOKENS", "99999")
+    cfg = llm.settings()
+    assert cfg["timeout"] == 60.0
+    assert cfg["max_tokens"] == 4096
+
+
+def test_file_base_url_is_not_ready(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "decentral")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "file:///etc/passwd")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    status = llm.public_status()
+    assert status["ready"] is False
+    assert status["reason"] == "bad_base_url"
+    assert "passwd" not in str(status)
