@@ -131,6 +131,21 @@ def test_export_and_invoice_snapshot(client):
     assert "users" in payload and "documents" in payload
 
 
+def test_jobs_and_audit_reject_negative_limit(client):
+    from product.api import _page_limit
+
+    assert _page_limit(-1, cap=100, default=20) == 20
+    assert _page_limit(0, cap=100, default=20) == 20
+    assert _page_limit(500, cap=100, default=20) == 100
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    jobs = client.get("/api/jobs?limit=-1", headers=headers)
+    assert jobs.status_code == 422
+    audit = client.get("/api/audit?limit=-1", headers=headers)
+    assert audit.status_code == 422
+    ok = client.get("/api/jobs?limit=5", headers=headers)
+    assert ok.status_code == 200
+
+
 def test_lockout(client, monkeypatch):
     monkeypatch.setattr("product.config.LOCKOUT_AFTER", 2)
     email = "katharina.vogel@meridian.example"

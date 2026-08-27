@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
@@ -66,6 +66,17 @@ def current_user(
 def _require(role_ok: bool, message: str = "Keine Berechtigung.") -> None:
     if not role_ok:
         raise HTTPException(403, message)
+
+
+def _page_limit(limit: int, *, cap: int, default: int) -> int:
+    """SQLite treats LIMIT < 0 as unlimited — never pass a negative through."""
+    try:
+        n = int(limit)
+    except (TypeError, ValueError):
+        n = default
+    if n < 1:
+        return default
+    return min(n, cap)
 
 
 class LoginBody(BaseModel):
@@ -759,13 +770,16 @@ def run_agent(body: RunBody, user: dict = Depends(current_user)) -> dict[str, An
 
 
 @router.get("/jobs")
-def jobs(user: dict = Depends(current_user), limit: int = 20) -> dict[str, Any]:
+def jobs(
+    user: dict = Depends(current_user),
+    limit: int = Query(20, ge=1, le=100),
+) -> dict[str, Any]:
     conn = _conn()
     try:
         rows = conn.execute(
             "SELECT id, agent_id, task, status, created_at, output_json FROM jobs "
             "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
-            (user["org_id"], min(limit, 100)),
+            (user["org_id"], _page_limit(limit, cap=100, default=20)),
         ).fetchall()
         items = []
         for r in rows:
@@ -801,13 +815,16 @@ def jobs(user: dict = Depends(current_user), limit: int = 20) -> dict[str, Any]:
 
 
 @router.get("/audit")
-def audit(user: dict = Depends(current_user), limit: int = 50) -> dict[str, Any]:
+def audit(
+    user: dict = Depends(current_user),
+    limit: int = Query(50, ge=1, le=200),
+) -> dict[str, Any]:
     _require(tenancy.can_see_audit(user["role"]), "Kein Zugriff auf das Audit-Log.")
     conn = _conn()
     try:
         rows = conn.execute(
             "SELECT * FROM audit_log WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
-            (user["org_id"], min(limit, 200)),
+            (user["org_id"], _page_limit(limit, cap=200, default=50)),
         ).fetchall()
         return {"events": [dict(r) for r in rows]}
     finally:

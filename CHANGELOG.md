@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.26 — 2026-08-27 — Listen nicht mit LIMIT -1 leeren
+
+SQLite behandelt negatives `LIMIT` als unbegrenzt. `GET /api/jobs?limit=-1`
+und `/api/audit?limit=-1` hätten die ganze Tabelle ausgegeben. Jetzt 1–100
+bzw. 1–200, sonst 422.
+
 ## Produktlaufzeit 1.4.25 — 2026-08-27 — Aufträge und Export begrenzen
 
 `/api/agents/run` war unbegrenzt (Orchestrator plus Wissenssuche). Pro Nutzer
