@@ -22,7 +22,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.43"
+VERSION = "1.4.44"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 

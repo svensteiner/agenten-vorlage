@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.44 — 2026-08-27 — Dokumentliste ohne Körper, Viewer einzeln
+
+`GET /api/docs` lieferte `body_parts` für bis zu 500 Dokumente (bis 50 000
+Zeichen je Datei) — Login und Einstellungen konnten den Prozess umwerfen.
+Jetzt nur Metadaten; der Körper kommt über `GET /api/docs/{id}`. Suche
+ebenso ohne Körper. Die Kachelansicht escaped Titel, Snippet und Autor.
+
 ## Produktlaufzeit 1.4.43 — 2026-08-27 — Docker-XFF, nginx-Verbindungen, Jobs/Audit
 
 Docker-Produktion bindet `0.0.0.0`, der TCP-Peer ist die Bridge — nicht

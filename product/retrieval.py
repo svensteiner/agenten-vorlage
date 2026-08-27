@@ -126,20 +126,47 @@ def get_document(org_id: str, doc_id: str, role: str, conn=None) -> dict[str, An
     return item
 
 
-def list_documents(org_id: str, role: str, conn=None, *, limit: int = 500) -> list[dict[str, Any]]:
+_LIST_COLS = (
+    "id, org_id, title, type, module, path, author, date, snippet, "
+    "locked, locked_role, classification"
+)
+
+
+def list_documents(
+    org_id: str,
+    role: str,
+    conn=None,
+    *,
+    limit: int = 500,
+    summaries: bool = False,
+) -> list[dict[str, Any]]:
     c = conn or db.get_conn()
     try:
         cap = int(limit)
     except (TypeError, ValueError):
         cap = 500
     cap = max(1, min(cap, 5000))
-    rows = c.execute(
-        "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
-        (org_id, cap),
-    ).fetchall()
+    if summaries:
+        rows = c.execute(
+            "SELECT " + _LIST_COLS + " FROM documents WHERE org_id = ? "
+            "ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
+    else:
+        rows = c.execute(
+            "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
     out = []
     for row in rows:
-        item = _hydrate(row)
+        if summaries:
+            item = db.row_dict(row)
+            assert item is not None
+            item["body_parts"] = []
+            item["extra"] = {}
+            item["locked"] = bool(item.get("locked"))
+        else:
+            item = _hydrate(row)
         if not can_read(item, role):
             item["body"] = ""
             item["body_parts"] = []
@@ -148,9 +175,14 @@ def list_documents(org_id: str, role: str, conn=None, *, limit: int = 500) -> li
     return out
 
 
-def to_frontend_doc(item: dict[str, Any]) -> dict[str, Any]:
-    """Shape a stored document the way prototype/app.js expects in DOCS."""
+def to_frontend_doc(item: dict[str, Any], *, summary: bool = False) -> dict[str, Any]:
+    """Shape a stored document the way prototype/app.js expects in DOCS.
+
+    ``summary=True`` omits body/extra (GET /api/docs). The viewer loads
+    ``GET /api/docs/{id}`` which includes ``body`` (same array as ``body_parts``).
+    """
     extra = item.get("extra") if isinstance(item.get("extra"), dict) else db.parse_json(item.get("extra_json"), {})
+    parts = [] if summary else (item.get("body_parts") or [])
     out = {
         "id": item["id"],
         "title": item.get("title") or item["id"],
@@ -160,14 +192,16 @@ def to_frontend_doc(item: dict[str, Any]) -> dict[str, Any]:
         "author": item.get("author") or "",
         "date": item.get("date") or "",
         "snippet": item.get("snippet") or "",
-        "body_parts": item.get("body_parts") or [],
         "locked": bool(item.get("locked")),
         "lockedRole": item.get("locked_role") or item.get("lockedRole"),
         "classification": item.get("classification"),
         "denied": bool(item.get("denied")),
     }
-    if extra:
-        out.update(extra)
+    if not summary:
+        out["body_parts"] = parts
+        out["body"] = parts
+        if extra:
+            out.update(extra)
     return out
 
 

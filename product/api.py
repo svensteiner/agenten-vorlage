@@ -614,9 +614,30 @@ def docs(user: dict = Depends(current_user)) -> dict[str, Any]:
     try:
         cap = config.org_max_docs()
         items = retrieval.list_documents(
-            conn=conn, org_id=user["org_id"], role=user["role"], limit=cap
+            conn=conn,
+            org_id=user["org_id"],
+            role=user["role"],
+            limit=cap,
+            summaries=True,
         )
-        return {"docs": [retrieval.to_frontend_doc(d) for d in items], "limit": cap}
+        return {
+            "docs": [retrieval.to_frontend_doc(d, summary=True) for d in items],
+            "limit": cap,
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/docs/{doc_id}")
+def doc_one(doc_id: str, user: dict = Depends(current_user)) -> dict[str, Any]:
+    if rate_limited("docs:" + user["id"], 60):
+        raise rate_limit_error()
+    conn = _conn()
+    try:
+        item = retrieval.get_document(user["org_id"], doc_id, user["role"], conn=conn)
+        if not item:
+            raise HTTPException(404, "Dokument nicht gefunden.")
+        return retrieval.to_frontend_doc(item)
     finally:
         conn.close()
 
@@ -651,7 +672,7 @@ def search(
             user["org_id"], q, role=user["role"], conn=conn
         )
         return {
-            "hits": [retrieval.to_frontend_doc(h) for h in hits],
+            "hits": [retrieval.to_frontend_doc(h, summary=True) for h in hits],
             "withheld": retrieval.withheld_payload(withheld),
         }
     finally:

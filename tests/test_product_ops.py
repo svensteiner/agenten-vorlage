@@ -191,6 +191,40 @@ def test_search_rejects_huge_query(client):
     ok = client.get("/api/search", params={"q": "Reiserichtlinie"}, headers=headers)
     assert ok.status_code == 200
     assert "hits" in ok.json()
+    for hit in ok.json()["hits"]:
+        assert not hit.get("body_parts")
+        assert not hit.get("body")
+
+
+def test_docs_list_is_summary_detail_has_body(client):
+    headers = _login(client, "katharina.vogel@meridian.example", "Meridian2026!")
+    listed = client.get("/api/docs", headers=headers)
+    assert listed.status_code == 200
+    docs = listed.json()["docs"]
+    assert docs
+    one = next(d for d in docs if not d.get("locked") and d.get("id") == "reiserichtlinie-2026")
+    assert "body_parts" not in one
+    assert "body" not in one
+    assert one["title"]
+    assert one["snippet"]
+    full = client.get("/api/docs/" + one["id"], headers=headers)
+    assert full.status_code == 200, full.text
+    payload = full.json()
+    assert payload.get("body_parts")
+    assert payload.get("body")
+    assert any("Bahnreisen" in (p.get("t") or "") for p in payload["body_parts"])
+    missing = client.get("/api/docs/gibt-es-nicht", headers=headers)
+    assert missing.status_code == 404
+    locked = client.get("/api/docs/akquisition-nordstern", headers=headers)
+    assert locked.status_code == 200
+    assert locked.json().get("denied") is True
+    assert locked.json().get("body_parts") == []
+    proto = (config.ROOT / "prototype" / "product-client.js").read_text(encoding="utf-8")
+    assert "getDoc:" in proto
+    app = (config.ROOT / "prototype" / "app.js").read_text(encoding="utf-8")
+    assert "escapeHtml(d.title)" in app
+    assert "escapeHtml(d.snippet)" in app
+    assert "AISTUDIO.getDoc" in app
 
 
 def test_lockout(client, monkeypatch):

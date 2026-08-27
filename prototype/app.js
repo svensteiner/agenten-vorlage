@@ -1272,14 +1272,14 @@
       const card = el("div", d.locked ? "doc-card locked" : "doc-card");
       if (d.locked) {
         card.innerHTML =
-          `<div class="top"><span class="ficon lock">🔒</span><div><div class="t">${d.title}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
-          `<div class="snip">${d.snippet}</div>` +
-          `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${d.date}</span></div>`;
+          `<div class="top"><span class="ficon lock">🔒</span><div><div class="t">${escapeHtml(d.title)}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
+          `<div class="snip">${escapeHtml(d.snippet)}</div>` +
+          `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${escapeHtml(d.date)}</span></div>`;
       } else {
         card.innerHTML =
-          `<div class="top"><span class="ficon">${d.type === "E-Mail" ? "✉" : "▤"}</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
-          `<div class="snip">${d.snippet}</div>` +
-          `<div class="foot"><span>${d.author}</span><span>${d.date}</span></div>`;
+          `<div class="top"><span class="ficon">${d.type === "E-Mail" ? "✉" : "▤"}</span><div><div class="t">${escapeHtml(d.title)}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
+          `<div class="snip">${escapeHtml(d.snippet)}</div>` +
+          `<div class="foot"><span>${escapeHtml(d.author)}</span><span>${escapeHtml(d.date)}</span></div>`;
       }
       card.onclick = () => openViewer(d.id);
       grid.appendChild(card);
@@ -1632,9 +1632,20 @@
   }
 
   // ---------- Dokumentenviewer ----------
-  function openViewer(docId, highlightQuote) {
-    const doc = DOCS[docId];
+  async function openViewer(docId, highlightQuote) {
+    let doc = DOCS[docId];
     if (!doc) return;
+    const parts = doc.body || doc.body_parts || [];
+    if (isLive() && AISTUDIO.getDoc && !doc.locked && !doc.denied && !parts.length) {
+      try {
+        const full = await AISTUDIO.getDoc(docId);
+        if (full && full.id) {
+          DOCS[docId] = Object.assign({}, doc, full);
+          doc = DOCS[docId];
+        }
+      } catch (e) { /* Liste reicht für Metadaten; Körper fehlt dann */ }
+    }
+    if (!doc.body && doc.body_parts) doc.body = doc.body_parts;
     $("#vTitle").textContent = doc.title;
     $("#vType").textContent = doc.type;
     $("#vMeta").innerHTML = doc.locked
@@ -1736,7 +1747,8 @@
       paper.appendChild(el("div", "dtitle", escapeHtml(doc.title)));
     }
 
-    doc.body.forEach((p, i) => {
+    const paras = doc.body || doc.body_parts || [];
+    paras.forEach((p, i) => {
       if (i === 0) return; // erste Zeile ist die Dokument-Überschrift → als Titel oben
       const hl = p.highlight || (highlightQuote && p.t.includes(highlightQuote.slice(0, 24)));
       const para = el("p", hl ? "dp hl" : "dp", markupClause(escapeHtml(p.t)));

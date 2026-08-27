@@ -237,6 +237,10 @@
       (list || []).forEach((d) => { if (d && d.id) DOCS[d.id] = d; });
     },
 
+    getDoc: function (id) {
+      return this.request("/api/docs/" + encodeURIComponent(id));
+    },
+
     refreshFleet: async function () {
       this.fleet = await this.request("/api/fleet");
       return this.fleet;
