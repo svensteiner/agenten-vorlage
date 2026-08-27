@@ -47,43 +47,47 @@ async def lifespan(_app: FastAPI):
             "X-Forwarded-For greift nicht (Peer ist die Docker-Bridge). "
             "Gateway-IP setzen, nicht 172.16.0.0/12."
         )
-    conn = connect()
+    config.acquire_instance_lock()
     try:
-        ensure_seeded(conn)
-        from product import tenancy
+        conn = connect()
+        try:
+            ensure_seeded(conn)
+            from product import tenancy
+
+            try:
+                created = tenancy.bootstrap_if_empty(conn)
+                leftover = created or config.has_bootstrap_residue()
+                if leftover:
+                    if config.consume_bootstrap_env():
+                        logging.getLogger("product").info(
+                            "Bootstrap-Zugang aus der Datendatei entfernt."
+                        )
+                    else:
+                        logging.getLogger("product").info(
+                            "Bootstrap-Zugang aus der Prozessumgebung entfernt."
+                        )
+            except ValueError as exc:
+                raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
+            conn.commit()
+            if config.is_production() and config.allow_demo_seed():
+                logging.getLogger("product").warning(
+                    "Produktion läuft mit Demo-Seed. AISTUDIO_ALLOW_DEMO_SEED=false setzen."
+                )
+        finally:
+            conn.close()
+        from product import housekeeping
 
         try:
-            created = tenancy.bootstrap_if_empty(conn)
-            leftover = created or config.has_bootstrap_residue()
-            if leftover:
-                if config.consume_bootstrap_env():
-                    logging.getLogger("product").info(
-                        "Bootstrap-Zugang aus der Datendatei entfernt."
-                    )
-                else:
-                    logging.getLogger("product").info(
-                        "Bootstrap-Zugang aus der Prozessumgebung entfernt."
-                    )
-        except ValueError as exc:
-            raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
-        conn.commit()
-        if config.is_production() and config.allow_demo_seed():
-            logging.getLogger("product").warning(
-                "Produktion läuft mit Demo-Seed. AISTUDIO_ALLOW_DEMO_SEED=false setzen."
-            )
+            housekeeping.run_once()
+        except Exception:
+            logging.getLogger("product.housekeeping").exception("housekeeping skipped")
+        housekeeping.start_loop()
+        config.write_pid_file()
+        yield
+        housekeeping.stop_loop()
+        config.clear_pid_file()
     finally:
-        conn.close()
-    from product import housekeeping
-
-    try:
-        housekeeping.run_once()
-    except Exception:
-        logging.getLogger("product.housekeeping").exception("housekeeping skipped")
-    housekeeping.start_loop()
-    config.write_pid_file()
-    yield
-    housekeeping.stop_loop()
-    config.clear_pid_file()
+        config.release_instance_lock()
 
 
 app = FastAPI(

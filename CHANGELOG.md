@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.45 — 2026-08-27 — Ein Prozess je Datenverzeichnis
+
+Zwei Produktprozesse auf derselben SQLite (zweiter `run_product`, doppeltes
+Compose, Reload neben systemd) überschreiben sich die WAL. Start nimmt
+`data/aistudio.lock` exklusiv (`flock`); der zweite Prozess bricht ab.
+`aistudio.pid` bleibt für Restore.
+
 ## Produktlaufzeit 1.4.44 — 2026-08-27 — Dokumentliste ohne Körper, Viewer einzeln
 
 `GET /api/docs` lieferte `body_parts` für bis zu 500 Dokumente (bis 50 000

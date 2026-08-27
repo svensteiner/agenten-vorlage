@@ -45,6 +45,25 @@ def test_ready(client, tmp_path):
     pidf = tmp_path / "aistudio.pid"
     assert pidf.is_file()
     assert pidf.read_text(encoding="utf-8").strip().isdigit()
+    lockf = tmp_path / "aistudio.lock"
+    assert lockf.is_file()
+
+
+def test_instance_lock_refuses_second_holder(tmp_path, monkeypatch):
+    monkeypatch.setattr("product.config.DATA_DIR", tmp_path)
+    if config._lock_fd is not None:
+        config.release_instance_lock()
+    config.acquire_instance_lock()
+    held = config._lock_fd
+    try:
+        config._lock_fd = None
+        with pytest.raises(RuntimeError, match="anderer AI-Studio-Prozess"):
+            config.acquire_instance_lock()
+    finally:
+        config._lock_fd = held
+        config.release_instance_lock()
+    config.acquire_instance_lock()
+    config.release_instance_lock()
 
 
 def test_register_empty_tenant_and_upload(client):
@@ -910,6 +929,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "listen_host()" in main
     assert "listen_port()" in main
     assert "proxy_xff_unreachable()" in main
+    assert "acquire_instance_lock()" in main
 
 
 def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):

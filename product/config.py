@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import ipaddress
 import os
 import time
@@ -22,7 +23,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.44"
+VERSION = "1.4.45"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -517,6 +518,56 @@ def pid_file() -> Path:
     return Path(DATA_DIR) / "aistudio.pid"
 
 
+def lock_file() -> Path:
+    return Path(DATA_DIR) / "aistudio.lock"
+
+
+_lock_fd: int | None = None
+
+
+def acquire_instance_lock() -> None:
+    """One product process per data directory. SQLite cannot take two writers."""
+    global _lock_fd
+    if _lock_fd is not None:
+        return
+    path = lock_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as exc:
+        os.close(fd)
+        raise RuntimeError(
+            "Ein anderer AI-Studio-Prozess nutzt bereits dieses Datenverzeichnis "
+            "(%s). Zweiten Start abbrechen — sonst wird die SQLite-Datei beschädigt."
+            % path
+        ) from exc
+    try:
+        os.ftruncate(fd, 0)
+        os.write(fd, ("%s\n" % os.getpid()).encode("utf-8"))
+        os.fsync(fd)
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+    _lock_fd = fd
+
+
+def release_instance_lock() -> None:
+    global _lock_fd
+    fd = _lock_fd
+    _lock_fd = None
+    if fd is None:
+        return
+    try:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+    except OSError:
+        pass
+    try:
+        os.close(fd)
+    except OSError:
+        pass
+
+
 def write_pid_file() -> None:
     """Record this process so restore.sh can refuse a live overwrite."""
     path = pid_file()
@@ -557,6 +608,12 @@ def harden_data_dir() -> None:
     if pidf.is_file():
         try:
             os.chmod(pidf, 0o600)
+        except OSError:
+            pass
+    lockf = lock_file()
+    if lockf.is_file():
+        try:
+            os.chmod(lockf, 0o600)
         except OSError:
             pass
     for extra in (DB_PATH, Path(str(DB_PATH) + "-wal"), Path(str(DB_PATH) + "-shm")):
