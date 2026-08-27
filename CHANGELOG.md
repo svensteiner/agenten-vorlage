@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.56 — 2026-08-27 — Housekeeping lässt die Sicherung durch
+
+`PRAGMA wal_checkpoint(TRUNCATE)` lief parallel zu `sqlite3 .backup`.
+Der Timer konnte `SQLITE_BUSY` sehen und die Tageskopie verlieren.
+Housekeeping prüft `data/.backup.lock` und überspringt WAL und
+`PRAGMA optimize`, wenn Backup oder Restore die Sperre hält.
+Löschen abgelaufener Sitzungen bleibt.
+
 ## Produktlaufzeit 1.4.55 — 2026-08-27 — nginx 10 MB, Restore teilt die Sperre
 
 nginx `client_max_body_size 4m` hat Uploads vor der App abgewiesen,

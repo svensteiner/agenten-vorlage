@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.55"
+VERSION = "1.4.56"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -590,6 +590,32 @@ def pid_file() -> Path:
 
 def lock_file() -> Path:
     return Path(DATA_DIR) / "aistudio.lock"
+
+
+def backup_lock_file() -> Path:
+    return Path(DATA_DIR) / ".backup.lock"
+
+
+def backup_lock_busy() -> bool:
+    """True if backup.sh or restore.sh holds data/.backup.lock.
+
+    Housekeeping must not TRUNCATE the WAL while sqlite3 .backup runs.
+    Does not hold the lock — backup.sh uses non-blocking flock and would fail.
+    """
+    path = backup_lock_file()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(path), os.O_RDWR | os.O_CREAT, 0o600)
+    except OSError:
+        return False
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return False
+    except OSError:
+        return True
+    finally:
+        os.close(fd)
 
 
 _lock_fd: int | None = None

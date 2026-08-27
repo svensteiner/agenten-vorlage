@@ -117,6 +117,10 @@ def fail_stale_jobs(conn=None, org_id: str | None = None) -> int:
 
 
 def wal_checkpoint(conn=None) -> dict[str, int]:
+    """TRUNCATE WAL. Skip when backup/restore holds data/.backup.lock."""
+    if config.backup_lock_busy():
+        log.info("housekeeping wal skipped — backup lock held")
+        return {"busy": 1, "log": 0, "checkpointed": 0, "skipped": 1}
     c = conn or db.get_conn()
     row = c.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
     return {
@@ -241,7 +245,8 @@ def run_once(conn=None) -> dict:
             out["restore_leftovers"] = {"db": 0, "uploads": 0}
         config.harden_data_dir()
         try:
-            c.execute("PRAGMA optimize")
+            if not (out.get("wal") or {}).get("skipped"):
+                c.execute("PRAGMA optimize")
         except Exception:
             log.exception("pragma optimize skipped")
         with _lock:

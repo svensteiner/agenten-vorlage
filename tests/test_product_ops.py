@@ -814,6 +814,24 @@ def test_housekeeping_prunes_old_audit(client):
         conn.close()
 
 
+def test_wal_checkpoint_skips_when_backup_locked(client, tmp_path):
+    import fcntl
+    from product import housekeeping
+
+    lock = tmp_path / ".backup.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        out = housekeeping.wal_checkpoint()
+        assert out.get("skipped") == 1
+        assert out.get("checkpointed") == 0
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+    ran = housekeeping.wal_checkpoint()
+    assert ran.get("skipped") != 1
+
+
 def test_stale_running_jobs_marked_error(client, monkeypatch):
     from product import db, housekeeping
 
