@@ -239,6 +239,54 @@ def test_encrypted_backup_roundtrip(tmp_path):
     assert note.read_text(encoding="utf-8") == "secret-body"
 
 
+def test_backup_warns_without_pass_in_production(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    db = data / "aistudio.db"
+    _make_db(db, 3)
+    dest = tmp_path / "backups"
+    env = _env(data, db)
+    env.pop("AISTUDIO_BACKUP_PASS", None)
+    env["AISTUDIO_ENV"] = "production"
+    r = subprocess.run(
+        [str(BACKUP), str(dest)],
+        cwd=str(ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "unverschlüsselt" in (r.stderr or "")
+    backup = Path(r.stdout.strip())
+    assert backup.is_file()
+    assert not str(backup).endswith(".enc")
+
+
+def test_install_appends_missing_backup_pass(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text("AISTUDIO_SECRET=keep-this-secret-value-xx\nAISTUDIO_ENV=production\n", encoding="utf-8")
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    text = envf.read_text(encoding="utf-8")
+    assert "AISTUDIO_SECRET=keep-this-secret-value-xx" in text
+    lines = [ln for ln in text.splitlines() if ln.startswith("AISTUDIO_BACKUP_PASS=")]
+    assert len(lines) == 1
+    assert len(lines[0].split("=", 1)[1].strip()) >= 20
+    assert "nachgetragen" in (r.stdout + r.stderr)
+
+
 def test_compose_publishes_localhost_only():
     text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "127.0.0.1:8123:8123" in text

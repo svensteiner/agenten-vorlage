@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.16 — 2026-08-27 — Backup-Passwort nachtragen
+
+`install.sh` hängt `AISTUDIO_BACKUP_PASS` an eine bestehende `.env`, wenn der Wert
+fehlt — Neuinstallation war schon verschlüsselt, ältere Installs nicht.
+`backup.sh` warnt in Produktion bei Klartext, bricht aber nicht ab.
+
 ## Produktlaufzeit 1.4.15 — 2026-08-26 — Backup-Passwort bei Install, nginx Register, Crash-Loop
 
 `install.sh` legt `AISTUDIO_BACKUP_PASS` an — der Backup-Timer schreibt AES-256,

@@ -79,8 +79,32 @@ render_systemd() {
   fi
 }
 
+ensure_backup_pass() {
+  local envf="$1"
+  [[ -f "$envf" ]] || return 0
+  if grep -q '^AISTUDIO_BACKUP_PASS=.' "$envf" 2>/dev/null; then
+    return 0
+  fi
+  local pass
+  pass="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+text = p.read_text(encoding="utf-8")
+lines = [ln for ln in text.splitlines(keepends=True) if not ln.lstrip().startswith("AISTUDIO_BACKUP_PASS=")]
+p.write_text("".join(lines), encoding="utf-8")
+' "$envf"
+  printf '\nAISTUDIO_BACKUP_PASS=%s\n' "$pass" >> "$envf"
+  chmod 600 "$envf"
+  echo "nachgetragen: AISTUDIO_BACKUP_PASS in $envf (AES-256 für Sicherungen)."
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "Hinweis: openssl fehlt — Sicherungen bleiben unverschlüsselt, bis openssl da ist." >&2
+  fi
+}
+
 if [[ -f "$ENV_FILE" ]]; then
   echo "$ENV_FILE existiert bereits — nichts überschrieben." >&2
+  ensure_backup_pass "$ENV_FILE"
 else
   SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
   METRICS="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"

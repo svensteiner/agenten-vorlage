@@ -55,6 +55,13 @@ encrypt_file() {
     -pass env:AISTUDIO_BACKUP_PASS -in "$src" -out "$dest"
 }
 
+if [[ -z "${AISTUDIO_BACKUP_PASS:-}" ]]; then
+  envn="$(printf '%s' "${AISTUDIO_ENV:-}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$envn" == "production" || "$envn" == "prod" ]]; then
+    echo "Hinweis: AISTUDIO_BACKUP_PASS fehlt — Sicherung unverschlüsselt. ./scripts/install.sh nachtragen oder Wert in .env setzen." >&2
+  fi
+fi
+
 if [[ -n "${AISTUDIO_BACKUP_PASS:-}" ]]; then
   if ! command -v openssl >/dev/null 2>&1; then
     echo "AISTUDIO_BACKUP_PASS gesetzt, aber openssl fehlt — keine Klartext-Sicherung." >&2

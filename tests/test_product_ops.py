@@ -477,6 +477,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_ALLOWED_HOSTS" in install
     assert "AISTUDIO_METRICS_TOKEN" in install
     assert "AISTUDIO_BACKUP_PASS" in install
+    assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
     assert "--password-file" in install
     assert "data/bootstrap.env" in install
     assert "chmod 600 oder 400" in install
