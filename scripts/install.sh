@@ -250,6 +250,30 @@ raise SystemExit(0 if val.lower() in {"1", "true", "yes", "on"} else 1)
 ' "$envf" "$key"
 }
 
+env_value_is() {
+  # Exit 0 when last assignment of $2 equals $3 (case-insensitive).
+  local envf="$1" key="$2" want="$3"
+  python3 -c '
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+want = sys.argv[3].strip().lower()
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(1)
+val = ""
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == key:
+        val = v.strip()
+raise SystemExit(0 if val.lower() == want else 1)
+' "$envf" "$key" "$want"
+}
+
 env_runs_as_production() {
   # .env last assignment. Missing key → production (unit + pin file).
   # systemd EnvironmentFile overrides Environment=; the pin file after
@@ -501,6 +525,10 @@ if [[ "$SYSTEMD" -eq 1 ]]; then
   fi
   if env_flag_on "$ENV_FILE" AISTUDIO_ALLOW_REGISTER; then
     echo "AISTUDIO_ALLOW_REGISTER ist an — systemd nicht installiert (öffentliche Mandantenanlage hinter nginx). In $ENV_FILE auf false setzen; erster Mandant über data/bootstrap.env." >&2
+    exit 1
+  fi
+  if env_value_is "$ENV_FILE" AISTUDIO_LLM_EGRESS cloud && ! env_flag_on "$ENV_FILE" AISTUDIO_LLM_CLOUD_OK; then
+    echo "AISTUDIO_LLM_EGRESS=cloud ohne AISTUDIO_LLM_CLOUD_OK — systemd nicht installiert (Laptop-Rest würde Kurzauszüge in die Cloud schicken). CLOUD_OK=true setzen oder Egress auf in_boundary." >&2
     exit 1
   fi
   if [[ ! -f "$ROOT/scripts/aistudio.systemd.env" ]]; then

@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.65 — 2026-08-28 — Cloud-Auszüge nur mit CLOUD_OK
+
+Produktion startete mit `AISTUDIO_LLM_EGRESS=cloud` aus einer Laptop-`.env`
+(OpenAI-Test) und schickte Kurzauszüge nach außen. Jetzt bricht der Start
+ab, solange `AISTUDIO_LLM_CLOUD_OK` nicht ausdrücklich `true` ist.
+`install.sh --systemd` ebenso. Entwicklung bleibt ungeändert.
+
 ## Produktlaufzeit 1.4.64 — 2026-08-28 — in_boundary nur interne Hosts
 
 `AISTUDIO_LLM_EGRESS=in_boundary` hat nur OpenAI/Anthropic-Hostnamen

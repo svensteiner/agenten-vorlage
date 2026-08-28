@@ -418,6 +418,14 @@ def test_production_requires_metrics_token(monkeypatch):
         config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
     config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
+    with pytest.raises(RuntimeError, match="CLOUD_OK"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_LLM_CLOUD_OK", "true")
+    config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    monkeypatch.delenv("AISTUDIO_LLM_CLOUD_OK", raising=False)
+    config.validate_runtime()
 
 
 def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):
@@ -1204,6 +1212,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "env_flag_on" in install
     assert "ALLOW_DEMO_SEED" in install
     assert "ALLOW_REGISTER" in install
+    assert "LLM_CLOUD_OK" in install
+    assert "env_value_is" in install
     assert "aistudio.systemd.env" in install
     assert "aistudio.systemd.env" in src
     assert "AISTUDIO_RESTORE_FORCE" in (root / "scripts" / "restore.sh").read_text(encoding="utf-8")

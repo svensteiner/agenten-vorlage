@@ -839,6 +839,34 @@ def test_install_systemd_refuses_open_register(tmp_path):
     assert not (tmp_path / "data" / "systemd").exists()
 
 
+def test_install_systemd_refuses_cloud_egress_without_ok(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_ENV=production\n"
+        "AISTUDIO_SECRET=keep-this-secret-value-xx\n"
+        "AISTUDIO_LLM_EGRESS=cloud\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh"), "--systemd"],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    err = (r.stderr or "") + (r.stdout or "")
+    assert "CLOUD_OK" in err
+    assert "sk-" not in err
+    assert "AISTUDIO_LLM_EGRESS=cloud" in envf.read_text(encoding="utf-8")
+    assert not (tmp_path / "data" / "systemd").exists()
+
+
 def test_install_systemd_refuses_missing_pin(tmp_path):
     scripts = tmp_path / "scripts"
     scripts.mkdir()
@@ -1047,6 +1075,7 @@ def test_compose_publishes_localhost_only():
     assert "AISTUDIO_SECRET:" not in after
     assert "AISTUDIO_BACKUP_PASS:" not in after
     assert "${AISTUDIO_METRICS_TOKEN:?" in before
+    assert "AISTUDIO_LLM_CLOUD_OK" in before
     assert "AISTUDIO_BACKUP_ENV" in after
     assert "aistudio-backup-secret:/app/backup-secret" in after
     assert "aistudio-backup-secret:/app/backup-secret" not in before
