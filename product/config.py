@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.66"
+VERSION = "1.4.67"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -554,8 +554,10 @@ def validate_runtime() -> None:
 
     Production also refuses a missing metrics token, an explicit demo seed
     (published Meridian password), open registration (leftover laptop
-    ``AISTUDIO_ALLOW_REGISTER``), and cloud LLM egress without
-    ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts).
+    ``AISTUDIO_ALLOW_REGISTER``), cloud LLM egress without
+    ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts),
+    and ``AISTUDIO_PROXY_IPS=*`` while trusting X-Forwarded-For
+    (any client could rotate rate-limit keys).
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
@@ -596,6 +598,14 @@ def validate_runtime() -> None:
             "Produktion verweigert den Start: AISTUDIO_ALLOW_REGISTER ist an "
             "(öffentliche Mandantenanlage). AISTUDIO_ALLOW_REGISTER=false setzen; "
             "erster Mandant über data/bootstrap.env."
+        )
+    raw_proxy = (os.environ.get("AISTUDIO_PROXY_IPS") or "").strip().lower()
+    if trust_proxy() and raw_proxy in {"*", "any"}:
+        raise RuntimeError(
+            "Produktion verweigert den Start: AISTUDIO_PROXY_IPS=* mit "
+            "AISTUDIO_TRUST_PROXY=true — jeder Client kann X-Forwarded-For "
+            "setzen und Rate-Limits umgehen. Konkrete Proxy-IP setzen "
+            "(127.0.0.1,::1 oder die Gateway-Adresse)."
         )
 
 

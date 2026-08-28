@@ -366,6 +366,10 @@ backfill_runtime_env() {
       echo "nachgetragen: AISTUDIO_METRICS_TOKEN (Header X-Metrics-Token)."
     fi
   fi
+  if env_value_is "$envf" AISTUDIO_PROXY_IPS "*" || env_value_is "$envf" AISTUDIO_PROXY_IPS any; then
+    replace_env_value "$envf" AISTUDIO_PROXY_IPS "127.0.0.1,::1"
+    echo "nachgetragen: AISTUDIO_PROXY_IPS=127.0.0.1,::1 (war * — jeder Client könnte X-Forwarded-For setzen)."
+  fi
   if ! env_has_key "$envf" AISTUDIO_PROXY_IPS; then
     append_env_line "$envf" "AISTUDIO_PROXY_IPS=127.0.0.1,::1"
     echo "nachgetragen: AISTUDIO_PROXY_IPS=127.0.0.1,::1"

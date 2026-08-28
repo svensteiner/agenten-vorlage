@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.67 — 2026-08-28 — Produktion ohne PROXY_IPS=*
+
+`AISTUDIO_TRUST_PROXY=true` plus `AISTUDIO_PROXY_IPS=*` (Laptop-Debug)
+ließ jeden Client `X-Forwarded-For` setzen und Login-/Register-Limits
+umgehen. `install.sh` trug `TRUST_PROXY=true` nach und aktivierte ein
+ruhendes `*`. Jetzt bricht der Start in Produktion ab. `install.sh`
+ersetzt `*`/`any` durch `127.0.0.1,::1`.
+
 ## Produktlaufzeit 1.4.66 — 2026-08-28 — Produktion ohne offenes Register
 
 `AISTUDIO_ALLOW_REGISTER=true` in einer Laptop-`.env` plus `AISTUDIO_ENV=production`
