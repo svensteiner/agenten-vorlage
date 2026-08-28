@@ -15,7 +15,8 @@ EnvironmentFile=-/opt/aistudio/.env
 # EnvironmentFile always overrides Environment=. A leftover .env with
 # AISTUDIO_ENV=development would otherwise start demo-seed behind nginx.
 # Later EnvironmentFile wins — pins production, loopback, no demo tenant, no public register.
-EnvironmentFile=-/opt/aistudio/scripts/aistudio.systemd.env
+# Pin is required (no '-'). If it is missing, leftover development .env wins.
+EnvironmentFile=/opt/aistudio/scripts/aistudio.systemd.env
 ExecStart=/usr/bin/python3 -m product
 Restart=on-failure
 RestartSec=5

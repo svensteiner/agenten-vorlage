@@ -1200,9 +1200,11 @@ def test_systemd_unit_rewrites_install_root():
     rendered = src.replace("/opt/aistudio", "/srv/studio")
     assert "WorkingDirectory=/srv/studio" in rendered
     assert "EnvironmentFile=-/srv/studio/.env" in rendered
-    assert "EnvironmentFile=-/srv/studio/scripts/aistudio.systemd.env" in rendered
+    assert "EnvironmentFile=/srv/studio/scripts/aistudio.systemd.env" in rendered
+    assert "EnvironmentFile=-/srv/studio/scripts/aistudio.systemd.env" not in rendered
     env_idx = src.index("EnvironmentFile=-/opt/aistudio/.env")
-    pin_idx = src.index("EnvironmentFile=-/opt/aistudio/scripts/aistudio.systemd.env")
+    pin_idx = src.index("EnvironmentFile=/opt/aistudio/scripts/aistudio.systemd.env")
+    assert "EnvironmentFile=-/opt/aistudio/scripts/aistudio.systemd.env" not in src
     assert env_idx < pin_idx
     pin = (root / "scripts" / "aistudio.systemd.env").read_text(encoding="utf-8")
     assert "AISTUDIO_ENV=production" in pin

@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.70 — 2026-08-28 — systemd-Pin Pflicht
+
+1.4.62 hat `scripts/aistudio.systemd.env` nach der `.env` geladen, aber mit
+`EnvironmentFile=-` (fehlende Datei wird ignoriert). Ohne Pin gewinnt wieder
+eine Laptop-`.env` mit `development` — Demo-Seed und Register hinter nginx.
+Die Pin-Zeile ist jetzt Pflicht; fehlt die Datei, startet die Unit nicht.
+`install.sh --systemd` bricht weiter ab, wenn die Pin fehlt.
+
 ## Produktlaufzeit 1.4.69 — 2026-08-28 — Produktion ohne PROXY_IPS=0.0.0.0/0
 
 1.4.67 hat `*` und `any` beim Start verweigert. `AISTUDIO_PROXY_IPS=0.0.0.0/0`
