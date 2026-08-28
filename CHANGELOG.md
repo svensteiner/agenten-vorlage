@@ -2,6 +2,576 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.75 — 2026-08-28 — Produkt-Schlüssel nur bei in-boundary-URL
+
+1.4.74 hat den Produkt-Schlüssel bei leftover `https://api.openai.com`
+entfernt, bei anderen öffentlichen Hosts (Groq, Azure) aber behalten —
+obwohl `in_boundary` dort keine Auszüge schickt. Jetzt bleibt
+`AISTUDIO_LLM_API_KEY` nur bei in-boundary-Hosts (Loopback, RFC1918,
+Docker-Name, `IN_BOUNDARY_HOSTS`). Vendor-Hosts nie.
+
+## Produktlaufzeit 1.4.74 — 2026-08-28 — Produkt-Schlüssel nicht bei leftover Cloud-URL
+
+1.4.73 hat `AISTUDIO_LLM_API_KEY` behalten, sobald irgendeine `BASE_URL`
+gesetzt war. Eine Laptop-`.env` mit `https://api.openai.com` plus Schlüssel
+blieb damit im Prozess — Vendor-Hosts können nicht in-boundary sein.
+Produktion entfernt den Produkt-Schlüssel jetzt auch in diesem Fall.
+Lokales Gateway und andere öffentliche Hosts (z. B. mit `IN_BOUNDARY_HOSTS`)
+bleiben.
+
+## Produktlaufzeit 1.4.73 — 2026-08-28 — Produkt-LLM-Schlüssel nur mit Gateway oder Cloud
+
+1.4.72 hat `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` entfernt, `AISTUDIO_LLM_API_KEY`
+aber immer behalten („lokales Gateway“). Auf dem Laptop liegt der OpenAI-Schlüssel
+genau dort — ohne `AISTUDIO_LLM_BASE_URL` kann `in_boundary` ihn nicht nutzen.
+Produktion entfernt den Produkt-Schlüssel dann ebenfalls. Mit lokaler Basis-URL
+oder `egress=cloud` bleibt er.
+
+## Produktlaufzeit 1.4.72 — 2026-08-28 — Cloud-Schlüssel nur bei Egress=cloud
+
+`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` aus einer Laptop-`.env` blieben im
+Produktprozess, obwohl `AISTUDIO_LLM_EGRESS=in_boundary` keine Auszüge
+schickt. Produktion entfernt die Vendor-Schlüssel beim Start.
+`AISTUDIO_LLM_API_KEY` bleibt für ein lokales Gateway.
+
+## Produktlaufzeit 1.4.71 — 2026-08-28 — Backup-Passwort nicht im Produktprozess
+
+`AISTUDIO_BACKUP_PASS` in einer Laptop-`.env` wurde per dotenv wieder in den
+Produktprozess geladen — `backup.env` und `InaccessiblePaths` halfen dann
+nicht. Jetzt wird der Schlüssel nach dem Laden entfernt. systemd
+`UnsetEnvironment=AISTUDIO_BACKUP_PASS`. Die Backup-Unit behält den Wert.
+
+## Produktlaufzeit 1.4.70 — 2026-08-28 — systemd-Pin Pflicht
+
+1.4.62 hat `scripts/aistudio.systemd.env` nach der `.env` geladen, aber mit
+`EnvironmentFile=-` (fehlende Datei wird ignoriert). Ohne Pin gewinnt wieder
+eine Laptop-`.env` mit `development` — Demo-Seed und Register hinter nginx.
+Die Pin-Zeile ist jetzt Pflicht; fehlt die Datei, startet die Unit nicht.
+`install.sh --systemd` bricht weiter ab, wenn die Pin fehlt.
+
+## Produktlaufzeit 1.4.69 — 2026-08-28 — Produktion ohne PROXY_IPS=0.0.0.0/0
+
+1.4.67 hat `*` und `any` beim Start verweigert. `AISTUDIO_PROXY_IPS=0.0.0.0/0`
+bzw. `::/0` (CIDR-Schreibweise von „jeder Client“) blieb erlaubt und ließ
+jeden Peer `X-Forwarded-For` setzen. Jetzt dieselbe Sperre. `install.sh`
+ersetzt unbeschränkte CIDR wie `*`.
+
+## Produktlaufzeit 1.4.68 — 2026-08-28 — Housekeeping lässt Uploads in Ruhe
+
+1.4.56 hat den WAL-Checkpoint übersprungen, solange `.backup.lock` gehalten
+wird. `prune_orphan_uploads` und `prune_restore_leftovers` haben trotzdem
+gelöscht — mitten im `tar` von `uploads/` bzw. während Restore. Jetzt
+dieselbe Sperre.
+
+## Produktlaufzeit 1.4.67 — 2026-08-28 — Produktion ohne PROXY_IPS=*
+
+`AISTUDIO_TRUST_PROXY=true` plus `AISTUDIO_PROXY_IPS=*` (Laptop-Debug)
+ließ jeden Client `X-Forwarded-For` setzen und Login-/Register-Limits
+umgehen. `install.sh` trug `TRUST_PROXY=true` nach und aktivierte ein
+ruhendes `*`. Jetzt bricht der Start in Produktion ab. `install.sh`
+ersetzt `*`/`any` durch `127.0.0.1,::1`.
+
+## Produktlaufzeit 1.4.66 — 2026-08-28 — Produktion ohne offenes Register
+
+`AISTUDIO_ALLOW_REGISTER=true` in einer Laptop-`.env` plus `AISTUDIO_ENV=production`
+startete den Prozess (systemd-Pin und `--systemd` fingen das nur auf dem
+Unit-Pfad). Jetzt bricht `validate_runtime()` ab. Erster Mandant bleibt
+`data/bootstrap.env`. `install.sh` trägt fehlendes `false` nach.
+
+## Prototyp — 2026-08-28 — Sales-Demo abgeschlossen
+
+Favicon, Meta-Beschreibung, mobile Modul-Leiste (Sidebar war unter 820px
+weg ohne Ersatz) und Onboarding-/README-Text an die kuratierte 6er-Demo
+angepasst. Weiter `file://`, Vanilla-JS, kein Framework.
+
+## Prototyp — 2026-08-28 — Quellen-Titel escaped
+
+Quellenzeilen, gesperrte Treffer, verwandte Dokumente und Folgefragen
+setzten Titel/Pfad per `innerHTML` ohne Escape. Jetzt `escapeHtml` —
+die Verkaufsdemo bleibt `file://`-fähig.
+
+## Produktlaufzeit 1.4.65 — 2026-08-28 — Cloud-Auszüge nur mit CLOUD_OK
+
+Produktion startete mit `AISTUDIO_LLM_EGRESS=cloud` aus einer Laptop-`.env`
+(OpenAI-Test) und schickte Kurzauszüge nach außen. Jetzt bricht der Start
+ab, solange `AISTUDIO_LLM_CLOUD_OK` nicht ausdrücklich `true` ist.
+`install.sh --systemd` ebenso. Entwicklung bleibt ungeändert.
+
+## Produktlaufzeit 1.4.64 — 2026-08-28 — in_boundary nur interne Hosts
+
+`AISTUDIO_LLM_EGRESS=in_boundary` hat nur OpenAI/Anthropic-Hostnamen
+gesperrt. `decentral` plus eine öffentliche Basis-URL (Groq, Azure,
+Laptop-Rest) hat Kurzauszüge trotzdem geschickt — `/api/me` zeigte
+`sends_excerpts: false`. Jetzt nur Loopback, RFC1918, Link-Local,
+localhost, Ein-Label-Namen (Docker) und `*.internal`/`*.local`/`*.lan`
+/`*.home`/`*.corp`. Andere Hosts: `egress_blocked`. Ausnahmen:
+`AISTUDIO_LLM_IN_BOUNDARY_HOSTS`.
+
+## Produktlaufzeit 1.4.63 — 2026-08-27 — systemd ohne öffentliche Registrierung
+
+1.4.62 hat `development` in der `.env` überschrieben, nicht aber
+`AISTUDIO_ALLOW_REGISTER=true` (Standard in `.env.example`). Die Pin-Datei
+setzt jetzt `false`; `--systemd` bricht ab, wenn das Flag an ist. Erster
+Mandant bleibt `data/bootstrap.env`.
+
+## Produktlaufzeit 1.4.62 — 2026-08-27 — systemd-Pin nach der .env
+
+`Environment=AISTUDIO_ENV=production` in der Unit gilt nicht, sobald
+`.env` geladen wird — systemd lässt EnvironmentFile immer gewinnen.
+Eine alte Laptop-`.env` mit `development` startete den Dienst hinter
+nginx mit Demo-Mandant und Register-Standard. Zweite EnvironmentFile
+(`scripts/aistudio.systemd.env`) nach `.env` setzt production, Loopback
+und `ALLOW_DEMO_SEED=false`. `--systemd` bricht bei gesetztem Demo-Seed
+auch ohne `AISTUDIO_ENV=production` in der `.env` ab.
+
+## Produktlaufzeit 1.4.61 — 2026-08-27 — Produktion ohne Demo-Mandant
+
+`AISTUDIO_ALLOW_DEMO_SEED=true` in Produktion hat den Meridian-Mandanten
+mit bekanntem Passwort angelegt — bisher nur eine Log-Warnung. Start
+bricht jetzt ab. `install.sh --systemd` ebenso, bevor Einheiten
+geschrieben werden. Neuinstallation setzt weiter `false`.
+
+## Produktlaufzeit 1.4.60 — 2026-08-27 — Restore nimmt die Prozess-Sperre
+
+Restore prüfte nur `data/aistudio.pid`. Die Datei kann fehlen (Schreibfehler,
+manuell gelöscht), während der Prozess `data/aistudio.lock` hält — dann
+wurde die offene WAL überschrieben. Jetzt nicht-blockierendes `flock` auf
+dieselbe Sperre wie der Start; gehalten bis Restore endet, damit kein
+zweiter Prozess dazwischenkommt. `AISTUDIO_RESTORE_FORCE=1` umgeht nur
+eine PID-Datei, nicht die Sperre.
+
+## Produktlaufzeit 1.4.59 — 2026-08-27 — systemd nicht mit Demo-Secret
+
+`install.sh --systemd` hat Einheiten geschrieben, auch wenn `.env` noch
+`dev-secret-change-me` oder unter 24 Zeichen hatte. Die Unit setzt
+`AISTUDIO_ENV=production` — Start bricht dann in einer Crash-Loop ab.
+Jetzt Abbruch vor dem Kopieren der Units. Das Secret wird nicht
+still ersetzt (sonst ungültige Sitzungen). Neuinstallation schreibt
+weiter ein langes Secret.
+
+## Produktlaufzeit 1.4.58 — 2026-08-27 — Sitzung nicht bei jedem GET schreiben
+
+Jede angemeldete Anfrage hat `sessions.last_seen_at` aktualisiert und
+committet — nach 1.4.52 der verbliebene Schreib-Hot-Path. Die Oberfläche
+ruft `/api/me` und Listen oft auf; die WAL wächst neben der Sicherung.
+Jetzt höchstens einmal pro Minute (bzw. ein Viertel der Sitzungsruhe).
+Abgelaufene Sitzungen werden weiter sofort erkannt.
+
+## Produktlaufzeit 1.4.57 — 2026-08-27 — Docker mit RAM-Deckel
+
+systemd begrenzt den Produktprozess auf 512 MB (`MemoryMax`, ohne Swap).
+Compose hatte `pids_limit` und `/tmp`, aber keinen Speicher — ein Ausreißer
+im Container konnte den Host füllen. Jetzt `mem_limit`/`memswap_limit`
+512 MB (Produkt) und 256 MB (Backup-Profil), wie die Units.
+
+## Produktlaufzeit 1.4.56 — 2026-08-27 — Housekeeping lässt die Sicherung durch
+
+`PRAGMA wal_checkpoint(TRUNCATE)` lief parallel zu `sqlite3 .backup`.
+Der Timer konnte `SQLITE_BUSY` sehen und die Tageskopie verlieren.
+Housekeeping prüft `data/.backup.lock` und überspringt WAL und
+`PRAGMA optimize`, wenn Backup oder Restore die Sperre hält.
+Löschen abgelaufener Sitzungen bleibt.
+
+## Produktlaufzeit 1.4.55 — 2026-08-27 — nginx 10 MB, Restore teilt die Sperre
+
+nginx `client_max_body_size 4m` hat Uploads vor der App abgewiesen,
+sobald `AISTUDIO_MAX_UPLOAD_BYTES` über 4 MB lag (erlaubt bis 8 MB,
+Request bis 10 MB). Jetzt 10m — die App antwortet 413 als JSON.
+
+Restore nahm `data/.backup.lock` nicht. Eine Timer-Sicherung während
+des Restore konnte eine zerrissene Kopie schreiben. Dieselbe Sperre
+wie `backup.sh`.
+
+## Produktlaufzeit 1.4.54 — 2026-08-27 — Demo-Secret nicht auf allen Interfaces
+
+Entwicklung band ohne `AISTUDIO_HOST` auf `0.0.0.0` mit dem bekannten
+Demo-HMAC. Im LAN und im Docker-Netz konnte jeder Tokens fälschen.
+Jetzt ist der Standard immer Loopback. Bind `0.0.0.0`/`::` mit dem
+Demo-Wert oder unter 24 Zeichen bricht den Start ab — lokal und in
+Docker. `docker compose up` verlangt `AISTUDIO_SECRET` wie die
+Produktions-Overlay.
+
+## Produktlaufzeit 1.4.53 — 2026-08-27 — Sicherung mit Sperre, ohne Dateikopie
+
+Zwei parallele `backup.sh` (Timer plus Hand) konnten die Aufbewahrung
+durcheinanderbringen — die zweite Runde löschte die Datei der ersten.
+Jetzt `flock` auf `data/.backup.lock` (nicht blockierend). Ohne `sqlite3`
+kein Fallback mehr auf `cp` der WAL (zerrissene Kopie). Restore war schon
+so streng. `install.sh --systemd` bricht ohne `sqlite3`/`flock` ab.
+
+## Produktlaufzeit 1.4.52 — 2026-08-27 — Schema nicht auf dem Hot-Path
+
+Jede Anfrage (Health, Ready, Login, Ask) hat `CREATE TABLE IF NOT EXISTS`
+plus Migration und `COMMIT` ausgeführt — Lastbalancer 1/s und Backup
+teilen sich die WAL. Schema und Demo-Seed laufen nur noch im Start
+(Lifespan). Produktion `/api/health` öffnet SQLite nicht (`allow_register`
+bleibt für den Login-Dialog). `/api/ready` prüft `SELECT 1` ohne
+`init_db`. `chmod` auf `data/` nur noch beim Start und in der Housekeeping,
+nicht bei jeder Verbindung.
+
+## Produktlaufzeit 1.4.51 — 2026-08-27 — Health/Metriken nicht ins Access-Log
+
+Live/Ready 2xx standen seit 1.4.35 nicht im Access-Log. `/api/health` und
+`/api/metrics` (Prometheus alle 15 s) füllten die Platte weiter. Jetzt 2xx
+dieser vier Sonden ohne Zeile; 4xx/429 bleiben (fehlendes Token, Überlast).
+
+## Produktlaufzeit 1.4.50 — 2026-08-27 — Leeres Metrik-Token nachtragen
+
+Nach 1.4.49 startet Produktion nicht mit `AISTUDIO_METRICS_TOKEN=`.
+`install.sh` hat nur fehlende Keys ergänzt, nicht leere. Jetzt wird ein zu
+kurzer Wert ersetzt, ein gesetzter bleibt. Logout 20/Minute.
+Housekeeping leert den Upload-Cache nach gelöschten Waisen.
+
+## Produktlaufzeit 1.4.49 — 2026-08-27 — Metrik-Token beim Start, Schreib-APIs kappen
+
+Produktion startete ohne `AISTUDIO_METRICS_TOKEN` — `/api/metrics` war 401,
+der Prozess aber grün. Jetzt Start verweigert (mindestens 16 Zeichen);
+Compose-Produktion verlangt die Variable wie das Secret. `POST /api/fleet`,
+`PATCH /org` und `/users/{id}`, `DELETE /docs/{id}` und Sitzungs-Widerruf
+haben Limits (30/20/20/30/20 je Minute).
+
+## Produktlaufzeit 1.4.48 — 2026-08-27 — Parallele Aufträge kappen, hängende Jobs
+
+`POST /api/agents/run` ist synchron und ließ `running`-Zeilen stehen, wenn der
+Worker abstürzt — der nächste Auftrag und SQLite bleiben blockiert. Pro Mandant
+höchstens 2 parallele Aufträge (`AISTUDIO_ORG_MAX_RUNNING`, 1–8), sonst 429.
+Eine Exception setzt den Auftrag auf `error` (ohne Trace). Housekeeping und der
+nächste Start räumen `running` älter als 180 s ab (`AISTUDIO_JOB_STALE_SECONDS`).
+
+## Produktlaufzeit 1.4.47 — 2026-08-27 — Auftragsliste ohne vollen Task
+
+`GET /api/jobs` lieferte bis zu 100 Aufträge à 4000 Zeichen Task plus
+`output_json`. Die Oberfläche braucht nur `preview`. Jetzt Task und
+Antworttext je 180 Zeichen, ohne Quellen; SQLite liest `substr`/`json_extract`.
+Export bleibt vollständig. Nutzerliste ohne Passwort-Hash-Spalten.
+`/api/fleet`, `/billing`, `/agents`, `/sessions`, `/users` 60/Minute.
+
+## Produktlaufzeit 1.4.46 — 2026-08-27 — /api/me begrenzen, Speichergröße cachen
+
+`GET /api/me` lief ohne Limit und zählte bei jedem Aufruf alle Upload-Dateien
+(`rglob`). Jetzt 60/Minute je Nutzer; die Summe liegt 15 s im Speicher.
+Quota-Prüfung und Upload/Löschen lesen frisch bzw. leeren den Cache.
+
+## Produktlaufzeit 1.4.45 — 2026-08-27 — Ein Prozess je Datenverzeichnis
+
+Zwei Produktprozesse auf derselben SQLite (zweiter `run_product`, doppeltes
+Compose, Reload neben systemd) überschreiben sich die WAL. Start nimmt
+`data/aistudio.lock` exklusiv (`flock`); der zweite Prozess bricht ab.
+`aistudio.pid` bleibt für Restore.
+
+## Produktlaufzeit 1.4.44 — 2026-08-27 — Dokumentliste ohne Körper, Viewer einzeln
+
+`GET /api/docs` lieferte `body_parts` für bis zu 500 Dokumente (bis 50 000
+Zeichen je Datei) — Login und Einstellungen konnten den Prozess umwerfen.
+Jetzt nur Metadaten; der Körper kommt über `GET /api/docs/{id}`. Suche
+ebenso ohne Körper. Die Kachelansicht escaped Titel, Snippet und Autor.
+
+## Produktlaufzeit 1.4.43 — 2026-08-27 — Docker-XFF, nginx-Verbindungen, Jobs/Audit
+
+Docker-Produktion bindet `0.0.0.0`, der TCP-Peer ist die Bridge — nicht
+`127.0.0.1`. `AISTUDIO_PROXY_IPS=127.0.0.1,::1` ließ X-Forwarded-For
+ins Leere laufen, alle Nutzer teilten ein Rate-Limit. Start warnt; die
+Gateway-IP setzen, nicht `172.16.0.0/12`. nginx begrenzt 32 parallele
+Verbindungen pro IP (`limit_conn`). `GET /api/jobs` und `GET /api/audit`
+60/Minute je Nutzer (SQLite mit Auftragstext).
+
+## Produktlaufzeit 1.4.42 — 2026-08-27 — Export kappen, Docker-init
+
+DSGVO-Export lud alle Aufträge und das ganze Audit — bei 20 Aufträgen/Minute
+über 90 Tage ein Prozess-OOM. Jetzt die neuesten 2000 Jobs, 5000 Audit-Zeilen,
+500 Rechnungen (`AISTUDIO_EXPORT_*`), mit `truncated`/`totals`. Docker startet
+mit `init: true` (Zombie-Reaping), `pids_limit` und `/tmp` 64 MB.
+
+## Produktlaufzeit 1.4.41 — 2026-08-27 — Sicherung ohne Klartext-Rest, Dokumentenzahl
+
+Mit gesetztem `AISTUDIO_BACKUP_PASS` blieb bei fehlgeschlagenem openssl die
+Klartext-`.db` (und das Uploads-tar) im Backup-Ordner. Jetzt wird der Klartext
+bei Fehler mitgelöscht. Pro Mandant höchstens 500 Dokumente
+(`AISTUDIO_ORG_MAX_DOCS`, 20–5000) — Upload 413, Liste und Export nicht
+unbegrenzt. Upload-IDs sind eindeutig, auch bei mehreren Dateien in derselben
+Sekunde.
+
+## Produktlaufzeit 1.4.40 — 2026-08-27 — Loopback-Bind, Zahlen kappen, CORS-Stern aus
+
+Produktion ohne `AISTUDIO_HOST` band `0.0.0.0` — nginx TLS und Limits
+waren umgehbar. Jetzt Loopback, Docker setzt weiter `0.0.0.0` im Container.
+`install.sh` trägt `AISTUDIO_HOST=127.0.0.1` nach. Unsinnige
+`PORT`/`TOKEN_TTL`/`LOCKOUT_*`/`MAX_UPLOAD` stürzen den Import nicht mehr
+ab und werden gekappt (Upload höchstens 8 MB, Request 10 MB, Token 60 s–30 Tage).
+`AISTUDIO_CORS_ORIGINS=*` in Produktion wird ignoriert. `GET /api/docs`
+(volle Wissensbasis) 60/Minute je Nutzer.
+
+## Produktlaufzeit 1.4.39 — 2026-08-27 — Install trägt Host-Allowlist nach
+
+Bestehende `.env` blieb unverändert. Nach 1.4.38 prüft Produktion den
+Host — hinter nginx 400, bis `AISTUDIO_ALLOWED_HOSTS` den öffentlichen
+Namen enthält. `install.sh` schreibt fehlende Keys nach (Allowlist,
+Metrik-Token, Proxy, Sitzungsruhe, LLM-Egress), ohne vorhandene Werte
+zu überschreiben. Start warnt, wenn nur Loopback hinter einem Proxy steht.
+
+## Produktlaufzeit 1.4.38 — 2026-08-27 — Host-Allowlist in Produktion immer an
+
+`AISTUDIO_ALLOWED_HOSTS=*` oder leer hat TrustedHost ausgeschaltet. In
+Produktion gilt immer eine Liste: ohne Angabe oder mit `*` nur
+`127.0.0.1` und `localhost`. Hinter nginx den öffentlichen Namen setzen.
+
+## Produktlaufzeit 1.4.37 — 2026-08-27 — Modell ohne Proxy-Leck, Timeout kappen
+
+httpx folgt sonst `HTTP_PROXY`. Bei `in_boundary` würden Kurzauszüge über
+einen Firmen-Proxy die Instanz verlassen. Jetzt `trust_env` nur bei
+`egress=cloud`. Timeout 1–60s, `max_tokens` 16–4096; unsinnige Zahlen
+werfen `/api/me` nicht um. Nur http(s)-Basis-URLs.
+
+## Produktlaufzeit 1.4.36 — 2026-08-27 — backup.env nicht ins Image, Suche begrenzen
+
+`backup.env` liegt seit 1.4.31 neben `.env`. `.dockerignore` ließ die Datei
+durch — `COPY . .` hätte `AISTUDIO_BACKUP_PASS` ins Image gebacken. Jetzt
+ausgeschlossen, ebenso `bootstrap.env`. `GET /api/search` wie Ask
+120/Minute je Nutzer (FTS auf SQLite), sonst 429.
+
+## Produktlaufzeit 1.4.35 — 2026-08-27 — Health/Ready begrenzen, Server-Header aus
+
+`/api/health` und `/api/ready` trafen SQLite ohne Limit. Jetzt 180/Minute
+pro IP (Docker-HEALTHCHECK bleibt bei 30s grün, Lastbalancer 1/s ebenso),
+`/api/live` 300, `/api/metrics` 60 vor dem Token. nginx drosselt `/api/`
+mit 20/s (Login/Register bleiben 10/Minute). uvicorn sendet kein
+`Server:` mehr. Metrics-Token wird vor `compare_digest` auf SHA-256
+gebracht — die Länge des Tokens ist kein Orakel. Live/Ready 2xx stehen
+nicht im Access-Log.
+
+## Produktlaufzeit 1.4.34 — 2026-08-27 — PBKDF2-Pfade begrenzen, TLS 1.2+
+
+Nutzer anlegen, Admin-Passwort setzen und Mandant löschen hashen ohne Pause
+(120 000 Iterationen). Jetzt 8 bzw. 10/Minute, sonst 429. nginx-TLS nur
+TLSv1.2/1.3, Session-Tickets aus.
+
+## Produktlaufzeit 1.4.33 — 2026-08-27 — Request-ID kappen, Docker-backup.env weg vom Produkt
+
+Client-`X-Request-ID` war unbegrenzt und landete in JSON und Access-Log.
+Jetzt nur 8–64 Zeichen `[A-Za-z0-9._-]`, sonst eine neue ID. Docker: das
+Backup-Passwort liegt auf Volume `aistudio-backup-secret` (nicht im
+Produkt-Container); eine alte `data/backup.env` wird dort überdeckt.
+
+## Produktlaufzeit 1.4.32 — 2026-08-27 — Health ohne LLM- und Backup-Lage
+
+`/api/health` und `/api/ready` waren unauthentifiziert und zeigten Demo-Flag,
+Modell, Kontingent und Backup-Alter. In Produktion nur noch Prozess/DB
+(`allow_register` bleibt für den Login-Dialog). Lage nach der Anmeldung auf
+`/api/me` und hinter Token auf `/api/metrics`.
+
+## Produktlaufzeit 1.4.31 — 2026-08-27 — Backup-Passwort nicht im Produktprozess
+
+`backup.env` lag unter `data/` — derselbe Dienstbenutzer konnte die Datei
+lesen. Jetzt neben `.env` (außerhalb von `ReadWritePaths`). Die Produkt-Unit
+blendet beide Pfade per `InaccessiblePaths` aus. Die Backup-Unit lädt die
+Datei. Docker schreibt weiter `data/backup.env` auf dem Volume (Root ist
+read-only).
+
+## Produktlaufzeit 1.4.30 — 2026-08-27 — systemd nicht als root
+
+Docker läuft schon als `aistudio` (uid 10001). Die systemd-Einheiten
+waren ohne `User=` — `install.sh --systemd` als root startete den
+Produktprozess und die Sicherung mit uid 0. Jetzt `User=aistudio` /
+`Group=aistudio`; `install.sh --systemd` legt den Systembenutzer an,
+`data/` gehört ihm, `.env` ist `640 root:aistudio` (lesen, nicht
+überschreiben). Ohne root schreibt die Einheit den aktuellen Nutzer.
+
+## Produktlaufzeit 1.4.29 — 2026-08-27 — Mandant/Flotte kappen, Passwortwechsel begrenzen
+
+Name, Slogan, Agent-ID und Aktionen waren unbegrenzt und landeten in SQLite
+bis zur Körpergrenze. Jetzt feste Höchstlängen (422). Passwortwechsel
+höchstens 10/Minute — sonst PBKDF2 ohne Pause.
+
+## Produktlaufzeit 1.4.28 — 2026-08-27 — Modell ohne Redirect, Backup ohne Netz
+
+httpx folgt keinem 302 mehr — sonst wandern Kurzauszüge auf einen fremden Host.
+Die Backup-Unit (hält `AISTUDIO_BACKUP_PASS`) läuft ohne Netzwerk
+(`PrivateNetwork`, `RestrictAddressFamilies=none`).
+
+## Produktlaufzeit 1.4.27 — 2026-08-27 — Suche wie Ask auf 4000 Zeichen
+
+`GET /api/search?q=` war unbegrenzt, `/api/ask` schon 4000. Eine lange Query
+läuft durch FTS-Regex — jetzt dieselbe Kappe, sonst 422.
+
+## Produktlaufzeit 1.4.26 — 2026-08-27 — Listen nicht mit LIMIT -1 leeren
+
+SQLite behandelt negatives `LIMIT` als unbegrenzt. `GET /api/jobs?limit=-1`
+und `/api/audit?limit=-1` hätten die ganze Tabelle ausgegeben. Jetzt 1–100
+bzw. 1–200, sonst 422.
+
+## Produktlaufzeit 1.4.25 — 2026-08-27 — Aufträge und Export begrenzen
+
+`/api/agents/run` war unbegrenzt (Orchestrator plus Wissenssuche). Pro Nutzer
+20 Aufträge/Minute, Export 6/Minute — sonst kann ein angemeldetes Konto CPU
+und Modellkontingent leer ziehen.
+
+## Produktlaufzeit 1.4.24 — 2026-08-27 — Login ohne E-Mail-Orakel
+
+Unbekannte Adressen haben PBKDF2 übersprungen — die Antwortzeit verriet, ob
+das Konto existiert. Login hasht immer (Dummy-Hash). Deaktiviert und falsch
+liefern dieselbe 401; Sperre (423) nur nach richtigem Passwort.
+
+## Produktlaufzeit 1.4.23 — 2026-08-27 — Passwortlänge vor PBKDF2 kappen
+
+Login, Register und Passwortwechsel nehmen kein unbegrenztes Passwort mehr
+(sonst rechnet PBKDF2 auf Megabytes). Höchstens 256 Zeichen, E-Mail 254.
+Zu lang ist 422, nicht 120 000 Iterationen.
+
+## Produktlaufzeit 1.4.22 — 2026-08-27 — Anfragekörper begrenzen, nicht nur den Header
+
+`Content-Length` allein reicht nicht: ein chunked POST umgeht das Limit, und
+Access-Log (BaseHTTPMiddleware) puffert den Körper vorher. Das Limit sitzt
+jetzt außen und zählt die echten Bytes. Uploads lesen höchstens
+`AISTUDIO_MAX_UPLOAD_BYTES + 1`.
+
+## Produktlaufzeit 1.4.21 — 2026-08-27 — Erste Produktionssicherung legt backup.env an
+
+Fehlt `AISTUDIO_BACKUP_PASS` in Produktion, schreibt `backup.sh` einmal
+`data/backup.env` und verschlüsselt — Docker braucht dafür nicht `install.sh`.
+Ohne openssl bleibt der bisherige Klartext-Hinweis. Der Schlüssel wird nicht
+neu gewürfelt, wenn die Datei schon da ist.
+
+## Produktlaufzeit 1.4.20 — 2026-08-27 — Docker-Sicherung mit openssl
+
+Das Image enthält `openssl` (AES-256). `docker-compose.prod.yml` hat ein
+One-Shot-Profil `backup` ohne Secret in der Umgebung — das Passwort kommt aus
+`data/backup.env` auf dem Volume. Läuft nicht mit `up`, nur mit
+`--profile backup run --rm backup`.
+
+## Produktlaufzeit 1.4.19 — 2026-08-27 — Restore nicht über laufenden Prozess
+
+`restore.sh` bricht ab, solange `data/aistudio.pid` auf einen lebenden
+Produktprozess zeigt — sonst überschreibt die Rücksicherung eine offene WAL-Datei.
+`AISTUDIO_RESTORE_FORCE=1` bleibt der bewusste Ausweg.
+
+## Produktlaufzeit 1.4.18 — 2026-08-27 — X-Forwarded-For nur vom Proxy
+
+`AISTUDIO_TRUST_PROXY=true` glaubt `X-Forwarded-For` nicht mehr von jedem Client
+(sonst sind Anmeldelimits umgehbar). Standard-Peers: `127.0.0.1` und `::1`
+(`AISTUDIO_PROXY_IPS`, CIDR erlaubt). `*` nur bewusst.
+
+## Produktlaufzeit 1.4.17 — 2026-08-27 — Backup-Passwort außerhalb der Produkt-Umgebung
+
+`AISTUDIO_BACKUP_PASS` liegt in `data/backup.env` (600), nicht in `.env`. Der
+Produktprozess (systemd `EnvironmentFile=.env`) sieht den Schlüssel nicht;
+Backup-Timer und `backup.sh`/`restore.sh` laden ihn selbst. Bestehende Werte
+werden aus `.env` verschoben, nicht neu gewürfelt. Manuelles `./scripts/backup.sh`
+verschlüsselt auch ohne vorheriges `source .env`.
+
+## Produktlaufzeit 1.4.16 — 2026-08-27 — Backup-Passwort nachtragen
+
+`install.sh` hängt `AISTUDIO_BACKUP_PASS` an eine bestehende `.env`, wenn der Wert
+fehlt — Neuinstallation war schon verschlüsselt, ältere Installs nicht.
+`backup.sh` warnt in Produktion bei Klartext, bricht aber nicht ab.
+
+## Produktlaufzeit 1.4.15 — 2026-08-26 — Backup-Passwort bei Install, nginx Register, Crash-Loop
+
+`install.sh` legt `AISTUDIO_BACKUP_PASS` an — der Backup-Timer schreibt AES-256,
+kein Klartext mehr in `data/backups` bei Neuinstallation. nginx begrenzt
+`/api/auth/register` wie Login. systemd: `StartLimitBurst=5` / 120 s gegen
+Crash-Loops.
+
+## Produktlaufzeit 1.4.14 — 2026-08-26 — Restore-Kopien begrenzen
+
+`restore.sh` legt Vor-Restore-Kopien 0600/0700 an und behält nur die letzten drei
+(Datenbank und `uploads.before-restore-*`). Housekeeping räumt ältere Reste auf —
+sonst bleiben Mandantendateien nach einem Restore unbegrenzt auf der Platte.
+
+## Produktlaufzeit 1.4.13 — 2026-08-26 — Bootstrap-Passwort unter data/, kein Demo-PREV
+
+`install.sh` schreibt den Erstmandant nach `data/bootstrap.env` (600), nicht nach `.env`.
+Der Prozess liest die Datei, legt den Mandanten an und löscht sie — systemd darf `data/`
+schreiben, `.env` nicht. Überzählige Bootstrap-Variablen werden auch dann entfernt,
+wenn schon ein Mandant existiert (Neustart lädt sie sonst erneut). `--password-file`
+muss 600 oder 400 sein. `AISTUDIO_SECRET_PREV` mit Demo-Wert oder unter 24 Zeichen
+wird in Produktion ignoriert. WAL/SHM der SQLite-Datei werden 0600.
+
+## Produktlaufzeit 1.4.12 — 2026-08-26 — Secret-Rotation, Install ohne argv-Passwort
+
+Sitzungstokens akzeptieren optional das vorige HMAC-Geheimnis (`AISTUDIO_SECRET_PREV`),
+damit ein Secret-Wechsel nicht alle Anmeldungen sofort ungültig macht.
+`install.sh` liest das Bootstrap-Passwort aus `--password-file` oder
+`AISTUDIO_BOOTSTRAP_PASSWORD`; `--password` bleibt, warnt aber (Prozessliste).
+
+## Produktlaufzeit 1.4.11 — 2026-08-26 — Audit ohne Fragen, systemd nur data/
+
+Fragen und Auftrags-Texte stehen nicht mehr im Audit-Log (nur Zeichenlänge).
+systemd schreibt nur noch `data/` (nicht den Quellbaum); zusätzlich
+`CapabilityBoundingSet=` und `LimitCORE=0`.
+
+## Produktlaufzeit 1.4.10 — 2026-08-26 — Bootstrap-Passwort, Metriken, Backup-Alter
+
+Nach erfolgreichem Erstmandant entfernt der Prozess `AISTUDIO_BOOTSTRAP_*` aus
+der Umgebung und aus `.env` — das Admin-Passwort bleibt nicht auf der Platte.
+`/api/metrics` ist in Produktion ohne Token 401 (`AISTUDIO_METRICS_TOKEN`, Install
+legt eines an). `/api/ready` und Metriken melden das Alter der letzten Sicherung
+(`backup_age_hours`, `backup_ok`; optional `AISTUDIO_READY_REQUIRE_BACKUP`).
+Housekeeping ruft `PRAGMA optimize` auf.
+
+## Produktlaufzeit 1.4.9 — 2026-08-26 — Schutzschalter, Speicherlimit, Sitzungsruhe
+
+Nach wiederholten Modell-Ausfällen bleiben Antworten extractiv (`AISTUDIO_LLM_BREAKER_FAILS` /
+`AISTUDIO_LLM_BREAKER_SECONDS`, Standard 5 / 300 s) — der Worker wartet nicht weiter auf
+eine tote API. Uploads sind je Mandant begrenzt (`AISTUDIO_ORG_UPLOAD_MB`, Standard 200).
+Ungenutzte Sitzungen laufen nach `AISTUDIO_SESSION_IDLE` aus (Install: 4 Stunden).
+Produktion blendet `/openapi.json` aus. Optional `AISTUDIO_ALLOWED_HOSTS` prüft den
+Host-Header. systemd: `MemoryMax=512M`.
+
+## Produktlaufzeit 1.4.8 — 2026-08-26 — LLM-Tageskontingent
+
+Cloud-Aufrufe sind zusätzlich pro Kalendertag begrenzt (`AISTUDIO_LLM_PER_USER_DAY` /
+`AISTUDIO_LLM_PER_ORG_DAY`, Standard 200/800) und in SQLite persistiert — ein
+Neustart setzt das Tagesbudget nicht zurück. Bei Ausschöpfung weiter extractiv.
+
+## Produktlaufzeit 1.4.7 — 2026-08-26 — Backup-Verschlüsselung, Compose localhost
+
+Sicherungen sind 0600, das Backup-Verzeichnis 0700. Mit `AISTUDIO_BACKUP_PASS`
+schreibt `backup.sh` AES-256 (openssl, pbkdf2) und lässt kein Klartext liegen.
+Compose veröffentlicht Port 8123 nur auf 127.0.0.1.
+
+## Produktlaufzeit 1.4.6 — 2026-08-26 — nginx, systemd, Metriken-Token
+
+nginx-HTTP-Conf startet ohne Zertifikat; TLS liegt in `nginx-aistudio.tls.conf`.
+Login am Proxy ist rate-begrenzt. `install.sh --systemd` schreibt Einheiten für
+dieses Checkout. 429 mit `Retry-After`. `/api/metrics` optional mit Token,
+Prometheus-Text über `?format=prom`.
+
+## Produktlaufzeit 1.4.5 — 2026-08-26 — Housekeeping, Metriken, Uploads
+
+Housekeeping läuft periodisch im Prozess (nicht nur beim Start), WAL-Checkpoint,
+verwaiste Upload-Dateien werden entfernt. Löschen eines Dokuments löscht die
+Datei. `/api/metrics` (Größen und Zähler, keine Mandantentexte). Backup bricht
+ab unter 100 MB frei. `data/` und die SQLite-Datei werden auf 0700/0600 gesetzt.
+
+## Produktlaufzeit 1.4.4 — 2026-08-26 — Rate-Limiter, Restore, Compose-Prod
+
+Rate-Limiter vergisst idle Keys (kein unbegrenztes Wachstum). Restore prüft
+die Quelle vor dem Überschreiben, legt bei Fehler den vorherigen Stand zurück
+und spielt Uploads aus dem Schwesterarchiv wieder ein. `backup.sh` sichert
+`uploads/` mit. `docker-compose.prod.yml` ohne Demo-Seed, Secret Pflicht.
+Image enthält `sqlite3` (WAL-sichere Sicherung). nginx leitet HTTP nach HTTPS.
+Install setzt `data/` auf 0700. `/api/health` nennt in Produktion keine
+Mandanten-/Dokumentzahlen.
+
+## Produktlaufzeit 1.4.3 — 2026-08-26 — Image und Dateiauslieferung
+
+`.dockerignore` lässt `.env`, Tests und `platform/` draußen. Statische Dateien nur
+mit erlaubter Endung, keine Hidden Files. Uploads ohne Pfadanteile, ohne NUL.
+Compose: read-only Root, `cap_drop: ALL`. nginx verweigert `/.…`.
+
+## Produktlaufzeit 1.4.2 — 2026-08-26 — Fehler, Logs, Aufräumen
+
+Unhandled Errors in Produktion ohne Stacktrace, `request_id` in API-Fehlern,
+JSON-Access-Log in Produktion, `/api/live` ohne Datenbank, Housekeeping
+(abgelaufene Sitzungen, alte Audit-/Auftragszeilen), härterer Backup-Timer,
+Install mit 12-Stunden-Sitzung.
+
+## Produktlaufzeit 1.4.1 — 2026-08-26 — Produktionshärtung
+
+CSP, COOP/CORP, LLM-Kontingent (extractiver Fallback statt 429), Audit ohne Prompt,
+systemd-Härtung, nginx HSTS, Backup mit `integrity_check`, Install-Default
+`AISTUDIO_LLM_EGRESS=in_boundary`. `/api/ready` meldet freien Speicher.
+
 ## Produktlaufzeit 1.4.0 — 2026-08-26 — Modell-Schicht, Daten bleiben auf der Instanz
 
 **Sprachmodell hinter einem Tor, nicht als Direktaufruf.** Additiv `product/llm.py`

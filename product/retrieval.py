@@ -126,14 +126,47 @@ def get_document(org_id: str, doc_id: str, role: str, conn=None) -> dict[str, An
     return item
 
 
-def list_documents(org_id: str, role: str, conn=None) -> list[dict[str, Any]]:
+_LIST_COLS = (
+    "id, org_id, title, type, module, path, author, date, snippet, "
+    "locked, locked_role, classification"
+)
+
+
+def list_documents(
+    org_id: str,
+    role: str,
+    conn=None,
+    *,
+    limit: int = 500,
+    summaries: bool = False,
+) -> list[dict[str, Any]]:
     c = conn or db.get_conn()
-    rows = c.execute(
-        "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title", (org_id,)
-    ).fetchall()
+    try:
+        cap = int(limit)
+    except (TypeError, ValueError):
+        cap = 500
+    cap = max(1, min(cap, 5000))
+    if summaries:
+        rows = c.execute(
+            "SELECT " + _LIST_COLS + " FROM documents WHERE org_id = ? "
+            "ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
+    else:
+        rows = c.execute(
+            "SELECT * FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
     out = []
     for row in rows:
-        item = _hydrate(row)
+        if summaries:
+            item = db.row_dict(row)
+            assert item is not None
+            item["body_parts"] = []
+            item["extra"] = {}
+            item["locked"] = bool(item.get("locked"))
+        else:
+            item = _hydrate(row)
         if not can_read(item, role):
             item["body"] = ""
             item["body_parts"] = []
@@ -142,9 +175,14 @@ def list_documents(org_id: str, role: str, conn=None) -> list[dict[str, Any]]:
     return out
 
 
-def to_frontend_doc(item: dict[str, Any]) -> dict[str, Any]:
-    """Shape a stored document the way prototype/app.js expects in DOCS."""
+def to_frontend_doc(item: dict[str, Any], *, summary: bool = False) -> dict[str, Any]:
+    """Shape a stored document the way prototype/app.js expects in DOCS.
+
+    ``summary=True`` omits body/extra (GET /api/docs). The viewer loads
+    ``GET /api/docs/{id}`` which includes ``body`` (same array as ``body_parts``).
+    """
     extra = item.get("extra") if isinstance(item.get("extra"), dict) else db.parse_json(item.get("extra_json"), {})
+    parts = [] if summary else (item.get("body_parts") or [])
     out = {
         "id": item["id"],
         "title": item.get("title") or item["id"],
@@ -154,14 +192,16 @@ def to_frontend_doc(item: dict[str, Any]) -> dict[str, Any]:
         "author": item.get("author") or "",
         "date": item.get("date") or "",
         "snippet": item.get("snippet") or "",
-        "body_parts": item.get("body_parts") or [],
         "locked": bool(item.get("locked")),
         "lockedRole": item.get("locked_role") or item.get("lockedRole"),
         "classification": item.get("classification"),
         "denied": bool(item.get("denied")),
     }
-    if extra:
-        out.update(extra)
+    if not summary:
+        out["body_parts"] = parts
+        out["body"] = parts
+        if extra:
+            out.update(extra)
     return out
 
 
@@ -209,7 +249,14 @@ def extractive_text(hits: list[dict[str, Any]], query: str) -> str:
     return "".join(parts)
 
 
-def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str, Any]:
+def ask(
+    org_id: str,
+    query: str,
+    *,
+    role: str = "member",
+    conn=None,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """Permission-faithful answer in the prototype answer-card shape."""
     hits, withheld = retrieve(org_id, query, role=role, limit=5, conn=conn)
     withheld_ui = withheld_payload(withheld)
@@ -226,8 +273,11 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
 
     text = ""
     via = "extractive"
+    llm_meta: dict[str, Any] = {}
     if hits:
-        llm_text = _maybe_llm_answer(query, hits)
+        llm_text, llm_meta = _maybe_llm_answer(
+            query, hits, org_id=org_id, user_id=user_id, conn=conn
+        )
         if llm_text:
             text = llm_text
             via = "llm"
@@ -237,9 +287,18 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
         else:
             text = extractive_text(hits, query)
             via = "extractive"
-            reasoning.append(
-                "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
-            )
+            if llm_meta.get("error") == "rate_limited":
+                reasoning.append(
+                    "Antwort extractiv auf der Instanz — Modell-Kontingent erschöpft."
+                )
+            elif llm_meta.get("error") == "circuit_open":
+                reasoning.append(
+                    "Antwort extractiv auf der Instanz — Modell vorübergehend nicht erreichbar."
+                )
+            else:
+                reasoning.append(
+                    "Antwort extractiv aus den Treffern auf der Instanz (kein Cloud-Modell oder Ausgang gesperrt)."
+                )
         confidence = min(94, 70 + len(hits) * 6)
     elif withheld_ui:
         text = (
@@ -275,6 +334,8 @@ def ask(org_id: str, query: str, *, role: str = "member", conn=None) -> dict[str
         "related": [h["id"] for h in hits[:4]],
         "followups": _followups(query),
         "via": via,
+        "llm_provider": llm_meta.get("provider") or None,
+        "llm_model": llm_meta.get("model") or None,
     }
 
 
@@ -287,13 +348,25 @@ def _followups(query: str) -> list[str]:
     ]
 
 
-def _maybe_llm_answer(query: str, hits: list[dict[str, Any]]) -> str:
+def _maybe_llm_answer(
+    query: str,
+    hits: list[dict[str, Any]],
+    *,
+    org_id: str | None = None,
+    user_id: str | None = None,
+    conn=None,
+) -> tuple[str, dict[str, Any]]:
     """Formulate via the product gateway. Corpus stays local; only excerpts may leave."""
     from product import llm
 
+    empty: dict[str, Any] = {}
+    if llm.circuit_open():
+        return "", {"error": "circuit_open"}
+    if not llm.allow_call(org_id=org_id, user_id=user_id, conn=conn):
+        return "", {"error": "rate_limited"}
     excerpts = llm.excerpts_from_hits(hits, query, quote_fn=quote_from)
     if not excerpts:
-        return ""
+        return "", empty
     system = (
         "Du bist der Auskunfts-Agent von AI Studio. Antworte auf Deutsch, knapp und belegt. "
         "Verwende nur die gelieferten Auszüge. Keine Erfindung. HTML erlaubt: <b>, <p>, <ul>, <li>."
@@ -302,10 +375,15 @@ def _maybe_llm_answer(query: str, hits: list[dict[str, Any]]) -> str:
     try:
         result = llm.complete(system=system, user=user)
     except Exception:
-        return ""
+        return "", empty
+    meta = {
+        "provider": result.get("provider"),
+        "model": result.get("model"),
+        "error": result.get("error") or "",
+    }
     if not result.get("ok"):
-        return ""
-    return (result.get("text") or "").strip()
+        return "", meta
+    return (result.get("text") or "").strip(), meta
 
 
 def quote_from(doc: dict[str, Any], query: str, n: int = 180) -> str:

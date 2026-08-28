@@ -274,6 +274,7 @@
     wireSearch();
     wireOnboarding();
     wireRentOverlay();
+    wireMobileNav();
     if (isLive()) {
       const st = $(".status");
       if (st) {
@@ -395,6 +396,7 @@
     closeViewer();
     closeSearch();
     closeRent();
+    closeMobileNav();
     await resetFleet();
     hideFleetToast();
     selectModule("wissen");
@@ -535,11 +537,38 @@
       `<div class="demo-badge">● Demo-Daten · rein fiktiv</div>`;
   }
 
+  function closeMobileNav() {
+    const side = $(".sidebar");
+    const ov = $("#sidebarOv");
+    const btn = $("#navToggle");
+    if (side) side.classList.remove("open");
+    if (ov) ov.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  }
+
+  function wireMobileNav() {
+    const btn = $("#navToggle");
+    const side = $(".sidebar");
+    const ov = $("#sidebarOv");
+    if (!btn || !side) return;
+    btn.onclick = () => {
+      const open = !side.classList.contains("open");
+      side.classList.toggle("open", open);
+      if (ov) ov.hidden = !open;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    if (ov) ov.onclick = closeMobileNav;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && side.classList.contains("open")) closeMobileNav();
+    });
+  }
+
   function selectModule(key) {
     currentModule = key;
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
     const mod = MODULES.find((m) => m.key === key);
     $("#topTitle").innerHTML = `${mod.label}<small>${mod.hint}</small>`;
+    closeMobileNav();
 
     if (key === "wissen") return renderChatView();
     if (key === "team") return renderTeamView();
@@ -916,10 +945,10 @@
       const row = el("div", "source");
       row.innerHTML =
         `<span class="ficon">▤</span>` +
-        `<span class="meta"><span class="t">${doc.title}</span>` +
+        `<span class="meta"><span class="t">${escapeHtml(doc.title)}</span>` +
         `<span class="q">„${escapeHtml(s.quote)}"</span>` +
-        `<span class="p">${doc.path}</span></span>` +
-        `<span class="rel">Relevanz<b>${s.relevance}%</b></span>`;
+        `<span class="p">${escapeHtml(doc.path)}</span></span>` +
+        `<span class="rel">Relevanz<b>${Number(s.relevance) || 0}%</b></span>`;
       row.onclick = () => openViewer(s.docId, s.quote);
       b.appendChild(row);
     });
@@ -946,7 +975,7 @@
         if (!doc) return;
         const row = el("button", "wh-item",
           `<span class="lk">🔒</span>` +
-          `<span class="wt">${doc.title}<span class="wty">${escapeHtml(doc.type)}</span></span>` +
+          `<span class="wt">${escapeHtml(doc.title)}<span class="wty">${escapeHtml(doc.type)}</span></span>` +
           `<span class="wr">Kein Zugriff</span>`);
         row.onclick = () => openViewer(id);
         box.appendChild(row);
@@ -995,7 +1024,7 @@
     related.forEach((id) => {
       const doc = DOCS[id];
       if (!doc) return;
-      const pill = el("button", "pill", `▤ ${doc.title}`);
+      const pill = el("button", "pill", `▤ ${escapeHtml(doc.title)}`);
       pill.onclick = () => openViewer(id);
       box.appendChild(pill);
     });
@@ -1009,7 +1038,7 @@
     b.appendChild(el("div", "block-title", "➜ Folgefragen"));
     const box = el("div", "chips");
     followups.forEach((q) => {
-      const chip = el("button", "chip", q);
+      const chip = el("button", "chip", escapeHtml(q));
       chip.onclick = () => ask(q);
       box.appendChild(chip);
     });
@@ -1272,14 +1301,14 @@
       const card = el("div", d.locked ? "doc-card locked" : "doc-card");
       if (d.locked) {
         card.innerHTML =
-          `<div class="top"><span class="ficon lock">🔒</span><div><div class="t">${d.title}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
-          `<div class="snip">${d.snippet}</div>` +
-          `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${d.date}</span></div>`;
+          `<div class="top"><span class="ficon lock">🔒</span><div><div class="t">${escapeHtml(d.title)}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
+          `<div class="snip">${escapeHtml(d.snippet)}</div>` +
+          `<div class="foot"><span class="no-access">🔒 Kein Zugriff — ${escapeHtml(d.lockedRole)}</span><span>${escapeHtml(d.date)}</span></div>`;
       } else {
         card.innerHTML =
-          `<div class="top"><span class="ficon">${d.type === "E-Mail" ? "✉" : "▤"}</span><div><div class="t">${d.title}</div><div class="type">${d.type}</div></div></div>` +
-          `<div class="snip">${d.snippet}</div>` +
-          `<div class="foot"><span>${d.author}</span><span>${d.date}</span></div>`;
+          `<div class="top"><span class="ficon">${d.type === "E-Mail" ? "✉" : "▤"}</span><div><div class="t">${escapeHtml(d.title)}</div><div class="type">${escapeHtml(d.type)}</div></div></div>` +
+          `<div class="snip">${escapeHtml(d.snippet)}</div>` +
+          `<div class="foot"><span>${escapeHtml(d.author)}</span><span>${escapeHtml(d.date)}</span></div>`;
       }
       card.onclick = () => openViewer(d.id);
       grid.appendChild(card);
@@ -1360,8 +1389,28 @@
       `Es gehen höchstens freigegebene Kurzauszüge, und nur wenn Cloud-Ausgang ausdrücklich erlaubt ist.</p>` +
       `<p><b>${escapeHtml(llm.provider || "none")}</b>` +
       (llm.model ? ` · ${escapeHtml(llm.model)}` : "") +
-      ` · ${escapeHtml(kindLabel)}<br>${escapeHtml(egressLabel)}<br>${escapeHtml(readyLabel)}</p>`;
+      ` · ${escapeHtml(kindLabel)}<br>${escapeHtml(egressLabel)}<br>${escapeHtml(readyLabel)}` +
+      `<br>Kontingent Cloud: ${escapeHtml(String(llm.per_user != null ? llm.per_user : 20))}/min je Nutzer, ` +
+      `${escapeHtml(String(llm.per_org != null ? llm.per_org : 60))}/min je Mandant` +
+      ` · ${escapeHtml(String(llm.per_user_day != null ? llm.per_user_day : 200))}/Tag je Nutzer, ` +
+      `${escapeHtml(String(llm.per_org_day != null ? llm.per_org_day : 800))}/Tag je Mandant — bei Ausschöpfung Antworten aus Belegen.` +
+      (llm.circuit_open
+        ? `<br>Schutzschalter offen` + (llm.circuit_open_s ? ` (${escapeHtml(String(llm.circuit_open_s))} s)` : "") + ` — Antworten bleiben auf der Instanz, bis der Anbieter wieder erreichbar ist.`
+        : "") +
+      `</p>`;
     box.appendChild(llmBox);
+
+    const backupBox = el("div", "upload-box");
+    const health = AISTUDIO.health || {};
+    const age = health.backup_age_hours;
+    const backupLine = (age == null || age === undefined)
+      ? "Noch keine Sicherung im Datenverzeichnis dieser Instanz."
+      : ("Letzte Sicherung vor " + escapeHtml(String(age)) + " Stunden.");
+    const backupOk = health.backup_ok
+      ? "Stand im Rahmen."
+      : "Bitte `./scripts/backup.sh` ausführen (optional `AISTUDIO_BACKUP_PASS`).";
+    backupBox.innerHTML = `<h3>Sicherung</h3><p>${backupLine} ${backupOk}</p>`;
+    box.appendChild(backupBox);
 
     const pwd = el("div", "upload-box");
     pwd.innerHTML = `<h3>Passwort ändern</h3><p>Andere Sitzungen werden beendet, diese bleibt aktiv.</p>`;
@@ -1423,8 +1472,19 @@
     reloadSessions();
 
     const up = el("div", "upload-box");
+    const storage = AISTUDIO.storage || {};
+    const usedMb = storage.used_bytes != null ? (Number(storage.used_bytes) / (1024 * 1024)).toFixed(1) : "—";
+    const limitMb = storage.limit_bytes ? Math.round(Number(storage.limit_bytes) / (1024 * 1024)) : 0;
+    const quotaLine = limitMb
+      ? ` Derzeit ${escapeHtml(String(usedMb))} MB von ${escapeHtml(String(limitMb))} MB für diesen Mandanten.`
+      : "";
+    const docsN = storage.docs != null ? String(storage.docs) : "";
+    const docsCap = storage.docs_limit ? String(storage.docs_limit) : "";
+    const docsLine = docsCap
+      ? ` ${escapeHtml(docsN || "0")} von ${escapeHtml(docsCap)} Dokumenten.`
+      : "";
     up.innerHTML = `<h3>Wissensbasis</h3>` +
-      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.</p>`;
+      `<p>Textdatei (.txt, .md, .csv, .json) bis 2 MB. Nur dieser Mandant sieht den Inhalt.${quotaLine}${docsLine}</p>`;
     const docList = el("div", "doc-admin-list");
     const input = el("input");
     input.type = "file";
@@ -1601,9 +1661,20 @@
   }
 
   // ---------- Dokumentenviewer ----------
-  function openViewer(docId, highlightQuote) {
-    const doc = DOCS[docId];
+  async function openViewer(docId, highlightQuote) {
+    let doc = DOCS[docId];
     if (!doc) return;
+    const parts = doc.body || doc.body_parts || [];
+    if (isLive() && AISTUDIO.getDoc && !doc.locked && !doc.denied && !parts.length) {
+      try {
+        const full = await AISTUDIO.getDoc(docId);
+        if (full && full.id) {
+          DOCS[docId] = Object.assign({}, doc, full);
+          doc = DOCS[docId];
+        }
+      } catch (e) { /* Liste reicht für Metadaten; Körper fehlt dann */ }
+    }
+    if (!doc.body && doc.body_parts) doc.body = doc.body_parts;
     $("#vTitle").textContent = doc.title;
     $("#vType").textContent = doc.type;
     $("#vMeta").innerHTML = doc.locked
@@ -1705,7 +1776,8 @@
       paper.appendChild(el("div", "dtitle", escapeHtml(doc.title)));
     }
 
-    doc.body.forEach((p, i) => {
+    const paras = doc.body || doc.body_parts || [];
+    paras.forEach((p, i) => {
       if (i === 0) return; // erste Zeile ist die Dokument-Überschrift → als Titel oben
       const hl = p.highlight || (highlightQuote && p.t.includes(highlightQuote.slice(0, 24)));
       const para = el("p", hl ? "dp hl" : "dp", markupClause(escapeHtml(p.t)));

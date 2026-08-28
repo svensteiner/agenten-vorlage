@@ -78,6 +78,8 @@ def test_answer_card_defined():
     assert "function renderTeamView(" in src
     assert "function rentAgent(" in src
     assert "function openRent(" in src
+    assert "${escapeHtml(doc.title)}" in src
+    assert "${escapeHtml(doc.path)}" in src
 
 
 def test_money_shot_finale_untouched():

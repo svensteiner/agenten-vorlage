@@ -164,7 +164,7 @@ def prune_sessions(conn) -> None:
 def list_user_sessions(conn, user_id: str, current_jti: str) -> list[dict[str, Any]]:
     prune_sessions(conn)
     rows = conn.execute(
-        """SELECT id, jti, created_at, expires_at, ip, user_agent
+        """SELECT id, jti, created_at, expires_at, last_seen_at, ip, user_agent
            FROM sessions WHERE user_id = ? AND revoked_at IS NULL
            ORDER BY created_at DESC LIMIT 30""",
         (user_id,),
@@ -174,6 +174,7 @@ def list_user_sessions(conn, user_id: str, current_jti: str) -> list[dict[str, A
             "id": r["id"],
             "created_at": r["created_at"],
             "expires_at": r["expires_at"],
+            "last_seen_at": r["last_seen_at"] or r["created_at"],
             "ip": r["ip"] or "",
             "user_agent": (r["user_agent"] or "")[:120],
             "current": r["jti"] == current_jti,
@@ -199,16 +200,18 @@ def open_session(conn, user, *, ip: str = "", user_agent: str = "") -> str:
     jti = uuid.uuid4().hex
     now = int(datetime.now(timezone.utc).timestamp())
     exp = now + config.TOKEN_TTL_SECONDS
+    now_iso = db.now_iso()
     conn.execute(
-        """INSERT INTO sessions (id, jti, user_id, org_id, created_at, expires_at, ip, user_agent)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO sessions (id, jti, user_id, org_id, created_at, expires_at, last_seen_at, ip, user_agent)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             _uid("sess"),
             jti,
             user["id"],
             user["org_id"],
-            db.now_iso(),
+            now_iso,
             datetime.fromtimestamp(exp, timezone.utc).replace(microsecond=0).isoformat(),
+            now_iso,
             (ip or "")[:80],
             (user_agent or "")[:240],
         ),
@@ -224,6 +227,18 @@ def open_session(conn, user, *, ip: str = "", user_agent: str = "") -> str:
     )
 
 
+def _parse_ts(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        ts = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts
+
+
 def session_ok(conn, jti: str, user_id: str) -> bool:
     if not jti:
         return not config.is_production()
@@ -233,15 +248,33 @@ def session_ok(conn, jti: str, user_id: str) -> bool:
     ).fetchone()
     if not row or row["revoked_at"]:
         return False
-    try:
-        exp = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
-        if exp.tzinfo is None:
-            exp = exp.replace(tzinfo=timezone.utc)
-        if exp < datetime.now(timezone.utc):
-            return False
-    except ValueError:
+    now = datetime.now(timezone.utc)
+    exp = _parse_ts(row["expires_at"])
+    if exp is None or exp < now:
         return False
+    seen = _parse_ts(row["last_seen_at"] if "last_seen_at" in row.keys() else None) or _parse_ts(
+        row["created_at"]
+    )
+    idle = config.session_idle_seconds()
+    if idle > 0:
+        if seen is None or (now - seen).total_seconds() > idle:
+            revoke_session(conn, jti)
+            return False
+    # Idle is hours; writing last_seen on every GET filled the WAL (backup, disk).
+    elapsed = (now - seen).total_seconds() if seen is not None else 1e9
+    if elapsed >= _session_touch_seconds(idle):
+        conn.execute(
+            "UPDATE sessions SET last_seen_at = ? WHERE jti = ? AND revoked_at IS NULL",
+            (db.now_iso(), jti),
+        )
     return True
+
+
+def _session_touch_seconds(idle: int) -> int:
+    """How often last_seen may be written. Always well below the idle window."""
+    if idle <= 0:
+        return 60
+    return max(5, min(60, idle // 4))
 
 
 def revoke_session(conn, jti: str) -> None:
@@ -385,25 +418,50 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
             "SELECT * FROM users WHERE org_id = ? ORDER BY email", (org_id,)
         ).fetchall()
     ]
-    docs = [retrieval.to_frontend_doc(d) for d in retrieval.list_documents(org_id, role, conn=conn)]
+    cap = config.org_max_docs()
+    n_docs = conn.execute(
+        "SELECT COUNT(*) AS n FROM documents WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
+    docs = [
+        retrieval.to_frontend_doc(d)
+        for d in retrieval.list_documents(org_id, role, conn=conn, limit=cap)
+    ]
     bodies = {
         r["id"]: r["body"]
-        for r in conn.execute("SELECT id, body FROM documents WHERE org_id = ?", (org_id,)).fetchall()
+        for r in conn.execute(
+            "SELECT id, body FROM documents WHERE org_id = ? ORDER BY date DESC, title LIMIT ?",
+            (org_id, cap),
+        ).fetchall()
     }
     visible_ids = {d["id"] for d in docs if not d.get("denied")}
     for d in docs:
         d["body"] = bodies.get(d["id"], "") if d["id"] in visible_ids else ""
+    job_cap = config.export_jobs_limit()
+    n_jobs = conn.execute(
+        "SELECT COUNT(*) AS n FROM jobs WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     jobs = [dict(r) for r in conn.execute(
-        "SELECT id, agent_id, task, status, created_at FROM jobs WHERE org_id = ? ORDER BY created_at",
-        (org_id,),
+        "SELECT id, agent_id, task, status, created_at FROM jobs "
+        "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, job_cap),
     ).fetchall()]
+    audit_cap = config.export_audit_limit()
+    n_audit = conn.execute(
+        "SELECT COUNT(*) AS n FROM audit_log WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     audit = [dict(r) for r in conn.execute(
-        "SELECT actor, action, detail, created_at FROM audit_log WHERE org_id = ? ORDER BY created_at",
-        (org_id,),
+        "SELECT actor, action, detail, created_at FROM audit_log "
+        "WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, audit_cap),
     ).fetchall()]
+    inv_cap = config.export_invoices_limit()
+    n_inv = conn.execute(
+        "SELECT COUNT(*) AS n FROM invoices WHERE org_id = ?", (org_id,)
+    ).fetchone()["n"]
     invoices = [dict(r) for r in conn.execute(
-        "SELECT id, period, amount_cents, currency, status, lines_json, created_at FROM invoices WHERE org_id = ?",
-        (org_id,),
+        "SELECT id, period, amount_cents, currency, status, lines_json, created_at "
+        "FROM invoices WHERE org_id = ? ORDER BY created_at DESC LIMIT ?",
+        (org_id, inv_cap),
     ).fetchall()]
     return {
         "exported_at": db.now_iso(),
@@ -416,6 +474,18 @@ def export_tenant(conn, org_id: str, role: str) -> dict[str, Any]:
         "jobs": jobs,
         "invoices": invoices,
         "audit": audit,
+        "truncated": {
+            "documents": int(n_docs) > cap,
+            "jobs": int(n_jobs) > job_cap,
+            "audit": int(n_audit) > audit_cap,
+            "invoices": int(n_inv) > inv_cap,
+        },
+        "totals": {
+            "documents": int(n_docs),
+            "jobs": int(n_jobs),
+            "audit": int(n_audit),
+            "invoices": int(n_inv),
+        },
     }
 
 
@@ -427,3 +497,8 @@ def purge_org(conn, org_id: str) -> None:
         conn.execute(f"DELETE FROM {table} WHERE org_id = ?", (org_id,))
     conn.execute("DELETE FROM users WHERE org_id = ?", (org_id,))
     conn.execute("DELETE FROM orgs WHERE id = ?", (org_id,))
+    uploads = config.DATA_DIR / "uploads" / config.org_dir(org_id)
+    if uploads.is_dir():
+        import shutil
+
+        shutil.rmtree(uploads, ignore_errors=True)

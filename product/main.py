@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 
 from product import config
 from product.api import router
 from product.db import connect
-from product.security import AccessLogMiddleware, LimitRequestMiddleware, SecurityHeadersMiddleware
+from product.security import (
+    AccessLogMiddleware,
+    LimitRequestMiddleware,
+    SecurityHeadersMiddleware,
+    normalize_request_id,
+)
 from product.seed import ensure_seeded
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,28 +36,62 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     config.validate_runtime()
-    conn = connect()
+    if config.proxy_hosts_need_public_name():
+        logging.getLogger("product").warning(
+            "Produktion hinter Proxy: AISTUDIO_ALLOWED_HOSTS um den öffentlichen "
+            "Hostnamen ergänzen, sonst 400."
+        )
+    if config.proxy_xff_unreachable():
+        logging.getLogger("product").warning(
+            "Produktion an 0.0.0.0 mit AISTUDIO_PROXY_IPS nur Loopback: "
+            "X-Forwarded-For greift nicht (Peer ist die Docker-Bridge). "
+            "Gateway-IP setzen, nicht 172.16.0.0/12."
+        )
+    config.acquire_instance_lock()
     try:
-        ensure_seeded(conn)
-        from product import tenancy
+        config.harden_data_dir()
+        conn = connect()
+        try:
+            ensure_seeded(conn)
+            from product import tenancy
+
+            try:
+                created = tenancy.bootstrap_if_empty(conn)
+                leftover = created or config.has_bootstrap_residue()
+                if leftover:
+                    if config.consume_bootstrap_env():
+                        logging.getLogger("product").info(
+                            "Bootstrap-Zugang aus der Datendatei entfernt."
+                        )
+                    else:
+                        logging.getLogger("product").info(
+                            "Bootstrap-Zugang aus der Prozessumgebung entfernt."
+                        )
+            except ValueError as exc:
+                raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
+            conn.commit()
+        finally:
+            conn.close()
+        from product import housekeeping
 
         try:
-            tenancy.bootstrap_if_empty(conn)
-        except ValueError as exc:
-            raise RuntimeError("Bootstrap fehlgeschlagen: %s" % exc) from exc
-        conn.commit()
+            housekeeping.run_once()
+        except Exception:
+            logging.getLogger("product.housekeeping").exception("housekeeping skipped")
+        housekeeping.start_loop()
+        config.write_pid_file()
+        yield
+        housekeeping.stop_loop()
+        config.clear_pid_file()
     finally:
-        conn.close()
-    yield
+        config.release_instance_lock()
 
 
-_docs = None if config.is_production() else "/docs"
 app = FastAPI(
     title="AI Studio",
     version=config.VERSION,
     lifespan=lifespan,
-    docs_url=_docs,
-    redoc_url=None if config.is_production() else "/redoc",
+    **config.docs_kwargs(),
 )
 origins = config.cors_origins()
 app.add_middleware(SecurityHeadersMiddleware)
@@ -62,7 +104,50 @@ if origins:
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
+_hosts = config.allowed_hosts()
+if _hosts:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_hosts)
 app.include_router(router, prefix="/api")
+
+
+def _request_id(request: Request) -> str:
+    rid = getattr(request.state, "request_id", None)
+    if rid:
+        return str(rid)[:64]
+    return normalize_request_id(request.headers.get("x-request-id"))
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    rid = _request_id(request)
+    if config.is_production():
+        return JSONResponse({"detail": "Anfrage ungültig.", "request_id": rid}, status_code=422)
+    return JSONResponse({"detail": exc.errors(), "request_id": rid}, status_code=422)
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    return JSONResponse(
+        {"detail": exc.detail, "request_id": _request_id(request)},
+        status_code=exc.status_code,
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error(request: Request, exc: Exception):
+    rid = _request_id(request)
+    logging.getLogger("product").exception("unhandled rid=%s", rid)
+    detail = (
+        str(exc)
+        if not config.is_production()
+        else "Interner Fehler. Bitte später erneut versuchen."
+    )
+    return JSONResponse({"detail": detail, "request_id": rid}, status_code=500)
+
+
+_STATIC_EXT = {".js", ".css", ".html", ".svg", ".png", ".ico", ".woff", ".woff2", ".map"}
+_STATIC_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 
 
 @app.get("/")
@@ -73,6 +158,14 @@ def index():
 @app.get("/{path:path}")
 def static_file(path: str):
     if path.startswith("api/") or path == "api":
+        raise HTTPException(404, "Not found")
+    if (
+        ".." in path
+        or path.startswith(".")
+        or not _STATIC_NAME.match(path)
+        or any(part.startswith(".") for part in path.split("/"))
+        or Path(path).suffix.lower() not in _STATIC_EXT
+    ):
         raise HTTPException(404, "Not found")
     dest = (PROTO / path).resolve()
     try:
@@ -90,11 +183,13 @@ def run() -> None:
     config.validate_runtime()
     uvicorn.run(
         "product.main:app",
-        host=config.HOST,
-        port=config.PORT,
+        host=config.listen_host(),
+        port=config.listen_port(),
         reload=False,
+        access_log=False,
+        server_header=False,
         proxy_headers=config.trust_proxy(),
-        forwarded_allow_ips="*" if config.trust_proxy() else None,
+        forwarded_allow_ips=config.uvicorn_forwarded_allow_ips(),
         timeout_keep_alive=30,
     )
 

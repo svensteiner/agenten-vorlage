@@ -150,6 +150,8 @@ def test_run_included_agent(client):
     jobs = listed.json()["jobs"]
     assert jobs and jobs[0]["id"] == data["job_id"]
     assert jobs[0].get("preview") is not None
+    assert "output_json" not in jobs[0]
+    assert len(jobs[0].get("task") or "") <= 180
 
 
 def test_upload_and_ask(client):
@@ -172,3 +174,6 @@ def test_audit_for_cfo(client):
     actions = [e["action"] for e in r.json()["events"]]
     assert "ask" in actions
     assert "login" in actions
+    details = " ".join(str(e.get("detail") or "") for e in r.json()["events"])
+    assert "Reiserichtlinie" not in details
+    assert "chars=" in details

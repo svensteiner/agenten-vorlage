@@ -13,11 +13,11 @@ Kein Build, kein Server, keine Installation nötig:
 1. `prototype/index.html` per Doppelklick im Browser öffnen — **fertig.**
 
 Falls der Browser lokale Skripte über `file://` blockiert, alternativ mit
-Mini-Server starten und `http://127.0.0.1:8123` öffnen:
+Mini-Server starten und `http://127.0.0.1:8765` öffnen:
 
 ```bash
 cd prototype
-python -m http.server 8123
+python3 -m http.server 8765
 ```
 
 **Live-Produkt** (Anmeldung, echte Suche, persistente Miete) — denselben Port, aber den Produkt-Server:
@@ -30,10 +30,11 @@ Details: [`../product/README.md`](../product/README.md). `file://` und der Mini-
 
 ## Was die Demo zeigt
 
-- **Geführte Demo (▶ oben rechts)** — spielt alle 8 Szenarien **hands-free** nacheinander
-  ab: die Frage tippt sich selbst in den Composer, die Antwort streamt, kurze Lesepause,
-  dann das nächste Szenario (Fortschritt „n / 8", jederzeit stoppbar). Ideal für die
-  Videoaufnahme und einen Messestand-Loop. *(Tab beim Aufnehmen im Vordergrund halten.)*
+- **Geführte Demo (▶ oben rechts)** — spielt eine **kuratierte 6er-Kern-Auswahl**
+  **hands-free** nacheinander ab (Fortschritt „n / 6", endet auf dem Money-Shot
+  „Agenten dazubuchen"). Die übrigen Szenarien bleiben per Kachel, Frage und Suche
+  erreichbar. Ideal für die Videoaufnahme und einen Messestand-Loop.
+  *(Tab beim Aufnehmen im Vordergrund halten.)*
 - **Chat als Zentrum** — Frage in natürlicher Sprache, gestreamte Antwort.
 - **Jede Antwort belegt** — Antwort · Nachvollziehbarkeit · Quellen (mit Zitat & Relevanz) ·
   Konfidenz · verwandte Dokumente · Folgefragen.
@@ -66,6 +67,8 @@ Das komplette Drehbuch steht in [`../VIDEO_SCRIPT.md`](../VIDEO_SCRIPT.md).
 | `styles.css` | Enterprise-Design (Stripe/Linear/Notion-Anmutung). |
 | `data.js`    | Demo-Firma, Dokumente & Szenarien — **einzige Quelle der Wahrheit**. |
 | `app.js`     | Interaktionslogik (Streaming, Quellen, Viewer). Reines Vanilla-JS. |
+| `product-client.js` | Optional: spricht den Produkt-Server an, wenn `/api/health` erreichbar ist. |
+| `favicon.svg` | App-Icon (kein 404 mehr beim lokalen Server). |
 
 **Neues Szenario/Dokument hinzufügen:** nur `data.js` erweitern (`DOCS`, `SCENARIOS`).
 Kein Code in `app.js` nötig.

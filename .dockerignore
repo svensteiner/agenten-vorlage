@@ -1,4 +1,6 @@
 .git
+.github
+.cursor
 __pycache__
 *.pyc
 .pytest_cache
@@ -7,5 +9,16 @@ htmlcov
 state
 logs
 data
+*.db
 .env
+.env.*
+!.env.example
+# install.sh writes this next to .env (1.4.31+). COPY . . must not bake the pass.
+backup.env
+bootstrap.env
 node_modules
+tests
+platform
+pilot-assets
+deck-agenten-einstieg
+.claude

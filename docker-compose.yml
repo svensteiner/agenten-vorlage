@@ -2,13 +2,13 @@ services:
   aistudio:
     build: .
     ports:
-      - "8123:8123"
+      - "127.0.0.1:8123:8123"
     environment:
       AISTUDIO_HOST: "0.0.0.0"
       AISTUDIO_PORT: "8123"
       AISTUDIO_DATA: /app/data
       AISTUDIO_ENV: ${AISTUDIO_ENV:-development}
-      AISTUDIO_SECRET: ${AISTUDIO_SECRET:-dev-secret-change-me}
+      AISTUDIO_SECRET: ${AISTUDIO_SECRET:?AISTUDIO_SECRET muss gesetzt sein}
       AISTUDIO_ALLOW_DEMO_SEED: ${AISTUDIO_ALLOW_DEMO_SEED:-true}
       AISTUDIO_ALLOW_REGISTER: ${AISTUDIO_ALLOW_REGISTER:-true}
       AISTUDIO_LLM_PROVIDER: ${AISTUDIO_LLM_PROVIDER:-none}
@@ -17,6 +17,18 @@ services:
       AISTUDIO_LLM_API_KEY: ${AISTUDIO_LLM_API_KEY:-}
       AISTUDIO_LLM_EGRESS: ${AISTUDIO_LLM_EGRESS:-in_boundary}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      PYTHONDONTWRITEBYTECODE: "1"
+    read_only: true
+    init: true
+    pids_limit: 128
+    mem_limit: 512m
+    memswap_limit: 512m
+    tmpfs:
+      - /tmp:size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - aistudio-data:/app/data
     healthcheck:

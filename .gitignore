@@ -1,7 +1,9 @@
 # Runtime — nie committen
+.herenow/
 state/
 logs/
 .env
+backup.env
 tasks.json
 .claude/
 data/

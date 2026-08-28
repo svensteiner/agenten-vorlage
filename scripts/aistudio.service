@@ -1,13 +1,25 @@
 [Unit]
 Description=AI Studio product
 After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
 
 [Service]
 Type=simple
+User=aistudio
+Group=aistudio
 WorkingDirectory=/opt/aistudio
 Environment=PYTHONPATH=/opt/aistudio
 Environment=AISTUDIO_ENV=production
 EnvironmentFile=-/opt/aistudio/.env
+# EnvironmentFile always overrides Environment=. A leftover .env with
+# AISTUDIO_ENV=development would otherwise start demo-seed behind nginx.
+# Later EnvironmentFile wins — pins production, loopback, no demo tenant, no public register.
+# Pin is required (no '-'). If it is missing, leftover development .env wins.
+EnvironmentFile=/opt/aistudio/scripts/aistudio.systemd.env
+# Leftover AISTUDIO_BACKUP_PASS in .env must not reach the product (RCE → archives).
+# dotenv would reload it from .env; product/config.py drops it again after load.
+UnsetEnvironment=AISTUDIO_BACKUP_PASS
 ExecStart=/usr/bin/python3 -m product
 Restart=on-failure
 RestartSec=5
@@ -15,7 +27,29 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/aistudio
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectHostname=true
+PrivateDevices=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+UMask=0077
+LimitNOFILE=4096
+LimitCORE=0
+MemoryMax=512M
+MemorySwapMax=0
+TasksMax=128
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/opt/aistudio/data
+# Backup-Passwort: systemd lädt es nicht; der Prozess darf die Datei nicht lesen.
+InaccessiblePaths=-/opt/aistudio/backup.env -/opt/aistudio/data/backup.env
 
 [Install]
 WantedBy=multi-user.target

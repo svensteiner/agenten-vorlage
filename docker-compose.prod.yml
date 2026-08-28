@@ -1,0 +1,61 @@
+# Production overlay. Secret and metrics token are required:
+#   AISTUDIO_SECRET='…' AISTUDIO_METRICS_TOKEN='…' docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+# Port bleibt 127.0.0.1:8123 (Basis-Compose) — nginx auf dem Host verbindet lokal.
+# X-Forwarded-For: Standard PROXY_IPS=127.0.0.1,::1 gilt nur, wenn nginx
+# denselben Loopback wie der Prozess sieht. Im Container ist der TCP-Peer die
+# Docker-Bridge (oft 172.17.0.1), nicht 127.0.0.1 — Limits fallen sonst auf
+# eine Gateway-IP. AISTUDIO_PROXY_IPS auf diese Gateway-Adresse setzen
+# (docker network inspect … Gateway). Nicht 172.16.0.0/12 und nicht
+# 0.0.0.0/0 / ::/0: jeder Client könnte X-Forwarded-For setzen.
+# Sicherung (openssl im Image; Passwort auf Volume aistudio-backup-secret, nicht im Produkt-Container):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile backup run --rm backup
+services:
+  aistudio:
+    environment:
+      AISTUDIO_ENV: production
+      AISTUDIO_SECRET: ${AISTUDIO_SECRET:?AISTUDIO_SECRET muss gesetzt sein}
+      AISTUDIO_SECRET_PREV: ${AISTUDIO_SECRET_PREV:-}
+      AISTUDIO_ALLOW_DEMO_SEED: "false"
+      AISTUDIO_ALLOW_REGISTER: "false"
+      AISTUDIO_LLM_EGRESS: ${AISTUDIO_LLM_EGRESS:-in_boundary}
+      AISTUDIO_LLM_CLOUD_OK: ${AISTUDIO_LLM_CLOUD_OK:-}
+      AISTUDIO_TRUST_PROXY: ${AISTUDIO_TRUST_PROXY:-true}
+      AISTUDIO_PROXY_IPS: ${AISTUDIO_PROXY_IPS:-127.0.0.1,::1}
+      AISTUDIO_TOKEN_TTL: ${AISTUDIO_TOKEN_TTL:-43200}
+      AISTUDIO_SESSION_IDLE: ${AISTUDIO_SESSION_IDLE:-14400}
+      AISTUDIO_ORG_UPLOAD_MB: ${AISTUDIO_ORG_UPLOAD_MB:-200}
+      AISTUDIO_ORG_MAX_DOCS: ${AISTUDIO_ORG_MAX_DOCS:-500}
+      AISTUDIO_ALLOWED_HOSTS: ${AISTUDIO_ALLOWED_HOSTS:-127.0.0.1,localhost}
+      AISTUDIO_METRICS_TOKEN: ${AISTUDIO_METRICS_TOKEN:?AISTUDIO_METRICS_TOKEN muss gesetzt sein}
+    volumes:
+      - aistudio-data:/app/data
+      # Blendet eine etwaige data/backup.env auf dem Daten-Volume aus (älterer Stand).
+      - type: volume
+        target: /app/data/backup.env
+  backup:
+    profiles: ["backup"]
+    build: .
+    user: "10001:10001"
+    network_mode: none
+    read_only: true
+    init: true
+    pids_limit: 32
+    mem_limit: 256m
+    memswap_limit: 256m
+    tmpfs:
+      - /tmp:size=64M
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      AISTUDIO_DATA: /app/data
+      AISTUDIO_ENV: production
+      AISTUDIO_BACKUP_ENV: /app/backup-secret/backup.env
+    volumes:
+      - aistudio-data:/app/data
+      - aistudio-backup-secret:/app/backup-secret
+    entrypoint: ["/bin/bash", "/app/scripts/backup.sh"]
+    # Passwort nicht in der Compose-Umgebung — eigenes Volume, nicht im Produkt-Container.
+volumes:
+  aistudio-backup-secret:

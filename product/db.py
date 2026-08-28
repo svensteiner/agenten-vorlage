@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     revoked_at TEXT,
+    last_seen_at TEXT,
     ip TEXT DEFAULT '',
     user_agent TEXT DEFAULT ''
 );
@@ -122,6 +123,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS llm_usage (
+    day TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    key TEXT NOT NULL,
+    calls INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, scope, key)
+);
+
 CREATE INDEX IF NOT EXISTS idx_documents_org ON documents(org_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_org ON jobs(org_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log(org_id, created_at);
@@ -138,6 +147,7 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     db_path = Path(path or config.DB_PATH)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path), check_same_thread=False)
+    # chmod lives in lifespan + housekeeping, not on every request.
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
@@ -177,6 +187,7 @@ def migrate(conn: sqlite3.Connection) -> None:
         _add_column(conn, "users", "failed_logins", "INTEGER NOT NULL DEFAULT 0")
         _add_column(conn, "users", "locked_until", "TEXT")
         _add_column(conn, "users", "last_login_at", "TEXT")
+        _add_column(conn, "sessions", "last_seen_at", "TEXT")
     except sqlite3.OperationalError:
         # Table may not exist yet on a brand-new file before SCHEMA ran.
         return

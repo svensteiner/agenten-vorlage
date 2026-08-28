@@ -4,21 +4,25 @@ The rest of AI Studio never talks to a vendor SDK. Retrieval stays local (FTS5,
 ACL fail-closed). This module may send only the caller-supplied excerpts, never
 the knowledge base.
 
-Default egress is ``in_boundary``: cloud vendors are refused even if an API key
-is present, and answers stay extractive (or go to a local OpenAI-compatible
-server). First product can opt into OpenAI with ``AISTUDIO_LLM_EGRESS=cloud``.
-Later the same contract points at a decentral model via
-``AISTUDIO_LLM_PROVIDER=decentral`` and ``AISTUDIO_LLM_BASE_URL``.
+Default egress is ``in_boundary``: cloud vendors and public base URLs are
+refused even if an API key is present. Answers stay extractive or go to a
+loopback/RFC1918 OpenAI-compatible server. First product can opt into OpenAI
+with ``AISTUDIO_LLM_EGRESS=cloud``. Later the same contract points at a
+decentral model via ``AISTUDIO_LLM_PROVIDER=decentral`` and
+``AISTUDIO_LLM_BASE_URL``.
 
 Prompts and excerpts are never logged — only provider, model, status, latency.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 import re
+import threading
 import time
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
@@ -26,7 +30,13 @@ import httpx
 
 log = logging.getLogger("product.llm")
 
+_stats_lock = threading.Lock()
+_stats = {"complete_ok": 0, "complete_fail": 0, "budget_blocked": 0, "circuit_open": 0}
+_breaker = {"fails": 0, "open_until": 0.0}
+
 CLOUD_HOSTS = ("api.openai.com", "api.anthropic.com")
+# Single-label (Docker/k8s) plus these suffixes stay on-customer-net without DNS.
+_IN_BOUNDARY_SUFFIXES = (".local", ".internal", ".lan", ".home", ".corp")
 DEFAULT_OPENAI_URL = "https://api.openai.com/v1"
 DEFAULT_ANTHROPIC_URL = "https://api.anthropic.com"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
@@ -37,6 +47,32 @@ MAX_QUOTE_CHARS = 900
 _SCRIPT = re.compile(r"<(script|style|iframe|object|embed)\b[^>]*>.*?</\1>", re.I | re.S)
 _ONATTR = re.compile(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.I)
 _JSURL = re.compile(r"javascript:", re.I)
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _float_env(name: str, default: float, lo: float, hi: float) -> float:
+    raw = os.environ.get(name)
+    try:
+        n = float(raw) if raw is not None and str(raw).strip() else default
+    except (TypeError, ValueError):
+        n = default
+    if n != n or n in (float("inf"), float("-inf")):
+        n = default
+    return max(lo, min(n, hi))
+
+
+def _http_url(url: str) -> bool:
+    """Only http(s) hosts — never file://, unix://, or a bare path."""
+    parsed = urlparse(url or "")
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    return bool((parsed.hostname or "").strip())
 
 
 def sanitize_html(text: str) -> str:
@@ -91,8 +127,8 @@ def settings() -> dict[str, Any]:
     anthropic_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
     if provider == "anthropic" and os.environ.get("AISTUDIO_LLM_API_KEY"):
         anthropic_key = os.environ.get("AISTUDIO_LLM_API_KEY", "").strip() or anthropic_key
-    timeout = float(os.environ.get("AISTUDIO_LLM_TIMEOUT", "20"))
-    max_tokens = int(os.environ.get("AISTUDIO_LLM_MAX_TOKENS", "700"))
+    timeout = _float_env("AISTUDIO_LLM_TIMEOUT", 20.0, 1.0, 60.0)
+    max_tokens = max(16, min(_int_env("AISTUDIO_LLM_MAX_TOKENS", 700), 4096))
     egress = (os.environ.get("AISTUDIO_LLM_EGRESS") or "in_boundary").strip().lower()
     if egress not in {"cloud", "in_boundary"}:
         egress = "in_boundary"
@@ -129,13 +165,30 @@ def settings() -> dict[str, Any]:
         model = model or ""
 
     cloud = _is_cloud(provider, base_url)
-    blocked = bool(cloud and egress == "in_boundary")
-    ready = bool(provider != "none" and not blocked and (api_key or kind == "decentral") and (kind != "decentral" or base_url))
+    # in_boundary is not "not OpenAI" — public HTTPS hosts (Groq, Azure, leftover
+    # laptop BASE_URL) must not receive excerpts while ops see sends_excerpts=false.
+    off_box = bool(
+        egress == "in_boundary"
+        and base_url
+        and _http_url(base_url)
+        and not _host_in_boundary(urlparse(base_url).hostname or "")
+    )
+    blocked = bool(egress == "in_boundary" and (cloud or off_box))
+    bad_url = bool(base_url) and not _http_url(base_url)
+    ready = bool(
+        provider != "none"
+        and not blocked
+        and not bad_url
+        and (api_key or kind == "decentral")
+        and (kind != "decentral" or base_url)
+    )
     reason = ""
     if provider == "none":
         reason = "not_configured"
     elif blocked:
         reason = "egress_blocked"
+    elif bad_url:
+        reason = "bad_base_url"
     elif kind == "decentral" and not base_url:
         reason = "missing_base_url"
         ready = False
@@ -161,6 +214,11 @@ def settings() -> dict[str, Any]:
 def public_status() -> dict[str, Any]:
     """Health payload: never keys, never prompts, never host credentials."""
     cfg = settings()
+    per_user = _int_env("AISTUDIO_LLM_PER_USER", 20)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG", 60)
+    per_user_day = _int_env("AISTUDIO_LLM_PER_USER_DAY", 200)
+    per_org_day = _int_env("AISTUDIO_LLM_PER_ORG_DAY", 800)
+    brk = breaker_status()
     return {
         "provider": cfg["provider"],
         "kind": cfg["kind"],
@@ -170,7 +228,140 @@ def public_status() -> dict[str, Any]:
         "egress": cfg["egress"],
         "sends_excerpts": bool(cfg["ready"] and cfg["egress"] == "cloud"),
         "reason": cfg["reason"] or None,
+        "per_user": per_user,
+        "per_org": per_org,
+        "per_user_day": per_user_day,
+        "per_org_day": per_org_day,
+        "circuit_open": brk["open"],
+        "circuit_open_s": brk["open_for_s"],
     }
+
+
+def breaker_status() -> dict[str, Any]:
+    """Process-local circuit: consecutive vendor failures pause outbound calls."""
+    with _stats_lock:
+        open_until = float(_breaker["open_until"] or 0)
+        fails = int(_breaker["fails"] or 0)
+    remaining = max(0, int(open_until - time.time()))
+    return {"open": remaining > 0, "open_for_s": remaining, "consecutive_fails": fails}
+
+
+def circuit_open() -> bool:
+    _fails, seconds = _breaker_limits()
+    if seconds <= 0:
+        return False
+    with _stats_lock:
+        return time.time() < float(_breaker["open_until"] or 0)
+
+
+def _breaker_limits() -> tuple[int, int]:
+    return max(1, _int_env("AISTUDIO_LLM_BREAKER_FAILS", 5)), max(
+        0, _int_env("AISTUDIO_LLM_BREAKER_SECONDS", 300)
+    )
+
+
+def _breaker_note(ok: bool) -> None:
+    threshold, seconds = _breaker_limits()
+    if seconds <= 0:
+        return
+    with _stats_lock:
+        if ok:
+            _breaker["fails"] = 0
+            _breaker["open_until"] = 0.0
+            return
+        _breaker["fails"] = int(_breaker["fails"] or 0) + 1
+        if int(_breaker["fails"]) >= threshold:
+            _breaker["open_until"] = time.time() + seconds
+            log.info(
+                "llm circuit open for=%ss after=%s fails",
+                seconds,
+                _breaker["fails"],
+            )
+
+
+def call_stats() -> dict[str, int]:
+    """Process-local counters for /api/metrics. No prompts, no tenant ids."""
+    with _stats_lock:
+        return dict(_stats)
+
+
+def allow_call(*, org_id: str | None = None, user_id: str | None = None, conn=None) -> bool:
+    """Budget for paid/cloud calls. Exhausted budget → extractive fallback, not 429."""
+    cfg = settings()
+    if not cfg["ready"]:
+        return True
+    from product.security import rate_limited
+
+    per_user = _int_env("AISTUDIO_LLM_PER_USER", 20)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG", 60)
+    if user_id and per_user > 0 and rate_limited("llm-user:" + user_id, per_user):
+        return _block("user")
+    if org_id and per_org > 0 and rate_limited("llm-org:" + org_id, per_org):
+        return _block("org")
+    if not _take_daily(org_id=org_id, user_id=user_id, conn=conn):
+        return _block("day")
+    return True
+
+
+def _block(scope: str) -> bool:
+    with _stats_lock:
+        _stats["budget_blocked"] += 1
+    log.info("llm budget exhausted scope=%s", scope)
+    return False
+
+
+def _take_daily(*, org_id: str | None, user_id: str | None, conn=None) -> bool:
+    """Persist daily caps in SQLite so restarts do not reset spend. 0 = unlimited."""
+    per_user = _int_env("AISTUDIO_LLM_PER_USER_DAY", 200)
+    per_org = _int_env("AISTUDIO_LLM_PER_ORG_DAY", 800)
+    if per_user <= 0 and per_org <= 0:
+        return True
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from product import db
+
+    own = conn is None
+    c = conn or db.connect()
+    try:
+        c.execute("SAVEPOINT llm_budget")
+        ok = True
+        if user_id and per_user > 0 and not _bump_usage(c, day, "user", user_id, per_user):
+            ok = False
+        elif org_id and per_org > 0 and not _bump_usage(c, day, "org", org_id, per_org):
+            ok = False
+        if ok:
+            c.execute("RELEASE SAVEPOINT llm_budget")
+            if own:
+                c.commit()
+            return True
+        c.execute("ROLLBACK TO SAVEPOINT llm_budget")
+        c.execute("RELEASE SAVEPOINT llm_budget")
+        return False
+    except Exception:
+        try:
+            c.execute("ROLLBACK TO SAVEPOINT llm_budget")
+        except Exception:
+            pass
+        log.exception("llm daily budget check failed")
+        return False
+    finally:
+        if own:
+            c.close()
+
+
+def _bump_usage(conn, day: str, scope: str, key: str, limit: int) -> bool:
+    row = conn.execute(
+        "SELECT calls FROM llm_usage WHERE day = ? AND scope = ? AND key = ?",
+        (day, scope, key),
+    ).fetchone()
+    n = int(row["calls"]) if row else 0
+    if n >= limit:
+        return False
+    conn.execute(
+        """INSERT INTO llm_usage (day, scope, key, calls) VALUES (?, ?, ?, 1)
+           ON CONFLICT(day, scope, key) DO UPDATE SET calls = calls + 1""",
+        (day, scope, key),
+    )
+    return True
 
 
 def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[str, Any]:
@@ -189,21 +380,30 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
     if not cfg["ready"]:
         _log_complete(cfg, ok=False, ms=0, error=empty["error"])
         return empty
-    tokens = int(max_tokens or cfg["max_tokens"])
+    if circuit_open():
+        _log_complete(cfg, ok=False, ms=0, error="circuit_open", circuit=True)
+        empty["error"] = "circuit_open"
+        return empty
+    tokens = max(16, min(int(max_tokens or cfg["max_tokens"]), 4096))
     try:
         if cfg["provider"] == "anthropic":
             text = _anthropic(cfg, system, user, tokens)
         else:
             text = _openai_compat(cfg, system, user, tokens)
     except httpx.TimeoutException:
+        _breaker_note(False)
         return _fail(cfg, started, "timeout")
     except httpx.HTTPStatusError as exc:
+        _breaker_note(False)
         return _fail(cfg, started, "http_%s" % exc.response.status_code)
     except Exception:
+        _breaker_note(False)
         return _fail(cfg, started, "request_failed")
     ms = int((time.monotonic() - started) * 1000)
     text = sanitize_html(text or "")
     ok = bool(text)
+    if ok:
+        _breaker_note(True)
     _log_complete(cfg, ok=ok, ms=ms, error="" if ok else "empty")
     return {
         "ok": ok,
@@ -216,11 +416,63 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
     }
 
 
+def base_url_is_vendor_cloud(url: str) -> bool:
+    """True when BASE_URL hostname is a vendor cloud host. No DNS.
+
+    ``IN_BOUNDARY_HOSTS`` cannot override ``CLOUD_HOSTS`` — leftover
+    ``https://api.openai.com`` is never a local gateway.
+    """
+    raw = (url or "").strip()
+    if not raw:
+        return False
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not host:
+        return False
+    return any(host == item or host.endswith("." + item) for item in CLOUD_HOSTS)
+
+
 def _is_cloud(provider: str, base_url: str) -> bool:
     if provider in {"openai", "anthropic"}:
         return True
-    host = (urlparse(base_url).hostname or "").lower()
-    return any(host == item or host.endswith("." + item) for item in CLOUD_HOSTS)
+    return base_url_is_vendor_cloud(base_url)
+
+
+def base_url_keeps_product_key(url: str) -> bool:
+    """True when non-cloud egress may keep ``AISTUDIO_LLM_API_KEY``.
+
+    Local/decentral hosts and ``IN_BOUNDARY_HOSTS`` stay. Vendor cloud
+    hosts never qualify. A public host without an allowlist cannot
+    receive excerpts — leftover laptop keys are unused and dropped.
+    """
+    raw = (url or "").strip()
+    if not raw or base_url_is_vendor_cloud(raw):
+        return False
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    return _host_in_boundary(parsed.hostname or "")
+
+
+def _host_in_boundary(host: str) -> bool:
+    """Loopback, RFC1918, link-local, localhost, Docker names, *.internal — no DNS."""
+    h = (host or "").strip().lower().rstrip(".")
+    if not h:
+        return False
+    if h in {"localhost", "localhost.localdomain"}:
+        return True
+    extra = {
+        part.strip().lower().rstrip(".")
+        for part in (os.environ.get("AISTUDIO_LLM_IN_BOUNDARY_HOSTS") or "").split(",")
+        if part.strip()
+    }
+    if h in extra:
+        return True
+    try:
+        ip = ipaddress.ip_address(h)
+    except ValueError:
+        if "." not in h:
+            return True
+        return any(h.endswith(suffix) for suffix in _IN_BOUNDARY_SUFFIXES)
+    return bool(ip.is_loopback or ip.is_private or ip.is_link_local)
 
 
 def _chat_url(base_url: str) -> str:
@@ -228,6 +480,15 @@ def _chat_url(base_url: str) -> str:
     if url.endswith("/chat/completions"):
         return url
     return url + "/chat/completions"
+
+
+def _httpx_client(cfg: dict[str, Any]) -> httpx.Client:
+    """Cloud may use HTTP(S)_PROXY. in_boundary must not leak excerpts via a proxy."""
+    return httpx.Client(
+        timeout=cfg["timeout"],
+        follow_redirects=False,
+        trust_env=cfg.get("egress") == "cloud",
+    )
 
 
 def _openai_compat(cfg: dict[str, Any], system: str, user: str, max_tokens: int) -> str:
@@ -243,7 +504,7 @@ def _openai_compat(cfg: dict[str, Any], system: str, user: str, max_tokens: int)
             {"role": "user", "content": user},
         ],
     }
-    with httpx.Client(timeout=cfg["timeout"]) as client:
+    with _httpx_client(cfg) as client:
         response = client.post(_chat_url(cfg["base_url"]), headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
@@ -268,7 +529,7 @@ def _anthropic(cfg: dict[str, Any], system: str, user: str, max_tokens: int) -> 
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
-    with httpx.Client(timeout=cfg["timeout"]) as client:
+    with _httpx_client(cfg) as client:
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
@@ -293,7 +554,14 @@ def _fail(cfg: dict[str, Any], started: float, error: str) -> dict[str, Any]:
     }
 
 
-def _log_complete(cfg: dict[str, Any], *, ok: bool, ms: int, error: str) -> None:
+def _log_complete(
+    cfg: dict[str, Any], *, ok: bool, ms: int, error: str, circuit: bool = False
+) -> None:
+    with _stats_lock:
+        if circuit:
+            _stats["circuit_open"] += 1
+        else:
+            _stats["complete_ok" if ok else "complete_fail"] += 1
     log.info(
         "llm complete provider=%s model=%s kind=%s egress=%s ok=%s ms=%s error=%s",
         cfg.get("provider"),
