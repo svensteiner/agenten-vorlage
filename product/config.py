@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.68"
+VERSION = "1.4.69"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -118,10 +118,30 @@ def trust_proxy() -> bool:
     return _flag("AISTUDIO_TRUST_PROXY", default=False)
 
 
+def proxy_ips_unrestricted(raw: str | None = None) -> bool:
+    """True when PROXY_IPS trusts every client (* / any / 0.0.0.0/0 / ::/0)."""
+    text = (raw if raw is not None else (os.environ.get("AISTUDIO_PROXY_IPS") or "")).strip()
+    if not text:
+        return False
+    if text.lower() in {"*", "any"}:
+        return True
+    for part in text.split(","):
+        item = part.strip()
+        if not item or "/" not in item:
+            continue
+        try:
+            net = ipaddress.ip_network(item, strict=False)
+        except ValueError:
+            continue
+        if net.prefixlen == 0:
+            return True
+    return False
+
+
 def proxy_ip_networks():
     """Peers allowed to set X-Forwarded-For. Default loopback. '*' = any (opt-in)."""
     raw = (os.environ.get("AISTUDIO_PROXY_IPS") or "127.0.0.1,::1").strip()
-    if raw.lower() in {"*", "any"}:
+    if proxy_ips_unrestricted(raw):
         return None
     nets: list = []
     for part in raw.split(","):
@@ -171,7 +191,7 @@ def uvicorn_forwarded_allow_ips() -> str | None:
     if not trust_proxy():
         return None
     raw = (os.environ.get("AISTUDIO_PROXY_IPS") or "127.0.0.1,::1").strip()
-    if raw.lower() in {"*", "any"}:
+    if proxy_ips_unrestricted(raw):
         return "*"
     exact: list[str] = []
     for part in raw.split(","):
@@ -556,8 +576,8 @@ def validate_runtime() -> None:
     (published Meridian password), open registration (leftover laptop
     ``AISTUDIO_ALLOW_REGISTER``), cloud LLM egress without
     ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts),
-    and ``AISTUDIO_PROXY_IPS=*`` while trusting X-Forwarded-For
-    (any client could rotate rate-limit keys).
+    and ``AISTUDIO_PROXY_IPS=*`` / ``0.0.0.0/0`` / ``::/0`` while trusting
+    X-Forwarded-For (any client could rotate rate-limit keys).
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
@@ -599,13 +619,12 @@ def validate_runtime() -> None:
             "(öffentliche Mandantenanlage). AISTUDIO_ALLOW_REGISTER=false setzen; "
             "erster Mandant über data/bootstrap.env."
         )
-    raw_proxy = (os.environ.get("AISTUDIO_PROXY_IPS") or "").strip().lower()
-    if trust_proxy() and raw_proxy in {"*", "any"}:
+    if trust_proxy() and proxy_ips_unrestricted():
         raise RuntimeError(
-            "Produktion verweigert den Start: AISTUDIO_PROXY_IPS=* mit "
-            "AISTUDIO_TRUST_PROXY=true — jeder Client kann X-Forwarded-For "
-            "setzen und Rate-Limits umgehen. Konkrete Proxy-IP setzen "
-            "(127.0.0.1,::1 oder die Gateway-Adresse)."
+            "Produktion verweigert den Start: AISTUDIO_PROXY_IPS=* / "
+            "0.0.0.0/0 / ::/0 mit AISTUDIO_TRUST_PROXY=true — jeder Client "
+            "kann X-Forwarded-For setzen und Rate-Limits umgehen. Konkrete "
+            "Proxy-IP setzen (127.0.0.1,::1 oder die Gateway-Adresse)."
         )
 
 

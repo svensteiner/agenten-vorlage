@@ -274,6 +274,41 @@ raise SystemExit(0 if val.lower() == want else 1)
 ' "$envf" "$key" "$want"
 }
 
+env_proxy_ips_unrestricted() {
+  # Exit 0 when last AISTUDIO_PROXY_IPS is * / any / 0.0.0.0/0 / ::/0.
+  local envf="$1"
+  python3 -c '
+import ipaddress, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+try:
+    text = p.read_text(encoding="utf-8")
+except OSError:
+    raise SystemExit(1)
+val = ""
+for line in text.splitlines():
+    s = line.strip()
+    if not s or s.startswith("#") or "=" not in s:
+        continue
+    k, _, v = s.partition("=")
+    if k.strip() == "AISTUDIO_PROXY_IPS":
+        val = v.strip()
+low = val.lower()
+if low in {"*", "any"}:
+    raise SystemExit(0)
+for part in val.split(","):
+    item = part.strip()
+    if not item or "/" not in item:
+        continue
+    try:
+        net = ipaddress.ip_network(item, strict=False)
+    except ValueError:
+        continue
+    if net.prefixlen == 0:
+        raise SystemExit(0)
+raise SystemExit(1)
+' "$envf"
+}
+
 env_runs_as_production() {
   # .env last assignment. Missing key → production (unit + pin file).
   # systemd EnvironmentFile overrides Environment=; the pin file after
@@ -366,9 +401,9 @@ backfill_runtime_env() {
       echo "nachgetragen: AISTUDIO_METRICS_TOKEN (Header X-Metrics-Token)."
     fi
   fi
-  if env_value_is "$envf" AISTUDIO_PROXY_IPS "*" || env_value_is "$envf" AISTUDIO_PROXY_IPS any; then
+  if env_proxy_ips_unrestricted "$envf"; then
     replace_env_value "$envf" AISTUDIO_PROXY_IPS "127.0.0.1,::1"
-    echo "nachgetragen: AISTUDIO_PROXY_IPS=127.0.0.1,::1 (war * — jeder Client könnte X-Forwarded-For setzen)."
+    echo "nachgetragen: AISTUDIO_PROXY_IPS=127.0.0.1,::1 (war * / 0.0.0.0/0 — jeder Client könnte X-Forwarded-For setzen)."
   fi
   if ! env_has_key "$envf" AISTUDIO_PROXY_IPS; then
     append_env_line "$envf" "AISTUDIO_PROXY_IPS=127.0.0.1,::1"

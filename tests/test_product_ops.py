@@ -444,10 +444,21 @@ def test_production_requires_metrics_token(monkeypatch):
     monkeypatch.setenv("AISTUDIO_PROXY_IPS", "any")
     with pytest.raises(RuntimeError, match="PROXY_IPS"):
         config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "0.0.0.0/0")
+    with pytest.raises(RuntimeError, match="PROXY_IPS"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "::/0")
+    with pytest.raises(RuntimeError, match="PROXY_IPS"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,0.0.0.0/0")
+    with pytest.raises(RuntimeError, match="PROXY_IPS"):
+        config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "false")
     config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_TRUST_PROXY", "true")
     monkeypatch.setenv("AISTUDIO_PROXY_IPS", "127.0.0.1,::1")
+    config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "10.0.0.0/8")
     config.validate_runtime()
 
 
@@ -1239,7 +1250,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
     assert "backfill_runtime_env" in install
     assert "nachgetragen: AISTUDIO_ALLOW_REGISTER=false" in install
-    assert "war * — jeder Client könnte X-Forwarded-For setzen" in install
+    assert "war * / 0.0.0.0/0 — jeder Client könnte X-Forwarded-For setzen" in install
+    assert "env_proxy_ips_unrestricted" in install
     assert "AISTUDIO_HOST=127.0.0.1" in install
     assert "nachgetragen: AISTUDIO_HOST" in install
     assert "nachgetragen: AISTUDIO_ALLOWED_HOSTS" in install
@@ -1332,6 +1344,13 @@ def test_client_ip_ignores_spoofed_forwarded_for(monkeypatch):
     assert config.uvicorn_forwarded_allow_ips() == "127.0.0.1,::1"
     monkeypatch.setenv("AISTUDIO_PROXY_IPS", "*")
     assert config.uvicorn_forwarded_allow_ips() == "*"
+    monkeypatch.setenv("AISTUDIO_PROXY_IPS", "0.0.0.0/0")
+    assert config.uvicorn_forwarded_allow_ips() == "*"
+    assert config.proxy_ips_unrestricted("::/0")
+    assert config.proxy_ips_unrestricted("127.0.0.1,0.0.0.0/0")
+    assert not config.proxy_ips_unrestricted("10.0.0.0/8")
+    assert not config.proxy_ips_unrestricted("127.0.0.1,::1")
+    assert client_ip(req("198.51.100.2")) == "203.0.113.9"
 
 
 def test_orphan_upload_pruned(client, tmp_path):

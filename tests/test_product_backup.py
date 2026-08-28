@@ -747,7 +747,35 @@ def test_install_replaces_star_proxy_ips(tmp_path):
     assert "AISTUDIO_PROXY_IPS=*" not in text
     assert "AISTUDIO_PROXY_IPS=127.0.0.1,::1" in text
     assert text.count("AISTUDIO_PROXY_IPS=") == 1
-    assert "war *" in (r.stdout + r.stderr)
+    assert "war * / 0.0.0.0/0" in (r.stdout + r.stderr)
+
+
+def test_install_replaces_cidr_any_proxy_ips(tmp_path):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "install.sh").write_bytes((ROOT / "scripts" / "install.sh").read_bytes())
+    os.chmod(scripts / "install.sh", 0o755)
+    envf = tmp_path / ".env"
+    envf.write_text(
+        "AISTUDIO_SECRET=keep-this-secret-value-xx\n"
+        "AISTUDIO_PROXY_IPS=0.0.0.0/0,::/0\n"
+        "AISTUDIO_TRUST_PROXY=true\n",
+        encoding="utf-8",
+    )
+    os.chmod(envf, 0o600)
+    r = subprocess.run(
+        [str(scripts / "install.sh")],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    text = envf.read_text(encoding="utf-8")
+    assert "0.0.0.0/0" not in text
+    assert "AISTUDIO_PROXY_IPS=127.0.0.1,::1" in text
+    assert text.count("AISTUDIO_PROXY_IPS=") == 1
+    assert "0.0.0.0/0" in (r.stdout + r.stderr)
 
 
 def test_install_keeps_existing_metrics_token(tmp_path):

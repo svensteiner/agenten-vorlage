@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.69 — 2026-08-28 — Produktion ohne PROXY_IPS=0.0.0.0/0
+
+1.4.67 hat `*` und `any` beim Start verweigert. `AISTUDIO_PROXY_IPS=0.0.0.0/0`
+bzw. `::/0` (CIDR-Schreibweise von „jeder Client“) blieb erlaubt und ließ
+jeden Peer `X-Forwarded-For` setzen. Jetzt dieselbe Sperre. `install.sh`
+ersetzt unbeschränkte CIDR wie `*`.
+
 ## Produktlaufzeit 1.4.68 — 2026-08-28 — Housekeeping lässt Uploads in Ruhe
 
 1.4.56 hat den WAL-Checkpoint übersprungen, solange `.backup.lock` gehalten
