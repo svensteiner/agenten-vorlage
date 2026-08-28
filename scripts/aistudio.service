@@ -17,6 +17,9 @@ EnvironmentFile=-/opt/aistudio/.env
 # Later EnvironmentFile wins — pins production, loopback, no demo tenant, no public register.
 # Pin is required (no '-'). If it is missing, leftover development .env wins.
 EnvironmentFile=/opt/aistudio/scripts/aistudio.systemd.env
+# Leftover AISTUDIO_BACKUP_PASS in .env must not reach the product (RCE → archives).
+# dotenv would reload it from .env; product/config.py drops it again after load.
+UnsetEnvironment=AISTUDIO_BACKUP_PASS
 ExecStart=/usr/bin/python3 -m product
 Restart=on-failure
 RestartSec=5

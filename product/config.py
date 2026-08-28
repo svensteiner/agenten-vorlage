@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # Tests set AISTUDIO_LOAD_DOTENV=0 so a local .env cannot leak keys into pytest.
 if os.environ.get("AISTUDIO_LOAD_DOTENV", "1").strip().lower() not in {"0", "false", "no", "off"}:
     load_dotenv(ROOT / ".env")
+# Leftover .env AISTUDIO_BACKUP_PASS must not stay in this process (RCE → archives).
+_BACKUP_PASS_DROPPED = "AISTUDIO_BACKUP_PASS" in os.environ
+os.environ.pop("AISTUDIO_BACKUP_PASS", None)
 DATA_DIR = Path(os.environ.get("AISTUDIO_DATA", ROOT / "data"))
 DB_PATH = Path(os.environ.get("AISTUDIO_DB", DATA_DIR / "aistudio.db"))
 SECRET = os.environ.get("AISTUDIO_SECRET", "dev-secret-change-me")
@@ -24,7 +27,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.70"
+VERSION = "1.4.71"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -451,6 +454,16 @@ def env_file() -> Path:
     return Path(raw) if raw else ROOT / ".env"
 
 
+def drop_backup_pass() -> bool:
+    """Remove leftover AISTUDIO_BACKUP_PASS from this process. Never logs the value."""
+    global _BACKUP_PASS_DROPPED
+    if "AISTUDIO_BACKUP_PASS" not in os.environ:
+        return _BACKUP_PASS_DROPPED
+    os.environ.pop("AISTUDIO_BACKUP_PASS", None)
+    _BACKUP_PASS_DROPPED = True
+    return True
+
+
 def consume_bootstrap_env(*, env_path: Path | None = None) -> bool:
     """Drop first-tenant secrets from the process, data/bootstrap.env, and .env."""
     for key in BOOTSTRAP_KEYS:
@@ -625,6 +638,13 @@ def validate_runtime() -> None:
             "0.0.0.0/0 / ::/0 mit AISTUDIO_TRUST_PROXY=true — jeder Client "
             "kann X-Forwarded-For setzen und Rate-Limits umgehen. Konkrete "
             "Proxy-IP setzen (127.0.0.1,::1 oder die Gateway-Adresse)."
+        )
+    if drop_backup_pass():
+        import logging
+
+        logging.getLogger("product").warning(
+            "AISTUDIO_BACKUP_PASS aus dem Prozess entfernt "
+            "(gehört nach backup.env, nicht in die Produkt-Umgebung)."
         )
 
 

@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.71 — 2026-08-28 — Backup-Passwort nicht im Produktprozess
+
+`AISTUDIO_BACKUP_PASS` in einer Laptop-`.env` wurde per dotenv wieder in den
+Produktprozess geladen — `backup.env` und `InaccessiblePaths` halfen dann
+nicht. Jetzt wird der Schlüssel nach dem Laden entfernt. systemd
+`UnsetEnvironment=AISTUDIO_BACKUP_PASS`. Die Backup-Unit behält den Wert.
+
 ## Produktlaufzeit 1.4.70 — 2026-08-28 — systemd-Pin Pflicht
 
 1.4.62 hat `scripts/aistudio.systemd.env` nach der `.env` geladen, aber mit

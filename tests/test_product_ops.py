@@ -460,6 +460,10 @@ def test_production_requires_metrics_token(monkeypatch):
     config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_PROXY_IPS", "10.0.0.0/8")
     config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_BACKUP_PASS", "should-not-stay-in-product")
+    config.validate_runtime()
+    assert "AISTUDIO_BACKUP_PASS" not in os.environ
+    assert config._BACKUP_PASS_DROPPED
 
 
 def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):
@@ -1237,6 +1241,8 @@ def test_systemd_unit_rewrites_install_root():
     assert "EnvironmentFile=-/opt/aistudio/backup.env" in backup
     assert "EnvironmentFile=-/opt/aistudio/data/backup.env" in backup
     assert "EnvironmentFile=-/opt/aistudio/backup.env" not in src
+    assert "UnsetEnvironment=AISTUDIO_BACKUP_PASS" in src
+    assert "UnsetEnvironment=AISTUDIO_BACKUP_PASS" not in backup
     assert "PrivateNetwork=true" in backup
     assert "RestrictAddressFamilies=none" in backup
     assert "MemoryMax=256M" in backup
