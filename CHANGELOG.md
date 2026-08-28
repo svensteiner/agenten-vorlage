@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.73 — 2026-08-28 — Produkt-LLM-Schlüssel nur mit Gateway oder Cloud
+
+1.4.72 hat `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` entfernt, `AISTUDIO_LLM_API_KEY`
+aber immer behalten („lokales Gateway“). Auf dem Laptop liegt der OpenAI-Schlüssel
+genau dort — ohne `AISTUDIO_LLM_BASE_URL` kann `in_boundary` ihn nicht nutzen.
+Produktion entfernt den Produkt-Schlüssel dann ebenfalls. Mit lokaler Basis-URL
+oder `egress=cloud` bleibt er.
+
 ## Produktlaufzeit 1.4.72 — 2026-08-28 — Cloud-Schlüssel nur bei Egress=cloud
 
 `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` aus einer Laptop-`.env` blieben im

@@ -27,7 +27,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.72"
+VERSION = "1.4.73"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -467,8 +467,10 @@ def drop_backup_pass() -> bool:
 def drop_unused_cloud_keys() -> bool:
     """Drop leftover vendor keys when this process will not send excerpts to the cloud.
 
-    Keeps ``AISTUDIO_LLM_API_KEY`` for a local / decentral gateway.
-    Never logs key material.
+    Keeps ``AISTUDIO_LLM_API_KEY`` when egress is ``cloud`` or a local /
+    decentral ``BASE_URL`` is set. Without a base URL, in_boundary cannot
+    use the product key (cloud hosts are blocked) — leftover laptop keys
+    are dropped. Never logs key material.
     """
     egress = (os.environ.get("AISTUDIO_LLM_EGRESS") or "in_boundary").strip().lower()
     if egress == "cloud":
@@ -478,6 +480,10 @@ def drop_unused_cloud_keys() -> bool:
         if key in os.environ:
             os.environ.pop(key, None)
             dropped = True
+    base_url = (os.environ.get("AISTUDIO_LLM_BASE_URL") or "").strip()
+    if not base_url and "AISTUDIO_LLM_API_KEY" in os.environ:
+        os.environ.pop("AISTUDIO_LLM_API_KEY", None)
+        dropped = True
     return dropped
 
 
@@ -608,7 +614,9 @@ def validate_runtime() -> None:
     ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts),
     and ``AISTUDIO_PROXY_IPS=*`` / ``0.0.0.0/0`` / ``::/0`` while trusting
     X-Forwarded-For (any client could rotate rate-limit keys). Leftover
-    vendor LLM keys are dropped when egress is not ``cloud``.
+    vendor LLM keys are dropped when egress is not ``cloud``. The product
+    key ``AISTUDIO_LLM_API_KEY`` is dropped unless a local ``BASE_URL``
+    is set (otherwise it is a leftover cloud key).
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
@@ -668,9 +676,9 @@ def validate_runtime() -> None:
         import logging
 
         logging.getLogger("product").warning(
-            "OPENAI_API_KEY/ANTHROPIC_API_KEY aus dem Prozess entfernt "
-            "(Egress ist nicht cloud; Schlüssel gehört nicht in die "
-            "Produkt-Umgebung)."
+            "ungenutzte LLM-Schlüssel aus dem Prozess entfernt "
+            "(Egress ist nicht cloud und kein lokales Gateway; "
+            "Schlüssel gehört nicht in die Produkt-Umgebung)."
         )
 
 
