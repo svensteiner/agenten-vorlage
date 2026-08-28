@@ -2,6 +2,14 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.75 — 2026-08-28 — Produkt-Schlüssel nur bei in-boundary-URL
+
+1.4.74 hat den Produkt-Schlüssel bei leftover `https://api.openai.com`
+entfernt, bei anderen öffentlichen Hosts (Groq, Azure) aber behalten —
+obwohl `in_boundary` dort keine Auszüge schickt. Jetzt bleibt
+`AISTUDIO_LLM_API_KEY` nur bei in-boundary-Hosts (Loopback, RFC1918,
+Docker-Name, `IN_BOUNDARY_HOSTS`). Vendor-Hosts nie.
+
 ## Produktlaufzeit 1.4.74 — 2026-08-28 — Produkt-Schlüssel nicht bei leftover Cloud-URL
 
 1.4.73 hat `AISTUDIO_LLM_API_KEY` behalten, sobald irgendeine `BASE_URL`

@@ -485,10 +485,17 @@ def test_production_requires_metrics_token(monkeypatch):
     monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.anthropic.com")
     config.validate_runtime()
     assert "AISTUDIO_LLM_API_KEY" not in os.environ
-    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "groq-optional-gateway")
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-leftover-groq-url")
     monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.groq.com/openai/v1")
+    monkeypatch.delenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", raising=False)
     config.validate_runtime()
-    assert os.environ.get("AISTUDIO_LLM_API_KEY") == "groq-optional-gateway"
+    assert "AISTUDIO_LLM_API_KEY" not in os.environ
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "groq-allowlisted-gateway")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.groq.com/openai/v1")
+    monkeypatch.setenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", "api.groq.com")
+    config.validate_runtime()
+    assert os.environ.get("AISTUDIO_LLM_API_KEY") == "groq-allowlisted-gateway"
+    monkeypatch.delenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", raising=False)
     monkeypatch.delenv("AISTUDIO_LLM_BASE_URL", raising=False)
     monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
     monkeypatch.setenv("AISTUDIO_LLM_CLOUD_OK", "true")

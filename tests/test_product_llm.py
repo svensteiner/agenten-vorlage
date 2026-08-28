@@ -510,3 +510,15 @@ def test_base_url_is_vendor_cloud():
     assert llm.base_url_is_vendor_cloud("http://127.0.0.1:11434/v1") is False
     assert llm.base_url_is_vendor_cloud("https://api.groq.com/openai/v1") is False
     assert llm.base_url_is_vendor_cloud("file:///etc/passwd") is False
+
+
+def test_base_url_keeps_product_key(monkeypatch):
+    monkeypatch.delenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", raising=False)
+    assert llm.base_url_keeps_product_key("") is False
+    assert llm.base_url_keeps_product_key("http://127.0.0.1:11434/v1") is True
+    assert llm.base_url_keeps_product_key("http://ollama.internal/v1") is True
+    assert llm.base_url_keeps_product_key("https://api.openai.com/v1") is False
+    assert llm.base_url_keeps_product_key("https://api.groq.com/openai/v1") is False
+    monkeypatch.setenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", "api.groq.com")
+    assert llm.base_url_keeps_product_key("https://api.groq.com/openai/v1") is True
+    assert llm.base_url_keeps_product_key("https://api.openai.com/v1") is False

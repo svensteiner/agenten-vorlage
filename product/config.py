@@ -27,7 +27,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.74"
+VERSION = "1.4.75"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -467,12 +467,12 @@ def drop_backup_pass() -> bool:
 def drop_unused_cloud_keys() -> bool:
     """Drop leftover vendor keys when this process will not send excerpts to the cloud.
 
-    Keeps ``AISTUDIO_LLM_API_KEY`` when egress is ``cloud`` or a
-    non-vendor ``BASE_URL`` is set (local/decentral gateway, or a public
-    host the operator listed in ``IN_BOUNDARY_HOSTS``). Vendor cloud
-    hosts cannot be in-boundary — leftover laptop
-    ``BASE_URL=https://api.openai.com`` plus product key is dropped.
-    Never logs key material.
+    Keeps ``AISTUDIO_LLM_API_KEY`` when egress is ``cloud`` or the
+    ``BASE_URL`` host is in-boundary (loopback/RFC1918/Docker name or
+    ``IN_BOUNDARY_HOSTS``). Vendor cloud hosts never qualify. A leftover
+    public URL (Groq, Azure, …) cannot receive excerpts under
+    ``in_boundary`` — the unused product key is dropped. Never logs
+    key material.
     """
     egress = (os.environ.get("AISTUDIO_LLM_EGRESS") or "in_boundary").strip().lower()
     if egress == "cloud":
@@ -482,11 +482,10 @@ def drop_unused_cloud_keys() -> bool:
         if key in os.environ:
             os.environ.pop(key, None)
             dropped = True
-    from product.llm import base_url_is_vendor_cloud
+    from product.llm import base_url_keeps_product_key
 
     base_url = (os.environ.get("AISTUDIO_LLM_BASE_URL") or "").strip()
-    leftover_product = not base_url or base_url_is_vendor_cloud(base_url)
-    if leftover_product and "AISTUDIO_LLM_API_KEY" in os.environ:
+    if not base_url_keeps_product_key(base_url) and "AISTUDIO_LLM_API_KEY" in os.environ:
         os.environ.pop("AISTUDIO_LLM_API_KEY", None)
         dropped = True
     return dropped
@@ -620,9 +619,8 @@ def validate_runtime() -> None:
     and ``AISTUDIO_PROXY_IPS=*`` / ``0.0.0.0/0`` / ``::/0`` while trusting
     X-Forwarded-For (any client could rotate rate-limit keys). Leftover
     vendor LLM keys are dropped when egress is not ``cloud``. The product
-    key ``AISTUDIO_LLM_API_KEY`` is dropped unless a non-vendor
-    ``BASE_URL`` is set (leftover ``https://api.openai.com`` is not a
-    local gateway).
+    key ``AISTUDIO_LLM_API_KEY`` is dropped unless the ``BASE_URL`` host
+    is in-boundary (leftover public URLs cannot receive excerpts).
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24

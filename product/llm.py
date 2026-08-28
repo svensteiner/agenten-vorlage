@@ -438,6 +438,20 @@ def _is_cloud(provider: str, base_url: str) -> bool:
     return base_url_is_vendor_cloud(base_url)
 
 
+def base_url_keeps_product_key(url: str) -> bool:
+    """True when non-cloud egress may keep ``AISTUDIO_LLM_API_KEY``.
+
+    Local/decentral hosts and ``IN_BOUNDARY_HOSTS`` stay. Vendor cloud
+    hosts never qualify. A public host without an allowlist cannot
+    receive excerpts — leftover laptop keys are unused and dropped.
+    """
+    raw = (url or "").strip()
+    if not raw or base_url_is_vendor_cloud(raw):
+        return False
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    return _host_in_boundary(parsed.hostname or "")
+
+
 def _host_in_boundary(host: str) -> bool:
     """Loopback, RFC1918, link-local, localhost, Docker names, *.internal — no DNS."""
     h = (host or "").strip().lower().rstrip(".")
