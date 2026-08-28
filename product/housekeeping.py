@@ -131,7 +131,14 @@ def wal_checkpoint(conn=None) -> dict[str, int]:
 
 
 def prune_orphan_uploads(conn=None) -> int:
-    """Remove leftover upload files whose document row is gone."""
+    """Remove leftover upload files whose document row is gone.
+
+    Skip while backup/restore holds ``data/.backup.lock`` — ``backup.sh``
+    tars ``uploads/`` under that lock.
+    """
+    if config.backup_lock_busy():
+        log.info("housekeeping orphan_uploads skipped — backup lock held")
+        return 0
     c = conn or db.get_conn()
     ids = {r["id"] for r in c.execute("SELECT id FROM documents").fetchall()}
     root = Path(config.DATA_DIR) / "uploads"
@@ -171,7 +178,11 @@ def prune_restore_leftovers() -> dict[str, int]:
     """Keep the newest N pre-restore copies; drop older DB files and upload trees.
 
     Never logs file contents. Paths must stay under the data dir or the DB parent.
+    Skip while backup/restore holds ``data/.backup.lock``.
     """
+    if config.backup_lock_busy():
+        log.info("housekeeping restore_leftovers skipped — backup lock held")
+        return {"db": 0, "uploads": 0, "skipped": 1}
     keep = _restore_keep()
     db_removed = 0
     upload_removed = 0

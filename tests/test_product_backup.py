@@ -272,6 +272,26 @@ def test_housekeeping_prunes_restore_leftovers(tmp_path, monkeypatch):
     assert (newest_up / "secret.txt").is_file()
 
 
+def test_restore_leftovers_skip_when_backup_locked(tmp_path, monkeypatch):
+    import fcntl
+    from product import config, housekeeping
+
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "aistudio.db")
+    leftover = tmp_path / "aistudio.db.before-restore-20200101T000000Z"
+    leftover.write_bytes(b"old")
+    lock = tmp_path / ".backup.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        out = housekeeping.prune_restore_leftovers()
+        assert out.get("skipped") == 1
+        assert leftover.exists()
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
 def test_restore_rejects_corrupt_source(tmp_path):
     data = tmp_path / "data"
     data.mkdir()

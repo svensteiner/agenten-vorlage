@@ -868,6 +868,26 @@ def test_wal_checkpoint_skips_when_backup_locked(client, tmp_path):
     assert ran.get("skipped") != 1
 
 
+def test_orphan_uploads_skip_when_backup_locked(client, tmp_path):
+    import fcntl
+    from product import housekeeping
+
+    orphan = tmp_path / "uploads" / "orgx" / "upload-during-backup.txt"
+    orphan.parent.mkdir(parents=True)
+    orphan.write_text("rest", encoding="utf-8")
+    lock = tmp_path / ".backup.lock"
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert housekeeping.prune_orphan_uploads() == 0
+        assert orphan.exists()
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+    assert housekeeping.prune_orphan_uploads() >= 1
+    assert not orphan.exists()
+
+
 def test_stale_running_jobs_marked_error(client, monkeypatch):
     from product import db, housekeeping
 

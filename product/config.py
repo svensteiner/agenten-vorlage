@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.67"
+VERSION = "1.4.68"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -633,8 +633,9 @@ def backup_lock_file() -> Path:
 def backup_lock_busy() -> bool:
     """True if backup.sh or restore.sh holds data/.backup.lock.
 
-    Housekeeping must not TRUNCATE the WAL while sqlite3 .backup runs.
-    Does not hold the lock — backup.sh uses non-blocking flock and would fail.
+    Housekeeping must not TRUNCATE the WAL or delete uploads while
+    sqlite3 .backup / tar of uploads runs. Does not hold the lock —
+    backup.sh uses non-blocking flock and would fail.
     """
     path = backup_lock_file()
     try:

@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.68 — 2026-08-28 — Housekeeping lässt Uploads in Ruhe
+
+1.4.56 hat den WAL-Checkpoint übersprungen, solange `.backup.lock` gehalten
+wird. `prune_orphan_uploads` und `prune_restore_leftovers` haben trotzdem
+gelöscht — mitten im `tar` von `uploads/` bzw. während Restore. Jetzt
+dieselbe Sperre.
+
 ## Produktlaufzeit 1.4.67 — 2026-08-28 — Produktion ohne PROXY_IPS=*
 
 `AISTUDIO_TRUST_PROXY=true` plus `AISTUDIO_PROXY_IPS=*` (Laptop-Debug)
