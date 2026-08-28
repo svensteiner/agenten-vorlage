@@ -2,6 +2,16 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.64 — 2026-08-28 — in_boundary nur interne Hosts
+
+`AISTUDIO_LLM_EGRESS=in_boundary` hat nur OpenAI/Anthropic-Hostnamen
+gesperrt. `decentral` plus eine öffentliche Basis-URL (Groq, Azure,
+Laptop-Rest) hat Kurzauszüge trotzdem geschickt — `/api/me` zeigte
+`sends_excerpts: false`. Jetzt nur Loopback, RFC1918, Link-Local,
+localhost, Ein-Label-Namen (Docker) und `*.internal`/`*.local`/`*.lan`
+/`*.home`/`*.corp`. Andere Hosts: `egress_blocked`. Ausnahmen:
+`AISTUDIO_LLM_IN_BOUNDARY_HOSTS`.
+
 ## Produktlaufzeit 1.4.63 — 2026-08-27 — systemd ohne öffentliche Registrierung
 
 1.4.62 hat `development` in der `.env` überschrieben, nicht aber

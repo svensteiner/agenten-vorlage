@@ -56,7 +56,7 @@ In Produktion ist **Mandant anlegen** standardmäßig aus. Der erste Mandant kom
 
 | Variable | Wirkung |
 |---|---|
-| `AISTUDIO_LLM_EGRESS=in_boundary` | **Standard.** Cloud-APIs werden verweigert. Antworten bleiben auf der Instanz (extractiv oder lokales OpenAI-kompatibles Modell). |
+| `AISTUDIO_LLM_EGRESS=in_boundary` | **Standard.** Cloud-APIs und öffentliche Basis-URLs werden verweigert. Erlaubt: Loopback, RFC1918, Link-Local, localhost, Docker-Namen, `*.internal`/`*.local` (sonst `AISTUDIO_LLM_IN_BOUNDARY_HOSTS`). |
 | `AISTUDIO_LLM_EGRESS=cloud` | OpenAI/Anthropic dürfen **Kurzauszüge** der Treffer sehen — nicht die Wissensbasis. |
 | `AISTUDIO_LLM_PROVIDER=openai` | Erste Produktstufe, Chat Completions. |
 | `AISTUDIO_LLM_PROVIDER=decentral` | Später: lokale Instanz, `AISTUDIO_LLM_BASE_URL` z. B. `http://127.0.0.1:11434/v1`. |

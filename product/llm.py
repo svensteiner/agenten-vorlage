@@ -4,17 +4,19 @@ The rest of AI Studio never talks to a vendor SDK. Retrieval stays local (FTS5,
 ACL fail-closed). This module may send only the caller-supplied excerpts, never
 the knowledge base.
 
-Default egress is ``in_boundary``: cloud vendors are refused even if an API key
-is present, and answers stay extractive (or go to a local OpenAI-compatible
-server). First product can opt into OpenAI with ``AISTUDIO_LLM_EGRESS=cloud``.
-Later the same contract points at a decentral model via
-``AISTUDIO_LLM_PROVIDER=decentral`` and ``AISTUDIO_LLM_BASE_URL``.
+Default egress is ``in_boundary``: cloud vendors and public base URLs are
+refused even if an API key is present. Answers stay extractive or go to a
+loopback/RFC1918 OpenAI-compatible server. First product can opt into OpenAI
+with ``AISTUDIO_LLM_EGRESS=cloud``. Later the same contract points at a
+decentral model via ``AISTUDIO_LLM_PROVIDER=decentral`` and
+``AISTUDIO_LLM_BASE_URL``.
 
 Prompts and excerpts are never logged — only provider, model, status, latency.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 import re
@@ -33,6 +35,8 @@ _stats = {"complete_ok": 0, "complete_fail": 0, "budget_blocked": 0, "circuit_op
 _breaker = {"fails": 0, "open_until": 0.0}
 
 CLOUD_HOSTS = ("api.openai.com", "api.anthropic.com")
+# Single-label (Docker/k8s) plus these suffixes stay on-customer-net without DNS.
+_IN_BOUNDARY_SUFFIXES = (".local", ".internal", ".lan", ".home", ".corp")
 DEFAULT_OPENAI_URL = "https://api.openai.com/v1"
 DEFAULT_ANTHROPIC_URL = "https://api.anthropic.com"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
@@ -161,7 +165,15 @@ def settings() -> dict[str, Any]:
         model = model or ""
 
     cloud = _is_cloud(provider, base_url)
-    blocked = bool(cloud and egress == "in_boundary")
+    # in_boundary is not "not OpenAI" — public HTTPS hosts (Groq, Azure, leftover
+    # laptop BASE_URL) must not receive excerpts while ops see sends_excerpts=false.
+    off_box = bool(
+        egress == "in_boundary"
+        and base_url
+        and _http_url(base_url)
+        and not _host_in_boundary(urlparse(base_url).hostname or "")
+    )
+    blocked = bool(egress == "in_boundary" and (cloud or off_box))
     bad_url = bool(base_url) and not _http_url(base_url)
     ready = bool(
         provider != "none"
@@ -409,6 +421,29 @@ def _is_cloud(provider: str, base_url: str) -> bool:
         return True
     host = (urlparse(base_url).hostname or "").lower()
     return any(host == item or host.endswith("." + item) for item in CLOUD_HOSTS)
+
+
+def _host_in_boundary(host: str) -> bool:
+    """Loopback, RFC1918, link-local, localhost, Docker names, *.internal — no DNS."""
+    h = (host or "").strip().lower().rstrip(".")
+    if not h:
+        return False
+    if h in {"localhost", "localhost.localdomain"}:
+        return True
+    extra = {
+        part.strip().lower().rstrip(".")
+        for part in (os.environ.get("AISTUDIO_LLM_IN_BOUNDARY_HOSTS") or "").split(",")
+        if part.strip()
+    }
+    if h in extra:
+        return True
+    try:
+        ip = ipaddress.ip_address(h)
+    except ValueError:
+        if "." not in h:
+            return True
+        return any(h.endswith(suffix) for suffix in _IN_BOUNDARY_SUFFIXES)
+    return bool(ip.is_loopback or ip.is_private or ip.is_link_local)
 
 
 def _chat_url(base_url: str) -> str:

@@ -154,6 +154,68 @@ def test_decentral_uses_local_base_url(monkeypatch):
     assert status["egress"] == "in_boundary"
 
 
+def test_in_boundary_blocks_public_decentral_url(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "decentral")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.groq.com/openai/v1")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    monkeypatch.delenv("AISTUDIO_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    called = []
+
+    class Boom:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            called.append(True)
+            raise AssertionError("public decentral must not happen")
+
+    monkeypatch.setattr(llm.httpx, "Client", Boom)
+    result = llm.complete(system="sys", user="Frage: intern")
+    assert result["ok"] is False
+    assert result["error"] == "egress_blocked"
+    assert called == []
+    status = llm.public_status()
+    assert status["ready"] is False
+    assert status["reason"] == "egress_blocked"
+    assert status["sends_excerpts"] is False
+    assert "groq" not in str(status)
+
+
+def test_in_boundary_allows_rfc1918_and_docker_name(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "decentral")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    monkeypatch.delenv("AISTUDIO_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "http://10.1.2.3:11434/v1")
+    assert llm.public_status()["ready"] is True
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "http://ollama:11434/v1")
+    assert llm.public_status()["ready"] is True
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://llm.corp.internal/v1")
+    assert llm.public_status()["ready"] is True
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "http://8.8.8.8:11434/v1")
+    assert llm.public_status()["ready"] is False
+    assert llm.public_status()["reason"] == "egress_blocked"
+
+
+def test_in_boundary_hosts_allowlist(monkeypatch):
+    monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "decentral")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://llm.firma.example/v1")
+    monkeypatch.delenv("AISTUDIO_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", raising=False)
+    assert llm.public_status()["ready"] is False
+    monkeypatch.setenv("AISTUDIO_LLM_IN_BOUNDARY_HOSTS", "llm.firma.example")
+    assert llm.public_status()["ready"] is True
+
+
 def test_public_status_never_contains_secrets(monkeypatch):
     monkeypatch.setenv("AISTUDIO_LLM_PROVIDER", "openai")
     monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-proj-LEAKME")
