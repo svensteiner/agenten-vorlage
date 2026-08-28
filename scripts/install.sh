@@ -382,6 +382,10 @@ backfill_runtime_env() {
     append_env_line "$envf" "AISTUDIO_LLM_EGRESS=in_boundary"
     echo "nachgetragen: AISTUDIO_LLM_EGRESS=in_boundary"
   fi
+  if ! env_has_key "$envf" AISTUDIO_ALLOW_REGISTER; then
+    append_env_line "$envf" "AISTUDIO_ALLOW_REGISTER=false"
+    echo "nachgetragen: AISTUDIO_ALLOW_REGISTER=false (erster Mandant über data/bootstrap.env)."
+  fi
 }
 
 ensure_backup_pass() {

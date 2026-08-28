@@ -426,6 +426,11 @@ def test_production_requires_metrics_token(monkeypatch):
     monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
     monkeypatch.delenv("AISTUDIO_LLM_CLOUD_OK", raising=False)
     config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_ALLOW_REGISTER", "true")
+    with pytest.raises(RuntimeError, match="ALLOW_REGISTER"):
+        config.validate_runtime()
+    monkeypatch.setenv("AISTUDIO_ALLOW_REGISTER", "false")
+    config.validate_runtime()
 
 
 def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):
@@ -1195,6 +1200,7 @@ def test_systemd_unit_rewrites_install_root():
     assert "AISTUDIO_BACKUP_PASS" in install
     assert "nachgetragen: AISTUDIO_BACKUP_PASS" in install
     assert "backfill_runtime_env" in install
+    assert "nachgetragen: AISTUDIO_ALLOW_REGISTER=false" in install
     assert "AISTUDIO_HOST=127.0.0.1" in install
     assert "nachgetragen: AISTUDIO_HOST" in install
     assert "nachgetragen: AISTUDIO_ALLOWED_HOSTS" in install

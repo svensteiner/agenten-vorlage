@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.66 — 2026-08-28 — Produktion ohne offenes Register
+
+`AISTUDIO_ALLOW_REGISTER=true` in einer Laptop-`.env` plus `AISTUDIO_ENV=production`
+startete den Prozess (systemd-Pin und `--systemd` fingen das nur auf dem
+Unit-Pfad). Jetzt bricht `validate_runtime()` ab. Erster Mandant bleibt
+`data/bootstrap.env`. `install.sh` trägt fehlendes `false` nach.
+
 ## Prototyp — 2026-08-28 — Sales-Demo abgeschlossen
 
 Favicon, Meta-Beschreibung, mobile Modul-Leiste (Sidebar war unter 820px

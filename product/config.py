@@ -24,7 +24,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.65"
+VERSION = "1.4.66"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -553,7 +553,8 @@ def validate_runtime() -> None:
     """Refuse a weak HMAC secret in production, or on all interfaces anywhere.
 
     Production also refuses a missing metrics token, an explicit demo seed
-    (published Meridian password), and cloud LLM egress without
+    (published Meridian password), open registration (leftover laptop
+    ``AISTUDIO_ALLOW_REGISTER``), and cloud LLM egress without
     ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts).
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
@@ -589,6 +590,12 @@ def validate_runtime() -> None:
             "Produktion verweigert den Start: AISTUDIO_LLM_EGRESS=cloud "
             "ohne AISTUDIO_LLM_CLOUD_OK=true (Kurzauszüge würden die Instanz "
             "verlassen). CLOUD_OK setzen oder Egress auf in_boundary."
+        )
+    if allow_register():
+        raise RuntimeError(
+            "Produktion verweigert den Start: AISTUDIO_ALLOW_REGISTER ist an "
+            "(öffentliche Mandantenanlage). AISTUDIO_ALLOW_REGISTER=false setzen; "
+            "erster Mandant über data/bootstrap.env."
         )
 
 
