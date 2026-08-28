@@ -405,7 +405,11 @@ def test_production_requires_secret(monkeypatch):
 def test_production_requires_metrics_token(monkeypatch):
     monkeypatch.setenv("AISTUDIO_ENV", "production")
     monkeypatch.setenv("AISTUDIO_SECRET", "production-secret-not-demo-xx")
+    monkeypatch.setenv("AISTUDIO_ALLOW_DEMO_SEED", "false")
+    monkeypatch.setenv("AISTUDIO_ALLOW_REGISTER", "false")
     monkeypatch.delenv("AISTUDIO_METRICS_TOKEN", raising=False)
+    monkeypatch.delenv("AISTUDIO_LLM_EGRESS", raising=False)
+    monkeypatch.delenv("AISTUDIO_LLM_CLOUD_OK", raising=False)
     with pytest.raises(RuntimeError, match="METRICS_TOKEN"):
         config.validate_runtime()
     monkeypatch.setenv("AISTUDIO_METRICS_TOKEN", "short")
