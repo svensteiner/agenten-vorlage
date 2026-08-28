@@ -274,6 +274,7 @@
     wireSearch();
     wireOnboarding();
     wireRentOverlay();
+    wireMobileNav();
     if (isLive()) {
       const st = $(".status");
       if (st) {
@@ -395,6 +396,7 @@
     closeViewer();
     closeSearch();
     closeRent();
+    closeMobileNav();
     await resetFleet();
     hideFleetToast();
     selectModule("wissen");
@@ -535,11 +537,38 @@
       `<div class="demo-badge">● Demo-Daten · rein fiktiv</div>`;
   }
 
+  function closeMobileNav() {
+    const side = $(".sidebar");
+    const ov = $("#sidebarOv");
+    const btn = $("#navToggle");
+    if (side) side.classList.remove("open");
+    if (ov) ov.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  }
+
+  function wireMobileNav() {
+    const btn = $("#navToggle");
+    const side = $(".sidebar");
+    const ov = $("#sidebarOv");
+    if (!btn || !side) return;
+    btn.onclick = () => {
+      const open = !side.classList.contains("open");
+      side.classList.toggle("open", open);
+      if (ov) ov.hidden = !open;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    if (ov) ov.onclick = closeMobileNav;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && side.classList.contains("open")) closeMobileNav();
+    });
+  }
+
   function selectModule(key) {
     currentModule = key;
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
     const mod = MODULES.find((m) => m.key === key);
     $("#topTitle").innerHTML = `${mod.label}<small>${mod.hint}</small>`;
+    closeMobileNav();
 
     if (key === "wissen") return renderChatView();
     if (key === "team") return renderTeamView();

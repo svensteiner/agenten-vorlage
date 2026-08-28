@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Prototyp — 2026-08-28 — Sales-Demo abgeschlossen
+
+Favicon, Meta-Beschreibung, mobile Modul-Leiste (Sidebar war unter 820px
+weg ohne Ersatz) und Onboarding-/README-Text an die kuratierte 6er-Demo
+angepasst. Weiter `file://`, Vanilla-JS, kein Framework.
+
 ## Prototyp — 2026-08-28 — Quellen-Titel escaped
 
 Quellenzeilen, gesperrte Treffer, verwandte Dokumente und Folgefragen
