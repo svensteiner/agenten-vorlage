@@ -2,6 +2,13 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.72 — 2026-08-28 — Cloud-Schlüssel nur bei Egress=cloud
+
+`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` aus einer Laptop-`.env` blieben im
+Produktprozess, obwohl `AISTUDIO_LLM_EGRESS=in_boundary` keine Auszüge
+schickt. Produktion entfernt die Vendor-Schlüssel beim Start.
+`AISTUDIO_LLM_API_KEY` bleibt für ein lokales Gateway.
+
 ## Produktlaufzeit 1.4.71 — 2026-08-28 — Backup-Passwort nicht im Produktprozess
 
 `AISTUDIO_BACKUP_PASS` in einer Laptop-`.env` wurde per dotenv wieder in den

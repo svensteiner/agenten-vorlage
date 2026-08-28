@@ -464,6 +464,19 @@ def test_production_requires_metrics_token(monkeypatch):
     config.validate_runtime()
     assert "AISTUDIO_BACKUP_PASS" not in os.environ
     assert config._BACKUP_PASS_DROPPED
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-leftover-laptop-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-leftover")
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "local-gateway-key")
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "in_boundary")
+    config.validate_runtime()
+    assert "OPENAI_API_KEY" not in os.environ
+    assert "ANTHROPIC_API_KEY" not in os.environ
+    assert os.environ.get("AISTUDIO_LLM_API_KEY") == "local-gateway-key"
+    monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
+    monkeypatch.setenv("AISTUDIO_LLM_CLOUD_OK", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-keep-for-cloud")
+    config.validate_runtime()
+    assert os.environ.get("OPENAI_API_KEY") == "sk-keep-for-cloud"
 
 
 def test_dev_refuses_demo_secret_on_all_interfaces(monkeypatch):

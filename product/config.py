@@ -27,7 +27,7 @@ DEMO_PASSWORD = os.environ.get("AISTUDIO_DEMO_PASSWORD", "Meridian2026!")
 DEMO_NAME = os.environ.get("AISTUDIO_DEMO_NAME", "Dr. Katharina Vogel")
 DEMO_ROLE = os.environ.get("AISTUDIO_DEMO_ROLE", "cfo")
 
-VERSION = "1.4.71"
+VERSION = "1.4.72"
 STARTED_AT = time.time()
 DEFAULT_SECRET = "dev-secret-change-me"
 
@@ -464,6 +464,23 @@ def drop_backup_pass() -> bool:
     return True
 
 
+def drop_unused_cloud_keys() -> bool:
+    """Drop leftover vendor keys when this process will not send excerpts to the cloud.
+
+    Keeps ``AISTUDIO_LLM_API_KEY`` for a local / decentral gateway.
+    Never logs key material.
+    """
+    egress = (os.environ.get("AISTUDIO_LLM_EGRESS") or "in_boundary").strip().lower()
+    if egress == "cloud":
+        return False
+    dropped = False
+    for key in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        if key in os.environ:
+            os.environ.pop(key, None)
+            dropped = True
+    return dropped
+
+
 def consume_bootstrap_env(*, env_path: Path | None = None) -> bool:
     """Drop first-tenant secrets from the process, data/bootstrap.env, and .env."""
     for key in BOOTSTRAP_KEYS:
@@ -590,7 +607,8 @@ def validate_runtime() -> None:
     ``AISTUDIO_ALLOW_REGISTER``), cloud LLM egress without
     ``AISTUDIO_LLM_CLOUD_OK`` (leftover laptop key would send excerpts),
     and ``AISTUDIO_PROXY_IPS=*`` / ``0.0.0.0/0`` / ``::/0`` while trusting
-    X-Forwarded-For (any client could rotate rate-limit keys).
+    X-Forwarded-For (any client could rotate rate-limit keys). Leftover
+    vendor LLM keys are dropped when egress is not ``cloud``.
     """
     secret = (os.environ.get("AISTUDIO_SECRET") or SECRET or "").strip()
     weak = not secret or secret == DEFAULT_SECRET or len(secret) < 24
@@ -645,6 +663,14 @@ def validate_runtime() -> None:
         logging.getLogger("product").warning(
             "AISTUDIO_BACKUP_PASS aus dem Prozess entfernt "
             "(gehört nach backup.env, nicht in die Produkt-Umgebung)."
+        )
+    if drop_unused_cloud_keys():
+        import logging
+
+        logging.getLogger("product").warning(
+            "OPENAI_API_KEY/ANTHROPIC_API_KEY aus dem Prozess entfernt "
+            "(Egress ist nicht cloud; Schlüssel gehört nicht in die "
+            "Produkt-Umgebung)."
         )
 
 
