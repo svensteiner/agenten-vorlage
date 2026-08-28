@@ -2,6 +2,15 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Produktlaufzeit 1.4.74 — 2026-08-28 — Produkt-Schlüssel nicht bei leftover Cloud-URL
+
+1.4.73 hat `AISTUDIO_LLM_API_KEY` behalten, sobald irgendeine `BASE_URL`
+gesetzt war. Eine Laptop-`.env` mit `https://api.openai.com` plus Schlüssel
+blieb damit im Prozess — Vendor-Hosts können nicht in-boundary sein.
+Produktion entfernt den Produkt-Schlüssel jetzt auch in diesem Fall.
+Lokales Gateway und andere öffentliche Hosts (z. B. mit `IN_BOUNDARY_HOSTS`)
+bleiben.
+
 ## Produktlaufzeit 1.4.73 — 2026-08-28 — Produkt-LLM-Schlüssel nur mit Gateway oder Cloud
 
 1.4.72 hat `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` entfernt, `AISTUDIO_LLM_API_KEY`

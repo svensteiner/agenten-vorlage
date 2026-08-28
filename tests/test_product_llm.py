@@ -499,3 +499,14 @@ def test_file_base_url_is_not_ready(monkeypatch):
     assert status["ready"] is False
     assert status["reason"] == "bad_base_url"
     assert "passwd" not in str(status)
+
+
+def test_base_url_is_vendor_cloud():
+    assert llm.base_url_is_vendor_cloud("") is False
+    assert llm.base_url_is_vendor_cloud("https://api.openai.com/v1") is True
+    assert llm.base_url_is_vendor_cloud("https://api.anthropic.com") is True
+    assert llm.base_url_is_vendor_cloud("api.openai.com") is True
+    assert llm.base_url_is_vendor_cloud("https://eastus.api.openai.com/v1") is True
+    assert llm.base_url_is_vendor_cloud("http://127.0.0.1:11434/v1") is False
+    assert llm.base_url_is_vendor_cloud("https://api.groq.com/openai/v1") is False
+    assert llm.base_url_is_vendor_cloud("file:///etc/passwd") is False

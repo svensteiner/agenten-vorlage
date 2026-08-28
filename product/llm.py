@@ -416,11 +416,26 @@ def complete(*, system: str, user: str, max_tokens: int | None = None) -> dict[s
     }
 
 
+def base_url_is_vendor_cloud(url: str) -> bool:
+    """True when BASE_URL hostname is a vendor cloud host. No DNS.
+
+    ``IN_BOUNDARY_HOSTS`` cannot override ``CLOUD_HOSTS`` — leftover
+    ``https://api.openai.com`` is never a local gateway.
+    """
+    raw = (url or "").strip()
+    if not raw:
+        return False
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not host:
+        return False
+    return any(host == item or host.endswith("." + item) for item in CLOUD_HOSTS)
+
+
 def _is_cloud(provider: str, base_url: str) -> bool:
     if provider in {"openai", "anthropic"}:
         return True
-    host = (urlparse(base_url).hostname or "").lower()
-    return any(host == item or host.endswith("." + item) for item in CLOUD_HOSTS)
+    return base_url_is_vendor_cloud(base_url)
 
 
 def _host_in_boundary(host: str) -> bool:

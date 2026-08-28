@@ -477,6 +477,18 @@ def test_production_requires_metrics_token(monkeypatch):
     monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "http://127.0.0.1:11434/v1")
     config.validate_runtime()
     assert os.environ.get("AISTUDIO_LLM_API_KEY") == "local-gateway-key"
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-leftover-openai-url")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.openai.com/v1")
+    config.validate_runtime()
+    assert "AISTUDIO_LLM_API_KEY" not in os.environ
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "sk-leftover-anthropic-url")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.anthropic.com")
+    config.validate_runtime()
+    assert "AISTUDIO_LLM_API_KEY" not in os.environ
+    monkeypatch.setenv("AISTUDIO_LLM_API_KEY", "groq-optional-gateway")
+    monkeypatch.setenv("AISTUDIO_LLM_BASE_URL", "https://api.groq.com/openai/v1")
+    config.validate_runtime()
+    assert os.environ.get("AISTUDIO_LLM_API_KEY") == "groq-optional-gateway"
     monkeypatch.delenv("AISTUDIO_LLM_BASE_URL", raising=False)
     monkeypatch.setenv("AISTUDIO_LLM_EGRESS", "cloud")
     monkeypatch.setenv("AISTUDIO_LLM_CLOUD_OK", "true")
