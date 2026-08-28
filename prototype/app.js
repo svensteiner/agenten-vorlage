@@ -916,10 +916,10 @@
       const row = el("div", "source");
       row.innerHTML =
         `<span class="ficon">▤</span>` +
-        `<span class="meta"><span class="t">${doc.title}</span>` +
+        `<span class="meta"><span class="t">${escapeHtml(doc.title)}</span>` +
         `<span class="q">„${escapeHtml(s.quote)}"</span>` +
-        `<span class="p">${doc.path}</span></span>` +
-        `<span class="rel">Relevanz<b>${s.relevance}%</b></span>`;
+        `<span class="p">${escapeHtml(doc.path)}</span></span>` +
+        `<span class="rel">Relevanz<b>${Number(s.relevance) || 0}%</b></span>`;
       row.onclick = () => openViewer(s.docId, s.quote);
       b.appendChild(row);
     });
@@ -946,7 +946,7 @@
         if (!doc) return;
         const row = el("button", "wh-item",
           `<span class="lk">🔒</span>` +
-          `<span class="wt">${doc.title}<span class="wty">${escapeHtml(doc.type)}</span></span>` +
+          `<span class="wt">${escapeHtml(doc.title)}<span class="wty">${escapeHtml(doc.type)}</span></span>` +
           `<span class="wr">Kein Zugriff</span>`);
         row.onclick = () => openViewer(id);
         box.appendChild(row);
@@ -995,7 +995,7 @@
     related.forEach((id) => {
       const doc = DOCS[id];
       if (!doc) return;
-      const pill = el("button", "pill", `▤ ${doc.title}`);
+      const pill = el("button", "pill", `▤ ${escapeHtml(doc.title)}`);
       pill.onclick = () => openViewer(id);
       box.appendChild(pill);
     });
@@ -1009,7 +1009,7 @@
     b.appendChild(el("div", "block-title", "➜ Folgefragen"));
     const box = el("div", "chips");
     followups.forEach((q) => {
-      const chip = el("button", "chip", q);
+      const chip = el("button", "chip", escapeHtml(q));
       chip.onclick = () => ask(q);
       box.appendChild(chip);
     });

@@ -2,6 +2,12 @@
 
 Alle sichtbaren Änderungen am Demo-Prototyp. Neueste zuerst.
 
+## Prototyp — 2026-08-28 — Quellen-Titel escaped
+
+Quellenzeilen, gesperrte Treffer, verwandte Dokumente und Folgefragen
+setzten Titel/Pfad per `innerHTML` ohne Escape. Jetzt `escapeHtml` —
+die Verkaufsdemo bleibt `file://`-fähig.
+
 ## Produktlaufzeit 1.4.65 — 2026-08-28 — Cloud-Auszüge nur mit CLOUD_OK
 
 Produktion startete mit `AISTUDIO_LLM_EGRESS=cloud` aus einer Laptop-`.env`

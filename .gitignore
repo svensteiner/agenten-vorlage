@@ -1,4 +1,5 @@
 # Runtime — nie committen
+.herenow/
 state/
 logs/
 .env
