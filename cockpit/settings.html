@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Studio · Provider-Einstellungen</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #101111;
+        --panel: #181a19;
+        --rail: #171917;
+        --line: #303530;
+        --line-strong: #48533e;
+        --text: #eff3eb;
+        --muted: #a0aaa0;
+        --accent: #d2edab;
+        --accent-ink: #1c2715;
+        --red: #ffa99e;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 14px/1.55 system-ui, sans-serif; }
+      button, input { font: inherit; }
+      button, input { border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--panel); }
+      button { cursor: pointer; padding: 10px 14px; }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: .45; cursor: not-allowed; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      input { width: 100%; min-width: 0; padding: 11px 12px; }
+      a { color: var(--accent); }
+      p { color: var(--muted); }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { margin-bottom: 0; font-size: clamp(27px, 4vw, 42px); font-weight: 560; letter-spacing: -.045em; line-height: 1.12; }
+      h2 { font-size: 18px; }
+      .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
+      .rail { display: flex; flex-direction: column; gap: 20px; padding: 25px 17px; background: var(--rail); border-right: 1px solid var(--line); }
+      .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 650; letter-spacing: -.04em; }
+      .logo { display: grid; grid-template-columns: repeat(2, 7px); gap: 3px; transform: rotate(-12deg); }
+      .logo i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+      .rail-link { display: block; padding: 10px; border: 1px solid transparent; border-radius: 9px; color: var(--text); text-decoration: none; }
+      .rail-link:hover { border-color: var(--accent); }
+      .rail-footer { margin-top: auto; color: var(--muted); font-size: 11px; }
+      .rail-footer a { display: inline-block; margin-top: 6px; font-size: 12px; }
+      .main { min-width: 0; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 32px; border-bottom: 1px solid var(--line); }
+      .eyebrow { margin-bottom: 9px; color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+      .connection { color: var(--muted); font-size: 12px; }
+      .connection[data-state="online"] { color: var(--accent); }
+      .connection[data-state="offline"] { color: var(--red); }
+      .content { width: min(860px, 100%); margin: 0 auto; padding: 45px 40px 54px; }
+      .intro { margin-bottom: 28px; }
+      .intro p { max-width: 660px; margin: 10px 0 0; font-size: 16px; }
+      .notice { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #784c43; border-radius: 10px; background: #281e1b; color: #ffd1c9; white-space: pre-wrap; }
+      .notice[hidden], [hidden] { display: none !important; }
+      .card { margin-bottom: 16px; padding: 21px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+      .status-card { border-color: var(--line-strong); background: #191d18; }
+      .status-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+      .status-value { color: var(--accent); font-size: 17px; font-weight: 600; }
+      .status-detail { margin: 5px 0 0; }
+      .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 22px; margin: 20px 0 0; }
+      .fact dt { margin-bottom: 3px; color: var(--muted); font-size: 11px; }
+      .fact dd { margin: 0; overflow-wrap: anywhere; }
+      .form-card h2 { margin-bottom: 7px; }
+      .form-card > p { margin-bottom: 18px; }
+      label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; }
+      .secret-row { display: flex; align-items: stretch; gap: 9px; }
+      .secret-row input { flex: 1; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+      .primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+      .danger { border-color: #784c43; color: #ffd1c9; background: #281e1b; }
+      .hint { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+      .footer-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 23px; font-size: 12px; }
+      @media (max-width: 700px) {
+        .shell { display: block; }
+        .rail { border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+        .rail-footer { display: none; }
+        .topbar { padding: 15px 18px; }
+        .content { padding: 30px 16px 38px; }
+        .facts { grid-template-columns: 1fr; }
+        .secret-row { display: block; }
+        .secret-row button { width: 100%; margin-top: 9px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail" aria-label="AI-Studio-Navigation">
+        <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>AI Studio</span></div>
+        <a class="rail-link" href="/">Auftragsansicht</a>
+        <a class="rail-link" href="/chat">Arbeitsdialoge</a>
+        <a class="rail-link" href="/assistants">Assistenten verwalten</a>
+        <div class="rail-footer">Provider-Zugangsdaten werden serverseitig verwaltet.<br /><a href="/">Zur Auftragsansicht</a></div>
+      </aside>
+      <main class="main">
+        <header class="topbar"><span class="eyebrow">Lokaler Arbeitsraum</span><span id="connection" class="connection" data-state="offline" role="status">Verbindung wird geprüft …</span></header>
+        <div class="content">
+          <p id="notice" class="notice" role="alert" hidden></p>
+          <section class="intro"><div class="eyebrow">Provider</div><h1>DeepSeek API</h1><p>Verwalte den lokalen Zugang für DeepSeek. Speichern führt keinen Modellaufruf aus; laufende Aufträge behalten den Schlüssel, mit dem sie gestartet wurden.</p></section>
+          <section class="card status-card" aria-labelledby="statusTitle">
+            <div class="status-row"><h2 id="statusTitle">Aktueller Status</h2><span id="statusValue" class="status-value">Wird geladen …</span></div>
+            <p id="statusDetail" class="status-detail">Der Schlüssel wird niemals im Browser angezeigt. Ein gespeicherter Schlüssel hat Vorrang vor einer gesetzten Umgebungsvariable. Entfernen löscht nur den gespeicherten Schlüssel; eine Umgebungsvariable bleibt aktiv.</p>
+            <dl class="facts"><div class="fact"><dt>Quelle</dt><dd id="statusSource">—</dd></div><div class="fact"><dt>Lokale Speicherung</dt><dd id="storageStatus">—</dd></div></dl>
+          </section>
+          <section class="card form-card" aria-labelledby="saveTitle">
+            <h2 id="saveTitle">API-Schlüssel speichern</h2>
+            <p>Der Schlüssel wird für dein Windowskonto lokal verschlüsselt. Es wird kein Modelltest ausgeführt; ein bestätigter Modellzugriff ist damit noch nicht nachgewiesen.</p>
+            <label for="apiKey">DeepSeek API-Schlüssel</label>
+            <div class="secret-row"><input id="apiKey" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="Schlüssel hier eingeben" /><button id="saveKey" class="primary" type="button">Schlüssel speichern</button></div>
+            <p class="hint">Der Eingabewert wird nach jeder Anfrage aus dem Formular entfernt.</p>
+            <div class="actions"><button id="clearKey" class="danger" type="button">Gespeicherten Schlüssel entfernen</button><button id="retry" type="button" hidden>Erneut laden</button></div>
+          </section>
+          <div class="footer-links"><a href="/">Auftragsansicht</a><a href="/chat">Arbeitsdialoge</a><a href="/assistants">Assistenten verwalten</a></div>
+        </div>
+      </main>
+    </div>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const state = { status: null, busy: false, loading: false, online: false, loadError: false };
+      const sourceLabels = { stored: "Gespeicherter Schlüssel", environment: "Umgebungsvariable", none: "Nicht konfiguriert" };
+      function showNotice(message) { $("notice").textContent = message || ""; $("notice").hidden = !message; }
+      function connection(ok) { state.online = ok; $("connection").textContent = ok ? "Lokal verbunden" : "Verbindung unterbrochen"; $("connection").dataset.state = ok ? "online" : "offline"; }
+      function controls() {
+        const available = Boolean(state.status?.storage_available);
+        $("saveKey").disabled = state.busy || state.loading || !state.online || !available;
+        $("clearKey").disabled = state.busy || state.loading || !state.online || !available;
+        $("apiKey").disabled = state.busy || state.loading || !state.online || !available;
+        $("retry").hidden = !state.loadError && state.online && !state.loading;
+        $("retry").disabled = state.loading || state.busy;
+      }
+      async function api(path, options = {}) {
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), 15000);
+        try {
+          const response = await fetch(path, { ...options, signal: abort.signal, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+          let data;
+          try { data = await response.json(); } catch { throw new Error("Der Server hat keine lesbare Antwort geliefert."); }
+          connection(true);
+          if (!response.ok) throw new Error(data.error || "Die Anfrage konnte nicht verarbeitet werden.");
+          return data;
+        } catch (error) {
+          if (error.name === "AbortError" || error instanceof TypeError) { connection(false); throw new Error("Keine Serverantwort. Prüfe den lokalen Server und verbinde dich erneut."); }
+          throw error;
+        } finally { clearTimeout(timer); }
+      }
+      function renderStatus(status) {
+        state.status = status || null;
+        const available = Boolean(status?.storage_available);
+        $("statusValue").textContent = status ? (sourceLabels[status.source] || "Unbekannte Quelle") : "Unbekannt";
+        $("statusSource").textContent = status ? (sourceLabels[status.source] || status.source || "Unbekannt") : "—";
+        $("storageStatus").textContent = available ? "Für dieses Windowskonto verfügbar" : "Nicht verfügbar";
+        $("statusDetail").textContent = status?.error || (available ? "Der Schlüssel wird niemals im Browser angezeigt. Ein gespeicherter Schlüssel hat Vorrang vor einer gesetzten Umgebungsvariable. Entfernen löscht nur den gespeicherten Schlüssel; eine Umgebungsvariable bleibt aktiv." : "Lokale verschlüsselte Speicherung ist in dieser Umgebung nicht verfügbar.");
+        $("saveKey").textContent = status?.source === "stored" ? "Gespeicherten Schlüssel ersetzen" : "Schlüssel speichern";
+        controls();
+      }
+      async function loadStatus() {
+        if (state.loading || state.busy) return;
+        state.loading = true; state.loadError = false; controls(); showNotice("");
+        try { renderStatus(await api("/api/providers/deepseek")); }
+        catch (error) { state.status = null; state.loadError = true; showNotice(error.message); $("statusValue").textContent = "Status nicht verfügbar"; $("statusSource").textContent = "—"; $("storageStatus").textContent = "—"; }
+        finally { state.loading = false; controls(); }
+      }
+      async function mutate(action) {
+        if (state.busy || state.loading || !state.online || !state.status?.storage_available) return;
+        state.busy = true; controls(); showNotice("");
+        try {
+          const body = action === "save" ? { action, api_key: $("apiKey").value } : { action };
+          if (action === "save" && !body.api_key.trim()) { showNotice("Gib einen API-Schlüssel ein."); return; }
+          renderStatus(await api("/api/providers/deepseek", { method: "POST", body: JSON.stringify(body) }));
+        } catch (error) { showNotice(error.message); }
+        finally { $("apiKey").value = ""; state.busy = false; controls(); }
+      }
+      $("saveKey").onclick = () => mutate("save");
+      $("clearKey").onclick = () => mutate("clear");
+      $("retry").onclick = loadStatus;
+      loadStatus();
+    </script>
+  </body>
+</html>

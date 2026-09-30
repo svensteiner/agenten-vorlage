@@ -1,0 +1,178 @@
+---
+schema: agent-status/v1
+project: agenten-vorlage
+status: active
+last_updated: "2026-09-30"
+---
+
+# AI Studio — Projektstatus
+
+## Aktueller Auftrag
+
+Ein benutzbares lokales AI-Produkt nach dem Vorbild von Open-Dots aufbauen. AgentKit
+bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrennt.
+
+## Letzter bestätigter Stand
+
+- AI Studio: Assistenten anlegen, Profil/Vorgaben, Backend/Modell, Workspace, Auftragsverlauf.
+- Assistenten-Vorgaben bearbeiten: revisionsgesichertes SOUL.md, atomisches Speichern,
+  UTF-8-Grenzen, Konflikt-/Verbindungsfehler mit Entwurfsschutz. Neue Aufträge und spätere
+  Dialognachrichten übernehmen Änderungen; laufende Jobs/Freigaben behalten ihren Core.
+  Browser und Offline-Neustart-/Freigabeablauf geprüft; beschädigte/alte offene Zustände
+  verhindern rückwirkende Änderungen. Nachweis: docs/ASSISTANT-MANAGEMENT.md.
+- Dauerhafte Dialoge unter /chat übernehmen alle bisherigen sichtbaren Antworten und Nachrichten.
+- Reale zweistufige Codex/Luna-Kontextabnahme im isolierten Workspace bestanden:
+  erster Turn las `CONTEXT.txt` und antwortete `ORBIT-731`; der zweite Turn übernahm
+  den Marker ausschließlich aus dem sichtbaren Dialogkontext, ohne erneuten Dateizugriff
+  oder Dateiänderung. Beide Jobs abgeschlossen; Nachweis:
+  `.runs/qualification/codex-luna-conversation-context.json`.
+- Nachrichten werden vor Dispatch reserviert; unterbrochene Starts lassen sich mit derselben ID wiederholen.
+- Live-Schritte, Review-Evidenz, Artefakt-Downloads und kontrollierte Wiederaufnahme.
+- Run-ID vor Dispatch persistiert; request_id verhindert doppelte Starts bei wiederholten Anfragen.
+- Loopback-/Origin-Schutz, sichere DOM-Ausgabe, maximal vier aktive Aufträge und Server-Sperre.
+- DeepSeek erzwingt Read-only, Toolbudget und Deadline. Tests laufen ohne Server-Secrets
+  in der Umgebung; Prozessbäume werden bei Timeout beendet.
+- Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
+- Aktuelle vollständige Unittestsuite: 204 Tests in 65,526 Sekunden, Status OK;
+  ein erwarteter Windows-Symlink-Test wurde mangels Berechtigung übersprungen.
+  Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks mit
+  `--windows-ocr` bestanden (`offline_only=true`, `model_tested=false`); reale
+  Luna-Nachweise sind separat dokumentiert.
+- Navigierbare Workflow-Spur aus echten Checkpoints: Freigaben, Nacharbeit,
+  laufende Schritte, ungeklärte Ausgänge und Abschluss. Zehn Zustandsfälle geprüft;
+  Computer Use: Demo mit zwei Freigaben, Neustart, Korrektur, Review und Download;
+  320-/1440-Pixel-Abnahme. Details: docs/UI-QUALIFICATION.md.
+- Responsive-Abnahme: vier Hauptseiten bei 390/1440 Pixeln, Dialog zusätzlich bei
+  320 Pixeln; ausgeblendete mobile Dialognavigation und uneinheitliche GitHub-Labels
+  korrigiert. Computer Use bestätigte außerdem Namen für 29/29 sichtbare interaktive
+  Elemente, Tastaturfokus, Fokusführung des nativen Assistenten-Dialogs, Escape mit
+  Fokusrückgabe, 62 bestandene Kontrastfälle und Reflow bei 588 CSS-Pixeln ohne
+  horizontalen Seitenüberlauf. Keine formale Screenreader-Zertifizierung;
+  Details: docs/UI-QUALIFICATION.md.
+- Öffentlicher GitHub-Dateiconnector: explizite Vorschau, geprüfter Blob-SHA,
+  unveränderlicher Quellen-Snapshot als Dialoganhang, feste API-/Größen-/Netzwerkgrenzen.
+  Echter Open-Dots-README-Abruf und Browser-Import bis Demoabschluss, Reload und
+  Download geprüft; private/OAuth-/Schreib-Connectoren bleiben offen.
+- Reale GitHub-Connector-/Open-Dots-Aufgabe bestanden: öffentlicher Abruf von
+  `Anil-matcha/Open-Dots`, `README.md@main`, Blob
+  `430a85dfd698ca150cd6b9a8d8cc37c639dc493b`, Attachment-SHA-256
+  `6210e1fe567259c9f9b4313935017a9fe1f5ad69f0f8764f3c7ae9b6bc3da994`.
+  Luna/low über Adapterstandard; neun Schritte in 352,141 Sekunden, drei kumulative
+  Review-Fehler, begrenztes Feedback-Recovery, finaler Reviewer erfolgreich,
+  `reviewed=true`, `dirty=false`, fünf Fähigkeiten und drei priorisierte Lücken.
+  Keine rohen Modelltexte gespeichert. Der Lauf belegt dynamisches
+  Review-Repair-Recovery mit einem echten Connector-Snapshot.
+- Assistenten unter /assistants archivieren/wiederherstellen: persistente Auswahl,
+  unveränderte Packs, bestehende Dialoge/Anhänge/Freigaben weiter nutzbar. Browser:
+  Archivieren, Reload, leere Neuauswahl, Wiederherstellen und Verbindungsfehler mit
+  bewusstem Neuladen nach Server-Neustart geprüft.
+- Saubere Windows-/Python-3.12-Installation geprüft: reguläres Wheel, isolierter
+  CLI-Demostart, Launcher, HTTP-Demo und Neustart. CLI-Konstruktorfehler und fehlende
+  pytest-Laufzeitabhängigkeit dabei gefunden und behoben; docs/INSTALLATION-QUALIFICATION.md.
+- Cold-Restore am selben absoluten Pfad geprüft: Dialog, Originalanhang, Artefakt,
+  abgeschlossener Job und wartende Freigabe; Provider-Verzeichnis ausgeschlossen,
+  kein automatischer Dispatch, ausdrückliche Freigaben führen zum Demo-Abschluss.
+- PNG-/JPEG-Anhänge mit lokaler Windows-OCR (Deutsch, sonst Englisch): echte
+  synthetische PNG/JPEG- und Umlauterkennung, Originaldownload, Kontextübergabe,
+  Neustart und Demo-Freigaben geprüft. Keine Bildanalyse und keine OCR für Scan-PDFs.
+- PDF-/DOCX-/XLSX-/PPTX-Textanhänge mit begrenzter Subprozess-Extraktion,
+  unveränderten Downloads, Seiten-/Archiv-/Textgrenzen und Unicode-Kontext geprüft.
+- Browser: DOCX mit genau 2 MiB, Entwurfs-Recovery, Upload/Download und Demo-Abschluss;
+  PDF-Textkontext und Ablehnung leerer PDFs samt Entfernen/Reload geprüft.
+- Historischer Codex-Leseablauf mit gpt-5.5 bestand vor der Sandbox-Korrektur
+  (42,672 Sekunden); dies ist keine Live-Freigabe des korrigierten Adapters.
+- Codex-Adapter isoliert globale CLI-Konfiguration, behält Authentifizierung und
+  Rollen-Sandbox; expliziter Standard gpt-5.6-luna/low ohne Fast-Tier-Override.
+- Reale Codex-Live-Qualifizierung mit gpt-5.6-luna/low und elevated-Sandbox
+  bestanden: drei Schritte, Developer plus unabhängiger Reviewer, lokale
+  Python-Byteprüfung, exakter Marker `STUDIO-FACT-4729` und bytegleich exportiertes
+  Ergebnisartefakt in 101,61 Sekunden. Der Export nutzt den offiziellen App-Server
+  read-only, ohne Netzwerk, mit Größen- und SHA-256-Prüfung.
+- Repräsentative reale Repository-Prüfung mit Computer Use und gpt-5.6-luna bestanden:
+  echter Repository-Kontext read-only, `STATUS.md`, `docs/PRODUCT-ACCEPTANCE.md` und
+  `docs/PRODUCT-READINESS.md`, Researcher gefolgt von unabhängigem Reviewer,
+  drei Schritte in 93,0 Sekunden, `reviewed=true`, `dirty=false`. Ergebnis enthält
+  drei Risiken und konkrete Prüfaktionen; sanitisiertes Evidenzartefakt:
+  `.runs/qualification/codex-luna-repository-audit.json` (Run
+  `5243dfd6db934f87961b5dd2e6079e48`).
+- Gehärtete Codex-Unterbrechungs-/Resume-Abnahme bestanden: Kindprozess tatsächlich
+  beendet, dauerhafter `checkpoint_kind=planner`, Resume ohne Ack mit `ContractError`
+  verweigert, nach Ack in drei Schritten abgeschlossen; Marker in Summary und
+  Workerbericht, Workspace unverändert, 31,515 Sekunden. Nur `.agentkit.lock` war
+  als interner Laufzeitpfad ausgenommen.
+- Reale Test-/Recovery-Aufgabe bestanden: exakt
+  `python -m unittest -v tests.test_action_approvals tests.test_conversations`,
+  19 Tests, Exit 0, `OK`; nach drei kumulativen Fehlern und einem Feedback in acht
+  Schritten/541,391 Sekunden abgeschlossen. Der Reviewer blieb read-only und führte
+  den temporär schreibenden Testbefehl nicht erneut aus.
+- Windows-Sandbox-Auswahl wird gezielt aus der vorhandenen Konfiguration übernommen:
+  Der Quellcode von CLI 0.130.0 bestätigt die vorherige automatische Read-only-
+  Rückstufung bei fehlender Auswahl. Fehlende/ungültige Auswahl stoppt vor Modellkosten.
+- Provider-Einstellungen unter /settings: DeepSeek-Schlüssel mit Windows CurrentUser-DPAPI
+  verschlüsselt; keine Schlüssel in Status-/Job-APIs. Browser-Speichern/Reload/Entfernen,
+  echte DPAPI-Entschlüsselung in separatem Prozess und Manipulationsschutz geprüft.
+- Textanhänge in Dialogen: Upload, persistente Bindung, Kontextübergabe, Download,
+  Größen-/Kontextgrenzen und sichere Wiederholung geprüft. Keine Ausführung hochgeladener Dateien.
+- Browser: reale Dateiauswahl, Versand, Verlauf, Reload, Download sowie BOM-/NUL-Grenzfälle geprüft.
+- Konkrete Datei-/Testfreigaben für DeepSeek, zwei Datei-Freigaben in der Demo:
+  persistente Vorschläge, Ablehnen, veraltete Freigaben, Deduplizierung und sichere Wiederaufnahme geprüft.
+- Browser-Freigaben: erste Dateiaktion, Server-Neustart vor zweiter Aktion, gleicher Vorschlag,
+  zweite Freigabe, bestandenes Review und Abschluss bestätigt (Job 3c0486eaf51d4292b87931de49285d38).
+- Codex-CLI kann einzelne Werkzeuge nicht abfangen; die Oberfläche weist diese Grenze aus.
+- Browser: zwei Dialogschritte, Reload und Wiederholung einer unterbrochenen Reservierung geprüft;
+  beide Dialoge nach echtem Server-Neustart wiederhergestellt.
+- Browser: Assistent erstellt und Demo mit fehlgeschlagenem Review, Korrektur und Abschluss geprüft.
+- GitHub-Referenzen und Lizenzentscheidungen in docs/GITHUB-ADOPTION.md dokumentiert.
+- Windows-Start über Start-AI-Studio.ps1; Betrieb/Backup in docs/OPERATIONS.md.
+
+## Abgeschlossene Live-Reparatur
+
+- Codex CLI auf 0.159.2 aktualisiert; echter strukturierter Luna-Aufruf erfolgreich.
+- Nutzer hat die offizielle Windows-Sandbox-Einrichtung bestätigt. Die globale
+  Auswahl ist jetzt elevated; modellfreie Schreib- und Read-only-Prüfungen bestanden.
+- Der sichere Artefaktexport liest ausschließlich ein bereits vom Auftrag gemeldetes
+  Workspace-Artefakt über den offiziellen Codex-App-Server. Die Ausführung ist
+  read-only und netzwerkfrei; Pfad, 2-MB-Grenze, Länge und SHA-256 werden geprüft.
+- Der abschließende Luna-Lauf bestand Schreiben, Python-Test, unabhängiges Review,
+  Markerprüfung und bytegleichen Export von `RESULT.txt`. Nachweis:
+  `.runs/qualification/codex-luna-artifact-export-qualified.json`.
+- Der gehärtete Planner-Abbruch/Resume-Lauf bestand vollständig. Nachweis:
+  `.runs/qualification/codex-luna-live-resume-hardened.json`.
+- Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
+  und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
+  Aktuelle vollständige Suite: 204 Tests in 65,526 Sekunden, OK, ein erwarteter
+  Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
+  inklusive lokaler Windows-OCR bestanden.
+  Die historische direkte Host-Lesesperre wird ohne ACL-Änderung oder Sandbox-Bypass
+  durch den begrenzten read-only-Export behandelt. Globale CLI unverändert;
+  Nachweise: docs/LIVE-QUALIFICATION.md.
+
+## Lokale MVP-Freigabe
+
+Der verbindliche Single-Owner-MVP umfasst elf Bereiche; zehn sind vollständig
+abgenommen. Computeraufgaben sind optional, stehen außerhalb des Nenners und erhalten
+keine Gutschrift. Ergebnis: **10 / 11 = 90,9 %**. Ein kritisches Gate ist im lokalen
+Umfang nicht offen.
+
+Die einzige verbindliche Teil-Lücke ist die fehlende live per-tool interception der
+Codex CLI. DeepSeek und Demo besitzen die geprüften exakten Freigabesemantiken; Codex
+behauptet diese Fähigkeit nicht. Diese Backend-Grenze ist kein belegter Bypass.
+
+## Erweiterungen außerhalb des lokalen MVP
+
+- Authentifizierte beziehungsweise breite Schreibconnectoren.
+- Visuelle Bildanalyse und OCR gescannter PDFs.
+- Mehrbenutzerbetrieb und öffentliche Bereitstellung.
+- Eine hostile-web-gehärtete Computer-Sandbox; Computeraufgaben sind optional.
+
+## Grenzen
+
+Freigegebener lokaler Single-Owner-MVP mit 90,9 % des verbindlichen Umfangs.
+Keine Freigabe für Public Deployment oder Mehrbenutzerbetrieb.
+Historische production-Markierungen einzelner Packs sind keine Produktfreigabe.
+Keine Credentials in Statusdateien. Keine Deploy-/Outreach-/BMD-Freigabe ableiten.
+Externer AI-Company-Checkout blieb unverändert. Kein Upstream-Code übernommen.
+
+## Einstieg
+
+STATUS.md → README.md → AGENTS.md → docs/ARCHITECTURE.md → docs/PRODUCT-READINESS.md.

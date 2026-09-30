@@ -1,0 +1,6 @@
+.runs/
+.agentkit.lock
+workspace/.agentkit.lock
+workspace/demo-result.md
+.env
+.env.*

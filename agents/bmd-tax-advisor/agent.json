@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "id": "bmd-tax-advisor",
+  "company": "AI_Studioxyz",
+  "profile": "bmd-tax-advisor",
+  "require_review": true,
+  "limits": {
+    "max_steps": 12,
+    "max_failures": 3,
+    "max_seconds": 1800,
+    "call_timeout": 300,
+    "max_context_chars": 100000
+  },
+  "roles": {
+    "tax-advisor": {
+      "description": "Österreichische Steuer- und Buchhaltungsfragen fachlich vorbereiten",
+      "instructions": "roles/tax-advisor.md",
+      "skills": [
+        "austrian-tax-research",
+        "bookkeeping-review",
+        "learning-log",
+        "verification-before-completion"
+      ],
+      "sandbox": "workspace-write",
+      "can_review": false
+    },
+    "bmd-operator": {
+      "description": "BMD-NTCS-Arbeitsschritte vorbereiten, prüfen und über einen freigegebenen Adapter ausführen",
+      "instructions": "roles/bmd-operator.md",
+      "skills": [
+        "bmd-workflow",
+        "bookkeeping-review",
+        "learning-log"
+      ],
+      "sandbox": "workspace-write",
+      "can_review": false
+    },
+    "tax-reviewer": {
+      "description": "Steuerliche, buchhalterische und BMD-Ergebnisse unabhängig prüfen",
+      "instructions": "roles/tax-reviewer.md",
+      "skills": [
+        "austrian-tax-research",
+        "bookkeeping-review",
+        "tax-review",
+        "verification-before-completion"
+      ],
+      "sandbox": "read-only",
+      "can_review": true
+    },
+    "researcher": {
+      "description": "Primaerquellen und lokale Materialien untersuchen, Optionen vergleichen",
+      "instructions": "roles/researcher.md",
+      "skills": [
+        "research-brief"
+      ],
+      "sandbox": "read-only",
+      "can_review": false
+    }
+  }
+}

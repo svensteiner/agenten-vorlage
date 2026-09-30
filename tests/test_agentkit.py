@@ -1,0 +1,652 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, run_process
+from agentkit.catalog import Catalog, skill_metadata
+from agentkit.contracts import ContractError, LIBRARY, read_json
+from agentkit.engine import Engine
+from agentkit.integrations import issue_to_task, native_prompt, result_to_update
+from agentkit.scaffold import add_skill, create
+from agentkit.storage import lock, save
+
+
+def decision(action="delegate", role="developer", skills=None):
+    return {
+        "action": action,
+        "role": role,
+        "skills": skills or [],
+        "task": "Bounded task",
+        "reason": "Evidence gap",
+    }
+
+
+def report(status="success", evidence=None):
+    return {
+        "status": status,
+        "summary": "Observation",
+        "artifacts": [],
+        "evidence": ["Inspected current acceptance criteria"]
+        if evidence is None
+        else evidence,
+        "next_actions": [],
+    }
+
+
+class SequenceBackend:
+    name = "test"
+
+    def __init__(self, decisions, reports=()):
+        self.decisions = iter(decisions)
+        self.reports = iter(reports)
+        self.calls = 0
+
+    def decide(self, context, timeout):
+        return next(self.decisions)
+
+    def execute(self, choice, context, timeout):
+        self.calls += 1
+        value = next(self.reports)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+
+class AgentKitTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.agent = create(self.root / "agent", "developer", "cto-dev", "AI_Studioxyz")
+        self.workspace = self.agent / "workspace"
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_backend(self, backend):
+        return Engine(self.agent, self.workspace, backend).run(
+            "Build a verified deliverable"
+        )
+
+    def change_limits(self, **changes):
+        cfg = read_json(self.agent / "agent.json")
+        cfg["limits"].update(changes)
+        save(self.agent / "agent.json", cfg)
+
+    def test_all_profiles_generate_valid_portable_packs(self):
+        for name in read_json(LIBRARY / "profiles.json"):
+            with self.subTest(name=name):
+                target = create(self.root / name, name, name, "Example Company")
+                self.assertTrue(Catalog(target).roles)
+                self.assertTrue((target / "STATUS.md").is_file())
+                for skill in (target / ".agents/skills").glob("*/SKILL.md"):
+                    skill_metadata(skill)
+
+    def test_status_is_first_class_handoff_in_native_prompt(self):
+        prompt = native_prompt(self.agent, "Inspect the current project")
+        self.assertIn("Read STATUS.md first", prompt)
+
+    def test_existing_target_and_invalid_id_never_overwritten(self):
+        before = (self.agent / "agent.json").read_bytes()
+        with self.assertRaises(ContractError):
+            create(self.agent, "developer", "other", "Company")
+        with self.assertRaises(ContractError):
+            create(self.root / "other", "developer", "../escape", "Company")
+        self.assertEqual(before, (self.agent / "agent.json").read_bytes())
+
+    def test_demo_replans_from_failed_review(self):
+        state = self.run_backend(DemoBackend())
+        self.assertEqual("completed", state["status"])
+        self.assertEqual(
+            ["developer", "reviewer", "developer", "reviewer", ""],
+            [x["decision"]["role"] for x in state["history"]],
+        )
+        self.assertEqual("needs_revision", state["history"][1]["report"]["status"])
+        self.assertIn("ACCEPTED", (self.workspace / "demo-result.md").read_text())
+        self.assertEqual(1, state["failures"])
+
+    def test_bmd_demo_uses_domain_roles(self):
+        agent = create(
+            self.root / "bmd-agent", "bmd-tax-advisor", "bmd-tax-advisor", "Example Company"
+        )
+        workspace = agent / "workspace"
+        state = Engine(agent, workspace, DemoBackend()).run(
+            "Prepare a controlled BMD workflow artifact"
+        )
+        self.assertEqual("completed", state["status"])
+        self.assertEqual(
+            ["bmd-operator", "tax-reviewer", "bmd-operator", "tax-reviewer", ""],
+            [x["decision"]["role"] for x in state["history"]],
+        )
+
+    def test_research_can_finish_without_coding_pipeline(self):
+        backend = SequenceBackend(
+            [decision(role="researcher"), decision("finish", "")], [report()]
+        )
+        state = self.run_backend(backend)
+        self.assertEqual("completed", state["status"])
+        self.assertFalse(state["dirty"])
+
+    def test_finish_without_evidence_or_work_is_rejected(self):
+        for reports, decisions in [
+            ([], [decision("finish", "")]),
+            (
+                [report(evidence=[])],
+                [decision(role="researcher"), decision("finish", "")],
+            ),
+        ]:
+            with self.subTest(reports=reports):
+                state = self.run_backend(SequenceBackend(decisions, reports))
+                self.assertEqual("blocked", state["status"])
+                self.assertIn("evidence", state["summary"])
+
+    def test_writes_require_review(self):
+        state = self.run_backend(
+            SequenceBackend([decision(), decision("finish", "")], [report()])
+        )
+        self.assertEqual("blocked", state["status"])
+        self.assertIn("subsequent review", state["summary"])
+
+    def test_edit_invalidates_previous_review(self):
+        choices = [
+            decision(),
+            decision(role="reviewer"),
+            decision(),
+            decision("finish", ""),
+        ]
+        state = self.run_backend(
+            SequenceBackend(choices, [report(), report(), report()])
+        )
+        self.assertEqual("blocked", state["status"])
+        self.assertFalse(state["reviewed"])
+
+    def test_failed_review_invalidates_successful_review(self):
+        choices = [
+            decision(),
+            decision(role="reviewer"),
+            decision(role="reviewer"),
+            decision("finish", ""),
+        ]
+        state = self.run_backend(
+            SequenceBackend(choices, [report(), report(), report("needs_revision")])
+        )
+        self.assertEqual("blocked", state["status"])
+        self.assertFalse(state["reviewed"])
+
+    def test_unassigned_skill_or_unknown_role_never_executes(self):
+        for choice in [
+            decision(skills=["customer-response"]),
+            decision(role="../../other"),
+        ]:
+            backend = SequenceBackend([choice])
+            state = self.run_backend(backend)
+            self.assertEqual("blocked", state["status"])
+            self.assertEqual(0, backend.calls)
+
+    def test_invalid_model_json_fails_closed(self):
+        choice = decision()
+        choice["execute_shell"] = "arbitrary command"
+        backend = SequenceBackend([choice])
+        state = self.run_backend(backend)
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual(0, backend.calls)
+
+    def test_artifact_must_exist_and_stay_in_workspace(self):
+        for artifact in [
+            "missing.txt",
+            "../agent.json",
+            str(self.agent / "agent.json"),
+        ]:
+            value = report()
+            value["artifacts"] = [artifact]
+            state = self.run_backend(SequenceBackend([decision()], [value]))
+            self.assertEqual("blocked", state["status"])
+            self.assertIsNotNone(state["in_flight"])
+
+    def test_step_budget_is_enforced(self):
+        self.change_limits(max_steps=1)
+        state = self.run_backend(
+            SequenceBackend([decision(role="researcher")], [report()])
+        )
+        self.assertEqual("blocked", state["status"])
+        self.assertIn("Step budget", state["summary"])
+
+    def test_failure_budget_is_enforced(self):
+        self.change_limits(max_failures=1)
+        state = self.run_backend(
+            SequenceBackend([decision()], [report("needs_revision")])
+        )
+        self.assertIn("Failure budget", state["summary"])
+
+    def test_manual_feedback_starts_new_failure_epoch_without_erasing_audit(self):
+        self.change_limits(max_failures=1)
+        state = self.run_backend(
+            SequenceBackend([decision()], [report("needs_revision")])
+        )
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual(1, state["failures"])
+        resumed = Engine(
+            self.agent,
+            self.workspace,
+            SequenceBackend(
+                [decision(role="reviewer"), decision("finish", "")],
+                [report()],
+            ),
+        ).run(
+            "",
+            run_dir=self.agent / ".runs" / state["run_id"],
+            feedback="The blocker was resolved; inspect the fresh evidence.",
+        )
+        self.assertEqual("completed", resumed["status"])
+        self.assertEqual(1, resumed["failures"])
+        self.assertTrue(resumed["reviewed"])
+
+    def test_context_budget_blocks_before_worker(self):
+        self.change_limits(max_context_chars=1000)
+        backend = SequenceBackend([decision()])
+        state = self.run_backend(backend)
+        self.assertEqual(0, backend.calls)
+        self.assertIn("Context budget", state["summary"])
+
+    def test_interrupted_worker_is_not_automatically_replayed(self):
+        state = self.run_backend(
+            SequenceBackend([decision()], [RuntimeError("simulated crash")])
+        )
+        folder = self.agent / ".runs" / state["run_id"]
+        backend = SequenceBackend([decision("blocked", "")])
+        engine = Engine(self.agent, self.workspace, backend)
+        with self.assertRaises(ContractError):
+            engine.run("", run_dir=folder, feedback="Inspect first")
+        resumed = engine.run(
+            "",
+            run_dir=folder,
+            feedback="Inspected output; operation not repeated",
+            acknowledge_interruption=True,
+        )
+        self.assertEqual(2, resumed["steps"])
+        self.assertEqual(0, backend.calls)
+
+    def test_completed_run_is_idempotent(self):
+        state = self.run_backend(DemoBackend())
+        resumed = Engine(self.agent, self.workspace, DemoBackend()).run(
+            "", run_dir=self.agent / ".runs" / state["run_id"]
+        )
+        self.assertEqual(state, resumed)
+
+    def test_missing_resume_path_does_not_start_empty_task(self):
+        missing = self.agent / ".runs" / "typo"
+        with self.assertRaises(ContractError):
+            Engine(self.agent, self.workspace, DemoBackend()).run(
+                "", run_dir=missing, feedback="Resume"
+            )
+        self.assertFalse(missing.exists())
+
+    def test_resume_invalidates_review_before_pause(self):
+        choices = [decision(), decision(role="reviewer"), decision("blocked", "")]
+        state = self.run_backend(SequenceBackend(choices, [report(), report()]))
+        self.assertTrue(state["reviewed"])
+        resumed = Engine(
+            self.agent, self.workspace, SequenceBackend([decision("finish", "")])
+        ).run(
+            "",
+            run_dir=self.agent / ".runs" / state["run_id"],
+            feedback="Workspace inspected after pause",
+        )
+        self.assertEqual("blocked", resumed["status"])
+        self.assertIn("subsequent review", resumed["summary"])
+
+    def test_call_gets_remaining_wall_time_budget(self):
+        self.change_limits(max_seconds=1, call_timeout=10)
+        backend = SequenceBackend([decision("blocked", "")])
+        with patch.object(backend, "decide", wraps=backend.decide) as call:
+            self.run_backend(backend)
+            self.assertGreater(call.call_args.args[1], 0)
+            self.assertLessEqual(call.call_args.args[1], 1)
+
+    def test_elapsed_budget_survives_resume(self):
+        state = self.run_backend(SequenceBackend([decision("blocked", "")]))
+        folder = self.agent / ".runs" / state["run_id"]
+        state["elapsed_seconds"] = 9999
+        save(folder / "state.json", state)
+        resumed = Engine(self.agent, self.workspace, SequenceBackend([])).run(
+            "", run_dir=folder, feedback="Attempt resume without resetting time"
+        )
+        self.assertEqual("blocked", resumed["status"])
+        self.assertIn("Wall-time budget", resumed["summary"])
+
+    def test_resume_cannot_cross_company(self):
+        state = self.run_backend(SequenceBackend([decision("blocked", "")]))
+        cfg = read_json(self.agent / "agent.json")
+        cfg["company"] = "Another company"
+        save(self.agent / "agent.json", cfg)
+        with self.assertRaises(ContractError):
+            Engine(self.agent, self.workspace, SequenceBackend([])).run(
+                "", run_dir=self.agent / ".runs" / state["run_id"], feedback="x"
+            )
+
+    def test_workspace_lock_blocks_second_owner(self):
+        with lock(self.workspace / ".agentkit.lock"):
+            with self.assertRaises(RuntimeError):
+                self.run_backend(DemoBackend())
+
+    def test_skill_bundle_can_be_added_without_python_import(self):
+        source = self.root / "example-skill"
+        source.mkdir()
+        (source / "SKILL.md").write_text(
+            "---\nname: example-skill\ndescription: Example task guidance.\n---\nDo the assigned example.\n"
+        )
+        (source / "skill.py").write_text("raise RuntimeError('must not execute')")
+        add_skill(self.agent, source, "developer")
+        self.assertIn("example-skill", Catalog(self.agent).roles["developer"]["skills"])
+
+    def test_malformed_frontmatter_and_yaml_objects_are_rejected(self):
+        path = self.root / "bad-skill" / "SKILL.md"
+        path.parent.mkdir()
+        for text in [
+            "missing",
+            "---\nname: bad-skill\n---\nBody",
+            "---\n!!python/object:os.PathLike {}\n---\nBody",
+        ]:
+            path.write_text(text)
+            with self.assertRaises(ContractError):
+                skill_metadata(path)
+
+    def test_vendor_skill_matches_pinned_hash_and_includes_license(self):
+        folder = LIBRARY / "skills/verification-before-completion"
+        source = read_json(folder / "UPSTREAM.json")
+        self.assertEqual(
+            source["sha256"],
+            hashlib.sha256((folder / "SKILL.md").read_bytes()).hexdigest(),
+        )
+        self.assertIn("MIT License", (folder / "LICENSE").read_text())
+
+    def test_paperclip_company_and_owner_boundaries(self):
+        issue = {
+            "id": "i1",
+            "title": "Fix",
+            "companyId": "c1",
+            "assigneeAgentId": "a1",
+            "status": "todo",
+        }
+        self.assertIn("Fix", issue_to_task(issue, company_id="c1", agent_id="a1"))
+        for company, agent in [("c2", "a1"), ("c1", "a2")]:
+            with self.assertRaises(ContractError):
+                issue_to_task(issue, company_id=company, agent_id=agent)
+        self.assertEqual(
+            "blocked",
+            result_to_update({"status": "blocked", "run_id": "r", "summary": "x"})[
+                "status"
+            ],
+        )
+
+    def test_native_prompt_uses_explicit_portable_skill_paths(self):
+        text = native_prompt(self.agent, "Research the current repository")
+        self.assertIn("dynamic-workflow/SKILL.md", text.replace("\\", "/"))
+        self.assertIn("Python engine is not running", text)
+
+    def test_deepseek_backend_requires_local_api_key(self):
+        with self.assertRaises(ContractError):
+            DeepSeekBackend(api_key="")._call("{}", "decision", {}, 5)
+
+    def test_deepseek_backend_parses_structured_response_without_persisting_key(self):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self, limit):
+                return json.dumps(
+                    {
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": json.dumps(
+                                        {
+                                            "action": "blocked",
+                                            "role": "",
+                                            "skills": [],
+                                            "task": "Missing evidence",
+                                            "reason": "The test fixture is intentionally blocked.",
+                                        }
+                                    )
+                                }
+                            }
+                        ]
+                    }
+                ).encode("utf-8")
+
+        with patch("agentkit.backends.urllib.request.urlopen", return_value=Response()) as call:
+            result = DeepSeekBackend(api_key="test-only-key")._call(
+                "Return a blocked decision as JSON.", "decision", {}, 5
+            )
+
+        self.assertEqual("blocked", result["action"])
+        request = call.call_args.args[0]
+        self.assertEqual("Bearer test-only-key", request.get_header("Authorization"))
+        self.assertIn("response_format", request.data.decode("utf-8"))
+
+    def test_deepseek_backend_accepts_json_markdown_wrapper(self):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self, limit):
+                return json.dumps(
+                    {
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": "```json\n"
+                                    + json.dumps(
+                                        {
+                                            "action": "blocked",
+                                            "role": "",
+                                            "skills": [],
+                                            "task": "Wrapped response",
+                                            "reason": "The wrapper is tolerated.",
+                                        }
+                                    )
+                                    + "\n```"
+                                }
+                            }
+                        ]
+                    }
+                ).encode("utf-8")
+
+        with patch("agentkit.backends.urllib.request.urlopen", return_value=Response()):
+            result = DeepSeekBackend(api_key="test-only-key")._call(
+                "Return a blocked decision as JSON.", "decision", {}, 5
+            )
+
+        self.assertEqual("blocked", result["action"])
+
+    def test_deepseek_backend_parses_wrapped_tool_arguments(self):
+        self.assertEqual(
+            {"path": "README.md"},
+            DeepSeekBackend._parse_structured_content('```json\n{"path": "README.md"}\n```'),
+        )
+
+    def test_deepseek_backend_accepts_python_literal_tool_arguments(self):
+        self.assertEqual(
+            {"path": "README.md"},
+            DeepSeekBackend._parse_tool_arguments("{'path': 'README.md'}"),
+        )
+
+    def test_deepseek_workspace_reader_falls_back_to_cp1252(self):
+        path = self.workspace / "legacy.txt"
+        path.write_bytes("Prüfung: Maßnahme".encode("cp1252"))
+        result = DeepSeekBackend(api_key="test-only-key")._run_tool(
+            "read_file", {"path": "legacy.txt"}, {"workspace": str(self.workspace)}, 5
+        )
+        self.assertEqual("Prüfung: Maßnahme", result)
+
+    def test_deepseek_edit_file_requires_one_exact_match(self):
+        path = self.workspace / "target.txt"
+        path.write_text("alpha\nbeta\n", encoding="utf-8")
+        result = DeepSeekBackend(api_key="test-only-key")._run_tool(
+            "edit_file",
+            {"path": "target.txt", "old_text": "beta", "new_text": "gamma"},
+            {"workspace": str(self.workspace), "sandbox": "workspace-write"},
+            5,
+        )
+        self.assertIn('"edited": "target.txt"', result)
+        self.assertEqual("alpha\ngamma\n", path.read_text(encoding="utf-8"))
+
+    def test_deepseek_refuses_large_existing_file_rewrite(self):
+        path = self.workspace / "large.py"
+        path.write_text("x" * 2_000, encoding="utf-8")
+        result = DeepSeekBackend(api_key="test-only-key")._run_tool(
+            "write_file",
+            {"path": "large.py", "content": "short"},
+            {"workspace": str(self.workspace), "sandbox": "workspace-write"},
+            5,
+        )
+        self.assertIn("refusing_large_file_rewrite", result)
+        self.assertEqual(2_000, path.stat().st_size)
+
+    def test_deepseek_pytest_prefers_workspace_src(self):
+        source_root = self.workspace / "src"
+        source_root.mkdir()
+        test_path = self.workspace / "tests" / "test_smoke.py"
+        test_path.parent.mkdir()
+        test_path.write_text("def test_ok(): pass\n", encoding="utf-8")
+        completed = (0, "1 passed", "")
+        with patch("agentkit.backends._process_result", return_value=completed) as run:
+            DeepSeekBackend(api_key="test-only-key")._run_tool(
+                "run_pytest",
+                {"path": "tests/test_smoke.py"},
+                {"workspace": str(self.workspace), "sandbox": "workspace-write"},
+                5,
+            )
+        env = run.call_args.kwargs["env"]
+        self.assertEqual(
+            source_root.resolve(), Path(env["PYTHONPATH"].split(os.pathsep)[0]).resolve()
+        )
+
+    def test_pytest_subprocess_does_not_inherit_server_secrets(self):
+        path = self.workspace / "test_environment.py"
+        path.write_text(
+            "import os\ndef test_environment():\n"
+            "    assert 'DEEPSEEK_API_KEY' not in os.environ\n"
+            "    assert 'UNRELATED_PRIVATE_TOKEN' not in os.environ\n"
+            "    assert 'OPENAI_API_KEY' not in os.environ\n", encoding="utf-8")
+        with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "probe-secret", "UNRELATED_PRIVATE_TOKEN": "other-secret", "OPENAI_API_KEY": "openai-secret"}):
+            result = json.loads(DeepSeekBackend(api_key="probe-secret")._run_tool(
+                "run_pytest", {"path": path.name},
+                {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 15))
+        self.assertEqual(0, result["exit_code"], result)
+
+    def test_resume_rejects_external_directory_and_mismatched_identity(self):
+        state = self.run_backend(DemoBackend())
+        external = self.root / "external"
+        external.mkdir()
+        save(external / "state.json", state)
+        engine = Engine(self.agent, self.workspace, DemoBackend())
+        with self.assertRaises(ContractError):
+            engine.run("", run_dir=external, feedback="resume")
+        folder = self.agent / ".runs" / state["run_id"]
+        state["run_id"] = "0" * 32
+        save(folder / "state.json", state)
+        with self.assertRaises(ContractError):
+            engine.run("", run_dir=folder, feedback="resume")
+
+    def test_codex_adapter_uses_schema_stdin_and_role_sandbox(self):
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), patch(
+            "agentkit.backends._windows_sandbox_selection", return_value="unelevated"
+        ):
+            backend = CodexBackend()
+        ctx = {"workspace": str(self.workspace), "sandbox": "read-only"}
+
+        def fake_run(args, prompt, cwd, timeout):
+            self.assertEqual("-", args[-1])
+            self.assertEqual("read-only", args[args.index("--sandbox") + 1])
+            self.assertIn("--output-schema", args)
+            Path(args[args.index("--output-last-message") + 1]).write_text(
+                json.dumps(report()), encoding="utf-8"
+            )
+            return ""
+
+        with patch("agentkit.backends.run_process", side_effect=fake_run):
+            self.assertEqual(
+                "success", backend._call("Task", "report", ctx, 5)["status"]
+            )
+
+    def test_process_timeout_and_nonzero_exit(self):
+        with self.assertRaises(subprocess.TimeoutExpired):
+            run_process(
+                [sys.executable, "-c", "import time; time.sleep(10)"],
+                "",
+                self.workspace,
+                0.1,
+            )
+        with self.assertRaises(RuntimeError):
+            run_process(
+                [sys.executable, "-c", "raise SystemExit(7)"], "", self.workspace, 5
+            )
+
+    def test_readonly_deepseek_tools_cannot_modify_or_execute_workspace(self):
+        backend = DeepSeekBackend(api_key="test-only-key")
+        target = self.workspace / "target.txt"
+        target.write_text("original")
+        for sandbox in (None, "read-only"):
+            for name in ("write_file", "edit_file", "run_pytest"):
+                with self.subTest(sandbox=sandbox, tool=name), self.assertRaises(ContractError):
+                    backend._run_tool(name, {"path": "target.txt", "content": "changed", "old_text": "original", "new_text": "changed"}, {"workspace": str(self.workspace), "sandbox": sandbox}, 5)
+        self.assertEqual("original", target.read_text())
+        self.assertEqual({"read_file", "list_files"}, {s["function"]["name"] for s in backend._tool_specs()})
+
+    def test_deepseek_batch_cannot_exceed_tool_budget(self):
+        backend = DeepSeekBackend(api_key="test-only-key")
+        backend.max_tool_calls = 1
+        calls = [{"id": str(i), "function": {"name": "list_files", "arguments": "{}"}} for i in range(2)]
+        with patch.object(backend, "_chat", return_value={"tool_calls": calls}), patch.object(backend, "_run_tool", return_value="[]") as run:
+            with self.assertRaisesRegex(ContractError, "limit exhausted"):
+                backend._call("Task", "report", {"workspace": str(self.workspace)}, 5)
+        self.assertEqual(1, run.call_count)
+
+    def test_deepseek_expired_tool_cannot_write(self):
+        with self.assertRaisesRegex(ContractError, "deadline"):
+            DeepSeekBackend(api_key="test-only-key")._run_tool("write_file", {"path": "late.txt", "content": "late"}, {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 0)
+        self.assertFalse((self.workspace / "late.txt").exists())
+
+    def test_deepseek_test_process_preserves_timeout_and_isolates_path_argument(self):
+        target = self.workspace / "--help"
+        target.mkdir()
+        with patch("agentkit.backends._process_result", return_value=(1, "failure", "details")) as run:
+            result = DeepSeekBackend(api_key="test-only-key")._run_tool("run_pytest", {"path": "--help"}, {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 0.25)
+        self.assertEqual(0.25, run.call_args.args[3])
+        self.assertEqual(["--", str(target.resolve())], run.call_args.args[0][-2:])
+        self.assertEqual(1, json.loads(result)["exit_code"])
+
+    def test_deepseek_cannot_overwrite_coordination_files(self):
+        for path in (".agentkit.lock", ".runs/run/state.json", "nested/.lock"):
+            with self.subTest(path=path), self.assertRaisesRegex(ContractError, "coordination"):
+                DeepSeekBackend(api_key="test-only-key")._run_tool("write_file", {"path": path, "content": "bad"}, {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 5)
+
+    def test_new_run_id_is_bound_and_cannot_overwrite_checkpoint(self):
+        run_id = "a" * 32
+        engine = Engine(self.agent, self.workspace, DemoBackend())
+        state = engine.run("Demo", new_run_id=run_id)
+        self.assertEqual(run_id, state["run_id"])
+        self.assertTrue((self.agent / ".runs" / run_id / "state.json").is_file())
+        with self.assertRaisesRegex(ContractError, "already has a checkpoint"):
+            engine.run("Other task", new_run_id=run_id)
+        for invalid in ("../outside", "g" * 32, "A" * 32):
+            with self.assertRaises(ContractError):
+                engine.run("Demo", new_run_id=invalid)
+
+
+if __name__ == "__main__":
+    unittest.main()

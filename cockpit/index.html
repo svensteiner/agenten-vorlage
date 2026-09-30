@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Studio · Dein lokaler Arbeitsraum</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #101111;
+        --panel: #181a19;
+        --line: #303530;
+        --text: #eff3eb;
+        --muted: #a0aaa0;
+        --accent: #d2edab;
+        --red: #ffa99e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.55 system-ui,
+          sans-serif;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        color: var(--text);
+        background: var(--panel);
+      }
+      button {
+        padding: 10px 14px;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        min-width: 0;
+      }
+      textarea {
+        resize: vertical;
+      }
+      p {
+        color: var(--muted);
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+      h1 {
+        font-size: clamp(30px, 4vw, 49px);
+        font-weight: 550;
+        letter-spacing: -0.045em;
+        line-height: 1.12;
+      }
+      h2 {
+        font-size: 17px;
+      }
+      h3 {
+        font-size: 14px;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+      .rail {
+        background: #171917;
+        border-right: 1px solid var(--line);
+        padding: 25px 17px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 20px;
+        font-weight: 650;
+        letter-spacing: -0.04em;
+      }
+      .logo {
+        display: grid;
+        grid-template-columns: repeat(2, 7px);
+        gap: 3px;
+        transform: rotate(-12deg);
+      }
+      .logo i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .primary {
+        background: var(--accent);
+        color: #1c2715;
+        border-color: var(--accent);
+        font-weight: 650;
+      }
+      .section-title,
+      .eyebrow {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        margin-bottom: 9px;
+      }
+      .nav-item {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border-color: transparent;
+        margin: 2px 0;
+        padding: 10px;
+      }
+      .nav-item.active {
+        background: #2a3027;
+        border-color: #46513e;
+      }
+      .nav-item strong,
+      .nav-item small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nav-item small {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      .history-list {
+        max-height: 38vh;
+        overflow: auto;
+      }
+      .rail-footer {
+        margin-top: auto;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .topbar {
+        padding: 20px 32px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .connection {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .connection[data-state="online"] {
+        color: var(--accent);
+      }
+      .connection[data-state="offline"] {
+        color: var(--red);
+      }
+      .main {
+        min-width: 0;
+      }
+      .content {
+        max-width: 1120px;
+        margin: auto;
+        padding: 36px 40px;
+      }
+      .welcome {
+        max-width: 710px;
+        margin: 35px auto 30px;
+      }
+      .welcome .eyebrow {
+        color: var(--accent);
+      }
+      .welcome p {
+        font-size: 16px;
+        max-width: 600px;
+      }
+      .suggestions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 25px;
+      }
+      .suggestions button {
+        text-align: left;
+        padding: 17px;
+        background: #191d18;
+      }
+      .suggestions small {
+        display: block;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .composer {
+        max-width: 850px;
+        margin: auto;
+        border: 1px solid #48533e;
+        background: #191d18;
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .composer textarea {
+        background: transparent;
+        border: 0;
+        min-height: 110px;
+        padding: 5px 2px;
+      }
+      .composer label,
+      .resume-form label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .wide {
+        grid-column: 1/-1;
+      }
+      .composer-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 16px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .notice {
+        max-width: 850px;
+        margin: 0 auto 18px;
+        padding: 12px 16px;
+        border: 1px solid #784c43;
+        background: #281e1b;
+        border-radius: 10px;
+        color: #ffd1c9;
+        white-space: pre-wrap;
+      }
+      .job {
+        margin-bottom: 24px;
+      }
+      .job-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+      .badge {
+        border: 1px solid #48533e;
+        border-radius: 20px;
+        padding: 5px 11px;
+        font-size: 12px;
+        color: var(--accent);
+      }
+      .job-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 20px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 19px;
+        margin-bottom: 14px;
+      }
+      .task-text,
+      .summary,
+      .evidence {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .summary {
+        font-size: 16px;
+      }
+      .approval-card {
+        border-color: #6c7048;
+        background: #20251d;
+      }
+      .approval-card h2 {
+        margin-bottom: 8px;
+      }
+      .approval-intro {
+        margin-bottom: 14px;
+      }
+      .approval-tool {
+        color: var(--accent);
+        font-family: ui-monospace, monospace;
+        overflow-wrap: anywhere;
+      }
+      .approval-arguments {
+        max-height: 300px;
+        margin: 8px 0 16px;
+        padding: 12px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #141713;
+        color: var(--text);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font: 12px/1.5 ui-monospace, monospace;
+      }
+      .approval-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .approval-actions .reject {
+        border-color: #784c43;
+        color: #ffd1c9;
+        background: #281e1b;
+      }
+      .timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .workflow-trace { min-width: 0; margin-bottom: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #141914; }
+      .job-grid > * { min-width: 0; }
+      .workflow-trace h2 { margin: 0 0 4px; }
+      .trace-subtitle { margin: 0 0 16px; color: var(--muted); font-size: 12px; }
+      .trace-track { display: flex; gap: 0; overflow-x: auto; padding: 4px 0 8px; }
+      .trace-node { position: relative; min-width: 98px; flex: 1 0 98px; padding: 0 10px 0 0; }
+      .trace-node:not(:last-child)::after { content: ""; position: absolute; top: 13px; left: 27px; right: 8px; height: 2px; background: var(--line); pointer-events: none; }
+      .trace-dot { position: relative; z-index: 1; width: 26px; height: 26px; display: grid; place-items: center; border: 2px solid var(--muted); border-radius: 50%; background: var(--panel); color: var(--muted); font-size: 11px; }
+      .trace-node.done .trace-dot { border-color: var(--accent); background: #304328; color: var(--accent); }
+      .trace-node.review .trace-dot { border-color: #e8c889; color: #e8c889; }
+      .trace-node.failed .trace-dot { border-color: var(--red); color: var(--red); }
+      .trace-node strong { display: block; margin-top: 8px; color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
+      .trace-node small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.35; }
+      .trace-node a { display: block; color: inherit; text-decoration: none; }
+      .trace-node a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+      @media (prefers-reduced-motion: no-preference) { .trace-node.running .trace-dot { animation: trace-pulse 1.8s ease-in-out infinite; } }
+      @keyframes trace-pulse { 50% { box-shadow: 0 0 0 5px #d2edab18; } }
+      @media (max-width: 600px) { .trace-node { min-width: 116px; flex-basis: 116px; } }
+      .step {
+        border-left: 2px solid #48533e;
+        padding: 0 0 22px 18px;
+        margin-left: 5px;
+      }
+      .step:last-child {
+        padding-bottom: 0;
+      }
+      .step strong {
+        color: var(--accent);
+      }
+      .step p {
+        margin: 7px 0;
+      }
+      .evidence {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 7px 0;
+      }
+      .fact {
+        margin-bottom: 16px;
+      }
+      .fact:last-child {
+        margin: 0;
+      }
+      .fact dt {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .fact dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+      }
+      .artifacts {
+        padding-left: 17px;
+        overflow-wrap: anywhere;
+        font:
+          12px/1.8 ui-monospace,
+          monospace;
+      }
+      .artifacts a {
+        color: var(--accent);
+      }
+      .resume-form textarea {
+        min-height: 80px;
+        margin-bottom: 10px;
+      }
+      .check {
+        display: flex !important;
+        align-items: flex-start;
+        gap: 9px;
+        margin: 13px 0 !important;
+      }
+      .check input {
+        width: auto;
+        margin-top: 4px;
+      }
+      dialog {
+        width: min(540px, calc(100% - 32px));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 25px;
+      }
+      dialog::backdrop {
+        background: #000a;
+      }
+      dialog label {
+        display: block;
+        margin: 12px 0 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .small-button {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+      .empty {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 1050px) {
+        .job-grid {
+          grid-template-columns: 1fr;
+        }
+        .dossier {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+        .content {
+          padding: 25px;
+        }
+        .shell {
+          grid-template-columns: 220px minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 700px) {
+        .shell {
+          display: block;
+        }
+        .rail {
+          padding: 16px;
+          gap: 12px;
+        }
+        .brand {
+          font-size: 18px;
+        }
+        .rail-footer {
+          display: none;
+        }
+        .agent-list,
+        .history-list {
+          display: flex;
+          gap: 6px;
+          overflow: auto;
+          max-height: 130px;
+        }
+        .nav-item {
+          min-width: 180px;
+          max-width: 220px;
+        }
+        .rail section .section-title {
+          margin-bottom: 4px;
+        }
+        .topbar {
+          padding: 16px;
+        }
+        .content {
+          padding: 18px;
+        }
+        .welcome {
+          margin: 20px 0;
+        }
+        .suggestions {
+          grid-template-columns: 1fr;
+        }
+        .suggestions button {
+          padding: 12px;
+        }
+        .suggestions small {
+          margin-top: 2px;
+        }
+        .fields,
+        .dossier {
+          grid-template-columns: 1fr;
+        }
+        .composer-bottom {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .composer-bottom button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <div class="brand">
+          <span class="logo" aria-hidden="true"
+            ><i></i><i></i><i></i><i></i></span
+          >AI Studio
+        </div>
+        <button id="newTask" class="primary" type="button">
+          ＋ Neuer Auftrag
+        </button>
+        <a href="/chat" class="small-button" style="color: var(--accent)">Arbeitsdialoge öffnen →</a>
+        <a href="/settings" class="small-button" style="color: var(--accent)">Provider-Einstellungen →</a>
+        <a href="/assistants" class="small-button" style="color: var(--accent)">Assistenten verwalten →</a>
+        <section>
+          <div class="section-title">Deine Assistenten</div>
+          <button id="createAgent" type="button" class="small-button">
+            ＋ Assistent erstellen
+          </button>
+          <div id="agents" class="agent-list">
+            <p class="empty">Assistenten werden geladen …</p>
+          </div>
+        </section>
+        <section>
+          <div class="section-title">Aufträge</div>
+          <div id="history" class="history-list">
+            <p class="empty">Verlauf wird geladen …</p>
+          </div>
+        </section>
+        <div class="rail-footer">
+          Dein Workspace. Deine Kontrolle.<br />API-Schlüssel bleiben auf dem
+          Server.
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <div class="eyebrow">Lokaler Arbeitsraum</div>
+            <strong id="selectedAgent">AI Studio</strong>
+          </div>
+          <div>
+            <span id="connection" class="connection" role="status"
+              >Verbindung wird geprüft …</span
+            >
+            <button id="retry" class="small-button" hidden type="button">
+              Erneut verbinden
+            </button>
+          </div>
+        </header>
+        <div class="content">
+          <div id="notice" class="notice" role="alert" hidden></div>
+          <section id="welcome" class="welcome">
+            <div class="eyebrow">Aus einer Idee wird ein Ergebnis</div>
+            <h1>Woran arbeiten<br />wir heute?</h1>
+            <p>
+              Gib deinem Assistenten ein klares Ziel. Verfolge seine Arbeit,
+              prüfe die Nachweise und entscheide, wie es weitergeht.
+            </p>
+            <div class="suggestions">
+              <button
+                type="button"
+                data-task="Analysiere den Workspace und erstelle eine priorisierte Übersicht der nächsten Schritte mit nachvollziehbaren Nachweisen."
+              >
+                Überblick gewinnen<small
+                  >Bestand prüfen & nächste Schritte</small
+                ></button
+              ><button
+                type="button"
+                data-task="Untersuche den Workspace auf Fehler, behebe einen klar belegten Fehler und verifiziere die Änderung mit passenden Tests."
+              >
+                Ein Problem lösen<small
+                  >Analysieren, umsetzen, prüfen</small
+                ></button
+              ><button
+                type="button"
+                data-task="Erstelle auf Basis der vorhandenen Dateien eine verständliche Dokumentation und überprüfe alle Aussagen gegen den Workspace."
+              >
+                Wissen aufbereiten<small>Dokumentation aus dem Workspace</small>
+              </button>
+            </div>
+          </section>
+          <section
+            id="jobView"
+            class="job"
+            hidden
+            aria-label="Aktueller Auftrag"
+          >
+            <div class="job-header">
+              <h2>Dein Auftrag</h2>
+              <span id="jobStatus" class="badge" role="status"></span>
+            </div>
+            <div class="job-grid">
+              <div>
+                <div class="card">
+                  <div class="eyebrow">Auftrag</div>
+                  <div id="jobTask" class="task-text"></div>
+                </div>
+                <div class="card">
+                  <div class="eyebrow">Ergebnis & Fortschritt</div>
+                  <div id="summary" class="summary"></div>
+                </div>
+                <section id="approvalCard" class="approval-card card" hidden aria-labelledby="approvalTitle">
+                  <h2 id="approvalTitle">Freigabe erforderlich</h2>
+                  <p class="approval-intro">Der Auftrag wartet auf deine Entscheidung für diese konkrete Tool-Aktion:</p>
+                  <div id="approvalTool" class="approval-tool"></div>
+                  <div class="eyebrow">Vorgeschlagene Argumente</div>
+                  <pre id="approvalArguments" class="approval-arguments"></pre>
+                  <p id="approvalHint" class="hint">Prüfe Werkzeug und Argumente sorgfältig. Die Entscheidung wird an den laufenden Auftrag gebunden.</p>
+                  <div class="approval-actions"><button id="approveAction" class="primary" type="button">Aktion freigeben</button><button id="rejectAction" class="reject" type="button">Aktion ablehnen</button></div>
+                </section>
+                <section class="workflow-trace" aria-labelledby="traceTitle"><h2 id="traceTitle">Workflow-Spur</h2><p class="trace-subtitle">Dynamischer Verlauf aus den protokollierten Rollen und Ergebnissen</p><div id="workflowTrace" class="trace-track" role="list" aria-live="polite"></div></section>
+                <div class="card">
+                  <h2>Arbeitsschritte & Nachweise</h2>
+                  <ol id="timeline" class="timeline"></ol>
+                </div>
+                <form id="resumeForm" class="resume-form card" hidden>
+                  <h2>Auftrag fortsetzen</h2>
+                  <label for="feedback"
+                    >Neue Erkenntnisse oder konkrete Änderungen</label
+                  ><textarea
+                    id="feedback"
+                    required
+                    maxlength="12000"
+                    placeholder="Was wurde geklärt oder geändert?"
+                  ></textarea
+                  ><label class="check"
+                    ><input id="acknowledge" type="checkbox" /><span
+                      >Ich habe mögliche Änderungen eines unterbrochenen Laufs
+                      im Workspace geprüft und bestätige die Fortsetzung.</span
+                    ></label
+                  >
+                  <p class="hint">
+                    Bei unbekanntem Ausgang ist diese Bestätigung erforderlich.
+                    Sie bestätigt keine erfolgreiche Prüfung des Ergebnisses.
+                  </p>
+                  <button id="resume" class="primary" type="submit">
+                    Mit Feedback fortsetzen
+                  </button>
+                </form>
+              </div>
+              <aside class="dossier">
+                <div class="card">
+                  <h2>Laufdetails</h2>
+                  <dl id="dossier"></dl>
+                </div>
+                <div class="card">
+                  <h2>Artefakte</h2>
+                  <p class="hint">Dateipfade relativ zum Workspace.</p>
+                  <ul id="artifacts" class="artifacts"></ul>
+                </div>
+              </aside>
+            </div>
+          </section>
+          <form id="composer" class="composer">
+            <label for="task">Was soll dein Assistent erledigen?</label
+            ><textarea
+              id="task"
+              required
+              maxlength="12000"
+              placeholder="Beschreibe dein Ziel und woran du ein gutes Ergebnis erkennst …"
+            ></textarea>
+            <div class="fields">
+              <div>
+                <label for="agent">Assistent</label
+                ><select id="agent" required></select>
+              </div>
+              <div>
+                <label for="backend">Ausführung</label
+                ><select id="backend" required></select>
+              </div>
+              <div>
+                <label for="workspace">Workspace · bestehender Ordner</label
+                ><input
+                  id="workspace"
+                  required
+                  placeholder="Absoluter Ordnerpfad"
+                  autocomplete="off"
+                />
+              </div>
+              <div>
+                <label for="model">Modell · optional</label
+                ><input
+                  id="model"
+                  placeholder="Standard des Backends"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div class="composer-bottom">
+              <p id="backendHint" class="hint">Verfügbarkeit wird geprüft …</p>
+              <button class="primary" id="run" type="submit" disabled>
+                Auftrag starten ↗
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+    <dialog id="agentDialog" aria-labelledby="agentDialogTitle">
+      <form id="agentForm">
+        <h2 id="agentDialogTitle">Dein neuer Assistent</h2>
+        <p>Ein eigener Agent mit Rollen und Vorgaben für deine Arbeit.</p>
+        <label for="agentName"
+          >Name · Kleinbuchstaben, Zahlen und Bindestriche</label
+        ><input
+          id="agentName"
+          required
+          pattern="[a-z0-9][a-z0-9-]*"
+          maxlength="64"
+          placeholder="mein-assistent"
+        /><label for="agentProfile">Profil</label
+        ><select id="agentProfile" required></select
+        ><label for="agentCompany">Unternehmen</label
+        ><input
+          id="agentCompany"
+          required
+          maxlength="200"
+          placeholder="Dein Unternehmen"
+        /><label for="agentInstructions">Zusätzliche Vorgaben · optional</label
+        ><textarea
+          id="agentInstructions"
+          maxlength="12000"
+          placeholder="Ziele, Arbeitsweise und Grenzen …"
+        ></textarea>
+        <p id="agentError" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="cancelAgent" type="button">Abbrechen</button
+          ><button id="saveAgent" class="primary" type="submit">
+            Assistent erstellen
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const state = {
+        agents: [],
+        backends: [],
+        jobs: [],
+        job: null,
+        view: null,
+        parentJobId: null,
+        pendingSubmission: null,
+        epoch: 0,
+        timer: null,
+        ready: false,
+        posting: false,
+        approvalPosting: false,
+        online: false,
+      };
+      function loadPending() {
+        try {
+          const saved = sessionStorage.getItem("ai-studio-pending-submission");
+          if (saved) state.pendingSubmission = JSON.parse(saved);
+        } catch {}
+      }
+      function savePending() {
+        try {
+          if (state.pendingSubmission)
+            sessionStorage.setItem(
+              "ai-studio-pending-submission",
+              JSON.stringify(state.pendingSubmission),
+            );
+          else sessionStorage.removeItem("ai-studio-pending-submission");
+        } catch {}
+      }
+      function requestId() {
+        return crypto.randomUUID().replaceAll("-", "");
+      }
+      function renderBuildButton(job) {
+        let button = $("buildOnJob");
+        if (!button) {
+          button = el("button", "Darauf aufbauen", "small-button");
+          button.id = "buildOnJob";
+          button.type = "button";
+          $("jobStatus").before(button);
+        }
+        button.hidden = job.status !== "completed";
+        button.onclick = () => buildOnJob(job);
+      }
+      function renderArtifactLinks(job) {
+        const paths = [
+          ...new Set(
+            [...(job.result?.history || [])].flatMap(
+              (item) => item.report?.artifacts || [],
+            ),
+          ),
+        ];
+        for (const [index, path] of paths.entries()) {
+          const item = $("artifacts").children[index];
+          if (!item) break;
+          const link = document.createElement("a");
+          link.href =
+            "/api/jobs/" +
+            encodeURIComponent(job.job_id) +
+            "/artifacts?path=" +
+            encodeURIComponent(path);
+          link.textContent = path;
+          item.replaceChildren(link);
+        }
+      }
+      function approvalPending(job) {
+        return job && (job.status === "awaiting_approval" || job.result?.status === "awaiting_approval") ? job.result?.pending_approval : null;
+      }
+      function renderApproval(job) {
+        const pending = busy(job) ? null : approvalPending(job);
+        const card = $("approvalCard");
+        card.hidden = !pending;
+        if (!pending) return;
+        $("approvalTool").textContent = pending.tool || "Unbekanntes Werkzeug";
+        let argumentsText = "";
+        try {
+          argumentsText = typeof pending.arguments === "string" ? pending.arguments : JSON.stringify(pending.arguments ?? {}, null, 2);
+        } catch {
+          argumentsText = String(pending.arguments ?? "");
+        }
+        $("approvalArguments").textContent = argumentsText;
+        $("approvalHint").textContent = pending.id
+          ? `Freigabe-ID: ${pending.id}`
+          : "Prüfe Werkzeug und Argumente sorgfältig. Die Entscheidung wird an den laufenden Auftrag gebunden.";
+        $("approveAction").onclick = () => submitApproval("approve");
+        $("rejectAction").onclick = () => submitApproval("reject");
+      }
+      async function submitApproval(decision) {
+        if (state.approvalPosting || !state.job || !approvalPending(state.job)) return;
+        const pending = approvalPending(state.job);
+        if (!pending?.id) {
+          notice("Die ausstehende Freigabe ist unvollständig. Aktualisiere den Auftrag und prüfe ihn erneut.");
+          return;
+        }
+        const jobId = state.job.job_id;
+        const approvalEpoch = state.epoch;
+        state.approvalPosting = true;
+        controls();
+        notice("");
+        try {
+          const job = await api("/api/jobs/" + encodeURIComponent(jobId) + "/approval", {
+            method: "POST",
+            body: JSON.stringify({ approval_id: pending.id, decision }),
+          });
+          if (state.view !== jobId || state.epoch !== approvalEpoch) return;
+          renderJob(job);
+          renderBuildButton(job);
+          renderArtifactLinks(job);
+          if (busy(job)) {
+            clearTimeout(state.timer);
+            state.timer = setTimeout(() => poll(job.job_id, state.epoch), 1200);
+          }
+        } catch (error) {
+          notice(error.message);
+        } finally {
+          state.approvalPosting = false;
+          controls();
+        }
+      }
+      const busy = (job) => job && ["queued", "running"].includes(job.status);
+      const labels = {
+        queued: "Wartet",
+        running: "In Arbeit",
+        awaiting_approval: "Freigabe erforderlich",
+        completed: "Abgeschlossen",
+        blocked: "Klärung erforderlich",
+        error: "Fehler",
+        failed: "Fehlgeschlagen",
+        interrupted: "Unterbrochen",
+      };
+      function el(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== undefined) node.textContent = String(text);
+        if (className) node.className = className;
+        return node;
+      }
+      function connection(ok) {
+        state.online = ok;
+        $("connection").textContent = ok
+          ? "Lokal verbunden"
+          : "Verbindung unterbrochen";
+        $("connection").dataset.state = ok ? "online" : "offline";
+        $("retry").hidden = ok;
+        controls();
+      }
+      function notice(message) {
+        $("notice").textContent = message || "";
+        $("notice").hidden = !message;
+      }
+      function controls() {
+        const backend = state.backends.find((x) => x.id === $("backend").value);
+        $("run").disabled =
+          !state.ready ||
+          !state.online ||
+          state.posting ||
+          state.approvalPosting ||
+          !state.agents.length ||
+          !backend?.available;
+        $("resume").disabled = state.posting || state.approvalPosting || !state.online;
+        $("newTask").disabled = state.posting || state.approvalPosting;
+        $("createAgent").disabled =
+          state.posting || state.approvalPosting || !state.ready || !state.online;
+        $("approveAction").disabled = state.approvalPosting || !state.online;
+        $("rejectAction").disabled = state.approvalPosting || !state.online;
+      }
+      async function api(path, options = {}) {
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), 15000);
+        try {
+          const response = await fetch(path, {
+            ...options,
+            signal: abort.signal,
+            headers: { "Content-Type": "application/json", ...options.headers },
+          });
+          let data;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error("Der Server hat keine lesbare Antwort geliefert.");
+          }
+          connection(true);
+          if (!response.ok)
+            throw new Error(
+              data.error || "Die Anfrage konnte nicht verarbeitet werden.",
+            );
+          return data;
+        } catch (error) {
+          if (error.name === "AbortError" || error instanceof TypeError) {
+            connection(false);
+            throw new Error(
+              "Keine Serverantwort. Prüfe den lokalen Server und verbinde dich erneut. Ein gesendeter Auftrag könnte bereits gestartet sein; prüfe zuerst den Verlauf.",
+            );
+          }
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      function selectAgent(path) {
+        if (state.approvalPosting) return;
+        if (state.parentJobId) clearParent();
+        const currentWorkspace = $("workspace").value.trim();
+        const defaultWorkspace = path + "/workspace";
+        if (!currentWorkspace || currentWorkspace === state.defaultWorkspace)
+          $("workspace").value = defaultWorkspace;
+        state.defaultWorkspace = defaultWorkspace;
+        $("agent").value = path;
+        const item = state.agents.find((a) => a.path === path);
+        $("selectedAgent").textContent = item?.id || "AI Studio";
+        for (const b of $("agents").children)
+          b.classList.toggle("active", b.dataset.path === path);
+      }
+      function backendHint() {
+        const b = state.backends.find((x) => x.id === $("backend").value);
+        $("backendHint").textContent =
+          b?.id === "demo"
+            ? b.detail || "Deterministische Demo: Beispielablauf ohne KI-Modell."
+            : [b?.detail, b?.approval_detail].filter(Boolean).join(" ") || "Backend auswählen.";
+        $("model").disabled = b?.id === "demo";
+        controls();
+      }
+      function renderAgents() {
+        $("agents").replaceChildren();
+        $("agent").replaceChildren();
+        for (const a of state.agents) {
+          const b = el("button", undefined, "nav-item");
+          b.type = "button";
+          b.dataset.path = a.path;
+          b.append(
+            el("strong", a.id),
+            el(
+              "small",
+              `${a.profile} · ${a.roles} Rollen · ${a.skills} Skills`,
+            ),
+          );
+          b.onclick = () => {
+            if (state.posting || state.approvalPosting) return;
+            newTask();
+            selectAgent(a.path);
+          };
+          $("agents").append(b);
+          const o = el("option", a.id);
+          o.value = a.path;
+          $("agent").append(o);
+        }
+        if (state.agents.length)
+          selectAgent(
+            (
+              state.agents.find((a) => a.id === "programming-agent") ||
+              state.agents[0]
+            ).path,
+          );
+        else
+          $("agents").append(
+            el("p", "Keine gültigen Assistenten verfügbar.", "empty"),
+          );
+      }
+      function renderHistory() {
+        $("history").replaceChildren();
+        for (const job of state.jobs) {
+          const b = el(
+            "button",
+            undefined,
+            "nav-item" + (state.view === job.job_id ? " active" : ""),
+          );
+          b.type = "button";
+          b.append(
+            el("strong", job.task || "Auftrag"),
+            el(
+              "small",
+              `${labels[job.status] || job.status} · ${job.backend || "Backend"}`,
+            ),
+          );
+          b.onclick = () => openJob(job.job_id);
+          $("history").append(b);
+        }
+        if (!state.jobs.length)
+          $("history").append(
+            el("p", "Dein erster Auftrag beginnt hier.", "empty"),
+          );
+      }
+      async function loadHistory() {
+        const data = await api("/api/jobs");
+        state.jobs = data.jobs || [];
+        renderHistory();
+      }
+      function clearParent() {
+        state.parentJobId = null;
+        const label = $("parentContext");
+        if (label) {
+          label.textContent = "";
+          label.hidden = true;
+        }
+      }
+      function newTask() {
+        if (state.posting || state.approvalPosting) return;
+        state.epoch++;
+        clearTimeout(state.timer);
+        state.view = null;
+        state.job = null;
+        clearParent();
+        $("jobView").hidden = true;
+        $("welcome").hidden = false;
+        $("composer").hidden = false;
+        notice("");
+        renderHistory();
+        controls();
+        $("task").focus();
+      }
+      function buildOnJob(job) {
+        if (state.approvalPosting || !job || job.status !== "completed") return;
+        newTask();
+        selectAgent(job.agent);
+        state.parentJobId = job.job_id;
+        $("task").value = "";
+        $("agent").value = job.agent || "";
+        $("workspace").value = job.workspace || "";
+        $("backend").value = job.backend || "";
+        $("model").value = job.model || "";
+        backendHint();
+        const label =
+          $("parentContext") ||
+          (() => {
+            const node = el("p", undefined, "hint");
+            node.id = "parentContext";
+            $("task").before(node);
+            return node;
+          })();
+        label.textContent =
+          "Vorherige Aufgabe als Kontext: " + (job.task || job.job_id);
+        label.hidden = false;
+        $("jobView").hidden = true;
+        $("welcome").hidden = false;
+        $("composer").hidden = false;
+        $("task").focus();
+      }
+      function fact(label, value) {
+        const wrap = el("div", undefined, "fact");
+        wrap.append(el("dt", label), el("dd", value || "—"));
+        $("dossier").append(wrap);
+      }
+      function workflowNodes(job) {
+        const history = Array.isArray(job.result?.history) ? job.result.history : [];
+        const roleNames = { developer: "Umsetzung", reviewer: "Prüfung", planner: "Planung", researcher: "Recherche", writer: "Redaktion", finish: "Abschluss", blocked: "Klärung" };
+        const active = job.result?.in_flight;
+        const running = ["queued", "running"].includes(job.status);
+        const label = (decision) => roleNames[decision?.role || decision?.action] || decision?.role || decision?.action || "Workflow";
+        const sameDecision = (a, b) => a && b &&
+          ["action", "role", "task", "reason"].every((key) => a[key] === b[key]) &&
+          JSON.stringify(a.skills || []) === JSON.stringify(b.skills || []);
+        const last = history[history.length - 1];
+        const activeMatchesLast = active && last && !last.report && !last.error &&
+          (active.kind === "worker-resume" || sameDecision(active.decision, last.decision));
+        const activeOutcome = () => running
+          ? { detail: "Läuft", kind: "running" }
+          : { detail: "Ausgang ungeklärt", kind: "pending" };
+        const outcome = (entry, index) => {
+          if (entry.error) return { detail: "Fehlgeschlagen", kind: "failed" };
+          const status = entry.report?.status;
+          if (status === "needs_revision") return { detail: "Überarbeitung nötig", kind: "review" };
+          if (status === "success") return { detail: "Abgeschlossen", kind: "done" };
+          if (status === "blocked") return { detail: "Blockiert", kind: "failed" };
+          if (entry.decision?.action === "blocked") return { detail: "Blockiert", kind: "failed" };
+          if (index === history.length - 1) {
+            if (job.status === "awaiting_approval" && job.result?.pending_approval)
+              return { detail: "Freigabe erforderlich", kind: "pending" };
+            if (activeMatchesLast) return activeOutcome();
+            if (entry.decision?.action === "finish" && job.status === "completed")
+              return { detail: "Abgeschlossen", kind: "done" };
+            if (["blocked", "error"].includes(job.status))
+              return { detail: "Nicht abgeschlossen", kind: "failed" };
+          }
+          return { detail: "Status unbekannt", kind: "pending" };
+        };
+        const nodes = history.map((entry, index) => ({ label: label(entry.decision), index, ...outcome(entry, index) }));
+        if (active && !activeMatchesLast) {
+          nodes.push({ label: active.kind === "planner" ? "Planung" : label(active.decision), index: null, ...activeOutcome() });
+        }
+        if (!nodes.length) nodes.push({ label: "Workflow", detail: running ? "Startet …" : "Noch keine Schritte", kind: "pending", index: null });
+        return nodes;
+      }
+      function renderWorkflowTrace(job) {
+        const target = $("workflowTrace");
+        target.replaceChildren();
+        $("traceTitle").textContent = job.backend === "demo" ? "Workflow-Spur · Demo" : "Workflow-Spur";
+        const nodes = workflowNodes(job);
+        for (const [position, node] of nodes.entries()) {
+          const item = el("div", undefined, `trace-node ${node.kind}`);
+          item.setAttribute("role", "listitem");
+          const link = el("a");
+          if (node.index !== null) link.href = `#timeline-step-${node.index}`;
+          const dot = el("span", String(position + 1), "trace-dot");
+          dot.setAttribute("aria-hidden", "true");
+          link.append(dot, el("strong", node.label), el("small", node.detail));
+          item.append(link); target.append(item);
+        }
+      }
+      function renderJob(job) {
+        state.job = job;
+        $("selectedAgent").textContent =
+          state.agents.find((a) => a.path === job.agent)?.id || "AI Studio";
+        $("welcome").hidden = true;
+        $("composer").hidden = true;
+        $("jobView").hidden = false;
+        $("jobTask").textContent = job.task || "";
+        $("jobStatus").textContent = labels[job.status] || job.status;
+        $("summary").textContent =
+          job.result?.summary ||
+          job.error ||
+          (busy(job)
+            ? "Dein Assistent arbeitet. Neue Schritte erscheinen hier automatisch."
+            : "Für diesen Lauf liegt noch keine Zusammenfassung vor.");
+        renderApproval(job);
+        renderWorkflowTrace(job);
+        $("dossier").replaceChildren();
+        fact("Status", labels[job.status] || job.status);
+        fact(
+          "Ausführung",
+          job.backend === "demo" ? "Deterministische Demo" : job.backend,
+        );
+        fact(
+          "Modell",
+          job.backend === "demo"
+            ? "Kein KI-Modell"
+            : job.model || "Backend-Standard",
+        );
+        fact("Workspace", job.workspace);
+        fact("Job-ID", job.job_id);
+        fact("Run-ID", job.result?.run_id);
+        $("timeline").replaceChildren();
+        const history = job.result?.history || [];
+        const artifacts = new Set();
+        for (const [index, item] of history.entries()) {
+          const d = item.decision || {};
+          const report = item.report;
+          const step = el("li", undefined, "step");
+          step.id = `timeline-step-${index}`;
+          step.append(
+            el("strong", `${index + 1}. ${d.role || d.action || "Workflow"}`),
+          );
+          if (d.task) step.append(el("p", d.task));
+          if (d.reason) step.append(el("div", d.reason, "evidence"));
+          if (report) {
+            step.append(el("p", report.summary || report.status));
+            for (const evidence of report.evidence || [])
+              step.append(el("div", "Nachweis: " + evidence, "evidence"));
+            for (const action of report.next_actions || [])
+              step.append(el("div", "Nächster Schritt: " + action, "evidence"));
+            for (const artifact of report.artifacts || [])
+              artifacts.add(artifact);
+          }
+          if (item.error) step.append(el("p", item.error));
+          $("timeline").append(step);
+        }
+        if (!history.length)
+          $("timeline").append(
+            el(
+              "li",
+              busy(job)
+                ? "Warte auf den ersten protokollierten Schritt …"
+                : "Keine Arbeitsschritte vorhanden.",
+              "empty",
+            ),
+          );
+        $("artifacts").replaceChildren();
+        for (const path of artifacts) $("artifacts").append(el("li", path));
+        if (!artifacts.size)
+          $("artifacts").append(el("li", "Noch keine Artefakte."));
+        $("resumeForm").hidden = !["blocked", "error", "interrupted"].includes(
+          job.status,
+        );
+        renderHistory();
+        controls();
+      }
+      async function poll(id, epoch) {
+        try {
+          const job = await api("/api/jobs/" + encodeURIComponent(id));
+          if (epoch !== state.epoch || state.view !== id) return;
+          renderJob(job);
+          renderBuildButton(job);
+          renderArtifactLinks(job);
+          await loadHistory();
+          if (epoch !== state.epoch) return;
+          if (busy(job)) state.timer = setTimeout(() => poll(id, epoch), 1200);
+        } catch (error) {
+          if (epoch !== state.epoch) return;
+          notice(error.message);
+          state.timer = setTimeout(() => poll(id, epoch), 5000);
+        }
+      }
+      function openJob(id) {
+        if (state.posting || state.approvalPosting) return;
+        state.epoch++;
+        clearTimeout(state.timer);
+        state.view = id;
+        notice("");
+        $("feedback").value = "";
+        $("acknowledge").checked = false;
+        const cached = state.jobs.find((j) => j.job_id === id);
+        if (cached) {
+          renderJob(cached);
+          renderBuildButton(cached);
+          renderArtifactLinks(cached);
+          $("jobView").scrollIntoView({ block: "start" });
+        }
+        poll(id, state.epoch);
+      }
+      async function initialize() {
+        try {
+          const [agents, config] = await Promise.all([
+            api("/api/agents"),
+            api("/api/config"),
+          ]);
+          state.agents = agents.agents || [];
+          state.backends = config.backends || [];
+          $("agentProfile").replaceChildren();
+          for (const profile of config.profiles || []) {
+            const option = el("option", profile);
+            option.value = profile;
+            $("agentProfile").append(option);
+          }
+          renderAgents();
+          $("backend").replaceChildren();
+          for (const b of state.backends) {
+            const o = el(
+              "option",
+              b.label + (b.available ? "" : " · nicht verfügbar"),
+            );
+            o.value = b.id;
+            o.disabled = !b.available;
+            $("backend").append(o);
+          }
+          const first = state.backends.find((b) => b.available);
+          if (first) $("backend").value = first.id;
+          state.ready = true;
+          backendHint();
+          await loadHistory();
+          notice("");
+          const requestedJob = new URLSearchParams(location.search).get("job");
+          if (requestedJob && /^[0-9a-f]{32}$/.test(requestedJob)) openJob(requestedJob);
+        } catch (error) {
+          notice(error.message);
+          $("retry").hidden = false;
+        }
+        controls();
+      }
+      $("agent").onchange = () => selectAgent($("agent").value);
+      $("backend").onchange = backendHint;
+      $("newTask").onclick = newTask;
+      $("retry").onclick = async () => {
+        if (state.approvalPosting) return;
+        if (!state.ready) await initialize();
+        else {
+          try {
+            await loadHistory();
+            notice("");
+            if (state.view) openJob(state.view);
+          } catch (error) {
+            notice(error.message);
+          }
+        }
+      };
+      for (const b of document.querySelectorAll("[data-task]"))
+        b.onclick = () => {
+          $("task").value = b.dataset.task;
+          $("task").focus();
+        };
+      $("composer").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (state.posting || $("run").disabled) return;
+        state.posting = true;
+        controls();
+        notice("");
+        const payload = {
+          task: $("task").value.trim(),
+          agent: $("agent").value,
+          backend: $("backend").value,
+          workspace: $("workspace").value.trim(),
+          model: $("model").disabled ? "" : $("model").value.trim(),
+          require_approvals: $("backend").value === "demo",
+        };
+        if (state.parentJobId) payload.parent_job_id = state.parentJobId;
+        const signature = JSON.stringify(payload);
+        if (
+          !state.pendingSubmission ||
+          state.pendingSubmission.signature !== signature
+        )
+          state.pendingSubmission = { signature, request_id: requestId() };
+        savePending();
+        payload.request_id = state.pendingSubmission.request_id;
+        try {
+          const job = await api("/api/jobs", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          state.pendingSubmission = null;
+          savePending();
+          state.posting = false;
+          $("task").value = "";
+          state.jobs.unshift(job);
+          openJob(job.job_id);
+        } catch (error) {
+          notice(error.message);
+        } finally {
+          state.posting = false;
+          controls();
+        }
+      });
+      $("resumeForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (state.posting || !state.job) return;
+        const id = state.job.job_id;
+        state.posting = true;
+        controls();
+        notice("");
+        try {
+          const job = await api(
+            "/api/jobs/" + encodeURIComponent(id) + "/resume",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                feedback: $("feedback").value.trim(),
+                acknowledge_interruption: $("acknowledge").checked,
+              }),
+            },
+          );
+          state.posting = false;
+          openJob(job.job_id);
+        } catch (error) {
+          notice(error.message);
+        } finally {
+          state.posting = false;
+          controls();
+        }
+      });
+      $("createAgent").onclick = () => {
+        $("agentError").textContent = "";
+        $("agentDialog").showModal();
+      };
+      $("cancelAgent").onclick = () => $("agentDialog").close();
+      $("agentForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        $("saveAgent").disabled = true;
+        $("agentError").textContent = "";
+        try {
+          const response = await api("/api/agents", {
+            method: "POST",
+            body: JSON.stringify({
+              name: $("agentName").value.trim(),
+              profile: $("agentProfile").value,
+              company: $("agentCompany").value.trim(),
+              instructions: $("agentInstructions").value.trim(),
+            }),
+          });
+          const created = response.agent || response;
+          const data = await api("/api/agents");
+          state.agents = data.agents || [];
+          renderAgents();
+          $("agentDialog").close();
+          newTask();
+          selectAgent(created.path);
+          $("agentForm").reset();
+          controls();
+        } catch (error) {
+          $("agentError").textContent = error.message;
+        } finally {
+          $("saveAgent").disabled = false;
+        }
+      });
+      loadPending();
+      initialize();
+    </script>
+  </body>
+</html>

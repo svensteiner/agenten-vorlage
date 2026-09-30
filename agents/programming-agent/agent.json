@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "id": "programming-agent",
+  "company": "AI_Studioxyz",
+  "profile": "developer",
+  "require_review": true,
+  "limits": {
+    "max_steps": 12,
+    "max_failures": 3,
+    "max_seconds": 1800,
+    "call_timeout": 300,
+    "max_context_chars": 100000
+  },
+  "roles": {
+    "developer": {
+      "description": "Code implementieren, Fehler beheben, Tests ausfuehren",
+      "instructions": "roles/developer.md",
+      "skills": [
+        "implement-feature",
+        "debug-systematically",
+        "verification-before-completion",
+        "programming-workflow"
+      ],
+      "sandbox": "workspace-write",
+      "can_review": false
+    },
+    "reviewer": {
+      "description": "Artefakte und Nachweise unabhaengig auf Erfuellung pruefen",
+      "instructions": "roles/reviewer.md",
+      "skills": [
+        "review-deliverable",
+        "verification-before-completion"
+      ],
+      "sandbox": "read-only",
+      "can_review": true
+    },
+    "researcher": {
+      "description": "Primaerquellen und lokale Materialien untersuchen, Optionen vergleichen",
+      "instructions": "roles/researcher.md",
+      "skills": [
+        "research-brief"
+      ],
+      "sandbox": "read-only",
+      "can_review": false
+    },
+    "product": {
+      "description": "Produktziel, Umfang und Abnahmekriterien konkretisieren",
+      "instructions": "roles/product.md",
+      "skills": [
+        "product-brief",
+        "research-brief"
+      ],
+      "sandbox": "workspace-write",
+      "can_review": false
+    }
+  }
+}

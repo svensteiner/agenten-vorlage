@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "role", "skills", "task", "reason"],
+  "properties": {
+    "action": {"type": "string", "enum": ["delegate", "finish", "blocked"]},
+    "role": {"type": "string", "maxLength": 64},
+    "skills": {"type": "array", "maxItems": 4, "uniqueItems": true, "items": {"type": "string"}},
+    "task": {"type": "string", "minLength": 1, "maxLength": 12000},
+    "reason": {"type": "string", "minLength": 1, "maxLength": 2000}
+  }
+}

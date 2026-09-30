@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Studio · Assistenten verwalten</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #101111;
+        --panel: #181a19;
+        --rail: #171917;
+        --line: #303530;
+        --line-strong: #48533e;
+        --text: #eff3eb;
+        --muted: #a0aaa0;
+        --accent: #d2edab;
+        --accent-ink: #1c2715;
+        --red: #ffa99e;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 14px/1.55 system-ui, sans-serif; }
+      button { font: inherit; cursor: pointer; padding: 10px 14px; border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--panel); }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: .45; cursor: not-allowed; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      a { color: var(--accent); }
+      p, .muted { color: var(--muted); }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { margin-bottom: 0; font-size: clamp(27px, 4vw, 42px); font-weight: 560; letter-spacing: -.045em; line-height: 1.12; }
+      h2 { font-size: 18px; }
+      .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
+      .rail { display: flex; flex-direction: column; gap: 20px; padding: 25px 17px; background: var(--rail); border-right: 1px solid var(--line); }
+      .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 650; letter-spacing: -.04em; }
+      .logo { display: grid; grid-template-columns: repeat(2, 7px); gap: 3px; transform: rotate(-12deg); }
+      .logo i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+      .rail-link { display: block; padding: 10px; border: 1px solid transparent; border-radius: 9px; color: var(--text); text-decoration: none; }
+      .rail-link:hover { border-color: var(--accent); }
+      .rail-link.active { border-color: var(--line-strong); background: #2a3027; }
+      .rail-footer { margin-top: auto; color: var(--muted); font-size: 11px; }
+      .rail-footer a { display: inline-block; margin-top: 6px; font-size: 12px; }
+      .main { min-width: 0; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 32px; border-bottom: 1px solid var(--line); }
+      .eyebrow { margin-bottom: 9px; color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+      .connection { color: var(--muted); font-size: 12px; }
+      .connection[data-state="online"] { color: var(--accent); }
+      .connection[data-state="offline"] { color: var(--red); }
+      .content { width: min(900px, 100%); margin: 0 auto; padding: 45px 40px 54px; }
+      .intro { margin-bottom: 28px; }
+      .intro p { max-width: 690px; margin: 10px 0 0; font-size: 16px; }
+      .notice { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #784c43; border-radius: 10px; background: #281e1b; color: #ffd1c9; white-space: pre-wrap; }
+      .notice[hidden], [hidden] { display: none !important; }
+      .status-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; margin-bottom: 18px; color: var(--muted); }
+      .status-line strong { color: var(--accent); font-weight: 560; }
+      .status-line button { padding: 6px 10px; font-size: 12px; }
+      .card { margin-bottom: 16px; padding: 21px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+      .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 15px; }
+      .card-head h2 { margin-bottom: 6px; }
+      .card-head p { margin: 0; font-size: 12px; }
+      .agent-list { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+      .agent { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 11px; background: #191d18; }
+      .agent-copy { min-width: 0; }
+      .agent-copy strong { display: block; overflow-wrap: anywhere; font-size: 15px; }
+      .agent-copy p { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 12px; }
+      .agent-path { display: block; margin-top: 6px; color: var(--muted); font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+      .agent-action { flex: 0 0 auto; align-self: center; }
+      .restore { border-color: var(--line-strong); color: var(--accent); }
+      .empty { margin: 18px 0 0; color: var(--muted); }
+      .footer-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 23px; font-size: 12px; }
+      .nav-disabled { pointer-events: none; opacity: .45; }
+      .editor { margin-bottom: 18px; padding: 21px; border: 1px solid var(--line-strong); border-radius: 14px; background: #1d231b; }
+      .editor textarea { display: block; width: 100%; min-height: 280px; margin: 14px 0 10px; padding: 12px; resize: vertical; border: 1px solid var(--line); border-radius: 9px; background: #111411; color: var(--text); font: 14px/1.55 ui-monospace, Consolas, monospace; }
+      .editor-meta { display: flex; flex-wrap: wrap; min-width: 0; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+      .editor-meta span { min-width: 0; overflow-wrap: anywhere; }
+      .editor-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+      .editor-actions .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+      @media (max-width: 700px) {
+        .shell { display: block; }
+        .rail { border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+        .rail-footer { display: none; }
+        .topbar { padding: 15px 18px; }
+        .content { padding: 30px 16px 38px; }
+        .card-head, .agent { display: block; }
+        .agent-action { margin-top: 12px; }
+        .agent-action button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail" aria-label="AI-Studio-Navigation">
+        <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>AI Studio</span></div>
+        <a class="rail-link global-nav" href="/">Auftragsansicht</a>
+        <a class="rail-link global-nav" href="/chat">Arbeitsdialoge</a>
+        <a class="rail-link global-nav" href="/settings">Provider-Einstellungen</a>
+        <a class="rail-link active global-nav" href="/assistants" aria-current="page">Assistenten verwalten</a>
+        <div class="rail-footer">Archivieren löscht keinen Assistenten.<br /><a href="/">Zur Auftragsansicht</a></div>
+      </aside>
+      <main class="main">
+        <header class="topbar"><span class="eyebrow">Lokaler Arbeitsraum</span><span id="connection" class="connection" data-state="offline" role="status">Verbindung wird geprüft …</span></header>
+        <div class="content">
+          <p id="notice" class="notice" role="alert" hidden></p>
+          <section class="intro"><div class="eyebrow">Konfiguration</div><h1>Assistenten verwalten</h1><p>Archivierte Assistenten werden aus der Auswahl für neue Dialoge entfernt. Bestehende Dialoge und Aufträge bleiben erhalten; der explizite Pfad und die CLI-Nutzung bleiben möglich. Archivieren und Wiederherstellen sind jederzeit reversibel.</p></section>
+          <section id="editor" class="editor" aria-labelledby="editorTitle" hidden><div class="card-head"><div><h2 id="editorTitle">Vorgaben bearbeiten</h2><p>Beschreibung und Vorgaben (SOUL.md)</p></div></div><p id="editorIdentity" class="muted"></p><label for="instructionsText">Beschreibung und Vorgaben (SOUL.md)</label><textarea id="instructionsText" maxlength="32000"></textarea><div class="editor-meta"><span id="editorCount">0 / 32.000 UTF-8-Bytes</span><span id="editorRevision"></span></div><div class="editor-actions"><button id="saveInstructions" class="primary" type="button">Speichern</button><button id="cancelInstructions" type="button">Abbrechen</button><button id="reloadInstructions" type="button">Neu laden</button></div></section>
+          <div class="status-line"><strong id="liveStatus" role="status" aria-live="polite">Assistenten werden geladen …</strong><button id="retry" type="button" hidden>Erneut laden</button></div>
+          <section class="card" aria-labelledby="activeTitle">
+            <div class="card-head"><div><h2 id="activeTitle">Aktive Assistenten</h2><p>Diese Assistenten können für neue Dialoge ausgewählt werden.</p></div></div>
+            <ul id="activeAgents" class="agent-list"></ul><p id="activeEmpty" class="empty" hidden>Keine aktiven Assistenten.</p>
+          </section>
+          <section class="card" aria-labelledby="archivedTitle">
+            <div class="card-head"><div><h2 id="archivedTitle">Archivierte Assistenten</h2><p>Wiederherstellen fügt den Assistenten wieder zur Auswahl für neue Dialoge hinzu.</p></div></div>
+            <ul id="archivedAgents" class="agent-list"></ul><p id="archivedEmpty" class="empty" hidden>Keine archivierten Assistenten.</p>
+          </section>
+          <div class="footer-links"><a class="global-nav" href="/">Auftragsansicht</a><a class="global-nav" href="/chat">Arbeitsdialoge</a><a class="global-nav" href="/settings">Provider-Einstellungen</a></div>
+        </div>
+      </main>
+    </div>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const state = { agents: [], loading: false, posting: false, online: false, loadError: false, editor: null, editorLoading: false, editorDirty: false, editorStale: false };
+      function el(tag, text, className) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; }
+      function showNotice(message) { $("notice").textContent = message || ""; $("notice").hidden = !message; }
+      function setConnection(online) { state.online = online; $("connection").textContent = online ? "Lokal verbunden" : "Verbindung unterbrochen"; $("connection").dataset.state = online ? "online" : "offline"; }
+      function controls() {
+        const blocked = state.loading || state.posting || state.editorLoading;
+        document.querySelectorAll("[data-agent-action]").forEach((button) => { button.disabled = blocked || !state.online || state.loadError; });
+        $("retry").hidden = !state.loadError && state.online && !state.loading;
+        $("retry").disabled = blocked;
+        document.querySelectorAll(".global-nav").forEach((link) => { link.classList.toggle("nav-disabled", state.posting); link.setAttribute("aria-disabled", state.posting ? "true" : "false"); link.tabIndex = state.posting ? -1 : 0; });
+        $("saveInstructions").disabled = blocked || !state.editor || state.editorStale || !state.editorDirty || !state.online;
+        $("cancelInstructions").disabled = blocked || !state.editor; $("reloadInstructions").disabled = blocked || !state.editor;
+        $("instructionsText").disabled = blocked || !state.editor;
+      }
+      async function api(path, options = {}) {
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), 15000);
+        try {
+          const response = await fetch(path, { ...options, signal: abort.signal, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+          let data;
+          try { data = await response.json(); } catch { throw new Error("Der Server hat keine lesbare Antwort geliefert."); }
+          setConnection(true);
+          if (!response.ok) { const failure = new Error(data.error || "Die Anfrage konnte nicht verarbeitet werden."); failure.status = response.status; throw failure; }
+          return data;
+        } catch (error) {
+          if (error.name === "AbortError" || error instanceof TypeError) {
+            setConnection(false);
+            const uncertain = new Error("Keine eindeutige Serverantwort. Der Status der Änderung ist unklar; lade die Liste neu, bevor du erneut handelst.");
+            uncertain.ambiguous = true;
+            throw uncertain;
+          }
+          throw error;
+        } finally { clearTimeout(timer); }
+      }
+      function agentName(agent) { return agent?.id || agent?.name || agent?.path || "Unbenannter Assistent"; }
+      function agentDetail(agent) {
+        const parts = [agent?.profile, agent?.roles ? `${agent.roles} Rollen` : "", agent?.skills ? `${agent.skills} Skills` : ""].filter(Boolean);
+        return parts.join(" · ") || "Lokaler Assistent";
+      }
+      function renderAgentList(targetId, emptyId, agents, archived) {
+        const list = $(targetId); list.replaceChildren(); $(emptyId).hidden = agents.length > 0;
+        for (const agent of agents) {
+          const item = el("li", undefined, "agent");
+          const copy = el("div", undefined, "agent-copy");
+          copy.append(el("strong", agentName(agent)), el("p", agentDetail(agent)), el("code", agent.path || "Pfad nicht verfügbar", "agent-path"));
+          const action = el("button", archived ? `Wiederherstellen: ${agentName(agent)}` : `Archivieren: ${agentName(agent)}`, `agent-action${archived ? " restore" : ""}`);
+          action.type = "button"; action.dataset.agentAction = "true"; action.setAttribute("aria-label", action.textContent);
+          action.onclick = () => archiveAgent(agent, archived);
+          const edit = el("button", `Vorgaben bearbeiten: ${agentName(agent)}`); edit.type = "button"; edit.dataset.agentAction = "true"; edit.onclick = () => openEditor(agent); const actions = el("div", undefined, "agent-action"); actions.append(edit, action); item.append(copy, actions); list.append(item);
+        }
+      }
+      function renderAgents() {
+        const active = state.agents.filter((agent) => !agent.archived);
+        const archived = state.agents.filter((agent) => Boolean(agent.archived));
+        renderAgentList("activeAgents", "activeEmpty", active, false);
+        renderAgentList("archivedAgents", "archivedEmpty", archived, true);
+        $("liveStatus").textContent = `${active.length} aktive, ${archived.length} archivierte Assistenten`;
+        controls();
+      }
+      function utf8Bytes(value) { return new TextEncoder().encode(value).length; }
+      function updateEditorMeta() { const text = $("instructionsText").value; $("editorCount").textContent = `${utf8Bytes(text).toLocaleString("de-DE")} / 32.000 UTF-8-Bytes`; state.editorDirty = text !== (state.editor?.text || ""); controls(); }
+      function confirmDiscard() { return !state.editorDirty || window.confirm("Ungespeicherte Änderungen verwerfen?"); }
+      async function openEditor(agent) {
+        if (!agent?.path || state.posting || !confirmDiscard()) return;
+        state.editor = { agent, text: "", revision: null }; state.editorDirty = false; state.editorStale = false; $("editor").hidden = false; $("editorTitle").textContent = `Vorgaben bearbeiten: ${agentName(agent)}`; $("editorIdentity").textContent = `ID: ${agentName(agent)} · Profil: ${agent.profile || "unbekannt"} · Pfad: ${agent.path} · Änderungen gelten für neue Aufträge und spätere Nachrichten.`; $("instructionsText").value = ""; state.editorLoading = true; controls();
+        try { const data = await api(`/api/agents/instructions?agent=${encodeURIComponent(agent.path)}`); if (!state.editor || state.editor.agent.path !== agent.path) return; $("instructionsText").value = typeof data.text === "string" ? data.text : ""; state.editor.text = $("instructionsText").value; state.editor.revision = data.revision; $("editorRevision").textContent = `Revision ${data.revision ?? "unbekannt"}`; updateEditorMeta(); }
+        catch (error) { if (state.editor?.agent.path === agent.path) { showNotice(`Vorgaben konnten nicht geladen werden: ${error.message}`); $("editor").hidden = true; state.editor = null; } }
+        finally { state.editorLoading = false; controls(); if (state.editor?.agent.path === agent.path && !$("editor").hidden) $("instructionsText").focus(); }
+      }
+      async function saveInstructions() {
+        if (!state.editor || state.editorStale || !state.editorDirty) return; const text = $("instructionsText").value; const bytes = utf8Bytes(text);
+        if (!text.trim() || text.includes("\0") || bytes > 32000) { showNotice("Die Vorgaben müssen nichtleer sein, dürfen kein NUL enthalten und höchstens 32.000 UTF-8-Bytes umfassen."); return; }
+        state.posting = true; controls(); showNotice("");
+        try { const data = await api("/api/agents/instructions", { method: "POST", body: JSON.stringify({ agent: state.editor.agent.path, text, revision: state.editor.revision }) }); if (data.agent !== state.editor.agent.path || typeof data.text !== "string" || data.revision === undefined) throw Object.assign(new Error("Ungültige Serverantwort; der Status ist unklar."), { ambiguous: true }); state.editor.text = data.text; state.editor.revision = data.revision; state.editorDirty = false; state.editorStale = false; $("editorRevision").textContent = `Revision ${data.revision}`; updateEditorMeta(); showNotice("Vorgaben gespeichert. Neue Aufträge und spätere Dialognachrichten verwenden sie; laufende Aufträge behalten ihren Snapshot."); }
+        catch (error) { state.editorStale = true; showNotice(error.status === 409 ? `Speichern abgelehnt: ${error.message} Bitte neu laden und den aktuellen Stand prüfen.` : (error.ambiguous ? error.message : `Speichern fehlgeschlagen: ${error.message}`)); }
+        finally { state.posting = false; controls(); }
+      }
+      async function reloadInstructions() { if (!state.editor || !confirmDiscard()) return; const agent = state.editor.agent; state.editorDirty = false; await openEditor(agent); }
+      async function loadAgents() {
+        if (state.loading || state.posting) return;
+        state.loading = true; state.loadError = false; controls(); showNotice(""); $("liveStatus").textContent = "Assistenten werden geladen …";
+        try {
+          const data = await api("/api/agents?include_archived=true");
+          state.agents = Array.isArray(data.agents) ? data.agents : [];
+          renderAgents();
+        } catch (error) {
+          state.loadError = true; showNotice(error.message); $("liveStatus").textContent = "Assistenten konnten nicht geladen werden.";
+        } finally { state.loading = false; controls(); }
+      }
+      async function archiveAgent(agent, archived) {
+        if (state.posting || state.loading || state.loadError || !state.online || !agent?.path) return;
+        state.posting = true; controls(); showNotice(""); $("liveStatus").textContent = archived ? `${agentName(agent)} wird wiederhergestellt …` : `${agentName(agent)} wird archiviert …`;
+        try {
+          const data = await api("/api/agents/archive", { method: "POST", body: JSON.stringify({ agent: agent.path, archived: !archived }) });
+          const updated = data.agent || data;
+          if (updated && typeof updated === "object" && updated.path) state.agents = state.agents.map((item) => item.path === updated.path ? updated : item);
+          state.loadError = false; renderAgents(); showNotice("");
+        } catch (error) {
+          showNotice(error.ambiguous ? error.message : `Änderung fehlgeschlagen: ${error.message}`);
+          state.loadError = true;
+          $("liveStatus").textContent = "Status bitte erneut laden.";
+        } finally { state.posting = false; controls(); }
+      }
+      $("retry").onclick = loadAgents;
+      $("instructionsText").addEventListener("input", updateEditorMeta); $("saveInstructions").onclick = saveInstructions; $("cancelInstructions").onclick = () => { if (confirmDiscard()) { $("editor").hidden = true; state.editor = null; state.editorDirty = false; controls(); } }; $("reloadInstructions").onclick = reloadInstructions;
+      window.addEventListener("beforeunload", (event) => { if (state.editorDirty) { event.preventDefault(); event.returnValue = ""; } });
+      document.querySelectorAll(".global-nav").forEach((link) => link.addEventListener("click", (event) => { if (state.posting) event.preventDefault(); else if (!confirmDiscard()) event.preventDefault(); else state.editorDirty = false; }));
+      loadAgents();
+    </script>
+  </body>
+</html>

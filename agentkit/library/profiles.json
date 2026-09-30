@@ -1,0 +1,9 @@
+{
+  "developer": {"description": "Programmierung mit dynamischer Recherche, Implementierung und Review", "roles": ["developer", "reviewer", "researcher", "product"], "require_review": true},
+  "research": {"description": "Recherche und Entscheidungsgrundlagen", "roles": ["researcher"], "require_review": false},
+  "marketing": {"description": "Recherche, Content-Entwuerfe und Qualitaetspruefung", "roles": ["marketing", "researcher", "reviewer"], "require_review": true},
+  "sales": {"description": "Qualifizierung und Antwortentwuerfe", "roles": ["sales", "researcher", "reviewer"], "require_review": true},
+  "support": {"description": "Kundenprobleme analysieren und Antworten vorbereiten", "roles": ["support", "researcher", "reviewer"], "require_review": true},
+  "company": {"description": "Koordinator mit allen sieben Spezialisten fuer AI_Studioxyz", "roles": ["developer", "reviewer", "researcher", "product", "marketing", "sales", "support"], "require_review": true},
+  "bmd-tax-advisor": {"description": "BMD- und österreichischer Steuerberatungsmitarbeiter mit kontrolliertem Lernen", "roles": ["tax-advisor", "bmd-operator", "tax-reviewer", "researcher"], "require_review": true}
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary", "artifacts", "evidence", "next_actions"],
+  "properties": {
+    "status": {"type": "string", "enum": ["success", "needs_revision", "blocked"]},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 12000},
+    "artifacts": {"type": "array", "maxItems": 40, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+    "next_actions": {"type": "array", "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 2000}}
+  }
+}

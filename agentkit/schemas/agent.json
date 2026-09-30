@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "company", "profile", "require_review", "limits", "roles"],
+  "properties": {
+    "version": {"const": 1},
+    "id": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "company": {"type": "string", "minLength": 1, "maxLength": 100},
+    "profile": {"type": "string", "minLength": 1},
+    "require_review": {"type": "boolean"},
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_steps", "max_failures", "max_seconds", "call_timeout", "max_context_chars"],
+      "properties": {
+        "max_steps": {"type": "integer", "minimum": 1, "maximum": 100},
+        "max_failures": {"type": "integer", "minimum": 1, "maximum": 20},
+        "max_seconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+        "call_timeout": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "max_context_chars": {"type": "integer", "minimum": 1000, "maximum": 500000}
+      }
+    },
+    "roles": {
+      "type": "object", "minProperties": 1, "maxProperties": 50,
+      "propertyNames": {"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64},
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["description", "instructions", "skills", "sandbox", "can_review"],
+        "properties": {
+          "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "instructions": {"type": "string", "minLength": 1},
+          "skills": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+          "sandbox": {"type": "string", "enum": ["read-only", "workspace-write"]},
+          "can_review": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

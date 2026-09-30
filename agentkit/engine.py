@@ -1,0 +1,336 @@
+"""An observation-driven loop. The planner chooses the next action, not a task DAG."""
+
+from __future__ import annotations
+
+import json
+import time
+import uuid
+from pathlib import Path
+from typing import Protocol
+
+from .catalog import Catalog
+from .contracts import ContractError, inside, read_json, validate
+from .storage import lock, save
+from .approvals import ApprovalRequired, binding, new_id, validate_binding, workspace_fingerprint
+
+
+class Backend(Protocol):
+    name: str
+
+    def decide(self, context: dict, timeout: float) -> dict: ...
+
+    def execute(self, decision: dict, context: dict, timeout: float) -> dict: ...
+
+
+class Engine:
+    def __init__(self, agent_dir: Path, workspace: Path, backend: Backend, *, require_approvals: bool = False, core_snapshot: str | None = None):
+        self.catalog = Catalog(agent_dir)
+        self.workspace = workspace.resolve()
+        self.backend = backend
+        self.limits = self.catalog.config["limits"]
+        self.require_approvals = require_approvals
+        if core_snapshot is not None and not isinstance(core_snapshot, str):
+            raise ContractError("core_snapshot must be text.")
+        if isinstance(core_snapshot, str) and len(core_snapshot) > self.limits["max_context_chars"]:
+            raise ContractError("core_snapshot exceeds the context budget.")
+        self.core_snapshot = core_snapshot
+        if require_approvals and not getattr(backend, "supports_action_approvals", False):
+            raise ContractError("This backend cannot enforce individual tool approvals.")
+
+    def run(
+        self,
+        task: str,
+        *,
+        run_dir: Path | None = None,
+        feedback: str = "",
+        acknowledge_interruption: bool = False,
+        new_run_id: str | None = None,
+        approval_id: str = "",
+        approval_decision: str = "",
+    ) -> dict:
+        if new_run_id is not None:
+            if run_dir is not None or not isinstance(new_run_id, str) or len(new_run_id) != 32:
+                raise ContractError("new_run_id must be a fresh 32-character UUID hex value.")
+            try:
+                if uuid.UUID(hex=new_run_id).hex != new_run_id:
+                    raise ValueError("Noncanonical UUID")
+            except ValueError as exc:
+                raise ContractError("new_run_id must be a fresh 32-character UUID hex value.") from exc
+        if not task.strip() and run_dir is None:
+            raise ContractError("A task must not be empty.")
+        if not self.workspace.is_dir():
+            raise ContractError(f"Workspace does not exist: {self.workspace}")
+        if run_dir is not None and not (run_dir / "state.json").is_file():
+            raise ContractError("Resume checkpoint does not exist; no new run was started.")
+        directory = run_dir or self.catalog.root / ".runs" / (new_run_id or uuid.uuid4().hex)
+        directory = directory.resolve()
+        if directory.parent != (self.catalog.root / ".runs").resolve():
+            raise ContractError("Run checkpoints must remain inside this agent's .runs directory.")
+        directory.mkdir(parents=True, exist_ok=True)
+        with lock(directory / ".lock"), lock(self.workspace / ".agentkit.lock"):
+            if new_run_id is not None and (directory / "state.json").exists():
+                raise ContractError("Run ID already has a checkpoint; use resume explicitly.")
+            return self._locked(task, directory, feedback, acknowledge_interruption, approval_id, approval_decision)
+
+    def _locked(
+        self, task: str, directory: Path, feedback: str, acknowledge: bool, approval_id: str, approval_decision: str
+    ) -> dict:
+        path = directory / "state.json"
+        config = self.catalog.config
+        failure_baseline = 0
+        if path.exists():
+            state = read_json(path)
+            if state.get("run_id") != directory.name:
+                raise ContractError("Checkpoint identity does not match its directory.")
+            if (
+                state["agent"] != config["id"]
+                or state["company"] != config["company"]
+                or state["workspace"] != str(self.workspace)
+                or state["backend"] != self.backend.name
+            ):
+                raise ContractError(
+                    "Cannot resume across agent, company, backend or workspace boundaries."
+                )
+            if state["status"] == "completed":
+                return state
+            snapshot = state.get("core_snapshot")
+            if "core_snapshot" in state and (not isinstance(snapshot, str) or len(snapshot) > self.limits["max_context_chars"]):
+                raise ContractError("Persisted core_snapshot is invalid.")
+            if snapshot is not None and self.core_snapshot is not None and snapshot != self.core_snapshot:
+                raise ContractError("core_snapshot does not match the persisted run snapshot.")
+            if "core_snapshot" not in state:
+                state["core_snapshot"] = self.core_snapshot if self.core_snapshot is not None else self.catalog.core()
+                if len(state["core_snapshot"]) > self.limits["max_context_chars"]:
+                    raise ContractError("core_snapshot exceeds the context budget.")
+            if state.get("status") != "awaiting_approval" and (approval_id or approval_decision):
+                raise ContractError("No pending action matches this approval response.")
+            if state.get("status") == "awaiting_approval":
+                pending = state.get("pending_approval") or {}
+                if not approval_id or approval_id != pending.get("id"):
+                    raise ContractError("A matching approval_id is required to resume this tool approval.")
+                if approval_decision not in {"approve", "reject"}:
+                    raise ContractError("approval_decision must be approve or reject.")
+                current_binding = binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
+                                          workspace=str(self.workspace), backend=self.backend.name,
+                                          model=getattr(self.backend, "model", None),
+                                          fingerprint=workspace_fingerprint(self.workspace) if approval_decision == "approve"
+                                          else pending.get("binding", {}).get("workspace_fingerprint", ""))
+                validate_binding(pending, current_binding)
+                state.setdefault("approvals", []).append({"id": approval_id, "tool": pending.get("tool"),
+                    "arguments": pending.get("arguments"), "decision": approval_decision, "at": time.time()})
+                state["pending_approval"] = None
+                if approval_decision == "reject":
+                    state["status"] = "blocked"
+                    state["summary"] = f"Tool approval rejected: {pending.get('tool')}"
+                    state["in_flight"] = None
+                    save(path, state)
+                    return state
+                state["approval_resume"] = pending.get("continuation")
+                state["status"] = "running"
+                state["in_flight"] = {"kind": "worker-resume"}
+                # Continue below without requiring unrelated feedback.
+            elif state["in_flight"] and not acknowledge:
+                raise ContractError(
+                    "Interrupted call may have changed files. Inspect the workspace; resume with --acknowledge-interruption and --feedback."
+                )
+            if state.get("status") != "awaiting_approval" and not approval_decision:
+                # An acknowledged unknown outcome is replanned from evidence, never replayed.
+                state.pop("approval_resume", None)
+            if not feedback.strip() and not approval_decision:
+                raise ContractError(
+                    "Resuming requires --feedback with the new evidence or resolved blocker."
+                )
+            if feedback.strip():
+                state["feedback"].append(feedback)
+                # A manual recovery is a new bounded attempt. Preserve the
+                # cumulative failure audit, but do not make an exhausted prior
+                # attempt impossible to recover after its blocker is resolved.
+                failure_baseline = state["failures"]
+            state["in_flight"] = None
+            # The operator may have changed files while the run was paused.
+            # Recheck written work instead of trusting a review from before the pause.
+            if state["dirty"]:
+                state["reviewed"] = False
+        else:
+            if approval_id or approval_decision:
+                raise ContractError("A new run cannot consume an approval response.")
+            state = {
+                "version": 1,
+                "run_id": directory.name,
+                "agent": config["id"],
+                "company": config["company"],
+                "backend": self.backend.name,
+                "workspace": str(self.workspace),
+                "task": task,
+                "status": "running",
+                "summary": "",
+                "history": [],
+                "feedback": [],
+                "in_flight": None,
+                "steps": 0,
+                "failures": 0,
+                "elapsed_seconds": 0.0,
+                "dirty": False,
+                "reviewed": False,
+                "require_approvals": self.require_approvals,
+                "pending_approval": None,
+                "approvals": [],
+                "core_snapshot": self.core_snapshot if self.core_snapshot is not None else self.catalog.core(),
+            }
+        if path.exists() and state.get("require_approvals"):
+            # A persisted approval policy is sticky across process restarts;
+            # callers cannot resume a gated run with approvals disabled.
+            self.require_approvals = True
+        elif path.exists() and self.require_approvals:
+            state["require_approvals"] = True
+        if self.require_approvals and not getattr(self.backend, "supports_action_approvals", False):
+            raise ContractError("This backend cannot enforce the persisted approval policy.")
+        started = time.monotonic()
+        elapsed_before = state["elapsed_seconds"]
+
+        def checkpoint() -> None:
+            state["elapsed_seconds"] = round(
+                elapsed_before + time.monotonic() - started, 3
+            )
+            save(path, state)
+
+        def timeout() -> float:
+            remaining = self.limits["max_seconds"] - (
+                elapsed_before + time.monotonic() - started
+            )
+            if remaining <= 0:
+                raise ContractError(
+                    "Wall-time budget exhausted. Raise the limit deliberately before resuming."
+                )
+            return min(self.limits["call_timeout"], remaining)
+
+        def context() -> dict:
+            result = {
+                "task": state["task"],
+                "feedback": state["feedback"],
+                "history": state["history"],
+                "catalog": self.catalog.summary(),
+                "core": state["core_snapshot"],
+                "workspace": str(self.workspace),
+                "require_review": config["require_review"],
+                "review_pending": state["dirty"] and not state["reviewed"],
+                "steps_remaining": self.limits["max_steps"] - state["steps"],
+                "require_approvals": bool(state.get("require_approvals", False)),
+            }
+            if state.get("approval_resume"):
+                result["approval_resume"] = state["approval_resume"]
+            if (
+                len(json.dumps(result, ensure_ascii=False))
+                > self.limits["max_context_chars"]
+            ):
+                raise ContractError(
+                    "Context budget exhausted; split the task rather than silently discard evidence."
+                )
+            return result
+
+        state["status"] = "running"
+        checkpoint()
+        try:
+            resumed_worker = bool(state.get("approval_resume"))
+            while True:
+                if not resumed_worker and state["steps"] >= self.limits["max_steps"]:
+                    raise ContractError("Step budget exhausted.")
+                if state["failures"] - failure_baseline >= self.limits["max_failures"]:
+                    raise ContractError(
+                        "Failure budget exhausted; investigate the blocker."
+                    )
+                if resumed_worker:
+                    resumed_worker = False
+                    record = state["history"][-1]
+                    decision = record["decision"]
+                else:
+                    state["steps"] += 1
+                    state["in_flight"] = {"kind": "planner", "step": state["steps"]}
+                    checkpoint()
+                    decision = self.backend.decide(context(), timeout())
+                    validate(decision, "decision")
+                    state["in_flight"] = None
+                    record = {"step": state["steps"], "decision": decision}
+                    state["history"].append(record)
+                if decision["action"] == "blocked":
+                    state.update(status="blocked", summary=decision["task"])
+                    break
+                if decision["action"] == "finish":
+                    reports = [h["report"] for h in state["history"] if "report" in h]
+                    if (
+                        not reports
+                        or reports[-1]["status"] != "success"
+                        or not reports[-1]["evidence"]
+                    ):
+                        raise ContractError(
+                            "Completion requires a successful, evidence-bearing final report."
+                        )
+                    if (
+                        config["require_review"]
+                        and state["dirty"]
+                        and not state["reviewed"]
+                    ):
+                        raise ContractError(
+                            "Completion refused: changes require a successful subsequent review."
+                        )
+                    state.update(status="completed", summary=decision["task"])
+                    break
+                instructions = self.catalog.selected(
+                    decision["role"], decision["skills"]
+                )
+                role = self.catalog.roles[decision["role"]]
+                if role["sandbox"] == "workspace-write":
+                    state.update(dirty=True, reviewed=False)
+                state["in_flight"] = {"kind": "worker", "decision": decision}
+                checkpoint()
+                ctx = context()
+                ctx["instructions"] = instructions
+                ctx["sandbox"] = role["sandbox"]
+                if (
+                    len(json.dumps(ctx, ensure_ascii=False))
+                    > self.limits["max_context_chars"]
+                ):
+                    raise ContractError("Selected skills exceed context budget.")
+                def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
+                    approval = {
+                        "id": new_id(), "tool": tool, "arguments": arguments,
+                        "binding": binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
+                            workspace=str(self.workspace), backend=self.backend.name,
+                            model=getattr(self.backend, "model", None), fingerprint=workspace_fingerprint(self.workspace)),
+                        "continuation": continuation,
+                    }
+                    state["pending_approval"] = approval
+                    # The proposal is durable in pending_approval; no tool is in flight.
+                    state["in_flight"] = None
+                    state["status"] = "awaiting_approval"
+                    checkpoint()
+                    raise ApprovalRequired(approval)
+                ctx["request_approval"] = request_approval
+                state.pop("approval_resume", None)
+                checkpoint()
+                report = self.backend.execute(decision, ctx, timeout())
+                validate(report, "report")
+                for artifact in report["artifacts"]:
+                    if not inside(self.workspace, artifact).is_file():
+                        raise ContractError(
+                            f"Reported artifact does not exist: {artifact}"
+                        )
+                record["report"] = report
+                state.pop("approval_resume", None)
+                state["in_flight"] = None
+                if report["status"] != "success":
+                    state["failures"] += 1
+                    if role["can_review"]:
+                        state["reviewed"] = False
+                elif role["can_review"] and report["evidence"]:
+                    state["reviewed"] = True
+                checkpoint()
+        except ApprovalRequired:
+            # request_approval checkpointed the exact continuation already.
+            return state
+        except (Exception, KeyboardInterrupt) as exc:
+            state.update(status="blocked", summary=f"{type(exc).__name__}: {exc}")
+            # Keep an uncertain in-flight call; never auto-replay an operation with unknown effects.
+        finally:
+            checkpoint()
+        return state
