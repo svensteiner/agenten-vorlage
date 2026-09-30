@@ -2,11 +2,11 @@
 
 Stand: 30.09.2026. Produktziel: ein lokaler AI-Arbeitsraum nach dem Bedienvorbild von
 [Open-Dots](https://github.com/Anil-matcha/Open-Dots), auf dem vorhandenen AgentKit-Kern.
-Der klar begrenzte lokale Single-Owner-MVP erreicht **10 von 11 verbindlichen
-Bereichen = 90,9 %**. Computeraufgaben sind optional, stehen außerhalb des Nenners
+Der klar begrenzte lokale Single-Owner-MVP erreicht **11 von 11 verbindlichen
+Bereichen = 100 % innerhalb des Produktscopes**. Computeraufgaben sind optional, stehen außerhalb des Nenners
 und erhalten keine Gutschrift. Die Freigabe gilt nicht für Public Deployment oder
-Mehrbenutzerbetrieb. Die einzige verbindliche Teil-Lücke ist die fehlende live
-per-tool interception der Codex CLI.
+Mehrbenutzerbetrieb. Codex-Freigaben verwenden read-only Vorschläge und einen
+Allowlist-Host-Executor; native per-tool interception der Codex CLI wird nicht behauptet.
 
 ## Implementiert und geprüft
 
@@ -23,7 +23,7 @@ per-tool interception der Codex CLI.
 | Begrenzte Werkzeuge | Read-only-Reviewer dürfen weder schreiben noch Tests starten; Tool-/Zeitlimits |
 | Prozess- und Zustandsgrenzen | Prozessbaum-Abbruch, gefilterte Testumgebung, Workspace-Sperre, Resume-Pfadbindung |
 | Dauerhafte Dialoge | Vollständiger sichtbarer Kontext; zwei Schritte, Reload, Reservierungs-Recovery im Browser; nach Server-Neustart per API und Browser wiederhergestellt; echter zweistufiger Luna-Dialog übernahm `ORBIT-731` im zweiten Turn ausschließlich aus dem vorherigen Antwortkontext |
-| Konkrete Aktionsfreigaben | DeepSeek/Demo mit echten lokalen Tools: exakte Aktionen, Neustart, Ablehnung, stale und unknown outcome geprüft; teilweise, weil die Codex CLI keine live per-tool interception anbietet |
+| Konkrete Aktionsfreigaben | DeepSeek/Demo und Codex-Host-Gateway: exakte Aktionen, Neustart, Ablehnung, stale/unknown outcome, Digest-/Continuation-Bindung und laufweiter no-replay-Schutz geprüft; echte Codex-Abnahme mit gpt-5.6-luna/CLI 0.159.2, genau zwei Freigaben und exaktem Git-Diff nur für `app.py` |
 | Text- und Dokumentanhänge | UTF-8/PDF/DOCX/XLSX/PPTX; Browser-Dateiauswahl bis 2 MiB, Kontextübergabe, Originaldownload; Bindungs-, Integritäts- und Retry-Tests |
 | PNG-/JPEG-Texterkennung | Native Windows-OCR, deutsche Unicode-Fixture; Originalbytes, Dialogkontext, Neustart, Fehler-Recovery und Browser geprüft; keine visuelle Bildanalyse |
 | Lokale Provider-Einrichtung | Windows CurrentUser-DPAPI; synthetische Schlüssel, Manipulationstest, Browser-Speichern/Reload/Entfernen |
@@ -32,7 +32,7 @@ per-tool interception der Codex CLI.
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
 | Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast, Reflow bei 588 CSS-Pixeln ohne horizontalen Seitenüberlauf; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 204 Unittests in 65,526 s, OK, ein erwarteter Windows-Symlink-Skip; Ruff; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Reproduzierbare Offline-Abnahme | 240 Unittests in 98,121 s, OK, ein erwarteter Windows-Symlink-Skip; Ruff; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
@@ -105,12 +105,16 @@ Testartefakte bleiben lokal in ignorierten generierten Verzeichnissen.
 
 ## Freigabeumfang und verbleibende Grenze
 
-Der lokale Single-Owner-MVP ist mit 10/11 vollständig abgenommenen verbindlichen
-Bereichen bei **90,9 %** freigegeben. Die einzige verbindliche Teil-Lücke ist die
-fehlende live per-tool interception der Codex CLI. DeepSeek und Demo besitzen die
-geprüften exakten Freigabesemantiken; Codex behauptet sie nicht. Das ist eine sichtbare
-Backend-Grenze und kein belegter Bypass. Es ist kein kritisches Gate des abgegrenzten
-lokalen Single-Owner-Betriebs offen.
+Der lokale Single-Owner-MVP ist mit **11/11 = 100 %** der verbindlichen Bereiche
+freigegeben. Die Codex-Freigabe verwendet read-only Vorschläge und einen lokalen
+Allowlist-Host-Executor. Native per-tool interception der Codex CLI wird ausdrücklich
+nicht behauptet. Die Abnahme gilt für einen vertrauenswürdigen lokalen Single-User-
+Workspace; freigegebene Tests sind vertrauenswürdiger lokaler Code.
+
+Diese Produktfreigabe ist keine OS-Isolation, keine Public-/Multiuser-Freigabe,
+keine hostile-web-Computer-Sandbox und keine Garantie fachlicher Modellwahrheit.
+Alte pending approvals vor dem Digest-/Host-Gateway-Upgrade werden fail-closed
+verworfen und müssen neu geplant werden.
 
 Außerhalb dieses MVP liegen authentifizierte beziehungsweise breite
 Schreibconnectoren, visuelle Bildanalyse, OCR gescannter PDFs, Mehrbenutzer-/Public-
@@ -164,8 +168,8 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Unittestsuite lief mit 204 Tests in
-65,526 Sekunden durch (OK, ein erwarteter Windows-Symlink-Skip); Ruff, zehn
+und behoben. Die aktuelle vollständige Unittestsuite lief mit 240 Tests in
+98,121 Sekunden durch (OK, ein erwarteter Windows-Symlink-Skip); Ruff, zehn
 Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.
 Die neue grafische Workflow-Spur wurde mit Computer Use inklusive zwei Freigaben,

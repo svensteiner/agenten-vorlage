@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, run_process
+from agentkit.approvals import action_digest, replay_action_digest
 from agentkit.catalog import Catalog, skill_metadata
 from agentkit.contracts import ContractError, LIBRARY, read_json
 from agentkit.engine import Engine
@@ -199,10 +200,14 @@ class AgentKitTests(unittest.TestCase):
         self.assertEqual(0, backend.calls)
 
     def test_artifact_must_exist_and_stay_in_workspace(self):
+        internal = self.workspace / ".git" / "config"
+        internal.parent.mkdir()
+        internal.write_text("secret", encoding="utf-8")
         for artifact in [
             "missing.txt",
             "../agent.json",
             str(self.agent / "agent.json"),
+            ".git/config",
         ]:
             value = report()
             value["artifacts"] = [artifact]
@@ -531,6 +536,11 @@ class AgentKitTests(unittest.TestCase):
                 5,
             )
         env = run.call_args.kwargs["env"]
+        self.assertEqual("1", env["PYTHONDONTWRITEBYTECODE"])
+        self.assertEqual(
+            ["-p", "no:cacheprovider", "--", str(test_path.resolve())],
+            run.call_args.args[0][-4:],
+        )
         self.assertEqual(
             source_root.resolve(), Path(env["PYTHONPATH"].split(os.pathsep)[0]).resolve()
         )
@@ -596,6 +606,14 @@ class AgentKitTests(unittest.TestCase):
                 [sys.executable, "-c", "raise SystemExit(7)"], "", self.workspace, 5
             )
 
+    def test_process_output_is_bounded_while_subprocess_runs(self):
+        command = (
+            "import sys; "
+            "sys.stdout.buffer.write(b'x' * 2100000); sys.stdout.buffer.flush()"
+        )
+        with self.assertRaisesRegex(ContractError, "capture limit"):
+            run_process([sys.executable, "-c", command], "", self.workspace, 5)
+
     def test_readonly_deepseek_tools_cannot_modify_or_execute_workspace(self):
         backend = DeepSeekBackend(api_key="test-only-key")
         target = self.workspace / "target.txt"
@@ -627,13 +645,97 @@ class AgentKitTests(unittest.TestCase):
         with patch("agentkit.backends._process_result", return_value=(1, "failure", "details")) as run:
             result = DeepSeekBackend(api_key="test-only-key")._run_tool("run_pytest", {"path": "--help"}, {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 0.25)
         self.assertEqual(0.25, run.call_args.args[3])
-        self.assertEqual(["--", str(target.resolve())], run.call_args.args[0][-2:])
+        self.assertEqual(
+            ["-p", "no:cacheprovider", "--", str(target.resolve())],
+            run.call_args.args[0][-4:],
+        )
         self.assertEqual(1, json.loads(result)["exit_code"])
 
     def test_deepseek_cannot_overwrite_coordination_files(self):
-        for path in (".agentkit.lock", ".runs/run/state.json", "nested/.lock"):
+        for path in (".agentkit.lock", ".runs/run/state.json", "nested/.lock",
+                     ".git/config", ".GIT/hooks/post-checkout", ".pytest_cache/state",
+                     "nested/__pycache__/payload.pyc"):
             with self.subTest(path=path), self.assertRaisesRegex(ContractError, "coordination"):
                 DeepSeekBackend(api_key="test-only-key")._run_tool("write_file", {"path": path, "content": "bad"}, {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 5)
+
+    def test_deepseek_allows_safe_relative_path_under_internal_named_ancestor(self):
+        workspace = self.root / ".runs" / "workspace"
+        workspace.mkdir(parents=True)
+        result = DeepSeekBackend(api_key="test-only-key")._run_tool(
+            "write_file", {"path": "safe.txt", "content": "safe"},
+            {"workspace": str(workspace), "sandbox": "workspace-write"}, 5,
+        )
+        self.assertIn('"written": "safe.txt"', result)
+        self.assertEqual("safe", (workspace / "safe.txt").read_text())
+
+    @unittest.skipUnless(os.name == "nt", "Windows path aliases only")
+    def test_deepseek_rejects_windows_ads_and_reserved_device_paths(self):
+        for path in ("safe.txt:stream", "NUL", "nested/COM1.txt", "trailing. "):
+            with self.subTest(path=path), self.assertRaises(ContractError):
+                DeepSeekBackend(api_key="test-only-key")._run_tool(
+                    "write_file", {"path": path, "content": "bad"},
+                    {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 5)
+
+    @unittest.skipUnless(os.name == "nt", "Windows 8.3 aliases only")
+    def test_deepseek_rejects_short_aliases_for_internal_paths(self):
+        import ctypes
+
+        internal = self.workspace / ".git"
+        internal.mkdir()
+        (internal / "config").write_text("credential = secret", encoding="utf-8")
+        buffer = ctypes.create_unicode_buffer(32_768)
+        length = ctypes.windll.kernel32.GetShortPathNameW(
+            str(internal), buffer, len(buffer)
+        )
+        if not length or length >= len(buffer):
+            self.skipTest("Windows short names are unavailable")
+        alias = Path(buffer.value).name
+        if alias.casefold() == ".git":
+            self.skipTest("8.3 alias generation is disabled on this volume")
+        backend = DeepSeekBackend(api_key="test-only-key")
+        context = {"workspace": str(self.workspace), "sandbox": "workspace-write"}
+        for tool, arguments in (
+            ("read_file", {"path": f"{alias}/config"}),
+            ("list_files", {"path": alias}),
+            ("write_file", {"path": f"{alias}/new", "content": "bad"}),
+        ):
+            with self.subTest(tool=tool), self.assertRaises(ContractError):
+                backend._run_tool(tool, arguments, context, 5)
+
+    @unittest.skipUnless(os.name == "nt", "Windows 8.3 aliases only")
+    def test_action_replay_identity_canonicalizes_case_and_short_aliases(self):
+        import ctypes
+
+        directory = self.workspace / "Long Replay Directory"
+        directory.mkdir()
+        buffer = ctypes.create_unicode_buffer(32_768)
+        length = ctypes.windll.kernel32.GetShortPathNameW(
+            str(directory), buffer, len(buffer)
+        )
+        if not length or length >= len(buffer):
+            self.skipTest("Windows short names are unavailable")
+        alias = Path(buffer.value).name
+        if alias.casefold() == directory.name.casefold():
+            self.skipTest("8.3 alias generation is disabled on this volume")
+        variants = (
+            ("write_file", {"content": "x"}),
+            ("edit_file", {"old_text": "a", "new_text": "b"}),
+            ("run_pytest", {}),
+        )
+        for tool, extra in variants:
+            long_arguments = {
+                "path": f"{directory.name}/Result.PY", **extra,
+            }
+            alias_arguments = {"path": f"{alias}/RESULT.py", **extra}
+            with self.subTest(tool=tool):
+                self.assertNotEqual(
+                    action_digest(tool, long_arguments),
+                    action_digest(tool, alias_arguments),
+                )
+                self.assertEqual(
+                    replay_action_digest(tool, long_arguments, self.workspace),
+                    replay_action_digest(tool, alias_arguments, self.workspace),
+                )
 
     def test_new_run_id_is_bound_and_cannot_overwrite_checkpoint(self):
         run_id = "a" * 32

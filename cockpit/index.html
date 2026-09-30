@@ -1357,7 +1357,7 @@
           backend: $("backend").value,
           workspace: $("workspace").value.trim(),
           model: $("model").disabled ? "" : $("model").value.trim(),
-          require_approvals: $("backend").value === "demo",
+          require_approvals: ["codex", "deepseek", "demo"].includes($("backend").value),
         };
         if (state.parentJobId) payload.parent_job_id = state.parentJobId;
         const signature = JSON.stringify(payload);

@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -115,7 +116,7 @@ class CockpitHttpTests(unittest.TestCase):
             self.assertEqual(403, caught.exception.code)
 
     def test_invalid_http_bodies_fail_without_starting_jobs(self):
-        for content, headers in ((b'{}', {"Content-Type": "text/plain"}), (b'[]', {"Content-Type": "application/json"}), (b'{', {"Content-Type": "application/json"}), (b'{}', {"Content-Type": "application/json", "Content-Length": "-1"})):
+        for content, headers in ((b'{}', {"Content-Type": "text/plain"}), (b'[]', {"Content-Type": "application/json"}), (b'{', {"Content-Type": "application/json"}), (b'{"backend":[]}', {"Content-Type": "application/json"}), (b'{}', {"Content-Type": "application/json", "Content-Length": "-1"})):
             with self.subTest(content=content, headers=headers), self.assertRaises(HTTPError) as caught:
                 urlopen(Request(self.base + "/api/jobs", data=content, headers=headers), timeout=3)
             self.assertEqual(400, caught.exception.code)
@@ -236,6 +237,30 @@ class CockpitRecoveryTests(unittest.TestCase):
         (self.agent / "workspace" / "demo-result.md").write_bytes(b"x" * 2_000_001)
         with self.assertRaises(ContractError):
             self.manager.artifact(job.job_id, "demo-result.md")
+        internal = self.agent / "workspace" / ".git" / "config"
+        internal.parent.mkdir()
+        internal.write_text("credential = secret", encoding="utf-8")
+        report_record = next(
+            record for record in job.result["history"] if "report" in record
+        )
+        report_record["report"]["artifacts"].append(".git/config")
+        with self.assertRaises(ContractError):
+            self.manager.artifact(job.job_id, ".git/config")
+
+    @unittest.skipUnless(os.name == "nt", "NTFS alternate streams are Windows-only")
+    def test_reported_alternate_data_stream_cannot_be_downloaded(self):
+        job = self.manager.start(self.payload)
+        job.thread.join(5)
+        stream_name = "demo-result.md:private"
+        Path(str(self.agent / "workspace" / "demo-result.md") + ":private").write_bytes(
+            b"TOPSECRET"
+        )
+        report_record = next(
+            record for record in job.result["history"] if "report" in record
+        )
+        report_record["report"]["artifacts"].append(stream_name)
+        with self.assertRaises(ContractError):
+            self.manager.artifact(job.job_id, stream_name)
 
     def test_missing_checkpoint_requires_explicit_acknowledgment(self):
         with patch.object(self.manager, "_run"):

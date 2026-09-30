@@ -1,0 +1,47 @@
+{
+  "kind": "codex-cockpit-approval-smoke",
+  "job_id": "cf33685eb01d485db79d944ff8e9fcac",
+  "run_id": "d4cfea94cb3f41d881fbed00ff2772c9",
+  "backend": "codex",
+  "model": "gpt-5.6-luna (backend default)",
+  "status": "completed",
+  "reviewed": true,
+  "server_restart_preserved_pending_manifest": true,
+  "pending_manifest_before_restart": {
+    "tool": "write_file",
+    "action_sha256": "04cf219aae317822b505be0699d62acc70e6893593085edaacceeea0165ea9e1",
+    "approval_id_stable": true
+  },
+  "approvals": [
+    {
+      "tool": "write_file",
+      "action_sha256": "04cf219aae317822b505be0699d62acc70e6893593085edaacceeea0165ea9e1",
+      "continuation_sha256": "76ebafc169e970385b9989e5c01a52811dea7410c3da16f45a2432d8f2d701f3",
+      "decision": "approve"
+    },
+    {
+      "tool": "run_pytest",
+      "action_sha256": "90e1a5f9d769b6051e9b327cfaad2a15b2ed45a3fd2bbcc843bf96a3a2bcbb4b",
+      "continuation_sha256": "7fbe6ea89c2bca591123380ee355dc615a6f30fbc70014496547aabdeb7f6c57",
+      "decision": "approve"
+    }
+  ],
+  "workflow_roles": [
+    "developer",
+    "reviewer",
+    "finish"
+  ],
+  "pytest_exit_code": 0,
+  "pytest_passed": 1,
+  "artifacts": {
+    "ui-approval-smoke/app.py": {
+      "bytes": 32,
+      "sha256": "6bea535306613e9d567c61d472ef64ce35dc6290bb4e4b75eb0bc7f8c9565858"
+    },
+    "ui-approval-smoke/test_app.py": {
+      "bytes": 71,
+      "sha256": "79a398964a9b4fe526bdf67371dabe8faa9e36bbeec0c76a59a09f12b40e742f"
+    }
+  },
+  "evidence_note": "Sanitized from the local Cockpit API after visible Computer Use approval; prompts, raw model output, local absolute paths and file contents omitted."
+}

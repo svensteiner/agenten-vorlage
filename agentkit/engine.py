@@ -9,9 +9,19 @@ from pathlib import Path
 from typing import Protocol
 
 from .catalog import Catalog
-from .contracts import ContractError, inside, read_json, validate
+from .contracts import ContractError, read_json, validate
 from .storage import lock, save
-from .approvals import ApprovalRequired, binding, new_id, validate_binding, workspace_fingerprint
+from .approvals import (
+    ApprovalRequired,
+    action_digest,
+    binding,
+    continuation_digest,
+    new_id,
+    replay_action_digest,
+    safe_workspace_path,
+    validate_binding,
+    workspace_fingerprint,
+)
 
 
 class Backend(Protocol):
@@ -20,6 +30,31 @@ class Backend(Protocol):
     def decide(self, context: dict, timeout: float) -> dict: ...
 
     def execute(self, decision: dict, context: dict, timeout: float) -> dict: ...
+
+
+def _valid_completed_actions(value: object) -> bool:
+    if not isinstance(value, list) or len(value) > 48:
+        return False
+    try:
+        if len(json.dumps(value, ensure_ascii=False)) > 40_000:
+            return False
+    except (TypeError, ValueError):
+        return False
+    hexadecimal = frozenset("0123456789abcdef")
+    return all(
+        isinstance(entry, dict)
+        and entry.get("kind") == "completed_action"
+        and isinstance(entry.get("action_sha256"), str)
+        and len(entry["action_sha256"]) == 64
+        and set(entry["action_sha256"]) <= hexadecimal
+        and isinstance(entry.get("replay_sha256"), str)
+        and len(entry["replay_sha256"]) == 64
+        and set(entry["replay_sha256"]) <= hexadecimal
+        and isinstance(entry.get("post_workspace_fingerprint"), str)
+        and len(entry["post_workspace_fingerprint"]) == 64
+        and set(entry["post_workspace_fingerprint"]) <= hexadecimal
+        for entry in value
+    )
 
 
 class Engine:
@@ -102,6 +137,9 @@ class Engine:
                 state["core_snapshot"] = self.core_snapshot if self.core_snapshot is not None else self.catalog.core()
                 if len(state["core_snapshot"]) > self.limits["max_context_chars"]:
                     raise ContractError("core_snapshot exceeds the context budget.")
+            completed_actions = state.setdefault("completed_actions", [])
+            if not _valid_completed_actions(completed_actions):
+                raise ContractError("Persisted completed action history is invalid.")
             if state.get("status") != "awaiting_approval" and (approval_id or approval_decision):
                 raise ContractError("No pending action matches this approval response.")
             if state.get("status") == "awaiting_approval":
@@ -116,8 +154,21 @@ class Engine:
                                           fingerprint=workspace_fingerprint(self.workspace) if approval_decision == "approve"
                                           else pending.get("binding", {}).get("workspace_fingerprint", ""))
                 validate_binding(pending, current_binding)
+                replay_sha256 = pending.get("replay_sha256")
+                if (not isinstance(replay_sha256, str)
+                        or len(replay_sha256) != 64
+                        or any(char not in "0123456789abcdef" for char in replay_sha256)):
+                    raise ContractError("Approval canonical replay identity is missing or invalid.")
+                if (approval_decision == "approve"
+                        and replay_sha256 != replay_action_digest(
+                            pending.get("tool"), pending.get("arguments"), self.workspace
+                        )):
+                    raise ContractError("Approval canonical replay identity changed before execution.")
                 state.setdefault("approvals", []).append({"id": approval_id, "tool": pending.get("tool"),
-                    "arguments": pending.get("arguments"), "decision": approval_decision, "at": time.time()})
+                    "arguments": pending.get("arguments"), "action_sha256": pending.get("action_sha256"),
+                    "replay_sha256": replay_sha256,
+                    "continuation_sha256": pending.get("continuation_sha256"),
+                    "decision": approval_decision, "at": time.time()})
                 state["pending_approval"] = None
                 if approval_decision == "reject":
                     state["status"] = "blocked"
@@ -126,6 +177,12 @@ class Engine:
                     save(path, state)
                     return state
                 state["approval_resume"] = pending.get("continuation")
+                state["approved_action"] = {
+                    "tool": pending.get("tool"),
+                    "arguments": pending.get("arguments"),
+                    "action_sha256": pending.get("action_sha256"),
+                    "replay_sha256": replay_sha256,
+                }
                 state["status"] = "running"
                 state["in_flight"] = {"kind": "worker-resume"}
                 # Continue below without requiring unrelated feedback.
@@ -175,6 +232,7 @@ class Engine:
                 "require_approvals": self.require_approvals,
                 "pending_approval": None,
                 "approvals": [],
+                "completed_actions": [],
                 "core_snapshot": self.core_snapshot if self.core_snapshot is not None else self.catalog.core(),
             }
         if path.exists() and state.get("require_approvals"):
@@ -216,9 +274,11 @@ class Engine:
                 "review_pending": state["dirty"] and not state["reviewed"],
                 "steps_remaining": self.limits["max_steps"] - state["steps"],
                 "require_approvals": bool(state.get("require_approvals", False)),
+                "completed_actions": state.get("completed_actions", []),
             }
             if state.get("approval_resume"):
                 result["approval_resume"] = state["approval_resume"]
+                result["approved_action"] = state.get("approved_action")
             if (
                 len(json.dumps(result, ensure_ascii=False))
                 > self.limits["max_context_chars"]
@@ -294,6 +354,11 @@ class Engine:
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
                     approval = {
                         "id": new_id(), "tool": tool, "arguments": arguments,
+                        "action_sha256": action_digest(tool, arguments),
+                        "replay_sha256": replay_action_digest(
+                            tool, arguments, self.workspace
+                        ),
+                        "continuation_sha256": continuation_digest(continuation),
                         "binding": binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
                             workspace=str(self.workspace), backend=self.backend.name,
                             model=getattr(self.backend, "model", None), fingerprint=workspace_fingerprint(self.workspace)),
@@ -305,13 +370,22 @@ class Engine:
                     state["status"] = "awaiting_approval"
                     checkpoint()
                     raise ApprovalRequired(approval)
+                def record_completed_action(entry: dict) -> None:
+                    completed = state.setdefault("completed_actions", [])
+                    candidate = [*completed, entry]
+                    if not _valid_completed_actions(candidate):
+                        raise ContractError("Backend returned an invalid or exhausted completed action history.")
+                    completed.append(entry)
+                    checkpoint()
                 ctx["request_approval"] = request_approval
+                ctx["record_completed_action"] = record_completed_action
                 state.pop("approval_resume", None)
+                state.pop("approved_action", None)
                 checkpoint()
                 report = self.backend.execute(decision, ctx, timeout())
                 validate(report, "report")
                 for artifact in report["artifacts"]:
-                    if not inside(self.workspace, artifact).is_file():
+                    if not safe_workspace_path(self.workspace, artifact).is_file():
                         raise ContractError(
                             f"Reported artifact does not exist: {artifact}"
                         )

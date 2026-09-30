@@ -46,6 +46,15 @@ class ConversationTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             self.conversations.get("../../escape")
 
+    def test_codex_dialog_defaults_to_sticky_approval_policy(self):
+        payload = {**self.payload, "request_id": "4" * 32, "backend": "codex"}
+        conversation = self.conversations.create(payload)
+        self.assertTrue(conversation["require_approvals"])
+        self.assertTrue(self.conversations.create(payload)["require_approvals"])
+        self.assertTrue(self.conversations.create({**payload, "require_approvals": False})["require_approvals"])
+        restarted = Conversations(JobManager(self.root))
+        self.assertTrue(restarted.get(conversation["id"])["require_approvals"])
+
     def test_two_turns_keep_entire_visible_context_across_restart(self):
         _, first = self.send("Remember marker FIRST-123", "2" * 32)
         _, second = self.send("Use the earlier marker", "3" * 32)

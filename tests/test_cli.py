@@ -4,7 +4,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+from agentkit import cli
+from agentkit.scaffold import create
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,6 +89,19 @@ class AgentKitCliTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual("completed", final["status"])
             self.assertTrue((agent / "workspace" / "demo-result.md").is_file())
+
+    def test_model_backends_cannot_disable_action_approvals_in_cli(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = create(Path(temp_name) / "agent", "developer", "agent", "company")
+            for backend_name, constructor in (("codex", "CodexBackend"), ("deepseek", "DeepSeekBackend")):
+                with self.subTest(backend=backend_name), \
+                     patch.object(cli, constructor, return_value=Mock(name=backend_name)), \
+                     patch.object(cli, "Engine") as engine, redirect_stdout(StringIO()):
+                    engine.return_value.run.return_value = {"status": "blocked"}
+                    result = cli.main(["run", "--agent", str(agent), "--backend", backend_name,
+                                       "--task", "bounded"])
+                    self.assertEqual(2, result)
+                    self.assertTrue(engine.call_args.kwargs["require_approvals"])
 
 
 if __name__ == "__main__":

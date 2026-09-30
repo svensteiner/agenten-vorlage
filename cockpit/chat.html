@@ -821,7 +821,7 @@
         return ids;
       }
       async function createConversation(content) {
-        const payload = { agent: $("agent").value, workspace: $("workspace").value.trim(), backend: $("backend").value, model: $("model").disabled ? "" : $("model").value.trim(), title: $("title").value.trim().slice(0, 200) || "Neuer Dialog", require_approvals: $("backend").value === "demo" };
+        const payload = { agent: $("agent").value, workspace: $("workspace").value.trim(), backend: $("backend").value, model: $("model").disabled ? "" : $("model").value.trim(), title: $("title").value.trim().slice(0, 200) || "Neuer Dialog", require_approvals: ["codex", "deepseek", "demo"].includes($("backend").value) };
         if (!payload.agent || !payload.workspace || !payload.backend) throw new Error("Assistent, Backend und Workspace sind erforderlich.");
         const attachmentDraft = state.attachments.map(attachmentDescriptor);
         const record = mutation("conversation", { ...payload, content, attachments: attachmentDraft }); state.pending = record;

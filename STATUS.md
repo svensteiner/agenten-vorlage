@@ -33,7 +33,7 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 - DeepSeek erzwingt Read-only, Toolbudget und Deadline. Tests laufen ohne Server-Secrets
   in der Umgebung; Prozessbäume werden bei Timeout beendet.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Unittestsuite: 204 Tests in 65,526 Sekunden, Status OK;
+- Aktuelle vollständige Unittestsuite: 240 Tests in 98,121 Sekunden, Status OK;
   ein erwarteter Windows-Symlink-Test wurde mangels Berechtigung übersprungen.
   Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks mit
   `--windows-ocr` bestanden (`offline_only=true`, `model_tested=false`); reale
@@ -116,9 +116,16 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 - Browser: reale Dateiauswahl, Versand, Verlauf, Reload, Download sowie BOM-/NUL-Grenzfälle geprüft.
 - Konkrete Datei-/Testfreigaben für DeepSeek, zwei Datei-Freigaben in der Demo:
   persistente Vorschläge, Ablehnen, veraltete Freigaben, Deduplizierung und sichere Wiederaufnahme geprüft.
-- Browser-Freigaben: erste Dateiaktion, Server-Neustart vor zweiter Aktion, gleicher Vorschlag,
-  zweite Freigabe, bestandenes Review und Abschluss bestätigt (Job 3c0486eaf51d4292b87931de49285d38).
-- Codex-CLI kann einzelne Werkzeuge nicht abfangen; die Oberfläche weist diese Grenze aus.
+- Browser-Freigaben: reale Codex-Dateiaktion, Server-Neustart bei wartender Freigabe,
+  danach getrennte Testfreigabe, bestandenes Review und Abschluss bestätigt. Sanitierter
+  Computer-Use-Nachweis: `docs/evidence/codex-cockpit-approval.json`.
+- Codex-Freigaben laufen als read-only strukturierte Vorschläge mit lokalem Allowlist-
+  Host-Executor; native per-tool interception der Codex CLI wird nicht behauptet.
+  Echter gpt-5.6-luna-Lauf mit CLI 0.159.2 bestand genau eine `write_file`- und eine
+  `run_pytest`-Genehmigung, unabhängiges Review, exakten Git-Diff nur für `app.py`,
+  Digest-/Continuation-Bindung und laufweiten no-replay-Schutz; ein separater
+  Reject-Lauf blieb ohne Workspace-Mutation. Nachweis:
+  `docs/evidence/codex-luna-action-approvals.json`.
 - Browser: zwei Dialogschritte, Reload und Wiederholung einer unterbrochenen Reservierung geprüft;
   beide Dialoge nach echtem Server-Neustart wiederhergestellt.
 - Browser: Assistent erstellt und Demo mit fehlgeschlagenem Review, Korrektur und Abschluss geprüft.
@@ -140,7 +147,7 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 204 Tests in 65,526 Sekunden, OK, ein erwarteter
+  Aktuelle vollständige Suite: 240 Tests in 98,121 Sekunden, OK, ein erwarteter
   Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.
   Die historische direkte Host-Lesesperre wird ohne ACL-Änderung oder Sandbox-Bypass
@@ -149,14 +156,16 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 
 ## Lokale MVP-Freigabe
 
-Der verbindliche Single-Owner-MVP umfasst elf Bereiche; zehn sind vollständig
+Der verbindliche Single-Owner-MVP umfasst elf Bereiche; alle sind vollständig
 abgenommen. Computeraufgaben sind optional, stehen außerhalb des Nenners und erhalten
-keine Gutschrift. Ergebnis: **10 / 11 = 90,9 %**. Ein kritisches Gate ist im lokalen
-Umfang nicht offen.
+keine Gutschrift. Ergebnis: **11 / 11 = 100 % innerhalb des Produktscopes**.
 
-Die einzige verbindliche Teil-Lücke ist die fehlende live per-tool interception der
-Codex CLI. DeepSeek und Demo besitzen die geprüften exakten Freigabesemantiken; Codex
-behauptet diese Fähigkeit nicht. Diese Backend-Grenze ist kein belegter Bypass.
+Codex besitzt geprüfte exakte Freigabesemantiken über read-only Vorschläge und einen
+Allowlist-Host-Executor; das ist keine native per-tool interception. Die Freigabe gilt
+für den vertrauenswürdigen lokalen Single-User-Workspace. Freigegebene Tests bleiben
+vertrauenswürdiger lokaler Code; es gibt keine OS-Isolation, Public-/Multiuser-Freigabe,
+hostile-web-Computer-Sandbox oder Garantie fachlicher Modellwahrheit. Alte pending
+approvals vor dem Upgrade werden fail-closed verworfen und neu geplant.
 
 ## Erweiterungen außerhalb des lokalen MVP
 
@@ -167,7 +176,7 @@ behauptet diese Fähigkeit nicht. Diese Backend-Grenze ist kein belegter Bypass.
 
 ## Grenzen
 
-Freigegebener lokaler Single-Owner-MVP mit 90,9 % des verbindlichen Umfangs.
+Freigegebener lokaler Single-Owner-MVP mit 100 % des verbindlichen Umfangs.
 Keine Freigabe für Public Deployment oder Mehrbenutzerbetrieb.
 Historische production-Markierungen einzelner Packs sind keine Produktfreigabe.
 Keine Credentials in Statusdateien. Keine Deploy-/Outreach-/BMD-Freigabe ableiten.

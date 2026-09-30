@@ -19,6 +19,7 @@ Keine echten Provider-Schlüssel wurden in Nachweisen gespeichert.
 | Reale GitHub-Connector-/Open-Dots-Analyse, gpt-5.6-luna/low | Bestanden: öffentlicher Blob plus unveränderlicher Anhang; neun Schritte/352,141 s; drei Review-Fehler, begrenztes Feedback-Recovery, finaler Reviewer success; fünf Fähigkeiten, drei priorisierte Lücken | `.runs/qualification/codex-luna-github-connector-analysis.json` |
 | Gehärtete Unterbrechung/Wiederaufnahme, gpt-5.6-luna | Bestanden: Kindprozess beendet; Planner-Checkpoint; Resume ohne Ack verweigert, nach Ack abgeschlossen; Marker in Summary/Workerreport; Workspace unverändert; drei Schritte/31,515 s | `.runs/qualification/codex-luna-live-resume-hardened.json` |
 | Sicherer Codex-Artefaktexport | Offizieller App-Server, read-only, Netzwerk deaktiviert; gemeldeter Workspace-Pfad, 2-MB-Grenze, Länge und SHA-256 geprüft | `agentkit/codex_artifacts.py`, `tests/test_codex_artifact_export.py` |
+| Codex-Aktionsfreigaben, gpt-5.6-luna, CLI 0.159.2 | Bestanden: genau ein genehmigter `write_file` und `run_pytest`, `awaiting_approval` vor Mutation, unabhängiges Review, exakter Hash und Git-Diff nur für `app.py`, Digest-/Continuation-Bindung und laufweiter no-replay-Schutz; separater Reject-Lauf ohne Mutation; 158,140 s von 600 s Budget | `docs/evidence/codex-luna-action-approvals.json` |
 
 ### Historische Nachweise und Fehlversuche
 
@@ -306,22 +307,27 @@ Bestätigungspflicht, Checkpoint und sichere Fortsetzung gemeinsam.
 
 ## Aktueller automatisierter Gesamtstand
 
-`python -m unittest discover -v` führte 204 Tests in 65,526 Sekunden aus: Status
+`python -m unittest discover -v` führte 240 Tests in 98,121 Sekunden aus: Status
 `OK`, ein erwarteter Windows-Symlink-Test wegen fehlender Berechtigung übersprungen.
 `python -m ruff check .` bestand. `node scripts/test_workflow_trace.cjs` bestand
 zehn Szenarien. `python scripts/verify_release.py --windows-ocr` bestand alle 19
 Checks mit `offline_only=true` und `model_tested=false`; die realen Luna-Nachweise
 sind deshalb getrennt in dieser Datei dokumentiert.
 
-## Freigabeentscheidung
+## Aktuelle Freigabeentscheidung
 
-Für den lokalen Single-Owner-MVP sind zehn von elf verbindlichen Bereichen vollständig
-abgenommen: **10 / 11 = 90,9 %**. Computeraufgaben sind optional, stehen außerhalb
-des Nenners und erhalten keine Gutschrift. Ein kritisches Gate ist im begrenzten
-lokalen Umfang nicht offen.
+Für den lokalen Single-Owner-MVP sind elf von elf verbindlichen Bereichen vollständig
+abgenommen: **11 / 11 = 100 % innerhalb des lokalen Single-Owner-Produktscopes**.
+Computeraufgaben sind optional und stehen außerhalb des Nenners. Codex-Freigaben
+verwenden read-only Vorschläge plus Allowlist-Host-Executor; native per-tool
+interception der Codex CLI wird nicht behauptet.
 
-Die einzige verbindliche Teil-Lücke ist die fehlende live per-tool interception der
-Codex CLI. Das ist eine offen dokumentierte Backend-Grenze, kein belegter Bypass.
+Die verbleibenden Grenzen sind bewusst außerhalb des Scopes: authentifizierte/breite
+Schreibconnectoren, visuelle Bildanalyse, Scan-PDF-OCR, Mehrbenutzer-/Public-Deployment
+und hostile-web-gehärtete Computer-Sandbox. Die Freigabe ist keine OS-Isolation und
+keine Garantie fachlicher Modellwahrheit; freigegebene Tests sind vertrauenswürdiger
+lokaler Code. Alte pending approvals vor dem Host-Gateway-Upgrade werden fail-closed
+verworfen und müssen neu geplant werden.
 Authentifizierte/breite Schreibconnectoren, visuelle Bildanalyse, Scan-PDF-OCR,
 Mehrbenutzer-/Public-Deployment und eine hostile-web-gehärtete Computer-Sandbox
 bleiben Erweiterungen außerhalb dieser Freigabe.

@@ -78,15 +78,27 @@ class CockpitApprovalTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             self.manager.start({**payload, "require_approvals": False})
 
-    def test_backend_policy_is_explicit_and_deepseek_cannot_disable_it(self):
+    def test_backend_policy_is_explicit_and_codex_cannot_disable_it(self):
         with patch.object(self.manager, "_run"):
             job = self.manager.start({**self.payload, "backend": "deepseek", "require_approvals": False})
             self.settle(job)
             self.assertTrue(job.payload["require_approvals"])
-        with self.assertRaises(ContractError):
-            self.manager.start({**self.payload, "backend": "codex"})
+            job = self.manager.start({**self.payload, "backend": "codex"})
+            self.settle(job)
+            self.assertTrue(job.payload["require_approvals"])
         with self.assertRaises(ContractError):
             self.manager.start({**self.payload, "require_approvals": "false"})
+
+    def test_codex_default_is_approval_enabled_and_provider_describes_host_executor(self):
+        with patch.object(self.manager, "_run"):
+            job = self.manager.start({**self.payload, "backend": "codex"})
+            self.settle(job)
+        self.assertTrue(job.payload["require_approvals"])
+        codex = next(item for item in self.manager.configuration()["backends"] if item["id"] == "codex")
+        self.assertTrue(codex["tool_approvals"])
+        self.assertIn("read-only", codex["approval_detail"])
+        self.assertIn("allowlist", codex["approval_detail"])
+        self.assertIn("per-tool interception", codex["approval_detail"])
 
     def test_reserved_approval_dispatch_recovers_after_restart(self):
         job, approval_id = self.pending()

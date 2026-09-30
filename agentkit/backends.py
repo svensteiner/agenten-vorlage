@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import os
 import shutil
@@ -10,6 +11,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import tomllib
 import urllib.error
@@ -17,7 +19,15 @@ import urllib.request
 from pathlib import Path
 
 from .contracts import ContractError, ROOT, schema, validate
-from .approvals import ApprovalRequired, WRITE_TOOLS
+from .approvals import (
+    ApprovalRequired,
+    INTERNAL_WORKSPACE_SEGMENTS,
+    WRITE_TOOLS,
+    action_digest,
+    replay_action_digest,
+    safe_workspace_path,
+    workspace_fingerprint,
+)
 
 
 def codex_command() -> list[str]:
@@ -108,6 +118,28 @@ def _write_codex_schema(contract: str, destination: Path) -> Path:
     return destination
 
 
+MAX_SUBPROCESS_OUTPUT_BYTES = 2_000_000
+
+
+def _terminate_process_tree(process: subprocess.Popen) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    process.wait()
+
+
 def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, env: dict | None = None) -> tuple[int, str, str]:
     if timeout <= 0:
         raise subprocess.TimeoutExpired(args, timeout)
@@ -130,24 +162,37 @@ def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, 
             env=env if env is not None else subprocess_environment(),
             **options,
         )
+        communication_error: list[BaseException] = []
+        def communicate() -> None:
+            try:
+                process.communicate(prompt.encode("utf-8"))
+            except BaseException as exc:
+                communication_error.append(exc)
+
+        worker = threading.Thread(target=communicate, daemon=True)
+        worker.start()
+        deadline = time.monotonic() + timeout
         try:
-            process.communicate(prompt.encode("utf-8"), timeout=timeout)
-        except (subprocess.TimeoutExpired, KeyboardInterrupt):
-            if os.name == "nt":
-                subprocess.run(
-                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
-            else:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-            process.wait()
+            while worker.is_alive():
+                output_size = os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size
+                if output_size > MAX_SUBPROCESS_OUTPUT_BYTES:
+                    _terminate_process_tree(process)
+                    worker.join(5)
+                    raise ContractError("Subprocess output exceeded its bounded capture limit.")
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    _terminate_process_tree(process)
+                    worker.join(5)
+                    raise subprocess.TimeoutExpired(args, timeout)
+                worker.join(min(0.05, remaining))
+        except KeyboardInterrupt:
+            _terminate_process_tree(process)
+            worker.join(5)
             raise
+        if communication_error:
+            raise communication_error[0]
+        if os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size > MAX_SUBPROCESS_OUTPUT_BYTES:
+            raise ContractError("Subprocess output exceeded its bounded capture limit.")
         stdout.seek(0)
         stderr.seek(0)
         return (process.returncode, stdout.read(1_000_000).decode("utf-8", errors="replace"), stderr.read(1_000_000).decode("utf-8", errors="replace"))
@@ -161,6 +206,52 @@ def run_process(args: list[str], prompt: str, cwd: Path, timeout: float) -> str:
             f"Backend exited {returncode}; inspect CLI authentication/configuration. Raw output is not logged."
         )
     return stdout
+
+
+def _atomic_write_bytes(target: Path, data: bytes) -> None:
+    """Replace one file from its verified parent without leaving partial content."""
+    descriptor, temporary = tempfile.mkstemp(prefix=".agentkit-write-", dir=target.parent)
+    temporary_path = Path(temporary)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, target)
+    except BaseException:
+        try:
+            temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+
+
+def _validate_tool_path_text(relative: object) -> str:
+    """Validate one bounded, portable path before resolving it in a workspace."""
+    if (not isinstance(relative, str) or not relative or len(relative) > 500
+            or "\x00" in relative or "\\" in relative):
+        raise ContractError("Tool path must be a bounded portable relative path.")
+    parts = relative.split("/")
+    if Path(relative).is_absolute() or any(
+        not part or part in {".", ".."} or part.casefold() in INTERNAL_WORKSPACE_SEGMENTS
+        for part in parts
+    ):
+        raise ContractError(
+            "Tool path escapes the workspace or targets internal coordination/cache state."
+        )
+    if any(ord(char) < 32 for char in relative):
+        raise ContractError("Tool path contains control characters.")
+    if os.name == "nt":
+        reserved = {
+            "CON", "PRN", "AUX", "NUL",
+            *(f"COM{i}" for i in range(1, 10)),
+            *(f"LPT{i}" for i in range(1, 10)),
+        }
+        for part in parts:
+            if (":" in part or part.endswith((" ", "."))
+                    or part.split(".", 1)[0].upper() in reserved):
+                raise ContractError("Tool path is not a valid Windows workspace path.")
+    return relative
 
 
 def _windows_sandbox_selection() -> str | None:
@@ -185,13 +276,19 @@ def _windows_sandbox_selection() -> str | None:
 
 class CodexBackend:
     name = "codex"
-    supports_action_approvals = False
+    supports_action_approvals = True
     default_model = "gpt-5.6-luna"
+    max_action_history = 48
+    max_action_history_chars = 40_000
+    max_action_result_chars = 8_000
+    max_proposal_corrections = 3
 
     def __init__(self, model: str | None = None):
         self.command = codex_command()
         self.model = model or self.default_model
         self.windows_sandbox = _windows_sandbox_selection()
+        # The bounded host-tool implementation is shared with DeepSeek.
+        self.api_key = ""
 
     def _call(self, prompt: str, contract: str, context: dict, timeout: float) -> dict:
         with tempfile.TemporaryDirectory(prefix="agentkit-output-") as temp:
@@ -231,6 +328,211 @@ class CodexBackend:
                 raise ContractError("Missing or oversized structured backend response.")
             return json.loads(output.read_text(encoding="utf-8"))
 
+    @staticmethod
+    def _validate_action(tool: object, arguments: object) -> tuple[str, dict]:
+        if not isinstance(tool, str) or tool not in WRITE_TOOLS or not isinstance(arguments, dict):
+            raise ContractError("Codex proposed an unsupported action or arguments object.")
+        expected = {"write_file": {"path", "content"}, "edit_file": {"path", "old_text", "new_text"}, "run_pytest": {"path"}}[tool]
+        if set(arguments) != expected:
+            raise ContractError("Codex action arguments contain unexpected fields.")
+        path = _validate_tool_path_text(arguments["path"])
+        if tool == "write_file":
+            if not isinstance(arguments["content"], str) or len(arguments["content"].encode("utf-8")) > 200_000:
+                raise ContractError("Codex write content is missing or too large.")
+        elif tool == "edit_file":
+            if any(not isinstance(arguments[key], str) for key in ("old_text", "new_text")):
+                raise ContractError("Codex edit text is invalid.")
+            if any(len(arguments[key].encode("utf-8")) > 50_000 for key in ("old_text", "new_text")):
+                raise ContractError("Codex edit text is too large.")
+        elif path.startswith("-") or any(char in path for char in (";", "|", "&", "`", "$")):
+            raise ContractError("Codex test path contains shell syntax.")
+        return tool, arguments
+
+    @classmethod
+    def _action_from_step(cls, response: dict) -> tuple[str, dict]:
+        """Return the canonical action and reject data hidden in unused fields."""
+        tool = response.get("tool")
+        arguments = response.get("arguments")
+        if not isinstance(arguments, dict):
+            raise ContractError("Codex proposed an invalid action arguments object.")
+        if set(arguments) != {"path", "content", "old_text", "new_text"}:
+            raise ContractError("Codex action step has incomplete arguments.")
+        if tool == "write_file":
+            if arguments["old_text"] or arguments["new_text"]:
+                raise ContractError("Codex write proposal contains hidden edit arguments.")
+            canonical = {"path": arguments["path"], "content": arguments["content"]}
+        elif tool == "edit_file":
+            if arguments["content"] or not arguments["old_text"]:
+                raise ContractError("Codex edit proposal contains invalid or hidden arguments.")
+            canonical = {
+                "path": arguments["path"],
+                "old_text": arguments["old_text"],
+                "new_text": arguments["new_text"],
+            }
+        elif tool == "run_pytest":
+            if arguments["content"] or arguments["old_text"] or arguments["new_text"]:
+                raise ContractError("Codex test proposal contains hidden arguments.")
+            canonical = {"path": arguments["path"]}
+        else:
+            raise ContractError("Codex proposed an unsupported action.")
+        return cls._validate_action(tool, canonical)
+
+    @classmethod
+    def _history_entry(cls, tool: str, arguments: dict, result: str,
+                       post_workspace_fingerprint: str, workspace: Path) -> dict:
+        """Keep enough evidence for replanning without echoing whole file bodies."""
+        summary: dict[str, object] = {"path": arguments["path"]}
+        for key in ("content", "old_text", "new_text"):
+            value = arguments.get(key)
+            if isinstance(value, str):
+                encoded = value.encode("utf-8")
+                summary[f"{key}_bytes"] = len(encoded)
+                summary[f"{key}_sha256"] = hashlib.sha256(encoded).hexdigest()
+        return {
+            "kind": "completed_action",
+            "tool": tool,
+            "action_sha256": action_digest(tool, arguments),
+            "replay_sha256": replay_action_digest(tool, arguments, workspace),
+            "post_workspace_fingerprint": post_workspace_fingerprint,
+            "arguments": summary,
+            "result": result[: cls.max_action_result_chars],
+        }
+
+    @classmethod
+    def _validate_action_history(cls, value: object) -> list[dict]:
+        if not isinstance(value, list) or len(value) > cls.max_action_history:
+            raise ContractError("Codex approval action history is invalid or exhausted.")
+        try:
+            encoded = json.dumps(value, ensure_ascii=False)
+        except (TypeError, ValueError) as exc:
+            raise ContractError("Codex approval action history is invalid.") from exc
+        if len(encoded) > cls.max_action_history_chars:
+            raise ContractError("Codex approval action history exceeds its context budget.")
+        return value
+
+    @staticmethod
+    def _workspace_path(context: dict, relative: str) -> Path:
+        return DeepSeekBackend._workspace_path(context, relative)
+
+    def _execute_approval_gated(self, decision: dict, context: dict, timeout: float) -> dict:
+        deadline = time.monotonic() + timeout
+
+        def remaining() -> float:
+            value = deadline - time.monotonic()
+            if value <= 0:
+                raise ContractError("Codex approval worker exhausted its call-time budget.")
+            return value
+
+        resume = context.get("approval_resume")
+        action_history = self._validate_action_history(context.get("completed_actions", []))
+        if resume:
+            if not isinstance(resume, dict) or resume.get("kind") != "codex-action":
+                raise ContractError("Invalid Codex approval continuation.")
+            tool, arguments = self._validate_action(resume.get("tool"), resume.get("arguments"))
+            approved = context.get("approved_action")
+            if (not isinstance(approved, dict) or approved.get("tool") != tool
+                    or approved.get("arguments") != arguments
+                    or approved.get("action_sha256") != action_digest(tool, arguments)
+                    or approved.get("replay_sha256") != replay_action_digest(
+                        tool, arguments, Path(context["workspace"])
+                    )):
+                raise ContractError("Codex continuation does not match the approved action.")
+            action_history = self._validate_action_history(resume.get("action_history", []))
+            if len(action_history) >= self.max_action_history:
+                raise ContractError("Codex approval action history is exhausted.")
+            before_fingerprint = workspace_fingerprint(Path(context["workspace"]))
+            digest = replay_action_digest(tool, arguments, Path(context["workspace"]))
+            if any(entry.get("kind") == "completed_action"
+                   and entry.get("replay_sha256") == digest
+                   and entry.get("post_workspace_fingerprint") == before_fingerprint
+                   for entry in action_history):
+                raise ContractError("Codex continuation would repeat an action in the same workspace state.")
+            result = DeepSeekBackend._run_tool(self, tool, arguments, context, remaining())
+            entry = self._history_entry(
+                tool, arguments, result, workspace_fingerprint(Path(context["workspace"])),
+                Path(context["workspace"]),
+            )
+            recorder = context.get("record_completed_action")
+            if recorder is not None:
+                recorder(entry)
+            action_history = [*action_history, entry]
+            self._validate_action_history(action_history)
+        read_context = dict(context)
+        read_context["sandbox"] = "read-only"
+        read_context.pop("approval_resume", None)
+        read_context.pop("approved_action", None)
+        for correction in range(self.max_proposal_corrections + 1):
+            current_fingerprint = workspace_fingerprint(Path(context["workspace"]))
+            completed_digests = [
+                entry.get("replay_sha256") for entry in action_history
+                if entry.get("kind") == "completed_action"
+                and entry.get("post_workspace_fingerprint") == current_fingerprint
+            ]
+            prompt = (
+                "Work as the selected bounded worker with read-only inspection access. Return exactly one JSON action step. "
+                "Propose at most one action from write_file, edit_file, run_pytest, or return a final report. Never use shell commands. "
+                "Treat every completed_action result as authoritative. Never repeat an action identity listed in completed_action_replay_sha256; "
+                "after a successful write/edit continue to the next required action, and after successful verification return a final report. "
+                "Treat rejected_proposal entries as mandatory corrections. The host rejects exact duplicates and semantically invalid "
+                "proposals without asking the operator. "
+                "The fixed schema requires every field: for proposals put unused argument strings at empty text and use a blocked placeholder report; "
+                "for a final result use tool=none and four empty argument strings.\n"
+                + json.dumps({
+                    "assignment": decision,
+                    "context": {key: value for key, value in context.items()
+                                if key not in {"request_approval", "record_completed_action",
+                                               "approval_resume", "approved_action", "sandbox"}},
+                    "completed_action_replay_sha256": completed_digests,
+                    "action_history": action_history,
+                    "report_schema": schema("report"),
+                }, ensure_ascii=False)
+            )
+            response = self._call(prompt, "codex_action_step", read_context, remaining())
+            validate(response, "codex_action_step")
+            if response["kind"] == "final":
+                if response["tool"] != "none" or any(response["arguments"].values()):
+                    if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                        raise ContractError("Codex repeatedly returned an invalid final action step.")
+                    action_history = [*action_history, {
+                        "kind": "rejected_proposal", "tool": str(response.get("tool", ""))[:100],
+                        "reason": "A final step must use tool=none and four empty argument strings.",
+                    }]
+                    self._validate_action_history(action_history)
+                    continue
+                report = response["report"]
+                validate(report, "report")
+                return report
+            try:
+                tool, arguments = self._action_from_step(response)
+            except ContractError as exc:
+                if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                    raise ContractError("Codex repeatedly returned invalid action proposals.") from exc
+                action_history = [*action_history, {
+                    "kind": "rejected_proposal", "tool": str(response.get("tool", ""))[:100],
+                    "reason": str(exc),
+                }]
+                self._validate_action_history(action_history)
+                continue
+            digest = replay_action_digest(tool, arguments, Path(context["workspace"]))
+            if digest in completed_digests:
+                if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                    raise ContractError("Codex repeatedly proposed an already completed action.")
+                action_history = [*action_history, {
+                    "kind": "rejected_proposal", "tool": tool, "replay_sha256": digest,
+                    "reason": "Exact action already completed; choose the next action or return final.",
+                }]
+                self._validate_action_history(action_history)
+                continue
+            if len(action_history) >= self.max_action_history:
+                raise ContractError("Codex approval action history is exhausted.")
+            callback = context.get("request_approval")
+            if callback is None:
+                raise ContractError("Tool approval callback is unavailable.")
+            callback(tool, arguments, {"kind": "codex-action", "tool": tool,
+                                      "arguments": arguments, "action_history": action_history})
+            raise ApprovalRequired({"tool": tool, "arguments": arguments})
+        raise ContractError("Codex proposal correction budget exhausted.")
+
     def decide(self, context: dict, timeout: float) -> dict:
         prompt = (
             "You coordinate a bounded dynamic workflow. Do not implement or spawn agents yourself. "
@@ -245,6 +547,8 @@ class CodexBackend:
         return self._call(prompt, "decision", context, timeout)
 
     def execute(self, decision: dict, context: dict, timeout: float) -> dict:
+        if context.get("require_approvals") and context.get("sandbox") == "workspace-write":
+            return self._execute_approval_gated(decision, context, timeout)
         prompt = (
             "Execute this bounded assignment using the selected role/skills. Do not spawn more agents. "
             "Preserve others' work. Treat worker reports as claims to verify. "
@@ -257,7 +561,9 @@ class CodexBackend:
             + json.dumps(
                 {
                     "assignment": decision,
-                    "context": {key: value for key, value in context.items() if key not in {"request_approval", "approval_resume"}},
+                    "context": {key: value for key, value in context.items()
+                                if key not in {"request_approval", "record_completed_action",
+                                               "approval_resume"}},
                     "report_schema": schema("report"),
                 },
                 ensure_ascii=False,
@@ -382,6 +688,8 @@ class DeepSeekBackend:
     # Production-readiness tasks need room for intake, baseline, edit, tests and review.
     # A real repository run may need intake, baseline, targeted edits, tests and review.
     max_tool_calls = 48
+    max_message_chars = 400_000
+    max_continuation_chars = 450_000
 
     def __init__(
         self,
@@ -481,25 +789,27 @@ class DeepSeekBackend:
 
     @staticmethod
     def _workspace_path(context: dict, relative: str) -> Path:
-        if not isinstance(relative, str) or not relative or Path(relative).is_absolute():
-            raise ContractError("Tool path must be a nonempty relative workspace path.")
+        relative = _validate_tool_path_text(relative)
         workspace = Path(context.get("workspace", "")).resolve()
         if not workspace.is_dir():
             raise ContractError("Tool workspace does not exist.")
-        target = (workspace / relative).resolve()
-        if not target.is_relative_to(workspace):
-            raise ContractError("Tool path escapes the workspace.")
-        return target
+        candidate = workspace
+        for part in Path(relative).parts:
+            candidate /= part
+            try:
+                is_link = candidate.is_symlink()
+                is_junction = bool(getattr(candidate, "is_junction", lambda: False)())
+            except OSError as exc:
+                raise ContractError("Tool path cannot be inspected safely.") from exc
+            if is_link or is_junction:
+                raise ContractError("Tool path must not traverse links or junctions.")
+        return safe_workspace_path(workspace, relative)
 
     def _run_tool(self, name: str, arguments: dict, context: dict, timeout: float) -> str:
         if timeout <= 0:
             raise ContractError("DeepSeek tool deadline exhausted.")
         if name in {"write_file", "edit_file", "run_pytest"} and context.get("sandbox") != "workspace-write":
             raise ContractError("This tool requires the workspace-write sandbox.")
-        if name in {"write_file", "edit_file"}:
-            target = self._workspace_path(context, arguments.get("path", ""))
-            if any(part in {".agentkit.lock", ".lock", ".runs"} for part in target.parts):
-                raise ContractError("Cannot modify internal coordination files.")
         if name == "list_files":
             relative = arguments.get("path", ".")
             target = self._workspace_path(context, relative if relative != "." else "README.md")
@@ -512,13 +822,13 @@ class DeepSeekBackend:
             for item in sorted(directory.iterdir(), key=lambda p: p.name.lower())[:200]:
                 # Internal coordination locks are implementation details and may
                 # be held open with an OS-level deny-read lock on Windows.
-                if item.name in {".agentkit.lock", ".lock"}:
+                if item.name.casefold() in INTERNAL_WORKSPACE_SEGMENTS:
                     continue
                 entries.append({"path": str(item.relative_to(Path(context["workspace"]).resolve())), "kind": "dir" if item.is_dir() else "file"})
             return json.dumps(entries, ensure_ascii=False)
         if name == "read_file":
             target = self._workspace_path(context, arguments.get("path", ""))
-            if target.name in {".agentkit.lock", ".lock"}:
+            if target.name.casefold() in INTERNAL_WORKSPACE_SEGMENTS:
                 return json.dumps({"error": "internal_file_not_readable"})
             try:
                 is_file = target.is_file()
@@ -551,7 +861,8 @@ class DeepSeekBackend:
                         }
                     )
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
+            target = self._workspace_path(context, arguments.get("path", ""))
+            _atomic_write_bytes(target, content.encode("utf-8"))
             return json.dumps({"written": str(target.relative_to(Path(context["workspace"]).resolve()))})
         if name == "edit_file":
             target = self._workspace_path(context, arguments.get("path", ""))
@@ -576,15 +887,20 @@ class DeepSeekBackend:
             if occurrences != 1:
                 return json.dumps({"error": "edit_requires_one_match", "occurrences": occurrences})
             updated = text.replace(old_text, new_text)
-            target.write_bytes(updated.encode("utf-8-sig" if had_bom else encoding))
+            target = self._workspace_path(context, arguments.get("path", ""))
+            _atomic_write_bytes(target, updated.encode("utf-8-sig" if had_bom else encoding))
             return json.dumps({"edited": str(target.relative_to(Path(context["workspace"]).resolve()))})
         if name == "run_pytest":
             relative = arguments.get("path", "")
             target = self._workspace_path(context, relative)
             if not target.exists():
                 return json.dumps({"error": "test_path_not_found"})
+            target = self._workspace_path(context, relative)
             workspace = Path(context["workspace"]).resolve()
             environment = subprocess_environment()
+            # Verification should not mutate the reviewed workspace with Python
+            # bytecode or pytest cache artifacts.
+            environment["PYTHONDONTWRITEBYTECODE"] = "1"
             source_root = workspace / "src"
             if source_root.is_dir():
                 current_pythonpath = environment.get("PYTHONPATH", "")
@@ -593,7 +909,8 @@ class DeepSeekBackend:
                 )
             try:
                 returncode, stdout, stderr = _process_result(
-                    [sys.executable, "-m", "pytest", "-q", "--", str(target)],
+                    [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                     "--", str(target)],
                     "",
                     workspace,
                     timeout,
@@ -642,6 +959,88 @@ class DeepSeekBackend:
         except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise ContractError("DeepSeek returned no valid chat message.") from exc
 
+    @classmethod
+    def _validate_messages(cls, value: object) -> list[dict]:
+        if not isinstance(value, list):
+            raise ContractError("DeepSeek continuation messages are invalid.")
+        try:
+            size = len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
+        except (TypeError, ValueError) as exc:
+            raise ContractError("DeepSeek continuation messages are invalid.") from exc
+        if size > cls.max_message_chars:
+            raise ContractError("DeepSeek tool message context budget exhausted.")
+        return value
+
+    @classmethod
+    def _validate_continuation(cls, value: object) -> dict:
+        if not isinstance(value, dict):
+            raise ContractError("DeepSeek approval continuation is invalid.")
+        try:
+            size = len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
+        except (TypeError, ValueError) as exc:
+            raise ContractError("DeepSeek approval continuation is invalid.") from exc
+        if size > cls.max_continuation_chars:
+            raise ContractError("DeepSeek approval continuation budget exhausted.")
+        # A continuation can fit its outer budget while carrying an oversized
+        # message transcript. Validate the nested state before any resumed tool
+        # is allowed to run.
+        if "messages" in value:
+            cls._validate_messages(value["messages"])
+        return value
+
+    @classmethod
+    def _sibling_continuation(cls, messages: list[dict], tool_count: int,
+                              sibling_name: str, sibling_args: dict,
+                              sibling_id: str, remaining_calls: list[dict],
+                              batch_index: int) -> dict:
+        """Build and validate one persisted continuation at the approval boundary."""
+        continuation = {
+            "messages": messages,
+            "tool_count": tool_count,
+            "call": {"name": sibling_name, "arguments": sibling_args, "call_id": sibling_id},
+            "batch_index": batch_index,
+            "remaining_calls": remaining_calls,
+        }
+        return cls._validate_continuation(continuation)
+
+    @staticmethod
+    def _completed_in_current_workspace(name: str, arguments: dict, context: dict) -> bool:
+        completed = context.get("completed_actions", [])
+        if not isinstance(completed, list):
+            raise ContractError("Completed action history is invalid.")
+        digest = replay_action_digest(name, arguments, Path(context["workspace"]))
+        fingerprint = workspace_fingerprint(Path(context["workspace"]))
+        return any(
+            isinstance(entry, dict)
+            and entry.get("kind") == "completed_action"
+            and entry.get("replay_sha256") == digest
+            and entry.get("post_workspace_fingerprint") == fingerprint
+            for entry in completed
+        )
+
+    @staticmethod
+    def _record_completed(name: str, arguments: dict, result: str, context: dict) -> None:
+        recorder = context.get("record_completed_action")
+        if recorder is None or name not in WRITE_TOOLS:
+            return
+        entry = CodexBackend._history_entry(
+            name, arguments, result,
+            workspace_fingerprint(Path(context["workspace"])),
+            Path(context["workspace"]),
+        )
+        recorder(entry)
+
+    @classmethod
+    def _append_duplicate_observation(cls, messages: list[dict], call_id: str) -> None:
+        messages.append({
+            "role": "tool", "tool_call_id": call_id,
+            "content": json.dumps({
+                "error": "exact_action_already_completed_in_current_workspace",
+                "hint": "Inspect the result and choose a different next action.",
+            }),
+        })
+        cls._validate_messages(messages)
+
     def _call(self, prompt: str, contract: str, context: dict, timeout: float) -> dict:
         if not self.api_key:
             raise ContractError(
@@ -662,18 +1061,31 @@ class DeepSeekBackend:
         tool_count = 0
         resume = context.get("approval_resume")
         if resume:
+            resume = self._validate_continuation(resume)
             if not use_tools:
                 raise ContractError("Worker continuation cannot be used by a planner.")
             # The exact serialized continuation was checkpointed before the tool
             # request.  Resume it directly; never ask the model to replay prior work.
-            messages = resume["messages"]
+            messages = self._validate_messages(resume.get("messages"))
             tool_count = int(resume.get("tool_count", 0))
             call = resume["call"]
+            approved = context.get("approved_action")
+            if (not isinstance(approved, dict) or approved.get("tool") != call.get("name")
+                    or approved.get("arguments") != call.get("arguments")
+                    or approved.get("action_sha256") != action_digest(call.get("name"), call.get("arguments"))
+                    or approved.get("replay_sha256") != replay_action_digest(
+                        call.get("name"), call.get("arguments"), Path(context["workspace"])
+                    )):
+                raise ContractError("DeepSeek continuation does not match the approved action.")
             if tool_count >= self.max_tool_calls:
                 raise ContractError("DeepSeek tool-call limit exhausted.")
+            if self._completed_in_current_workspace(call["name"], call["arguments"], context):
+                raise ContractError("DeepSeek continuation would repeat a completed action.")
             tool_count += 1
             result = self._run_tool(call["name"], call["arguments"], context, deadline - time.monotonic())
+            self._record_completed(call["name"], call["arguments"], result, context)
             messages.append({"role": "tool", "tool_call_id": call["call_id"], "content": result})
+            self._validate_messages(messages)
             # Complete already-returned siblings in order. A later side effect
             # gets its own approval; earlier siblings are never replayed.
             for index, sibling in enumerate(resume.get("remaining_calls", [])):
@@ -685,19 +1097,24 @@ class DeepSeekBackend:
                 sibling_args = self._parse_tool_arguments(function.get("arguments", "{}"))
                 sibling_id = sibling.get("id")
                 if sibling_name in WRITE_TOOLS and context.get("require_approvals"):
+                    if self._completed_in_current_workspace(sibling_name, sibling_args, context):
+                        self._append_duplicate_observation(messages, sibling_id)
+                        continue
                     callback = context.get("request_approval")
                     if callback is None:
                         raise ContractError("Tool approval callback is unavailable.")
-                    callback(sibling_name, sibling_args, {
-                        "messages": messages, "tool_count": tool_count - 1,
-                        "call": {"name": sibling_name, "arguments": sibling_args, "call_id": sibling_id},
-                        "batch_index": index, "remaining_calls": resume.get("remaining_calls", [])[index + 1:],
-                    })
+                    continuation = self._sibling_continuation(
+                        messages, tool_count - 1, sibling_name, sibling_args, sibling_id,
+                        resume.get("remaining_calls", [])[index + 1:], index,
+                    )
+                    callback(sibling_name, sibling_args, continuation)
                     raise ContractError("Approval callback returned without a decision boundary.")
                 sibling_result = self._run_tool(sibling_name, sibling_args, context, deadline - time.monotonic())
                 messages.append({"role": "tool", "tool_call_id": sibling_id, "content": sibling_result})
+                self._validate_messages(messages)
             context.pop("approval_resume", None)
         for _ in range(self.max_tool_calls + 1):
+            self._validate_messages(messages)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError("DeepSeek tool loop timed out.")
@@ -707,6 +1124,7 @@ class DeepSeekBackend:
                 if not use_tools:
                     raise ContractError("DeepSeek requested tools during a planner decision.")
                 messages.append(message)
+                self._validate_messages(messages)
                 for index, call in enumerate(tool_calls):
                     if tool_count >= self.max_tool_calls:
                         raise ContractError("DeepSeek tool-call limit exhausted.")
@@ -728,6 +1146,9 @@ class DeepSeekBackend:
                     except (TypeError, ValueError, json.JSONDecodeError, SyntaxError) as exc:
                         raise ContractError("DeepSeek returned non-JSON tool arguments.") from exc
                     if name in WRITE_TOOLS and context.get("require_approvals"):
+                        if self._completed_in_current_workspace(name, arguments, context):
+                            self._append_duplicate_observation(messages, call_id)
+                            continue
                         callback = context.get("request_approval")
                         if callback is None:
                             raise ContractError("Tool approval callback is unavailable.")
@@ -738,10 +1159,12 @@ class DeepSeekBackend:
                             "batch_index": index,
                             "remaining_calls": tool_calls[index + 1 :],
                         }
+                        self._validate_continuation(continuation)
                         callback(name, arguments, continuation)
                         raise ApprovalRequired({"tool": name, "arguments": arguments})
                     result = self._run_tool(name, arguments, context, deadline - time.monotonic())
                     messages.append({"role": "tool", "tool_call_id": call_id, "content": result})
+                    self._validate_messages(messages)
                 continue
             content = message.get("content")
             if not isinstance(content, str) or not content.strip():
@@ -809,7 +1232,8 @@ class DeepSeekBackend:
             "evidence, blockers and the next action. "
             "Do not publish, deploy, message, purchase or delete unrelated files.\n"
             + json.dumps({"assignment": decision, "context": {
-                key: value for key, value in context.items() if key not in {"request_approval", "approval_resume"}
+                key: value for key, value in context.items()
+                if key not in {"request_approval", "record_completed_action", "approval_resume"}
             }}, ensure_ascii=False)
         )
         return self._call(prompt, "report", context, timeout)
@@ -916,6 +1340,13 @@ class DemoBackend:
                 raise ContractError("Tool approval callback is unavailable.")
             callback("write_file", {"path": "demo-result.md", "content": content},
                      {"demo": True, "decision": decision})
+        if decision["role"] == writer and context.get("approval_resume"):
+            approved = context.get("approved_action")
+            arguments = {"path": "demo-result.md", "content": content}
+            if (not isinstance(approved, dict) or approved.get("tool") != "write_file"
+                    or approved.get("arguments") != arguments
+                    or approved.get("action_sha256") != action_digest("write_file", arguments)):
+                raise ContractError("Demo continuation does not match the approved action.")
         if decision["role"] == writer:
             target.write_text(
                 content,

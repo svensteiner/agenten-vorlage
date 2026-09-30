@@ -10,8 +10,8 @@ python -m pip install -e .
 # http://127.0.0.1:8765
 ```
 
-Der aktuelle Stand ist ein **freigegebener lokaler Single-Owner-MVP** mit 10 von 11
-vollständig abgenommenen verbindlichen Bereichen (**90,9 %**). Die Demo funktioniert
+Der aktuelle Stand ist ein **freigegebener lokaler Single-Owner-MVP** mit 11 von 11
+vollständig abgenommenen verbindlichen Bereichen (**100 % innerhalb des Produktscopes**). Die Demo funktioniert
 ohne Modellzugang; reale Codex-Luna-Läufe belegen Schreiben/Test/Review, Dialogkontext,
 gehärtete Wiederaufnahme, Repository-Audit und den öffentlichen GitHub-Connector.
 Öffentliche Bereitstellung, Mehrbenutzerbetrieb und die optionale hostile-web-gehärtete
@@ -20,9 +20,10 @@ Browserlaufzeit gehören nicht zu dieser Freigabe.
 [Betrieb und Wiederherstellung](docs/OPERATIONS.md),
 [GitHub-Auswahl](docs/GITHUB-ADOPTION.md).
 
-DeepSeek und die Browser-Demo zeigen vor Dateiänderungen konkrete Aktionsfreigaben.
-Vorschläge bleiben nach Neustart erhalten. Der Codex-CLI-Adapter unterstützt diese
-Werkzeugfreigaben noch nicht. [Ablauf und Grenzen](docs/ACTION-APPROVALS.md).
+DeepSeek, Codex und die Browser-Demo zeigen vor Dateiänderungen konkrete
+Aktionsfreigaben. Codex liefert dafür read-only Vorschläge; ein lokaler Allowlist-
+Host-Executor führt exakt bestätigte Aktionen aus. Native per-tool interception der
+Codex CLI wird nicht behauptet. [Ablauf und Grenzen](docs/ACTION-APPROVALS.md).
 
 Arbeitsdialoge unterstützen UTF-8-Textanhänge bis 32 KiB sowie PDF-, DOCX-, XLSX-
 und PPTX-Dokumente bis 2 MiB. Extrahierter Text dient als Referenz; die Originaldateien
@@ -235,7 +236,7 @@ Für verteilte Worker/Container braucht es zusätzliche Isolation und einen zent
 
 - Die Offline-Demo und automatisierten Tests prüfen Routing, Review, Limits, Checkpoints,
   Sperren, Skill-Validierung und Adapterverträge.
-- Aktueller Gesamtstand: 204 Unittests in 65,526 Sekunden, `OK`, ein erwarteter
+- Aktueller Gesamtstand: 240 Unittests in 98,121 Sekunden, `OK`, ein erwarteter
   Windows-Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19
   Offline-Release-Checks mit echter lokaler Windows-OCR bestanden
   (`offline_only=true`, `model_tested=false`).

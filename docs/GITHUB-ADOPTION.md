@@ -103,7 +103,9 @@ implementation review.
 
 ## Open-Dots refresh: exact current comparison
 
-Checked again on 2026-09-30 against the [current Open-Dots README](https://github.com/Anil-matcha/Open-Dots/blob/main/README.md),
+Checked again on 2026-09-30 at Open-Dots revision
+`e8cf82b18dfc81bbdae4c47342229ae780b9e627` (2026-09-30 14:25:46 UTC) against the
+[current Open-Dots README](https://github.com/Anil-matcha/Open-Dots/blob/main/README.md),
 its [action gateway](https://github.com/Anil-matcha/Open-Dots/blob/main/server/app/services/action_gateway.py)
 and the repository history. The observed revision had 103 commits and an MIT license. The
 README still labels the product “Prototype / active development”. Its implemented product

@@ -98,8 +98,11 @@ nicht direkt lesen, verwendet `agentkit/codex_artifacts.py` den offiziellen Code
 App-Server mit read-only-Sandbox und deaktiviertem Netzwerk. Der Export bleibt auf
 den gebundenen Workspace und 2 MB begrenzt und prüft Länge sowie SHA-256.
 Die Dateien können nach dem Review verändert worden sein; die Oberfläche behauptet keinen
-unveränderlichen Artefakt-Snapshot. DeepSeek und Demo unterstützen konkrete
-[Aktionsfreigaben](ACTION-APPROVALS.md); der Codex-CLI-Adapter unterstützt sie nicht.
+unveränderlichen Artefakt-Snapshot. DeepSeek, Demo und der öffentliche Codex-
+Freigabemodus unterstützen konkrete [Aktionsfreigaben](ACTION-APPROVALS.md). Codex
+liefert read-only strukturierte Vorschläge; der Host-Executor führt ausschließlich
+Allowlist-Aktionen nach exakter Bestätigung aus. Das ersetzt keine native per-tool
+interception der Codex CLI.
 
 `cockpit/conversations.py` bindet dauerhafte Dialoge an Agent, Company, Workspace,
 Backend und Modell. Eine Nachricht wird vor dem Jobstart mit stabiler ID gespeichert;
@@ -136,7 +139,11 @@ Bei Fortsetzung läuft derselbe Worker mit gespeicherter Modellfortsetzung weite
 ohne erneuten Planeraufruf. Vor Ausführung wird die Fortsetzung aus dem persistenten
 Resume-Feld entfernt und der Worker als laufend markiert. Ein unbekannter Ausgang
 darf nur mit neuer Evidenz neu geplant werden. Das Backend bleibt für die konkrete
-Werkzeuggrenze verantwortlich; die Engine behauptet keine nicht unterstützte Abfangbarkeit.
+Werkzeuggrenze verantwortlich; die Engine behauptet keine native CLI-Abfangbarkeit.
+Vor dem Host-Executor werden der Digest des sichtbaren Manifests und eine getrennte,
+dateisystemkanonische Replay-Identität geprüft. Unter Windows vereinheitlicht sie
+Groß-/Kleinschreibung und vorhandene 8.3-Aliase. Pre-upgrade pending approvals ohne
+diese Identität werden fail-closed verworfen und neu geplant.
 
 1. Ein Agentenpaket, wenige Skills, messbare Aufgaben; Fehlversuche und Ergebnisqualität beobachten.
 2. Neue Rollen per Konfiguration; Skills fachlich schmal halten. Kein kopierter Agenten-Code.

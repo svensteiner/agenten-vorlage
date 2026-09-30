@@ -25,12 +25,13 @@ TEMPLATE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TEMPLATE_ROOT))
 
 from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, codex_readiness  # noqa: E402
+from agentkit.approvals import safe_workspace_path  # noqa: E402
 from agentkit.catalog import Catalog  # noqa: E402
 from agentkit.codex_artifacts import read_codex_artifact  # noqa: E402
 from agentkit.contracts import ContractError  # noqa: E402
 from agentkit.engine import Engine  # noqa: E402
 from agentkit.scaffold import create  # noqa: E402
-from agentkit.contracts import LIBRARY, read_json, inside  # noqa: E402
+from agentkit.contracts import LIBRARY, read_json  # noqa: E402
 from agentkit.storage import lock  # noqa: E402
 from cockpit.conversations import Conversations  # noqa: E402
 from cockpit.providers import ProviderSettings  # noqa: E402
@@ -410,7 +411,7 @@ class JobManager:
             checkpoint = agent_path / ".runs" / run_id
             run_dir = checkpoint if (checkpoint / "state.json").is_file() else None
             result = Engine(agent_path, workspace, backend,
-                            require_approvals=backend_name == "deepseek" or job.payload.get("require_approvals", False),
+                            require_approvals=backend_name in {"codex", "deepseek"} or job.payload.get("require_approvals", False),
                             core_snapshot=job.payload.get("core_snapshot")).run(
                 job.payload.get("execution_task", job.payload["task"]),
                 run_dir=run_dir,
@@ -437,13 +438,14 @@ class JobManager:
             raise ContractError("core_snapshot must be text.")
         if not isinstance(payload.get("require_approvals", False), bool):
             raise ContractError("require_approvals must be boolean.")
-        require_approvals = payload.get("backend", "demo") == "deepseek" or payload.get("require_approvals", False)
-        if require_approvals and payload.get("backend") == "codex":
-            raise ContractError("Codex CLI does not support individual tool approvals in this adapter.")
         for key in ("agent", "workspace", "task", "backend", "model", "parent_job_id", "request_id"):
             if key in payload and not isinstance(payload[key], str):
                 raise ContractError(f"{key} must be text.")
-        if payload.get("backend", "demo") not in {"demo", "codex", "deepseek"}:
+        backend_name = payload.get("backend", "demo")
+        # Codex and DeepSeek own an approval-enabled execution path. Demo
+        # remains opt-in so existing fixture jobs can still run unattended.
+        require_approvals = backend_name in {"codex", "deepseek"} or payload.get("require_approvals", False)
+        if backend_name not in {"demo", "codex", "deepseek"}:
             raise ContractError("Unknown backend.")
         if len(payload.get("model", "")) > 200:
             raise ContractError("Model name is too large.")
@@ -572,12 +574,12 @@ class JobManager:
         return {"profiles": list(read_json(LIBRARY / "profiles.json")), "default_workspace": str(self.template_root / "workspace"), "backends": [
             {"id": "demo", "label": "Offline-Demo", "available": True, "tool_approvals": True, "detail": "Deterministischer Funktionstest mit optionaler Freigabe der Dateiänderungen, kein Sprachmodell."},
             {"id": "codex", "label": "Codex CLI", "available": codex_available,
-             "readiness": readiness, "tool_approvals": False,
+             "readiness": readiness, "tool_approvals": True,
              "detail": "Lokale CLI und Zugangsdaten erkannt; Modellzugriff ist damit noch nicht bestätigt. Standard: gpt-5.6-luna mit niedrigem Reasoning und isolierter CLI-Konfiguration."
              if codex_available else ("Die konfigurierte Windows-Sandbox fehlt oder ist ungültig. Codex lokal einrichten; es wurde kein Modell aufgerufen."
                                      if not readiness.get("sandbox_configured", True)
                                      else "Lokale Codex-CLI oder Zugangsdaten fehlen. Erst installieren und anmelden."),
-             "approval_detail": "Dieser CLI-Adapter bietet keine Freigabe einzelner Werkzeugaktionen."},
+             "approval_detail": "Freigabemodus: Codex liefert read-only Vorschläge; ein allowlist-basierter Host-Executor führt freigegebene Aktionen aus. Die direkte Codex-CLI bietet keine per-tool interception."},
             {"id": "deepseek", "label": "DeepSeek API", "available": provider["configured"], "tool_approvals": True, "readiness": provider, "detail": "API-Schlüssel in den Provider-Einstellungen einrichten. Modellzugriff ist erst durch einen erfolgreichen Auftrag bestätigt. Dateiänderungen und Tests benötigen eine konkrete Freigabe."},
         ]}
 
@@ -599,7 +601,7 @@ class JobManager:
         }
         if relative not in allowed:
             raise ContractError("Artifact was not reported by this task.")
-        path = inside(Path(job.payload["workspace"]), relative)
+        path = safe_workspace_path(Path(job.payload["workspace"]), relative)
         try:
             with path.open("rb") as handle:
                 data = handle.read(2_000_001)

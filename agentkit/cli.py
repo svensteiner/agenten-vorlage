@@ -51,10 +51,10 @@ def parser() -> argparse.ArgumentParser:
             "--workspace", type=Path, help="Defaults to the pack's workspace directory"
         )
         cmd.add_argument("--backend", choices=("demo", "codex", "deepseek"), default="demo")
-        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported backend write/test actions")
+        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported backend write/test actions; always enabled for Codex and DeepSeek")
         cmd.add_argument(
             "--model",
-            help="Optional model override; Codex defaults to gpt-5.5 with low reasoning; DeepSeek uses its provider default",
+            help="Optional model override; Codex defaults to gpt-5.6-luna with low reasoning; DeepSeek uses its provider default",
         )
         if name == "run":
             cmd.add_argument("--task", required=True)
@@ -114,7 +114,8 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 backend = {"codex": CodexBackend, "deepseek": DeepSeekBackend}[args.backend](args.model)
             workspace = args.workspace or args.agent / "workspace"
-            engine = Engine(args.agent, workspace, backend, require_approvals=args.require_approvals)
+            require_approvals = args.backend in {"codex", "deepseek"} or args.require_approvals
+            engine = Engine(args.agent, workspace, backend, require_approvals=require_approvals)
             if args.command == "run":
                 result = engine.run(args.task)
             else:
