@@ -31,13 +31,17 @@ Allowlist-Host-Executor; native per-tool interception der Codex CLI wird nicht b
 | Installation | Frische Windows-/Python-3.12-Umgebung, reguläres Wheel, isolierter CLI-Demostart und Launcher/HTTP-Demo samt Neustart; INSTALLATION-QUALIFICATION.md |
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
-| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast, Reflow bei 588 CSS-Pixeln ohne horizontalen Seitenüberlauf; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 240 Unittests in 98,121 s, OK, ein erwarteter Windows-Symlink-Skip; Ruff; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; drei isolierte Chromium-Journeys prüfen 390-Pixel-Reflow und fanden/korrigierten einen langen Workspace-Chip als Überlauf; keine formale Screenreader-Zertifizierung |
+| Reproduzierbare Offline-Abnahme | 245 Tests in 97,074 s ohne Coverage-Instrumentierung, OK, ein erwarteter Windows-Symlink-Skip; 80 % kombinierte Line-/Branch-Coverage in einem separaten instrumentierten Lauf; Ruff und Bandit ohne mittlere/hohe Befunde; Dependency-Audit ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
 Der Server wurde neu gestartet, um den gespeicherten Verlauf erneut zu öffnen.
-Testartefakte bleiben lokal in ignorierten generierten Verzeichnissen.
+Die drei Playwright-Journeys laufen gegen einen isolierten temporären Serverzustand und
+prüfen Navigation, zugängliche Namen, mobilen Reflow, Archivieren/Wiederherstellen,
+zweistufige Demo-Freigaben, fehlgeschlagenes Review, Reparatur, Download und Reload.
+CI erzeugt Trace und Screenshot als Workflow-Artefakte. Der aktuelle Remote-Lauf konnte
+wegen eines externen GitHub-Billing-/Spending-Limits noch keine Schritte starten.
 
 ## Backend-Nachweise
 
@@ -111,6 +115,10 @@ Allowlist-Host-Executor. Native per-tool interception der Codex CLI wird ausdrü
 nicht behauptet. Die Abnahme gilt für einen vertrauenswürdigen lokalen Single-User-
 Workspace; freigegebene Tests sind vertrauenswürdiger lokaler Code.
 
+Diese Prozentzahl bewertet ausschließlich, ob jeder vereinbarte MVP-Bereich einen
+Abnahmenachweis besitzt. Sie ist keine Fehlerwahrscheinlichkeit und keine Code-Coverage;
+die aktuell gemessene kombinierte Line-/Branch-Coverage beträgt 80 %.
+
 Diese Produktfreigabe ist keine OS-Isolation, keine Public-/Multiuser-Freigabe,
 keine hostile-web-Computer-Sandbox und keine Garantie fachlicher Modellwahrheit.
 Alte pending approvals vor dem Digest-/Host-Gateway-Upgrade werden fail-closed
@@ -168,8 +176,9 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Unittestsuite lief mit 240 Tests in
-98,121 Sekunden durch (OK, ein erwarteter Windows-Symlink-Skip); Ruff, zehn
+und behoben. Die aktuelle vollständige Testsuite lief mit 245 Tests in
+97,074 Sekunden ohne Coverage-Instrumentierung durch (OK, ein erwarteter
+Windows-Symlink-Skip); Ruff, zehn
 Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.
 Die neue grafische Workflow-Spur wurde mit Computer Use inklusive zwei Freigaben,

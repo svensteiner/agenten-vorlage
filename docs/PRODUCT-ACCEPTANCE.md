@@ -26,8 +26,8 @@ Erweiterungen. Öffentliche Bereitstellung wird durch das aktuelle Produkt nicht
 | Computeraufgaben | Optional, keine Gutschrift | Optionaler isolierter Browser mit sichtbaren Aktionen und Freigaben | Nicht Bestandteil des Nenners; eine hostile-web-gehärtete Computer-Sandbox ist nicht implementiert |
 | Persistenz/Wiederaufnahme | Vollständig | Prozessabbruch, unbekannter Ausgang, stabile IDs, Cold-Restore | Gehärteter Luna-Lauf terminierte den Kindprozess, persistierte `checkpoint_kind=planner`, verweigerte Resume ohne Ack und schloss nach Ack mit unverändertem Workspace ab |
 | Geheimnisse/Zugriff | Vollständig | Schlüssel nicht in Browser/Log/Testprozess; Herkunftsschutz; lokale Speicherung | Subprozessfilter, Origin/Host und CSP-Hashes; Windows-DPAPI mit Browser-Speichern/Reload/Entfernen und Manipulationstest |
-| Bedienung | Vollständig | Einrichten, arbeiten, Fehler erkennen und fortsetzen; responsive und tastaturbedienbar | Vier Hauptseiten responsive; 29/29 sichtbare interaktive Elemente benannt, Fokusführung, 62 Kontrastfälle und Reflow ohne Seitenüberlauf geprüft |
-| Auslieferung | Vollständig | Reproduzierbare Installation, Release-Gate, Recovery-Anleitung und reale Anwendungsabnahme | Saubere Windows-/Python-3.12-Installation; 240 Tests, Ruff, zehn Workflow-Szenarien und 19/19 Offline-Release-Checks; drei getrennte reale Luna-Aufgaben dokumentiert |
+| Bedienung | Vollständig | Einrichten, arbeiten, Fehler erkennen und fortsetzen; responsive und tastaturbedienbar | Vier Hauptseiten responsive; 29/29 sichtbare interaktive Elemente benannt, Fokusführung, 62 Kontrastfälle und Reflow geprüft; drei isolierte Chromium-E2E-Journeys laufen reproduzierbar |
+| Auslieferung | Vollständig | Reproduzierbare Installation, Release-Gate, Recovery-Anleitung und reale Anwendungsabnahme | Saubere Windows-/Python-3.12-Installation; 245 Tests, 80 % Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, Dependency-Audit, zehn Workflow-Szenarien und 19/19 Offline-Release-Checks; drei getrennte reale Luna-Aufgaben dokumentiert |
 
 ## Bewertungsregel
 
@@ -43,6 +43,12 @@ elf verbindlichen Bereiche sind vollständig abgenommen; **11 / 11 = 100 %** inn
 des abgegrenzten **lokalen Single-Owner-MVP**. Die Codex-Abnahme gilt für read-only
 Vorschläge plus Allowlist-Host-Executor. Sie behauptet keine native per-tool
 interception der Codex CLI.
+
+Die 11/11-Quote ist eine binäre Abdeckung des vereinbarten Funktionsumfangs, keine
+statistische Zuverlässigkeits- oder Code-Coverage-Aussage. Die aktuelle kombinierte
+Line-/Branch-Coverage beträgt 80 %. Browser-E2E und lokale Release-Gates sind jetzt in
+GitHub Actions konfiguriert; ein erfolgreicher Remote-Lauf steht wegen des externen
+Billing-/Spending-Limits des GitHub-Kontos noch aus.
 
 Diese Freigabe gilt nicht für Mehrbenutzerbetrieb oder öffentliche Bereitstellung.
 Authentifizierte beziehungsweise breite Schreibconnectoren, visuelle Bildanalyse,

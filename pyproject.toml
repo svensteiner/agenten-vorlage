@@ -9,6 +9,9 @@ description = "Skill-based company agent templates with a bounded dynamic workfl
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0.2,<7", "jsonschema>=4.23,<5", "pypdf>=6.19,<7", "defusedxml>=0.7.1,<1", "pytest>=9.0.2,<10"]
 
+[project.optional-dependencies]
+e2e = ["playwright==1.60.0"]
+
 [project.scripts]
 agentkit = "agentkit.cli:main"
 

@@ -33,11 +33,26 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 - DeepSeek erzwingt Read-only, Toolbudget und Deadline. Tests laufen ohne Server-Secrets
   in der Umgebung; Prozessbäume werden bei Timeout beendet.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Unittestsuite: 240 Tests in 98,121 Sekunden, Status OK;
+- Aktuelle vollständige Testsuite: 245 Tests in 97,074 Sekunden ohne
+  Coverage-Instrumentierung, Status OK;
   ein erwarteter Windows-Symlink-Test wurde mangels Berechtigung übersprungen.
-  Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks mit
+  Drei isolierte Chromium-Journeys prüfen Navigation, Accessibility/Reflow,
+  Assistentenarchivierung sowie Demo-Freigaben, Review-Recovery, Download und Reload.
+  Gemessene kombinierte Line-/Branch-Coverage: 80 %; diese Zahl ist ein
+  Regressionssignal und keine Produktreifequote. Ruff, Bandit ohne mittlere/hohe
+  Befunde, Dependency-Audit ohne bekannte CVEs, zehn Workflow-Trace-Szenarien und
+  19/19 Offline-Release-Checks mit
   `--windows-ocr` bestanden (`offline_only=true`, `model_tested=false`); reale
   Luna-Nachweise sind separat dokumentiert.
+- Der reproduzierbare Browserlauf fand einen 26-Pixel-Überlauf eines langen
+  Workspace-Pfads im 390-Pixel-Dialog und belegt die Korrektur. DeepSeek akzeptiert
+  nur HTTPS-Basis-URLs ohne eingebettete Zugangsdaten, Query oder Fragment und folgt
+  keinen Redirects; Bearer-Zugangsdaten bleiben an den konfigurierten Provider gebunden.
+- GitHub Actions erzwingt jetzt Ruff, einen Coverage-Floor, Plattformtests,
+  Workflow-Trace, Windows-OCR, Bandit ab mittlerer Schwere, Dependency-Audit,
+  Wheel-Neuinstallation und einen Chromium-E2E-Job.
+  Der aktuelle externe Actions-Lauf startete wegen eines Billing-/Spending-Limits des
+  GitHub-Kontos keine Schritte; er ist daher kein grüner Remote-CI-Nachweis.
 - Navigierbare Workflow-Spur aus echten Checkpoints: Freigaben, Nacharbeit,
   laufende Schritte, ungeklärte Ausgänge und Abschluss. Zehn Zustandsfälle geprüft;
   Computer Use: Demo mit zwei Freigaben, Neustart, Korrektur, Review und Download;
@@ -147,7 +162,8 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 240 Tests in 98,121 Sekunden, OK, ein erwarteter
+  Aktuelle vollständige Suite: 245 Tests in 97,074 Sekunden ohne
+  Coverage-Instrumentierung, OK, ein erwarteter
   Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.
   Die historische direkte Host-Lesesperre wird ohne ACL-Änderung oder Sandbox-Bypass
@@ -159,6 +175,10 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 Der verbindliche Single-Owner-MVP umfasst elf Bereiche; alle sind vollständig
 abgenommen. Computeraufgaben sind optional, stehen außerhalb des Nenners und erhalten
 keine Gutschrift. Ergebnis: **11 / 11 = 100 % innerhalb des Produktscopes**.
+
+Diese Quote misst ausschließlich, ob jeder vereinbarte MVP-Bereich einen aktuellen
+Abnahmenachweis besitzt. Sie ist keine Fehlerwahrscheinlichkeit und keine Code-Coverage;
+die aktuell gemessene kombinierte Line-/Branch-Coverage beträgt 80 %.
 
 Codex besitzt geprüfte exakte Freigabesemantiken über read-only Vorschläge und einen
 Allowlist-Host-Executor; das ist keine native per-tool interception. Die Freigabe gilt

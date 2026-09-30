@@ -714,8 +714,12 @@ def make_handler(manager: JobManager):
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Content-Security-Policy", f"default-src 'self'; script-src {script_sources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+                # Browser navigation can cancel an in-flight local response.
+                return
 
         def _body(self, maximum: int = 64_000) -> dict[str, Any]:
             if self.headers.get("Transfer-Encoding"):
@@ -745,6 +749,9 @@ def make_handler(manager: JobManager):
             if not self._local_request():
                 return
             parsed = urlparse(self.path)
+            if parsed.path == "/favicon.ico":
+                self._send(HTTPStatus.NO_CONTENT, b"", "image/x-icon")
+                return
             if parsed.path == "/settings":
                 self._send(HTTPStatus.OK, (Path(__file__).parent / "settings.html").read_bytes(), "text/html")
                 return

@@ -101,7 +101,11 @@ def preview_file(payload: dict) -> dict:
         if "\x00" in text:
             raise ContractError("GitHub file contains NUL bytes.")
         blob_sha = value.get("sha")
-        expected = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+        # Git object IDs are protocol identifiers, not cryptographic trust decisions.
+        expected = hashlib.sha1(
+            b"blob " + str(len(data)).encode() + b"\0" + data,
+            usedforsecurity=False,
+        ).hexdigest()
         if not isinstance(blob_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", blob_sha) or blob_sha != expected:
             raise ContractError("GitHub blob integrity check failed.")
         source_path = "/".join(urllib.parse.quote(segment, safe="") for segment in path.split("/"))

@@ -15,5 +15,7 @@ cockpit/*.log
 .ruff_cache/
 .mypy_cache/
 .playwright-cli/
+.playwright-mcp/
+/artifacts/e2e-*.png
 cockpit/.runs-ui-check/
 deepseek-key-temp.docx

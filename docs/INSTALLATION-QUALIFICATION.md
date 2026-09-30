@@ -42,6 +42,12 @@ und pytest 9.1.1.
 Der abschließende Gesamtlauf bestand mit 140 Tests in 49,274 Sekunden; alle 17
 Offline-Release-Checks und Ruff bestanden ebenfalls.
 
+Am 30.09.2026 wurde die Wheel-Grenze erneut unabhängig geprüft: Wheel gebaut,
+in eine neue virtuelle Umgebung installiert und aus einem Verzeichnis außerhalb des
+Repositories ausgeführt. `agentkit.__file__` lag nachweislich unter `venv/Lib/site-packages`;
+`pip check`, Pack-Erstellung, Validierung und der komplette Demo-Review-Repair-Lauf
+bestanden. Das CI-Package-Gate verwendet dieselbe getrennte CWD- und Importprüfung.
+
 Der unterstützte AI-Studio-Start benötigt weiterhin den Quellordner samt `cockpit/`
 und Launcher. Das Python-Wheel liefert AgentKit, keine eigenständige Desktop-App.
 Die Abnahme gilt für diese Windows-/Python-Kombination und die aufgelösten Pakete;

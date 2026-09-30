@@ -15,6 +15,7 @@ import threading
 import time
 import tomllib
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -28,6 +29,14 @@ from .approvals import (
     safe_workspace_path,
     workspace_fingerprint,
 )
+
+
+class _NoProviderRedirect(urllib.request.HTTPRedirectHandler):
+    """Keep bearer credentials bound to the explicitly configured provider."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        fp.close()
+        raise ContractError("DeepSeek API redirects are not allowed.")
 
 
 def codex_command() -> list[str]:
@@ -700,7 +709,29 @@ class DeepSeekBackend:
     ):
         self.api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "").strip()
         self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
-        self.base_url = (base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")).rstrip("/")
+        configured_url = (
+            base_url
+            or os.environ.get("DEEPSEEK_BASE_URL", "")
+            or "https://api.deepseek.com"
+        ).strip().rstrip("/")
+        try:
+            parsed_url = urllib.parse.urlsplit(configured_url)
+            parsed_url.port
+        except ValueError as exc:
+            raise ContractError("DeepSeek provider URL is invalid.") from exc
+        if (
+            parsed_url.scheme != "https"
+            or not parsed_url.hostname
+            or parsed_url.username is not None
+            or parsed_url.password is not None
+            or "?" in configured_url
+            or "#" in configured_url
+            or any(ord(char) < 32 or ord(char) == 127 for char in configured_url)
+        ):
+            raise ContractError(
+                "DeepSeek provider URL must be an HTTPS base URL without credentials, query or fragment."
+            )
+        self.base_url = configured_url
 
     @staticmethod
     def _tool_specs(sandbox: str = "read-only") -> list[dict]:
@@ -944,7 +975,8 @@ class DeepSeekBackend:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
+            opener = urllib.request.build_opener(_NoProviderRedirect())
+            with opener.open(request, timeout=timeout) as response:
                 raw = response.read(1_000_000)
         except urllib.error.HTTPError as exc:
             raise RuntimeError(f"DeepSeek API returned HTTP {exc.code}; inspect local API configuration.") from exc

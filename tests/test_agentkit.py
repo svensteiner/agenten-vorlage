@@ -10,7 +10,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, run_process
+from agentkit.backends import (
+    CodexBackend,
+    DeepSeekBackend,
+    DemoBackend,
+    _NoProviderRedirect,
+    run_process,
+)
 from agentkit.approvals import action_digest, replay_action_digest
 from agentkit.catalog import Catalog, skill_metadata
 from agentkit.contracts import ContractError, LIBRARY, read_json
@@ -400,6 +406,39 @@ class AgentKitTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             DeepSeekBackend(api_key="")._call("{}", "decision", {}, 5)
 
+    def test_deepseek_backend_rejects_unsafe_provider_urls(self):
+        for base_url in (
+            "http://api.deepseek.com",
+            "file:///tmp/provider",
+            "https://user:secret@api.deepseek.com",
+            "https://api.deepseek.com?redirect=https://evil.example",
+            "https://api.deepseek.com?",
+            "https://api.deepseek.com/#fragment",
+            "https://api.deepseek.com#",
+            "https://[::1",
+        ):
+            with self.subTest(base_url=base_url), self.assertRaises(ContractError):
+                DeepSeekBackend(api_key="test-only-key", base_url=base_url)
+
+        backend = DeepSeekBackend(
+            api_key="test-only-key", base_url="https://provider.example/v1/"
+        )
+        self.assertEqual("https://provider.example/v1", backend.base_url)
+
+    def test_deepseek_backend_rejects_redirects_before_forwarding_credentials(self):
+        class Response:
+            closed = False
+
+            def close(self):
+                self.closed = True
+
+        response = Response()
+        with self.assertRaisesRegex(ContractError, "redirects are not allowed"):
+            _NoProviderRedirect().redirect_request(
+                None, response, 302, "Found", {}, "https://evil.example/collect"
+            )
+        self.assertTrue(response.closed)
+
     def test_deepseek_backend_parses_structured_response_without_persisting_key(self):
         class Response:
             def __enter__(self):
@@ -429,13 +468,23 @@ class AgentKitTests(unittest.TestCase):
                     }
                 ).encode("utf-8")
 
-        with patch("agentkit.backends.urllib.request.urlopen", return_value=Response()) as call:
+        class Opener:
+            def open(self, request, timeout):
+                self.request = request
+                self.timeout = timeout
+                return Response()
+
+        opener = Opener()
+        with patch(
+            "agentkit.backends.urllib.request.build_opener", return_value=opener
+        ) as build_opener:
             result = DeepSeekBackend(api_key="test-only-key")._call(
                 "Return a blocked decision as JSON.", "decision", {}, 5
             )
 
         self.assertEqual("blocked", result["action"])
-        request = call.call_args.args[0]
+        request = opener.request
+        self.assertIsInstance(build_opener.call_args.args[0], _NoProviderRedirect)
         self.assertEqual("Bearer test-only-key", request.get_header("Authorization"))
         self.assertIn("response_format", request.data.decode("utf-8"))
 
@@ -470,7 +519,11 @@ class AgentKitTests(unittest.TestCase):
                     }
                 ).encode("utf-8")
 
-        with patch("agentkit.backends.urllib.request.urlopen", return_value=Response()):
+        class Opener:
+            def open(self, request, timeout):
+                return Response()
+
+        with patch("agentkit.backends.urllib.request.build_opener", return_value=Opener()):
             result = DeepSeekBackend(api_key="test-only-key")._call(
                 "Return a blocked decision as JSON.", "decision", {}, 5
             )

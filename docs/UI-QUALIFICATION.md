@@ -15,6 +15,22 @@ Dateiauswahl und Vorschau-/Senden-Bereich bleiben innerhalb der Seitenbreite.
 Der Tastaturfokus war beim Wechsel zwischen GitHub-Feldern sichtbar.
 Die temporäre Browsergrößen-Vorgabe wurde nach der Prüfung zurückgesetzt.
 
+## Automatisiertes Browser-Regressionsgate
+
+`python -m unittest -v tests.test_browser_e2e` startet einen isolierten temporären
+Cockpit-Server und drei echte Chromium-Journeys. Geprüft werden alle vier Hauptseiten,
+zugängliche Namen sichtbarer Controls, genau eine Hauptüberschrift, 390 × 844 ohne
+horizontalen Dokumentüberlauf, Archivieren/Wiederherstellen mit Reload sowie der
+vollständige Demo-Ablauf mit zwei konkreten Freigaben, fehlgeschlagenem Review,
+Korrektur, erfolgreichem Review, `demo-result.md`-Download und Reload-Persistenz.
+
+Der erste reproduzierbare Lauf fand bei 390 Pixeln 416 Pixel Dokumentbreite im Dialog:
+ein langer Workspace-Pfad in `.chip` ragte 26 Pixel über den Viewport. Die gezielte
+Umbruchregel wurde ergänzt; der Test erzeugt und vermisst diesen Chip jetzt ausdrücklich.
+Eine kontrollierte Mutationsprobe ohne die Regel schlug bei 744,83 Pixel rechter Kante
+gegen 391 Pixel Viewport wie vorgesehen fehl. GitHub Actions führt die Suite in einem
+separaten Chromium-Job aus und lädt Trace plus Screenshot als Artefakt hoch.
+
 Zwei Fehler wurden dabei behoben:
 
 - Unter 760 Pixeln blendete der Dialog den gesamten Navigationsfooter aus. Dadurch

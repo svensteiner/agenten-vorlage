@@ -16,6 +16,8 @@ ohne Modellzugang; reale Codex-Luna-Läufe belegen Schreiben/Test/Review, Dialog
 gehärtete Wiederaufnahme, Repository-Audit und den öffentlichen GitHub-Connector.
 Öffentliche Bereitstellung, Mehrbenutzerbetrieb und die optionale hostile-web-gehärtete
 Browserlaufzeit gehören nicht zu dieser Freigabe.
+Die 11/11-Zahl ist eine Funktionsumfangsquote, keine Fehlerwahrscheinlichkeit oder
+Code-Coverage; aktuell gemessen sind 80 % kombinierte Line-/Branch-Coverage.
 [Abnahme und offene Grenzen](docs/PRODUCT-READINESS.md),
 [Betrieb und Wiederherstellung](docs/OPERATIONS.md),
 [GitHub-Auswahl](docs/GITHUB-ADOPTION.md).
@@ -236,8 +238,11 @@ Für verteilte Worker/Container braucht es zusätzliche Isolation und einen zent
 
 - Die Offline-Demo und automatisierten Tests prüfen Routing, Review, Limits, Checkpoints,
   Sperren, Skill-Validierung und Adapterverträge.
-- Aktueller Gesamtstand: 240 Unittests in 98,121 Sekunden, `OK`, ein erwarteter
-  Windows-Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19
+- Aktueller Gesamtstand: 245 Tests in 97,074 Sekunden ohne
+  Coverage-Instrumentierung, `OK`, ein erwarteter
+  Windows-Symlink-Skip; drei echte isolierte Chromium-Journeys, 80 % kombinierte
+  Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, zehn
+  Workflow-Trace-Szenarien und 19/19
   Offline-Release-Checks mit echter lokaler Windows-OCR bestanden
   (`offline_only=true`, `model_tested=false`).
 - Der Codex-Adapter ist gegen die installierte CLI-Hilfe und mit Prozess-/Vertragstests geprüft.
