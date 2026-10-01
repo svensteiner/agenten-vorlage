@@ -75,7 +75,8 @@ class LiveCodexApprovalSmokeTests(unittest.TestCase):
     def test_live_budget_is_shared_across_both_scenarios(self):
         with tempfile.TemporaryDirectory() as folder:
             output = Path(folder) / "evidence.json"
-            with patch.object(MODULE, "_scenario", return_value={"initial_status": "blocked"}) as scenario, \
+            with patch.object(MODULE, "_cli_version", return_value="unavailable"), \
+                 patch.object(MODULE, "_scenario", return_value={"initial_status": "blocked"}) as scenario, \
                  patch.object(MODULE.time, "monotonic", side_effect=[100.0, 100.0, 130.0, 131.0]):
                 result = MODULE.run_live(MODULE.MODEL, output, call_timeout=45, max_seconds=60)
         self.assertFalse(result["passed"])

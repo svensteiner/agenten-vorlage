@@ -51,7 +51,7 @@ jobs:
       - run: smoke-venv/bin/python -m pip check
       - run: mkdir wheel-smoke-work
       - working-directory: wheel-smoke-work
-        run: ../smoke-venv/bin/python -c "import agentkit; assert 'site-packages' in agentkit.__file__.replace('\\', '/')"
+        run: ../smoke-venv/bin/python -c "import agentkit; assert 'site-packages' in agentkit.__file__.replace(chr(92), '/')"
       - working-directory: wheel-smoke-work
         run: ../smoke-venv/bin/python -m agentkit init generated/wheel-smoke --profile developer --name wheel-smoke
       - working-directory: wheel-smoke-work
