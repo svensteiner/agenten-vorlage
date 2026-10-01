@@ -1,0 +1,177 @@
+name: agentkit-public
+
+services:
+  app-data-init:
+    image: ${AGENTKIT_APP_IMAGE:?set AGENTKIT_APP_IMAGE to an immutable app image@sha256 digest}
+    command: ["sh", "-c", "mkdir -p /var/lib/agentkit && chown -R 10001:10001 /var/lib/agentkit"]
+    restart: "no"
+    user: "0:0"
+    network_mode: none
+    volumes:
+      - app_data:/var/lib/agentkit
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    image: ${AGENTKIT_APP_IMAGE:?set AGENTKIT_APP_IMAGE to an immutable app image@sha256 digest}
+    command: ["python", "-m", "cockpit.public_server"]
+    restart: unless-stopped
+    expose:
+      - "8766"
+    environment:
+      AGENTKIT_ENV: production
+      AGENTKIT_PUBLIC: "1"
+      AGENTKIT_DATA_DIR: /var/lib/agentkit
+      AGENTKIT_PUBLIC_ORIGIN: ${AGENTKIT_PUBLIC_ORIGIN:?set the HTTPS origin}
+      AGENTKIT_PUBLIC_BACKENDS: ${AGENTKIT_PUBLIC_BACKENDS:-demo}
+      AGENTKIT_TENANT_ID: ${AGENTKIT_TENANT_ID:?set the static tenant id}
+      AGENTKIT_AUTH_ALLOWED_DOMAIN: ${AGENTKIT_AUTH_ALLOWED_DOMAIN:?set the allowed email domain}
+      AGENTKIT_AUTH_ALLOWED_GROUP: ${AGENTKIT_AUTH_ALLOWED_GROUP:?set the allowed OIDC group}
+      AGENTKIT_TRUSTED_PROXY_CIDRS: ${AGENTKIT_TRUSTED_PROXY_CIDRS:-172.31.0.0/24}
+      AGENTKIT_IDENTITY_USER_HEADER: X-Forwarded-Email
+      AGENTKIT_IDENTITY_ROLES_HEADER: X-Forwarded-Groups
+      AGENTKIT_PROVIDER_CREDENTIALS_FILE: /run/secrets/provider_credentials
+      AGENTKIT_CSRF_SECRET_FILE: /run/secrets/csrf_secret
+      AGENTKIT_IDENTITY_SECRET_FILE: /run/secrets/identity_secret
+      AGENTKIT_MAX_REQUESTS_PER_USER_PER_MINUTE: ${AGENTKIT_MAX_REQUESTS_PER_USER_PER_MINUTE:-120}
+      AGENTKIT_MAX_REQUESTS_PER_TENANT_PER_MINUTE: ${AGENTKIT_MAX_REQUESTS_PER_TENANT_PER_MINUTE:-1000}
+      AGENTKIT_MAX_CACHED_RUNTIMES: ${AGENTKIT_MAX_CACHED_RUNTIMES:-128}
+      AGENTKIT_MAX_USERS_PER_TENANT: ${AGENTKIT_MAX_USERS_PER_TENANT:-100}
+      AGENTKIT_STORAGE_QUOTA_BYTES: ${AGENTKIT_STORAGE_QUOTA_BYTES:-268435456}
+      AGENTKIT_STORAGE_QUOTA_FILES: ${AGENTKIT_STORAGE_QUOTA_FILES:-10000}
+      AGENTKIT_MAX_JOBS_PER_USER_PER_HOUR: ${AGENTKIT_MAX_JOBS_PER_USER_PER_HOUR:-20}
+      AGENTKIT_MAX_JOBS_PER_TENANT_PER_HOUR: ${AGENTKIT_MAX_JOBS_PER_TENANT_PER_HOUR:-200}
+      AGENTKIT_MAX_CONCURRENT_JOBS: ${AGENTKIT_MAX_CONCURRENT_JOBS:-4}
+      AGENTKIT_MAX_ACTIVE_JOBS_PER_USER: ${AGENTKIT_MAX_ACTIVE_JOBS_PER_USER:-2}
+      AGENTKIT_MAX_HTTP_WORKERS: ${AGENTKIT_MAX_HTTP_WORKERS:-32}
+      AGENTKIT_AUDIT_MAX_BYTES: ${AGENTKIT_AUDIT_MAX_BYTES:-8388608}
+    secrets:
+      - csrf_secret
+      - identity_secret
+      - provider_credentials
+    volumes:
+      - app_data:/var/lib/agentkit
+    tmpfs:
+      - /tmp:size=256m,noexec,nosuid,nodev
+    read_only: true
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 2.0
+    # The app is the only service on egress. Keep the public frontend isolated
+    # from the Internet while allowing an explicitly reviewed provider route.
+    networks: [frontend, egress]
+    depends_on:
+      app-data-init:
+        condition: service_completed_successfully
+
+  auth-proxy:
+    image: ${AGENTKIT_OAUTH2_PROXY_IMAGE:?set an immutable oauth2-proxy image@sha256 reference}
+    restart: unless-stopped
+    command:
+      - --http-address=0.0.0.0:4180
+      - --upstream=http://app:8766
+      - --provider=oidc
+      - --oidc-issuer-url=${AGENTKIT_AUTH_ISSUER:?set the OIDC issuer URL}
+      - --client-id=${AGENTKIT_AUTH_CLIENT_ID:?set the OIDC client id}
+      - --client-secret-file=/run/secrets/oidc_client_secret
+      - --cookie-secret-file=/run/secrets/session_cookie_secret
+      - --cookie-secure=true
+      - --cookie-samesite=lax
+      - --cookie-expire=8h
+      - --cookie-refresh=1h
+      - --reverse-proxy=true
+      - --trusted-proxy-ip=172.30.0.0/24
+      - --redirect-url=${AGENTKIT_PUBLIC_ORIGIN:?set the HTTPS origin}/oauth2/callback
+      - --whitelist-domain=${AGENTKIT_PUBLIC_HOST:?set the public DNS host}
+      - --pass-user-headers=true
+      - --pass-basic-auth=false
+      - --pass-access-token=false
+      - --pass-authorization-header=false
+      - --skip-auth-strip-headers=false
+      - --session-cookie-minimal=true
+      - --cookie-httponly=true
+      - --request-logging=false
+      - --auth-logging=false
+      - --email-domain=${AGENTKIT_AUTH_ALLOWED_DOMAIN:?set the allowed email domain}
+      - --allowed-group=${AGENTKIT_AUTH_ALLOWED_GROUP:?set the allowed OIDC group}
+      - --set-authorization-header=false
+    secrets:
+      - oidc_client_secret
+      - session_cookie_secret
+    expose:
+      - "4180"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    user: "65532:65532"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    networks: [edge, frontend]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  reverse-proxy:
+    image: ${AGENTKIT_CADDY_IMAGE:?set an immutable caddy image@sha256 reference}
+    restart: unless-stopped
+    environment:
+      AGENTKIT_PUBLIC_HOST: ${AGENTKIT_PUBLIC_HOST:?set the public DNS host}
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./certs:/etc/caddy/certs:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    networks: [edge]
+    depends_on: [auth-proxy]
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:
+
+secrets:
+  csrf_secret:
+    file: ./secrets/csrf_secret
+  identity_secret:
+    file: ./secrets/identity_secret
+  provider_credentials:
+    file: ./secrets/provider_credentials.json
+  oidc_client_secret:
+    file: ./secrets/oidc_client_secret
+  session_cookie_secret:
+    file: ./secrets/session_cookie_secret
+
+networks:
+  edge:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  frontend:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+  egress:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.32.0.0/24

@@ -13,6 +13,7 @@ import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from agentkit.contracts import ContractError
 
@@ -73,7 +74,13 @@ def read_document(pack: Path) -> InstructionDocument:
     return InstructionDocument(raw, text, hashlib.sha256(raw).hexdigest())
 
 
-def replace_document(pack: Path, text: object, expected_revision: object) -> InstructionDocument:
+def replace_document(
+    pack: Path,
+    text: object,
+    expected_revision: object,
+    *,
+    storage_writer: Callable[[Path, bytes], None] | None = None,
+) -> InstructionDocument:
     _, encoded = validate_text(text)
     expected = validate_revision(expected_revision)
     current = read_document(pack)
@@ -87,6 +94,9 @@ def replace_document(pack: Path, text: object, expected_revision: object) -> Ins
     soul = pack / "SOUL.md"
     if soul.is_symlink() or not soul.is_file():
         raise ContractError("SOUL.md must be a regular file, not a link.")
+    if storage_writer is not None:
+        storage_writer(soul, encoded)
+        return read_document(pack)
     fd, temporary = tempfile.mkstemp(prefix=".SOUL.", suffix=".tmp", dir=pack)
     try:
         with os.fdopen(fd, "wb") as stream:

@@ -1,0 +1,38 @@
+{
+    auto_https off
+    admin off
+}
+
+# Supply a real certificate and key through the deployment secret store.
+# This file intentionally contains no domain or credential.
+https://{$AGENTKIT_PUBLIC_HOST} {
+    tls /etc/caddy/certs/tls.crt /etc/caddy/certs/tls.key
+    encode gzip
+    request_body {
+        max_size 3MB
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "same-origin"
+        -Server
+    }
+    reverse_proxy auth-proxy:4180 {
+        # Never forward client-supplied identity headers to the OIDC proxy.
+        # OAuth2 Proxy injects the verified values after authentication.
+        header_up -X-Forwarded-Email
+        header_up -X-Forwarded-Groups
+        header_up -X-Forwarded-User
+        header_up -X-Forwarded-Preferred-Username
+        header_up -X-Forwarded-Access-Token
+        header_up -X-Agent-Tenant
+        header_up -X-Agent-User
+        header_up -X-Agent-Roles
+        header_up -X-Agent-*
+    }
+}
+
+http://{$AGENTKIT_PUBLIC_HOST} {
+    redir https://{$AGENTKIT_PUBLIC_HOST}{uri} permanent
+}

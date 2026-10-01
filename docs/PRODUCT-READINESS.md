@@ -1,12 +1,48 @@
-# AI Studio: Abnahme des lokalen Release-Kandidaten
+# AI Studio: Produkt- und Betriebsreife
 
-Stand: 30.09.2026. Produktziel: ein lokaler AI-Arbeitsraum nach dem Bedienvorbild von
+Stand: 01.10.2026. Produktziel: ein AI-Arbeitsraum nach dem Bedienvorbild von
 [Open-Dots](https://github.com/Anil-matcha/Open-Dots), auf dem vorhandenen AgentKit-Kern.
 Der klar begrenzte lokale Single-Owner-MVP erreicht **11 von 11 verbindlichen
-Bereichen = 100 % innerhalb des Produktscopes**. Computeraufgaben sind optional, stehen außerhalb des Nenners
-und erhalten keine Gutschrift. Die Freigabe gilt nicht für Public Deployment oder
-Mehrbenutzerbetrieb. Codex-Freigaben verwenden read-only Vorschläge und einen
-Allowlist-Host-Executor; native per-tool interception der Codex CLI wird nicht behauptet.
+Bereichen = 100 % innerhalb seines Produktscopes**. Computeraufgaben sind optional,
+stehen außerhalb des Nenners und erhalten keine Gutschrift. Codex-Freigaben verwenden
+read-only Vorschläge und einen Allowlist-Host-Executor; native per-tool interception
+der Codex CLI wird nicht behauptet.
+
+Für öffentlichen Betrieb existiert jetzt ein eigener, lokal geprüfter
+**Single-Tenant-Mehrbenutzer-Release-Candidate**. Seine Quellcode-Gates sind erfüllt;
+die konkrete Internetinstallation bleibt bis zu den unten genannten externen
+Abnahmen ein **No-Go**. Die beiden Bewertungen werden nicht zu einer scheinpräzisen
+Gesamtprozentzahl vermischt.
+
+## Öffentlicher Release-Candidate
+
+| Quellcode-Gate | Stand |
+|---|---|
+| OIDC-Proxy-Vertrauensgrenze, exakter HTTPS-Host | implementiert und vertraglich getestet |
+| Sitzungsgebundenes CSRF und exakter Origin | implementiert und HTTP-getestet |
+| Rollen und Cross-User-/Cross-Tenant-Isolation | implementiert und HTTP-getestet |
+| Opake getrennte Agenten-, Workspace- und State-Wurzeln | implementiert; Symlink-/Traversal-Tests |
+| Rate-, Job-, Runtime- und Speichergrenzen | implementiert; Unit-/Vertragstests |
+| Sicherer Public-Tool-Scope ohne Codex/Test/Fremdcode | implementiert und fail-closed getestet |
+| Pfad-/Continuation-Redaktion und HMAC-Auditkette | implementiert; Manipulationstest |
+| Gehärtete TLS/OIDC/Container-Vorlage | statisch geprüft; Images müssen per Digest gesetzt werden |
+
+Diese 8/8-Aussage bedeutet nur, dass der definierte Quellcode-Scope implementiert und
+lokal nachgewiesen ist. Sie ist keine Ausfallwahrscheinlichkeit, kein Pentest und keine
+Freigabe einer unbekannten Infrastruktur.
+
+Vor öffentlichem Go-live braucht **jede konkrete Installation** folgende Evidenz:
+
+1. realer OIDC-Login mit Domain-/Gruppenpolicy, Logout und Session-Rotation;
+2. reale DNS-/TLS-Kette sowie verifizierte Forwarded-Header am Proxy;
+3. verschlüsseltes Backup plus Restore-Probe des persistenten Volumes und der Secrets;
+4. repräsentativer Last-/Soak-Test mit beobachteten CPU-, RAM-, Queue- und Volume-Grenzen;
+5. unabhängiger Security-/Penetrationstest einschließlich IDOR, CSRF, Header-Spoofing und Uploads;
+6. Monitoring/Alarmierung sowie ein getesteter Rollback auf ein unveränderliches Image;
+7. bei aktiviertem DeepSeek ein echter, budgetierter Provider-Smoke ohne Secret-/Pfadleck.
+
+Bis diese sieben externen Gates für das Zielsystem belegt sind, lautet die ehrliche
+Produktionsentscheidung: **bereit zum Staging, noch nicht für offenen Internetverkehr freigegeben**.
 
 ## Implementiert und geprüft
 
@@ -31,15 +67,16 @@ Allowlist-Host-Executor; native per-tool interception der Codex CLI wird nicht b
 | Installation | Frische Windows-/Python-3.12-Umgebung, reguläres Wheel, isolierter CLI-Demostart und Launcher/HTTP-Demo samt Neustart; INSTALLATION-QUALIFICATION.md |
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
-| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; drei isolierte Chromium-Journeys prüfen 390-Pixel-Reflow und fanden/korrigierten einen langen Workspace-Chip als Überlauf; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 245 Tests in 97,074 s ohne Coverage-Instrumentierung, OK, ein erwarteter Windows-Symlink-Skip; 80 % kombinierte Line-/Branch-Coverage in einem separaten instrumentierten Lauf; Ruff und Bandit ohne mittlere/hohe Befunde; Dependency-Audit ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Nutzerabläufe einschließlich 390-Pixel-Reflow; keine formale Screenreader-Zertifizierung |
+| Reproduzierbare Offline-Abnahme | 314 Tests in 201,690 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
 Der Server wurde neu gestartet, um den gespeicherten Verlauf erneut zu öffnen.
-Die drei Playwright-Journeys laufen gegen einen isolierten temporären Serverzustand und
+Die fünf Playwright-Journeys laufen gegen isolierte temporäre Serverzustände und
 prüfen Navigation, zugängliche Namen, mobilen Reflow, Archivieren/Wiederherstellen,
-zweistufige Demo-Freigaben, fehlgeschlagenes Review, Reparatur, Download und Reload.
+zweistufige Demo-Freigaben, fehlgeschlagenes Review, Reparatur, Download, Reload sowie
+Authentifizierung und Trennung zweier öffentlicher Nutzersitzungen.
 CI erzeugt Trace und Screenshot als Workflow-Artefakte. Der aktuelle Remote-Lauf konnte
 wegen eines externen GitHub-Billing-/Spending-Limits noch keine Schritte starten.
 
@@ -119,15 +156,18 @@ Diese Prozentzahl bewertet ausschließlich, ob jeder vereinbarte MVP-Bereich ein
 Abnahmenachweis besitzt. Sie ist keine Fehlerwahrscheinlichkeit und keine Code-Coverage;
 die aktuell gemessene kombinierte Line-/Branch-Coverage beträgt 80 %.
 
-Diese Produktfreigabe ist keine OS-Isolation, keine Public-/Multiuser-Freigabe,
-keine hostile-web-Computer-Sandbox und keine Garantie fachlicher Modellwahrheit.
+Die lokale Produktfreigabe ist keine OS-Isolation, keine hostile-web-Computer-Sandbox
+und keine Garantie fachlicher Modellwahrheit. Der getrennte Public-Adapter ist nur für
+den oben beschriebenen Text-/Datei-Scope freigegeben; seine konkrete Bereitstellung
+benötigt die sieben externen Go-live-Nachweise.
 Alte pending approvals vor dem Digest-/Host-Gateway-Upgrade werden fail-closed
 verworfen und müssen neu geplant werden.
 
 Außerhalb dieses MVP liegen authentifizierte beziehungsweise breite
-Schreibconnectoren, visuelle Bildanalyse, OCR gescannter PDFs, Mehrbenutzer-/Public-
-Deployment und eine hostile-web-gehärtete Computer-Sandbox. Computeraufgaben sind
-optional, werden nicht als erfüllt behauptet und zählen nicht zur Quote.
+Schreibconnectoren, visuelle Bildanalyse, OCR gescannter PDFs, horizontaler
+Mehrmandantenbetrieb, öffentliche Fremdcodeausführung und eine hostile-web-gehärtete
+Computer-Sandbox. Computeraufgaben sind optional, werden nicht als erfüllt behauptet
+und zählen nicht zur Quote.
 Einzelne Folgeaufträge erhalten den letzten Auftrag und dessen Zusammenfassung. Die neue
 Dialogansicht erhält dagegen den vollständigen sichtbaren Verlauf innerhalb expliziter
 Kontextgrenzen. Das Review-Gate prüft Berichte und Artefakte, keine fachliche Wahrheit.
@@ -176,9 +216,9 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Testsuite lief mit 245 Tests in
-97,074 Sekunden ohne Coverage-Instrumentierung durch (OK, ein erwarteter
-Windows-Symlink-Skip); Ruff, zehn
+und behoben. Die aktuelle vollständige Testsuite lief mit 314 Tests in
+201,690 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
+Windows-Symlink-Skips); Ruff, zehn
 Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.
 Die neue grafische Workflow-Spur wurde mit Computer Use inklusive zwei Freigaben,

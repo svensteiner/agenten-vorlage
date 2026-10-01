@@ -14,8 +14,14 @@ cockpit/*.log
 .agentkit.lock
 .ruff_cache/
 .mypy_cache/
+.coverage
+htmlcov/
 .playwright-cli/
 .playwright-mcp/
 /artifacts/e2e-*.png
 cockpit/.runs-ui-check/
 deepseek-key-temp.docx
+deploy/public/secrets/*
+!deploy/public/secrets/.gitkeep
+deploy/public/certs/
+deploy/public/public.env

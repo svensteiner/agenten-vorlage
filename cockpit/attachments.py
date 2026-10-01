@@ -15,7 +15,7 @@ import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from agentkit.contracts import ContractError
 from agentkit.storage import save
@@ -132,11 +132,17 @@ def _timestamp() -> str:
 class Attachments:
     """Persist originals and extracted context without writing into a workspace."""
 
-    def __init__(self, state_dir: str | Path):
+    def __init__(
+        self,
+        state_dir: str | Path,
+        *,
+        storage_writer: Callable[[Path, bytes], None] | None = None,
+    ):
         self.state_dir = Path(state_dir)
         self.directory = self.state_dir / "attachments"
         self.directory.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
+        self._storage_writer = storage_writer
 
     @staticmethod
     def _binding(binding: dict) -> dict:
@@ -289,7 +295,11 @@ class Attachments:
             if extraction_method is not None:
                 record["extraction_method"] = extraction_method
                 record["language"] = language
-            save(self._path(binding["conversation_id"], attachment_id), record)
+            save(
+                self._path(binding["conversation_id"], attachment_id),
+                record,
+                writer=self._storage_writer,
+            )
             return self._metadata(record)
 
     @staticmethod

@@ -4,13 +4,21 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from typing import Callable
 
 from .catalog import Catalog, skill_metadata
 from .contracts import ContractError, LIBRARY, read_json, slug
 from .storage import save
 
 
-def create(target: Path, profile: str, agent_id: str, company: str) -> Path:
+def create(
+    target: Path,
+    profile: str,
+    agent_id: str,
+    company: str,
+    *,
+    storage_writer: Callable[[Path, bytes], None] | None = None,
+) -> Path:
     slug(agent_id)
     profiles = read_json(LIBRARY / "profiles.json")
     if profile not in profiles:
@@ -40,32 +48,51 @@ def create(target: Path, profile: str, agent_id: str, company: str) -> Path:
         },
         "roles": roles,
     }
+    def write_bytes(path: Path, data: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if storage_writer is None:
+            path.write_bytes(data)
+        else:
+            storage_writer(path, data)
+
     target.mkdir(parents=True)
-    (target / "roles").mkdir()
-    (target / "workspace").mkdir()
-    for path in (LIBRARY / "base").iterdir():
-        text = path.read_text(encoding="utf-8")
-        for key, value in {
-            "AGENT_ID": agent_id,
-            "COMPANY": company,
-            "PROFILE": profile,
-        }.items():
-            text = text.replace("{{" + key + "}}", value)
-        (target / path.name).write_text(text, encoding="utf-8")
-    for role in roles:
-        shutil.copy2(LIBRARY / "roles" / f"{role}.md", target / "roles" / f"{role}.md")
-    skills = {"dynamic-workflow"} | {
-        name for role in roles.values() for name in role["skills"]
-    }
-    for name in sorted(skills):
-        shutil.copytree(LIBRARY / "skills" / name, target / ".agents" / "skills" / name)
-    (target / ".gitignore").write_text(
-        ".runs/\n.agentkit.lock\nworkspace/.agentkit.lock\n.env\n.env.*\n",
-        encoding="utf-8",
-    )
-    save(target / "agent.json", config)
-    Catalog(target)
-    return target
+    try:
+        (target / "roles").mkdir()
+        (target / "workspace").mkdir()
+        for path in (LIBRARY / "base").iterdir():
+            text = path.read_text(encoding="utf-8")
+            for key, value in {
+                "AGENT_ID": agent_id,
+                "COMPANY": company,
+                "PROFILE": profile,
+            }.items():
+                text = text.replace("{{" + key + "}}", value)
+            write_bytes(target / path.name, text.encode("utf-8"))
+        for role in roles:
+            source = LIBRARY / "roles" / f"{role}.md"
+            write_bytes(target / "roles" / source.name, source.read_bytes())
+        skills = {"dynamic-workflow"} | {
+            name for role in roles.values() for name in role["skills"]
+        }
+        for name in sorted(skills):
+            source_root = LIBRARY / "skills" / name
+            for source in source_root.rglob("*"):
+                relative = source.relative_to(source_root)
+                destination = target / ".agents" / "skills" / name / relative
+                if source.is_dir():
+                    destination.mkdir(parents=True, exist_ok=True)
+                else:
+                    write_bytes(destination, source.read_bytes())
+        write_bytes(
+            target / ".gitignore",
+            b".runs/\n.agentkit.lock\nworkspace/.agentkit.lock\n.env\n.env.*\n",
+        )
+        save(target / "agent.json", config, writer=storage_writer)
+        Catalog(target)
+        return target
+    except Exception:
+        shutil.rmtree(target, ignore_errors=True)
+        raise
 
 
 def add_skill(agent_dir: Path, source: Path, role: str) -> str:

@@ -406,6 +406,26 @@ class AgentKitTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             DeepSeekBackend(api_key="")._call("{}", "decision", {}, 5)
 
+    def test_deepseek_prompts_do_not_disclose_the_host_workspace_path(self):
+        backend = DeepSeekBackend(api_key="test-only-key")
+        context = {
+            "workspace": str(self.workspace),
+            "history": [{"artifact": str(self.workspace / "private.txt")}],
+            "request_approval": lambda *_: None,
+        }
+        with patch.object(backend, "_call", return_value=decision()) as call:
+            backend.decide(context, 5)
+        planner_prompt = call.call_args.args[0]
+        self.assertNotIn(str(self.workspace), planner_prompt)
+        self.assertIn("<assigned-workspace>", planner_prompt)
+        self.assertNotIn("request_approval", planner_prompt)
+
+        with patch.object(backend, "_call", return_value=report()) as call:
+            backend.execute(decision(), context, 5)
+        worker_prompt = call.call_args.args[0]
+        self.assertNotIn(str(self.workspace), worker_prompt)
+        self.assertIn("<assigned-workspace>", worker_prompt)
+
     def test_deepseek_backend_rejects_unsafe_provider_urls(self):
         for base_url in (
             "http://api.deepseek.com",

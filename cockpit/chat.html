@@ -194,7 +194,7 @@
       </aside>
       <main class="main">
         <header class="topbar">
-          <span class="topbar-label">Lokaler Arbeitsraum · Dialog</span>
+          <span id="workspaceTopbar" class="topbar-label">Lokaler Arbeitsraum · Dialog</span>
           <div class="topbar-actions"><span id="connection" class="connection" data-state="offline">Verbinde …</span><button id="retryConnection" class="reconnect outline" type="button" hidden>Erneut verbinden</button></div>
         </header>
         <div class="content">
@@ -223,7 +223,7 @@
               <div class="fields">
                 <div><label for="agent">Assistent</label><select id="agent" required></select></div>
                 <div><label for="backend">Backend</label><select id="backend" required></select><p id="backendHint" class="field-note"></p></div>
-                <div><label for="workspace">Workspace</label><input id="workspace" type="text" required placeholder="C:\\Pfad\\zum\\Workspace" /></div>
+                <div><label id="workspaceLabel" for="workspace">Workspace</label><input id="workspace" type="text" required placeholder="C:\\Pfad\\zum\\Workspace" /></div>
                 <div><label for="model">Modell · optional</label><input id="model" type="text" placeholder="Backend-Standard" /></div>
                 <div class="wide"><label for="title">Titel · optional</label><input id="title" type="text" maxlength="200" placeholder="Worum geht es in diesem Dialog?" /></div>
               </div>
@@ -236,7 +236,7 @@
               <textarea id="message" maxlength="12000" placeholder="Beschreibe, was dein Assistent für dich erledigen soll …" required></textarea>
               <div class="attachment-picker">
                 <label for="attachmentInput">Dateien anhängen</label><input id="attachmentInput" type="file" multiple accept=".txt,.md,.csv,.json,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.sql,.xml,.toml,.pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg" />
-                <p class="attachment-hint">Dokumente und PNG/JPEG bis 2 MiB, Text bis 32 KiB; zusammen maximal 2 MiB und 5 Dateien. Bilder: lokale Windows-Texterkennung, maximal 4096 Pixel je Seite und 8 Megapixel. Erkennungsfehler sind möglich; das Modell erhält nur Text, keine Bildanalyse. Keine gescannten PDFs.</p>
+                <p id="attachmentHint" class="attachment-hint">Dokumente und PNG/JPEG bis 2 MiB, Text bis 32 KiB; zusammen maximal 2 MiB und 5 Dateien. Bilder: lokale Windows-Texterkennung, maximal 4096 Pixel je Seite und 8 Megapixel. Erkennungsfehler sind möglich; das Modell erhält nur Text, keine Bildanalyse. Keine gescannten PDFs.</p>
                 <ul id="attachmentList" class="attachment-list" aria-live="polite"></ul>
                 <section class="github-picker" aria-labelledby="githubTitle">
                   <h3 id="githubTitle">Öffentliche GitHub-Datei prüfen</h3>
@@ -278,6 +278,7 @@
         online: false, ready: false, newMode: false, saving: false, loading: false,
         pollTimer: null, epoch: 0, pending: null, defaultWorkspace: "", workspaceAuto: true,
         attachments: [], pendingAttachmentIds: [], fileBusy: false, persistenceError: false, githubPreview: null,
+        publicMode: false,
       };
       function el(tag, text, className) {
         const node = document.createElement(tag);
@@ -287,9 +288,18 @@
       }
       function setConnection(ok) {
         state.online = ok;
-        $("connection").textContent = ok ? "Lokal verbunden" : "Verbindung unterbrochen";
+        $("connection").textContent = ok ? (state.publicMode ? "Verbunden" : "Lokal verbunden") : "Verbindung unterbrochen";
         $("connection").dataset.state = ok ? "online" : "offline";
         $("retryConnection").hidden = ok;
+      }
+      function applyPublicUi() {
+        if (!state.publicMode) return;
+        document.title = "AI Studio · Öffentliche Dialoge";
+        $("workspaceTopbar").textContent = "Öffentlicher Arbeitsbereich · Dialog";
+        $("workspaceLabel").textContent = "Workspace · verwalteter Bereich";
+        $("workspace").placeholder = "Standard-Arbeitsbereich";
+        $("attachmentInput").accept = [...TEXT_ATTACHMENT_EXTENSIONS].map((extension) => "." + extension).join(",");
+        $("attachmentHint").textContent = "Nur begrenzte UTF-8-Textdateien bis 32 KiB; zusammen maximal 2 MiB und 5 Dateien. PDF, Office-Dateien und Bilder werden im öffentlichen Betrieb nicht verarbeitet.";
       }
       function showNotice(message) {
         $("notice").textContent = message || "";
@@ -515,6 +525,8 @@
           for (const file of files) {
             const extension = attachmentExtension(file.name);
             const binary = DOCUMENT_ATTACHMENT_EXTENSIONS.has(extension) || IMAGE_ATTACHMENT_EXTENSIONS.has(extension);
+            if (state.publicMode && !TEXT_ATTACHMENT_EXTENSIONS.has(extension))
+              throw new Error(`Datei „${file.name}“ ist im öffentlichen Betrieb nicht zulässig. Verwende eine UTF-8-Textdatei (maximal 32 KiB).`);
             if (!binary && !TEXT_ATTACHMENT_EXTENSIONS.has(extension))
               throw new Error(`Datei „${file.name}“ ist kein unterstütztes Text-, Dokument- oder Bildformat.`);
             if (state.attachments.some((item) => item.name === file.name) || added.some((item) => item.name === file.name))
@@ -536,11 +548,26 @@
         } catch (error) { showNotice(error.message); }
         finally { state.fileBusy = false; lockUi(); }
       }
+      let csrfToken = "";
+      let csrfRequest = null;
+      async function ensureCsrf() {
+        if (csrfToken) return;
+        if (!csrfRequest) csrfRequest = fetch("/api/session", { headers: { "Accept": "application/json" } }).then(async (response) => {
+          if (response.status === 404) return;
+          let data = null; try { data = await response.json(); } catch { throw new Error("Die Sitzung konnte nicht geprüft werden."); }
+          if (!response.ok || typeof data.csrf_token !== "string" || !data.csrf_token) throw new Error(data.error || "Die Sitzung konnte nicht geprüft werden.");
+          csrfToken = data.csrf_token;
+        }).finally(() => { csrfRequest = null; });
+        await csrfRequest;
+      }
       async function api(path, options = {}) {
+        if (["POST", "PUT", "PATCH", "DELETE"].includes(String(options.method || "GET").toUpperCase())) await ensureCsrf();
         const abort = new AbortController();
         const timer = setTimeout(() => abort.abort(), 15000);
         try {
-          const response = await fetch(path, { ...options, signal: abort.signal, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+          const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+          if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+          const response = await fetch(path, { ...options, signal: abort.signal, headers });
           let data;
           try { data = await response.json(); } catch { throw new Error("Der Server hat keine lesbare Antwort geliefert."); }
           setConnection(true);
@@ -549,14 +576,14 @@
         } catch (error) {
           if (error.name === "AbortError" || error instanceof TypeError) {
             setConnection(false);
-            throw new Error("Keine Serverantwort. Prüfe den lokalen Server. Ein Auftrag könnte bereits gestartet sein; prüfe zuerst den Dialog.");
+            throw new Error(state.publicMode ? "Keine Serverantwort. Prüfe deine Verbindung. Ein Auftrag könnte bereits gestartet sein; prüfe zuerst den Dialog." : "Keine Serverantwort. Prüfe den lokalen Server. Ein Auftrag könnte bereits gestartet sein; prüfe zuerst den Dialog.");
           }
           throw error;
         } finally { clearTimeout(timer); }
       }
       function agentLabel(path) { return state.agents.find((item) => item.path === path || item.id === path)?.id || path || "Assistent"; }
       function backendLabel(id) { return state.backends.find((item) => item.id === id)?.label || id || "Backend"; }
-      function workspaceDefault(agentPath) { return agentPath ? `${agentPath}/workspace` : ""; }
+      function workspaceDefault(agentPath) { return state.publicMode ? (state.defaultWorkspace || "default") : (agentPath ? `${agentPath}/workspace` : ""); }
       function renderList() {
         const list = $("conversationList");
         list.replaceChildren();
@@ -871,7 +898,11 @@
       async function initialize() {
         try {
           const [config, agents] = await Promise.all([api("/api/config"), api("/api/agents")]);
-          state.backends = config.backends || []; state.agents = agents.agents || []; populateOptions(); await loadConversations(); state.ready = true;
+          state.backends = config.backends || []; state.agents = agents.agents || [];
+          state.publicMode = Boolean(config.public_multiuser);
+          state.defaultWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+          applyPublicUi();
+          populateOptions(); await loadConversations(); state.ready = true;
           const pending = pendingRead();
           let saved = null; try { saved = sessionStorage.getItem("ai-studio-chat-current"); } catch {}
           const pendingId = pending?.kind === "message" ? pending.payload?.id : pending?.kind === "upload" ? pending.payload?.conversation_id : null;

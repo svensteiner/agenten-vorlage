@@ -131,6 +131,54 @@ DeepSeek erzwingt Rollenrechte vor der Toolausführung und zählt auch gebündel
 Testprozesse erhalten eine kleine Umgebungs-Whitelist statt Server-Credentials. Das ist
 keine OS-Sandbox: lokale Testprogramme bleiben ausführbarer, vertrauenswürdiger Code.
 
+### Öffentliche Single-Tenant-Mehrbenutzerschicht
+
+`cockpit/public_server.py` ist ein separater Adapter und öffnet den lokalen Server nicht
+nach außen. TLS endet am Reverse Proxy; ein OIDC-Proxy authentifiziert Nutzer, entfernt
+eingespeiste Identitätsheader und setzt verifizierte E-Mail- und Gruppenclaims. Die App
+akzeptiert diese Header nur aus einem konfigurierten privaten Proxy-CIDR und prüft den
+exakten öffentlichen HTTPS-Host. Ein fester, serverseitiger Tenant verhindert, dass ein
+Client seinen Mandanten per Header auswählt.
+
+```mermaid
+flowchart LR
+    B[Browser] -->|HTTPS| T[TLS Reverse Proxy]
+    T --> O[OIDC Auth Proxy]
+    O -->|verifizierte Identität| P[Public Adapter]
+    P --> N[Tenant/User Namespace]
+    N --> A[Agenten-Snapshot]
+    N --> W[Workspace]
+    N --> S[Jobs, Dialoge, Anhänge]
+    P -->|optional| D[DeepSeek API]
+```
+
+Jede Identität wird mit einem geheimen HMAC-Schlüssel in opake Tenant-/User-IDs
+übersetzt. Pro Nutzer entstehen getrennte Agenten-, Workspace- und State-Wurzeln.
+Provisionierung prüft Symlinks und Reparse Points, kopiert nur deklarative Agentenpakete
+und veröffentlicht in HTTP-Antworten ausschließlich kanonische Ressourcen-IDs. Ein
+fremder Job- oder Dialog-Identifier ist deshalb keine Berechtigung und wird im falschen
+Nutzerkontext als nicht vorhanden behandelt.
+
+Alle Mutationen benötigen einen an Identität und OAuth-Sitzung gebundenen CSRF-Token
+sowie den exakten Origin. Rollen, Request-/Job-Raten und aktive Jobs sind begrenzt.
+Bytes, Dateien und Verzeichnisse werden über den vollständigen Nutzerbaum gezählt;
+Workspace-, Job-, Dialog-, Anhang- und Assistentenzustände durchlaufen denselben
+prospektiven, gesperrten Writer. Das Audit enthält nur gehashte Identitäten und
+Metadaten, ist per HMAC verkettet und wird mit zwei Initialisierungsmarkern beim
+Prozessstart vollständig geprüft.
+
+Der öffentliche Ausführungsscope enthält `demo` und optional DeepSeek. DeepSeek sieht
+keine lokalen Hostpfade und erhält ausschließlich begrenzte Listen-/Lese-/Schreib-/
+Editierwerkzeuge. Codex, `run_pytest`, Subprozesse aus Nutzer-Workspaces, binäre
+Anhänge und Dokument-/Bildparser sind dort deaktiviert. Damit ist diese Schicht für
+gemeinsame Text-/Dateiarbeit geeignet. Fremdcode erfordert später einen getrennten,
+ephemeren Worker mit eigener OS-/Netzwerk-/Secret-Isolation.
+
+Der mitgelieferte Stack ist auf eine App-Instanz ausgelegt. Rate-Limits und Runtime-
+Cache sind prozesslokal, der Zustand liegt in einem persistenten Volume. Horizontale
+Skalierung benötigt eine gemeinsame Datenbank, Objektablage, Queue und verteilte
+Limits; sie wird vom aktuellen Release-Candidate nicht behauptet.
+
 ### Company-weite Erweiterung
 
 Werkzeugfreigaben werden vor Dispatch als `pending_approval` gespeichert. Der Status

@@ -4,15 +4,22 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
+from typing import Callable
 
 from agentkit.contracts import ContractError
 from agentkit.storage import save
 
 
 class AssistantSettings:
-    def __init__(self, state_dir: Path):
+    def __init__(
+        self,
+        state_dir: Path,
+        *,
+        storage_writer: Callable[[Path, bytes], None] | None = None,
+    ):
         self.path = Path(state_dir) / "assistant-settings" / "archive.json"
         self._lock = threading.RLock()
+        self._storage_writer = storage_writer
 
     def _read(self) -> dict[str, bool]:
         try:
@@ -48,5 +55,5 @@ class AssistantSettings:
             document = {"version": 1, "agents": values}
             if len(values) > 10_000 or len(json.dumps(document, ensure_ascii=False, indent=2) + "\n") > 512_000:
                 raise ContractError("Assistant archive state is too large.")
-            save(self.path, document)
+            save(self.path, document, writer=self._storage_writer)
             return archived

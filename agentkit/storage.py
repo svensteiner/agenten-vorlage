@@ -8,6 +8,7 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Callable
 
 
 def _replace_checkpoint(temp: str, target: Path) -> None:
@@ -28,13 +29,21 @@ def _replace_checkpoint(temp: str, target: Path) -> None:
             time.sleep(0.05 * (2 ** attempt))
 
 
-def save(path: Path, value: dict) -> None:
+def save(
+    path: Path,
+    value: dict,
+    *,
+    writer: Callable[[Path, bytes], None] | None = None,
+) -> None:
+    encoded = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    if writer is not None:
+        writer(path, encoded)
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=".checkpoint-", dir=path.parent)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(value, stream, ensure_ascii=False, indent=2)
-            stream.write("\n")
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
         _replace_checkpoint(temp, path)

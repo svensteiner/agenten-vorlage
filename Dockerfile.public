@@ -1,0 +1,61 @@
+# Public control plane image. Supply PYTHON_BASE_IMAGE as a fully pinned
+# image@sha256 digest at build time. There is deliberately no floating or
+# hard-coded Python tag in this file.
+ARG PYTHON_BASE_IMAGE
+FROM ${PYTHON_BASE_IMAGE} AS build
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+WORKDIR /build
+
+COPY pyproject.toml ./
+COPY deploy/public/requirements-build.lock deploy/public/requirements-runtime.lock ./deploy/public/
+COPY agentkit ./agentkit
+COPY cockpit ./cockpit
+ARG PYTHON_BASE_IMAGE
+RUN case "$PYTHON_BASE_IMAGE" in *'@sha256:'*) ;; *) echo 'PYTHON_BASE_IMAGE must be pinned with @sha256:' >&2; exit 1 ;; esac \
+    && python -m pip download --require-hashes --only-binary=:all: \
+         --dest /runtime-wheels -r deploy/public/requirements-runtime.lock \
+    && python -m pip install --require-hashes -r deploy/public/requirements-build.lock \
+    && python -m pip wheel --no-build-isolation --no-deps --wheel-dir /app-wheel .
+
+FROM ${PYTHON_BASE_IMAGE} AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    AGENTKIT_ENV=production \
+    AGENTKIT_PUBLIC=1 \
+    AGENTKIT_BIND=0.0.0.0 \
+    AGENTKIT_PORT=8766
+WORKDIR /app
+
+RUN groupadd --system --gid 10001 agentkit \
+    && useradd --system --uid 10001 --gid 10001 --create-home --home-dir /home/agentkit agentkit \
+    && mkdir -p /app/data /tmp/agentkit \
+    && chown -R agentkit:agentkit /app/data /tmp/agentkit
+
+COPY --from=build /runtime-wheels /runtime-wheels
+COPY --from=build /app-wheel /app-wheel
+COPY deploy/public/requirements-runtime.lock /tmp/requirements-runtime.lock
+RUN python -m pip install --no-index --find-links=/runtime-wheels --require-hashes \
+      -r /tmp/requirements-runtime.lock \
+    && python -m pip install --no-index --no-deps /app-wheel/company_agentkit-*.whl \
+    && rm -rf /runtime-wheels /app-wheel /tmp/requirements-runtime.lock
+COPY --chown=agentkit:agentkit agentkit ./agentkit
+COPY --chown=agentkit:agentkit cockpit ./cockpit
+COPY --chown=agentkit:agentkit agents ./agents
+
+USER 10001:10001
+EXPOSE 8766
+
+# /api/readiness is intentionally unauthenticated and verifies the safe public
+# backend policy and provider configuration before traffic is accepted.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('AGENTKIT_PORT','8766') + '/api/readiness', timeout=3).read()"
+
+# The public gateway module is supplied by the runtime integration.  Keeping
+# the command explicit makes accidental fallback to the local owner server
+# impossible in a production image.
+CMD ["python", "-m", "cockpit.public_server"]

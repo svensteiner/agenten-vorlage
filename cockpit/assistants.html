@@ -97,10 +97,10 @@
         <div class="rail-footer">Archivieren löscht keinen Assistenten.<br /><a href="/">Zur Auftragsansicht</a></div>
       </aside>
       <main class="main">
-        <header class="topbar"><span class="eyebrow">Lokaler Arbeitsraum</span><span id="connection" class="connection" data-state="offline" role="status">Verbindung wird geprüft …</span></header>
+        <header class="topbar"><span id="workspaceTopbar" class="eyebrow">Lokaler Arbeitsraum</span><span id="connection" class="connection" data-state="offline" role="status">Verbindung wird geprüft …</span></header>
         <div class="content">
           <p id="notice" class="notice" role="alert" hidden></p>
-          <section class="intro"><div class="eyebrow">Konfiguration</div><h1>Assistenten verwalten</h1><p>Archivierte Assistenten werden aus der Auswahl für neue Dialoge entfernt. Bestehende Dialoge und Aufträge bleiben erhalten; der explizite Pfad und die CLI-Nutzung bleiben möglich. Archivieren und Wiederherstellen sind jederzeit reversibel.</p></section>
+          <section class="intro"><div class="eyebrow">Konfiguration</div><h1>Assistenten verwalten</h1><p id="assistantIntro">Archivierte Assistenten werden aus der Auswahl für neue Dialoge entfernt. Bestehende Dialoge und Aufträge bleiben erhalten; der explizite Pfad und die CLI-Nutzung bleiben möglich. Archivieren und Wiederherstellen sind jederzeit reversibel.</p></section>
           <section id="editor" class="editor" aria-labelledby="editorTitle" hidden><div class="card-head"><div><h2 id="editorTitle">Vorgaben bearbeiten</h2><p>Beschreibung und Vorgaben (SOUL.md)</p></div></div><p id="editorIdentity" class="muted"></p><label for="instructionsText">Beschreibung und Vorgaben (SOUL.md)</label><textarea id="instructionsText" maxlength="32000"></textarea><div class="editor-meta"><span id="editorCount">0 / 32.000 UTF-8-Bytes</span><span id="editorRevision"></span></div><div class="editor-actions"><button id="saveInstructions" class="primary" type="button">Speichern</button><button id="cancelInstructions" type="button">Abbrechen</button><button id="reloadInstructions" type="button">Neu laden</button></div></section>
           <div class="status-line"><strong id="liveStatus" role="status" aria-live="polite">Assistenten werden geladen …</strong><button id="retry" type="button" hidden>Erneut laden</button></div>
           <section class="card" aria-labelledby="activeTitle">
@@ -118,10 +118,16 @@
     <script>
       "use strict";
       const $ = (id) => document.getElementById(id);
-      const state = { agents: [], loading: false, posting: false, online: false, loadError: false, editor: null, editorLoading: false, editorDirty: false, editorStale: false };
+      const state = { agents: [], loading: false, posting: false, online: false, loadError: false, publicMode: false, editor: null, editorLoading: false, editorDirty: false, editorStale: false };
       function el(tag, text, className) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; }
       function showNotice(message) { $("notice").textContent = message || ""; $("notice").hidden = !message; }
-      function setConnection(online) { state.online = online; $("connection").textContent = online ? "Lokal verbunden" : "Verbindung unterbrochen"; $("connection").dataset.state = online ? "online" : "offline"; }
+      function setConnection(online) { state.online = online; $("connection").textContent = online ? (state.publicMode ? "Verbunden" : "Lokal verbunden") : "Verbindung unterbrochen"; $("connection").dataset.state = online ? "online" : "offline"; }
+      function applyPublicUi() {
+        if (!state.publicMode) return;
+        document.title = "AI Studio · Öffentliche Assistenten";
+        $("workspaceTopbar").textContent = "Öffentlicher Arbeitsbereich";
+        $("assistantIntro").textContent = "Archivierte Assistenten werden aus der Auswahl für neue Dialoge entfernt. Bestehende Dialoge und Aufträge bleiben erhalten. Assistenten werden über sichere IDs verwaltet.";
+      }
       function controls() {
         const blocked = state.loading || state.posting || state.editorLoading;
         document.querySelectorAll("[data-agent-action]").forEach((button) => { button.disabled = blocked || !state.online || state.loadError; });
@@ -132,11 +138,26 @@
         $("cancelInstructions").disabled = blocked || !state.editor; $("reloadInstructions").disabled = blocked || !state.editor;
         $("instructionsText").disabled = blocked || !state.editor;
       }
+      let csrfToken = "";
+      let csrfRequest = null;
+      async function ensureCsrf() {
+        if (csrfToken) return;
+        if (!csrfRequest) csrfRequest = fetch("/api/session", { headers: { "Accept": "application/json" } }).then(async (response) => {
+          if (response.status === 404) return;
+          let data = null; try { data = await response.json(); } catch { throw new Error("Die Sitzung konnte nicht geprüft werden."); }
+          if (!response.ok || typeof data.csrf_token !== "string" || !data.csrf_token) throw new Error(data.error || "Die Sitzung konnte nicht geprüft werden.");
+          csrfToken = data.csrf_token;
+        }).finally(() => { csrfRequest = null; });
+        await csrfRequest;
+      }
       async function api(path, options = {}) {
+        if (["POST", "PUT", "PATCH", "DELETE"].includes(String(options.method || "GET").toUpperCase())) await ensureCsrf();
         const abort = new AbortController();
         const timer = setTimeout(() => abort.abort(), 15000);
         try {
-          const response = await fetch(path, { ...options, signal: abort.signal, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+          const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+          if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+          const response = await fetch(path, { ...options, signal: abort.signal, headers });
           let data;
           try { data = await response.json(); } catch { throw new Error("Der Server hat keine lesbare Antwort geliefert."); }
           setConnection(true);
@@ -155,14 +176,14 @@
       function agentName(agent) { return agent?.id || agent?.name || agent?.path || "Unbenannter Assistent"; }
       function agentDetail(agent) {
         const parts = [agent?.profile, agent?.roles ? `${agent.roles} Rollen` : "", agent?.skills ? `${agent.skills} Skills` : ""].filter(Boolean);
-        return parts.join(" · ") || "Lokaler Assistent";
+        return parts.join(" · ") || (state.publicMode ? "Öffentlicher Assistent" : "Lokaler Assistent");
       }
       function renderAgentList(targetId, emptyId, agents, archived) {
         const list = $(targetId); list.replaceChildren(); $(emptyId).hidden = agents.length > 0;
         for (const agent of agents) {
           const item = el("li", undefined, "agent");
           const copy = el("div", undefined, "agent-copy");
-          copy.append(el("strong", agentName(agent)), el("p", agentDetail(agent)), el("code", agent.path || "Pfad nicht verfügbar", "agent-path"));
+          copy.append(el("strong", agentName(agent)), el("p", agentDetail(agent)), el("code", state.publicMode ? (agent.id || "ID nicht verfügbar") : (agent.path || "Pfad nicht verfügbar"), "agent-path"));
           const action = el("button", archived ? `Wiederherstellen: ${agentName(agent)}` : `Archivieren: ${agentName(agent)}`, `agent-action${archived ? " restore" : ""}`);
           action.type = "button"; action.dataset.agentAction = "true"; action.setAttribute("aria-label", action.textContent);
           action.onclick = () => archiveAgent(agent, archived);
@@ -182,7 +203,7 @@
       function confirmDiscard() { return !state.editorDirty || window.confirm("Ungespeicherte Änderungen verwerfen?"); }
       async function openEditor(agent) {
         if (!agent?.path || state.posting || !confirmDiscard()) return;
-        state.editor = { agent, text: "", revision: null }; state.editorDirty = false; state.editorStale = false; $("editor").hidden = false; $("editorTitle").textContent = `Vorgaben bearbeiten: ${agentName(agent)}`; $("editorIdentity").textContent = `ID: ${agentName(agent)} · Profil: ${agent.profile || "unbekannt"} · Pfad: ${agent.path} · Änderungen gelten für neue Aufträge und spätere Nachrichten.`; $("instructionsText").value = ""; state.editorLoading = true; controls();
+        state.editor = { agent, text: "", revision: null }; state.editorDirty = false; state.editorStale = false; $("editor").hidden = false; $("editorTitle").textContent = `Vorgaben bearbeiten: ${agentName(agent)}`; $("editorIdentity").textContent = state.publicMode ? `ID: ${agentName(agent)} · Profil: ${agent.profile || "unbekannt"} · Änderungen gelten für neue Aufträge und spätere Nachrichten.` : `ID: ${agentName(agent)} · Profil: ${agent.profile || "unbekannt"} · Pfad: ${agent.path} · Änderungen gelten für neue Aufträge und spätere Nachrichten.`; $("instructionsText").value = ""; state.editorLoading = true; controls();
         try { const data = await api(`/api/agents/instructions?agent=${encodeURIComponent(agent.path)}`); if (!state.editor || state.editor.agent.path !== agent.path) return; $("instructionsText").value = typeof data.text === "string" ? data.text : ""; state.editor.text = $("instructionsText").value; state.editor.revision = data.revision; $("editorRevision").textContent = `Revision ${data.revision ?? "unbekannt"}`; updateEditorMeta(); }
         catch (error) { if (state.editor?.agent.path === agent.path) { showNotice(`Vorgaben konnten nicht geladen werden: ${error.message}`); $("editor").hidden = true; state.editor = null; } }
         finally { state.editorLoading = false; controls(); if (state.editor?.agent.path === agent.path && !$("editor").hidden) $("instructionsText").focus(); }
@@ -200,7 +221,9 @@
         if (state.loading || state.posting) return;
         state.loading = true; state.loadError = false; controls(); showNotice(""); $("liveStatus").textContent = "Assistenten werden geladen …";
         try {
-          const data = await api("/api/agents?include_archived=true");
+          const [data, config] = await Promise.all([api("/api/agents?include_archived=true"), api("/api/config")]);
+          state.publicMode = Boolean(config.public_multiuser);
+          applyPublicUi();
           state.agents = Array.isArray(data.agents) ? data.agents : [];
           renderAgents();
         } catch (error) {

@@ -6,7 +6,7 @@ import json
 import time
 import uuid
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol
 
 from .catalog import Catalog
 from .contracts import ContractError, read_json, validate
@@ -58,12 +58,24 @@ def _valid_completed_actions(value: object) -> bool:
 
 
 class Engine:
-    def __init__(self, agent_dir: Path, workspace: Path, backend: Backend, *, require_approvals: bool = False, core_snapshot: str | None = None):
+    def __init__(
+        self,
+        agent_dir: Path,
+        workspace: Path,
+        backend: Backend,
+        *,
+        require_approvals: bool = False,
+        core_snapshot: str | None = None,
+        mutation_writer: Callable[[Path, bytes], None] | None = None,
+        state_writer: Callable[[Path, bytes], None] | None = None,
+    ):
         self.catalog = Catalog(agent_dir)
         self.workspace = workspace.resolve()
         self.backend = backend
         self.limits = self.catalog.config["limits"]
         self.require_approvals = require_approvals
+        self.mutation_writer = mutation_writer
+        self.state_writer = state_writer
         if core_snapshot is not None and not isinstance(core_snapshot, str):
             raise ContractError("core_snapshot must be text.")
         if isinstance(core_snapshot, str) and len(core_snapshot) > self.limits["max_context_chars"]:
@@ -174,7 +186,7 @@ class Engine:
                     state["status"] = "blocked"
                     state["summary"] = f"Tool approval rejected: {pending.get('tool')}"
                     state["in_flight"] = None
-                    save(path, state)
+                    save(path, state, writer=self.state_writer)
                     return state
                 state["approval_resume"] = pending.get("continuation")
                 state["approved_action"] = {
@@ -250,7 +262,7 @@ class Engine:
             state["elapsed_seconds"] = round(
                 elapsed_before + time.monotonic() - started, 3
             )
-            save(path, state)
+            save(path, state, writer=self.state_writer)
 
         def timeout() -> float:
             remaining = self.limits["max_seconds"] - (
@@ -351,6 +363,8 @@ class Engine:
                     > self.limits["max_context_chars"]
                 ):
                     raise ContractError("Selected skills exceed context budget.")
+                if self.mutation_writer is not None:
+                    ctx["mutation_writer"] = self.mutation_writer
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
                     approval = {
                         "id": new_id(), "tool": tool, "arguments": arguments,

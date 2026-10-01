@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools==84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,10 +7,11 @@ name = "company-agentkit"
 version = "0.1.0"
 description = "Skill-based company agent templates with a bounded dynamic workflow"
 requires-python = ">=3.11"
-dependencies = ["PyYAML>=6.0.2,<7", "jsonschema>=4.23,<5", "pypdf>=6.19,<7", "defusedxml>=0.7.1,<1", "pytest>=9.0.2,<10"]
+dependencies = ["PyYAML>=6.0.2,<7", "jsonschema>=4.23,<5", "pypdf>=6.19,<7", "defusedxml>=0.7.1,<1"]
 
 [project.optional-dependencies]
-e2e = ["playwright==1.60.0"]
+execution = ["pytest==9.0.2"]
+e2e = ["playwright==1.60.0", "cryptography==50.0.2"]
 
 [project.scripts]
 agentkit = "agentkit.cli:main"

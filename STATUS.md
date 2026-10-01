@@ -2,17 +2,40 @@
 schema: agent-status/v1
 project: agenten-vorlage
 status: active
-last_updated: "2026-09-30"
+last_updated: "2026-10-01"
 ---
 
 # AI Studio — Projektstatus
 
 ## Aktueller Auftrag
 
-Ein benutzbares lokales AI-Produkt nach dem Vorbild von Open-Dots aufbauen. AgentKit
-bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrennt.
+AI Studio zusätzlich als öffentlich erreichbaren, sicheren Single-Tenant-
+Mehrbenutzerbetrieb auslieferbar machen. AgentKit bleibt der portable Ausführungskern;
+Rollen, Skills und Runtime bleiben getrennt.
 
 ## Letzter bestätigter Stand
+
+- Öffentlicher Release-Candidate: OIDC-Proxy-Vertrauensgrenze, exakter HTTPS-Origin,
+  sitzungsgebundenes CSRF, Rollen (`viewer`, `member`, `reviewer`, `tenant_admin`),
+  Nutzer-/Tenant-Rate-Limits, tenantweites Worker-Budget, Gesamt-Nutzerspeichergrenzen
+  mit einem atomaren Writer für Bytes, Dateien und Verzeichnisse sowie generische
+  Fehlerantworten.
+- Jeder authentifizierte Nutzer erhält opake, HMAC-abgeleitete Verzeichnisse mit
+  getrennten Agenten-Snapshots, Workspaces und Zuständen. API und UI verwenden nur
+  Ressourcen-IDs; Cross-User- und Cross-Tenant-Zugriffe liefern 404.
+- Öffentliche Ausführung ist bewusst auf `demo` und optional serververwaltetes
+  DeepSeek mit `list_files`, `read_file`, `write_file` und `edit_file` begrenzt.
+  Codex, `run_pytest`, beliebiger Fremdcode, lokale Hostpfade sowie Dokument-/Bildparser
+  sind im öffentlichen Modus gesperrt; Anhänge sind begrenzte Textdateien.
+- HMAC-verkettetes, größenbegrenztes Audit wird beim Start vollständig verifiziert;
+  fehlender Log-, lokaler oder Volume-Initialisierungsmarker lässt den Start scheitern.
+  Der Container-Stack
+  veröffentlicht nur den TLS-Proxy, verlangt unveränderliche Image-Digests für Basis-
+  und Proxy-Images und startet die App read-only, ohne Privilegien oder Docker-Socket.
+- Der Quellstand und die HTTP-Verträge sind lokal geprüft. Eine reale Internetfreigabe
+  bleibt bis zur Abnahme der konkreten OIDC-/TLS-Konfiguration, Backups, Lastgrenzen,
+  DeepSeek-Verbindung (falls aktiviert) und eines unabhängigen Security-/Pentests offen.
+  Details: `docs/PUBLIC-DEPLOYMENT.md` und `docs/PRODUCT-READINESS.md`.
 
 - AI Studio: Assistenten anlegen, Profil/Vorgaben, Backend/Modell, Workspace, Auftragsverlauf.
 - Assistenten-Vorgaben bearbeiten: revisionsgesichertes SOUL.md, atomisches Speichern,
@@ -33,14 +56,16 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
 - DeepSeek erzwingt Read-only, Toolbudget und Deadline. Tests laufen ohne Server-Secrets
   in der Umgebung; Prozessbäume werden bei Timeout beendet.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Testsuite: 245 Tests in 97,074 Sekunden ohne
-  Coverage-Instrumentierung, Status OK;
-  ein erwarteter Windows-Symlink-Test wurde mangels Berechtigung übersprungen.
-  Drei isolierte Chromium-Journeys prüfen Navigation, Accessibility/Reflow,
-  Assistentenarchivierung sowie Demo-Freigaben, Review-Recovery, Download und Reload.
+- Aktuelle vollständige Testsuite: 314 Tests in 201,690 Sekunden mit
+  Branch-Coverage-Instrumentierung, Status OK;
+  drei Windows-Symlink-Tests wurden mangels Berechtigung erwartbar übersprungen.
+  Fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Navigation,
+  Accessibility/Reflow, Nutzertrennung, Assistentenarchivierung sowie Demo-Freigaben,
+  Review-Recovery, Download und Reload.
   Gemessene kombinierte Line-/Branch-Coverage: 80 %; diese Zahl ist ein
   Regressionssignal und keine Produktreifequote. Ruff, Bandit ohne mittlere/hohe
-  Befunde, Dependency-Audit ohne bekannte CVEs, zehn Workflow-Trace-Szenarien und
+  Befunde, isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs, zehn
+  Workflow-Trace-Szenarien und
   19/19 Offline-Release-Checks mit
   `--windows-ocr` bestanden (`offline_only=true`, `model_tested=false`); reale
   Luna-Nachweise sind separat dokumentiert.
@@ -162,9 +187,9 @@ bleibt der portable Ausführungskern; Rollen, Skills und Runtime bleiben getrenn
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 245 Tests in 97,074 Sekunden ohne
-  Coverage-Instrumentierung, OK, ein erwarteter
-  Symlink-Skip; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
+  Aktuelle vollständige Suite: 314 Tests in 201,690 Sekunden mit
+  Branch-Coverage-Instrumentierung, OK, drei erwartete
+  Symlink-Skips; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.
   Die historische direkte Host-Lesesperre wird ohne ACL-Änderung oder Sandbox-Bypass
   durch den begrenzten read-only-Export behandelt. Globale CLI unverändert;
@@ -191,13 +216,17 @@ approvals vor dem Upgrade werden fail-closed verworfen und neu geplant.
 
 - Authentifizierte beziehungsweise breite Schreibconnectoren.
 - Visuelle Bildanalyse und OCR gescannter PDFs.
-- Mehrbenutzerbetrieb und öffentliche Bereitstellung.
+- Horizontal skalierter Mehrmandantenbetrieb mit externer Queue/Datenbank.
+- Öffentliche Ausführung von Codex, Tests oder anderem Fremdcode; dafür fehlt noch
+  ein nachweislich isolierter Worker.
 - Eine hostile-web-gehärtete Computer-Sandbox; Computeraufgaben sind optional.
 
 ## Grenzen
 
 Freigegebener lokaler Single-Owner-MVP mit 100 % des verbindlichen Umfangs.
-Keine Freigabe für Public Deployment oder Mehrbenutzerbetrieb.
+Der öffentliche Single-Tenant-Mehrbenutzermodus ist ein lokal geprüfter
+Release-Candidate innerhalb des sicheren Text-/Datei-Scope. Er ist keine pauschale
+Freigabe einer konkreten Internetinstallation; deren externe Go-live-Gates sind offen.
 Historische production-Markierungen einzelner Packs sind keine Produktfreigabe.
 Keine Credentials in Statusdateien. Keine Deploy-/Outreach-/BMD-Freigabe ableiten.
 Externer AI-Company-Checkout blieb unverändert. Kein Upstream-Code übernommen.

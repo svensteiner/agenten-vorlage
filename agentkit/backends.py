@@ -241,7 +241,7 @@ def _validate_tool_path_text(relative: object) -> str:
             or "\x00" in relative or "\\" in relative):
         raise ContractError("Tool path must be a bounded portable relative path.")
     parts = relative.split("/")
-    if Path(relative).is_absolute() or any(
+    if len(parts) > 16 or Path(relative).is_absolute() or any(
         not part or part in {".", ".."} or part.casefold() in INTERNAL_WORKSPACE_SEGMENTS
         for part in parts
     ):
@@ -490,7 +490,8 @@ class CodexBackend:
                     "assignment": decision,
                     "context": {key: value for key, value in context.items()
                                 if key not in {"request_approval", "record_completed_action",
-                                               "approval_resume", "approved_action", "sandbox"}},
+                                               "approval_resume", "approved_action", "sandbox",
+                                               "mutation_writer"}},
                     "completed_action_replay_sha256": completed_digests,
                     "action_history": action_history,
                     "report_schema": schema("report"),
@@ -572,7 +573,7 @@ class CodexBackend:
                     "assignment": decision,
                     "context": {key: value for key, value in context.items()
                                 if key not in {"request_approval", "record_completed_action",
-                                               "approval_resume"}},
+                                               "approval_resume", "mutation_writer"}},
                     "report_schema": schema("report"),
                 },
                 ensure_ascii=False,
@@ -699,6 +700,7 @@ class DeepSeekBackend:
     max_tool_calls = 48
     max_message_chars = 400_000
     max_continuation_chars = 450_000
+    supported_tools = frozenset({"list_files", "read_file", "write_file", "edit_file", "run_pytest"})
 
     def __init__(
         self,
@@ -706,7 +708,12 @@ class DeepSeekBackend:
         *,
         api_key: str | None = None,
         base_url: str | None = None,
+        allowed_tools: set[str] | frozenset[str] | None = None,
     ):
+        selected_tools = set(self.supported_tools) if allowed_tools is None else set(allowed_tools)
+        if not selected_tools <= self.supported_tools:
+            raise ContractError("DeepSeek execution policy contains an unsupported tool.")
+        self.allowed_tools = frozenset(selected_tools)
         self.api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "").strip()
         self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
         configured_url = (
@@ -818,6 +825,13 @@ class DeepSeekBackend:
             specs = [s for s in specs if s["function"]["name"] in {"list_files", "read_file"}]
         return specs
 
+    def available_tool_specs(self, sandbox: str = "read-only") -> list[dict]:
+        """Return only tools admitted by this backend instance's execution policy."""
+        return [
+            spec for spec in self._tool_specs(sandbox)
+            if spec["function"]["name"] in self.allowed_tools
+        ]
+
     @staticmethod
     def _workspace_path(context: dict, relative: str) -> Path:
         relative = _validate_tool_path_text(relative)
@@ -836,7 +850,25 @@ class DeepSeekBackend:
                 raise ContractError("Tool path must not traverse links or junctions.")
         return safe_workspace_path(workspace, relative)
 
+    @staticmethod
+    def _write_mutation(context: dict, target: Path, data: bytes) -> None:
+        writer = context.get("mutation_writer")
+        if writer is None:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            workspace = Path(context.get("workspace", "")).resolve()
+            target = DeepSeekBackend._workspace_path(
+                context,
+                str(target.relative_to(workspace)).replace("\\", "/"),
+            )
+            _atomic_write_bytes(target, data)
+            return
+        if not callable(writer):
+            raise ContractError("Workspace mutation writer is invalid.")
+        writer(target, data)
+
     def _run_tool(self, name: str, arguments: dict, context: dict, timeout: float) -> str:
+        if name not in getattr(self, "allowed_tools", DeepSeekBackend.supported_tools):
+            raise ContractError("Tool is disabled by the execution policy.")
         if timeout <= 0:
             raise ContractError("DeepSeek tool deadline exhausted.")
         if name in {"write_file", "edit_file", "run_pytest"} and context.get("sandbox") != "workspace-write":
@@ -891,9 +923,7 @@ class DeepSeekBackend:
                             "hint": "Use edit_file with one exact old_text match.",
                         }
                     )
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target = self._workspace_path(context, arguments.get("path", ""))
-            _atomic_write_bytes(target, content.encode("utf-8"))
+            DeepSeekBackend._write_mutation(context, target, content.encode("utf-8"))
             return json.dumps({"written": str(target.relative_to(Path(context["workspace"]).resolve()))})
         if name == "edit_file":
             target = self._workspace_path(context, arguments.get("path", ""))
@@ -919,7 +949,11 @@ class DeepSeekBackend:
                 return json.dumps({"error": "edit_requires_one_match", "occurrences": occurrences})
             updated = text.replace(old_text, new_text)
             target = self._workspace_path(context, arguments.get("path", ""))
-            _atomic_write_bytes(target, updated.encode("utf-8-sig" if had_bom else encoding))
+            DeepSeekBackend._write_mutation(
+                context,
+                target,
+                updated.encode("utf-8-sig" if had_bom else encoding),
+            )
             return json.dumps({"edited": str(target.relative_to(Path(context["workspace"]).resolve()))})
         if name == "run_pytest":
             relative = arguments.get("path", "")
@@ -1150,7 +1184,11 @@ class DeepSeekBackend:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError("DeepSeek tool loop timed out.")
-            message = self._chat(messages, remaining, tools=self._tool_specs(context.get("sandbox", "read-only")) if use_tools else None)
+            message = self._chat(
+                messages,
+                remaining,
+                tools=self.available_tool_specs(context.get("sandbox", "read-only")) if use_tools else None,
+            )
             tool_calls = message.get("tool_calls")
             if isinstance(tool_calls, list) and tool_calls:
                 if not use_tools:
@@ -1246,12 +1284,38 @@ class DeepSeekBackend:
             raise TypeError("Tool arguments must be an object")
         return result
 
+    @staticmethod
+    def _provider_context(context: dict) -> dict:
+        """Remove local control-plane details before serializing model context."""
+        workspace = str(context.get("workspace", ""))
+        aliases = {workspace}
+        if workspace:
+            aliases.add(str(Path(workspace).resolve()))
+
+        def sanitize(value):
+            if isinstance(value, dict):
+                return {
+                    key: sanitize(item)
+                    for key, item in value.items()
+                    if key not in {"request_approval", "record_completed_action", "approval_resume",
+                                   "mutation_writer"}
+                }
+            if isinstance(value, list):
+                return [sanitize(item) for item in value]
+            if isinstance(value, str):
+                for alias in sorted((item for item in aliases if item), key=len, reverse=True):
+                    value = value.replace(alias, "<assigned-workspace>")
+                return value
+            return value
+
+        return sanitize(context)
+
     def decide(self, context: dict, timeout: float) -> dict:
         prompt = (
             "Choose exactly one next action for this bounded dynamic workflow. "
             "Do not implement or spawn agents. Use only registered roles and assigned skills. "
             "Return a decision JSON object. review_pending requires a reviewer after the last edit.\n"
-            + json.dumps(context, ensure_ascii=False)
+            + json.dumps(self._provider_context(context), ensure_ascii=False)
         )
         return self._call(prompt, "decision", context, timeout)
 
@@ -1263,10 +1327,10 @@ class DeepSeekBackend:
             "concise one before changing source code, then update it after each meaningful run with "
             "evidence, blockers and the next action. "
             "Do not publish, deploy, message, purchase or delete unrelated files.\n"
-            + json.dumps({"assignment": decision, "context": {
-                key: value for key, value in context.items()
-                if key not in {"request_approval", "record_completed_action", "approval_resume"}
-            }}, ensure_ascii=False)
+            + json.dumps(
+                {"assignment": decision, "context": self._provider_context(context)},
+                ensure_ascii=False,
+            )
         )
         return self._call(prompt, "report", context, timeout)
 
@@ -1380,10 +1444,7 @@ class DemoBackend:
                     or approved.get("action_sha256") != action_digest("write_file", arguments)):
                 raise ContractError("Demo continuation does not match the approved action.")
         if decision["role"] == writer:
-            target.write_text(
-                content,
-                encoding="utf-8",
-            )
+            DeepSeekBackend._write_mutation(context, target, content.encode("utf-8"))
             status, summary = (
                 "success",
                 "Demo artifact written; this is not a real coding task.",

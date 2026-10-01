@@ -9,16 +9,18 @@ import json
 import os
 import re
 import copy
+import shutil
 import sys
 import threading
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import unquote, urlparse, parse_qs, quote
 
 TEMPLATE_ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +34,7 @@ from agentkit.contracts import ContractError  # noqa: E402
 from agentkit.engine import Engine  # noqa: E402
 from agentkit.scaffold import create  # noqa: E402
 from agentkit.contracts import LIBRARY, read_json  # noqa: E402
-from agentkit.storage import lock  # noqa: E402
+from agentkit.storage import lock, save  # noqa: E402
 from cockpit.conversations import Conversations  # noqa: E402
 from cockpit.providers import ProviderSettings  # noqa: E402
 from cockpit.assistant_settings import AssistantSettings  # noqa: E402
@@ -77,16 +79,58 @@ class Job:
 
 
 class JobManager:
-    def __init__(self, template_root: Path = TEMPLATE_ROOT, state_dir: Path | None = None, max_active: int = 4):
+    def __init__(
+        self,
+        template_root: Path = TEMPLATE_ROOT,
+        state_dir: Path | None = None,
+        max_active: int = 4,
+        *,
+        agent_roots: tuple[Path, ...] | None = None,
+        generated_root: Path | None = None,
+        workspace_root: Path | None = None,
+        public_mode: bool = False,
+        allowed_backends: set[str] | frozenset[str] | None = None,
+        provider_api_key: str | None = None,
+        worker_semaphore: threading.BoundedSemaphore | None = None,
+        mutation_writer: Callable[[Path, bytes], None] | None = None,
+        storage_writer: Callable[[Path, bytes], None] | None = None,
+    ):
         self.template_root = template_root.resolve()
-        self.agent_roots = (
-            self.template_root / "agents",
-            self.template_root / "generated",
+        self.agent_roots = tuple(
+            root.resolve() for root in (agent_roots or (
+                self.template_root / "agents",
+                self.template_root / "generated",
+            ))
         )
+        if not self.agent_roots:
+            raise ValueError("At least one assistant root is required.")
+        self.generated_root = (generated_root or self.template_root / "generated").resolve()
+        if self.generated_root not in self.agent_roots:
+            raise ValueError("The generated assistant root must be a registered assistant root.")
+        self.workspace_root = workspace_root.resolve() if workspace_root is not None else None
+        self.public_mode = bool(public_mode)
+        if self.public_mode and self.workspace_root is None:
+            raise ValueError("Public mode requires a server-controlled workspace root.")
+        self.allowed_backends = frozenset(allowed_backends or {"demo", "codex", "deepseek"})
+        if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek"}:
+            raise ValueError("allowed_backends contains an unsupported backend.")
+        if provider_api_key is not None and (
+            not isinstance(provider_api_key, str)
+            or not provider_api_key.strip()
+            or len(provider_api_key) > 500
+        ):
+            raise ValueError("provider_api_key must be bounded non-empty text.")
+        self._provider_api_key = provider_api_key.strip() if provider_api_key is not None else None
+        self._worker_semaphore = worker_semaphore
+        self._mutation_writer = mutation_writer
+        self._storage_writer = storage_writer
         self.state_dir = (state_dir or self.template_root / "cockpit" / ".runs").resolve()
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.providers = ProviderSettings(self.state_dir)
-        self.assistant_settings = AssistantSettings(self.state_dir)
+        self.assistant_settings = AssistantSettings(
+            self.state_dir,
+            storage_writer=self._storage_writer,
+        )
         self.jobs: dict[str, Job] = {}
         self.max_active = max_active
         self._lock = threading.Lock()
@@ -105,6 +149,9 @@ class JobManager:
             "created_at": job.created_at,
         }
         target = self._job_file(job.job_id)
+        if self._storage_writer is not None:
+            save(target, payload, writer=self._storage_writer)
+            return
         fd, temporary = tempfile.mkstemp(prefix=f".{job.job_id}.", suffix=".tmp", dir=self.state_dir)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
@@ -151,6 +198,25 @@ class JobManager:
             self._persist(job)
 
     def _agent_path(self, value: str) -> Path:
+        if getattr(self, "public_mode", False):
+            if not isinstance(value, str) or not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,127}", value):
+                raise ContractError("Assistant must be a canonical assistant id.")
+            matches: list[Path] = []
+            for root in self.agent_roots:
+                candidate = root / value
+                if candidate.is_symlink() or (hasattr(os.path, "isjunction") and os.path.isjunction(candidate)):
+                    continue
+                try:
+                    resolved = candidate.resolve()
+                    if resolved.parent != root or not (resolved / "agent.json").is_file():
+                        continue
+                    if Catalog(resolved).config["id"] == value:
+                        matches.append(resolved)
+                except (ContractError, OSError, ValueError):
+                    continue
+            if len(matches) != 1:
+                raise ContractError("Assistant id is missing or ambiguous.")
+            return matches[0]
         candidate = Path(value).expanduser()
         if not candidate.is_absolute():
             candidate = self.template_root / candidate
@@ -160,6 +226,18 @@ class JobManager:
         if not (candidate / "agent.json").is_file():
             raise ContractError("Agent pack is missing agent.json.")
         return candidate
+
+    def _agent_reference(self, path: Path) -> str:
+        return Catalog(path).config["id"] if self.public_mode else str(path)
+
+    def _workspace_reference(self, path: Path) -> str:
+        if not self.public_mode:
+            return str(path)
+        assert self.workspace_root is not None
+        relative = path.relative_to(self.workspace_root)
+        if len(relative.parts) != 1:
+            raise ContractError("Workspace must be a registered top-level workspace.")
+        return relative.as_posix()
 
     def _instruction_agent(self, value: str) -> Path:
         """Resolve only a registered, direct child assistant pack."""
@@ -172,10 +250,9 @@ class JobManager:
             raise ContractError("Assistant pack is invalid.") from exc
         return agent
 
-    @staticmethod
-    def _instruction_result(agent: Path, document) -> dict[str, Any]:
+    def _instruction_result(self, agent: Path, document) -> dict[str, Any]:
         config = Catalog(agent).config
-        return {"agent": str(agent), "id": config["id"], "text": document.text, "revision": document.revision}
+        return {"agent": self._agent_reference(agent), "id": config["id"], "text": document.text, "revision": document.revision}
 
     def _instruction_guard(self, agent: Path) -> None:
         """Reject edits while an old run could still reread SOUL.md."""
@@ -238,11 +315,8 @@ class JobManager:
                 if not isinstance(payload, dict) or not isinstance(payload.get("agent"), str):
                     raise InstructionConflict("Instruction edit is blocked by a job with unknown assistant binding.")
                 try:
-                    payload_path = Path(payload["agent"]).expanduser()
-                    if not payload_path.is_absolute():
-                        payload_path = self.template_root / payload_path
-                    payload_agent = str(payload_path.resolve())
-                except OSError as exc:
+                    payload_agent = str(self._agent_path(payload["agent"]))
+                except (ContractError, OSError) as exc:
                     raise InstructionConflict("Instruction edit is blocked by a job with unknown assistant binding.") from exc
                 bound = payload_agent == canonical
                 if not bound:
@@ -314,13 +388,29 @@ class JobManager:
                     return self._instruction_result(path, current)
                 self._instruction_guard(path)
                 return self._instruction_result(
-                    path, replace_document(path, payload["text"], payload["revision"])
+                    path,
+                    replace_document(
+                        path,
+                        payload["text"],
+                        payload["revision"],
+                        storage_writer=self._storage_writer,
+                    ),
                 )
 
-    @staticmethod
-    def _workspace_path(value: str) -> Path:
+    def _workspace_path(self, value: str) -> Path:
         if not isinstance(value, str) or not value.strip():
             raise ContractError("Workspace is required.")
+        if getattr(self, "public_mode", False):
+            if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,63}", value):
+                raise ContractError("Workspace must be a canonical workspace id.")
+            assert self.workspace_root is not None
+            candidate = self.workspace_root / value
+            if candidate.is_symlink() or (hasattr(os.path, "isjunction") and os.path.isjunction(candidate)):
+                raise ContractError("Workspace links are not allowed in public mode.")
+            workspace = candidate.resolve()
+            if workspace.parent != self.workspace_root or not workspace.is_dir():
+                raise ContractError("Workspace must be a registered top-level workspace.")
+            return workspace
         workspace = Path(value).expanduser().resolve()
         if not workspace.is_dir():
             raise ContractError("Workspace must be an existing directory.")
@@ -344,7 +434,7 @@ class JobManager:
                         "id": config["id"],
                         "company": config["company"],
                         "profile": config["profile"],
-                        "path": str(agent_json.parent),
+                        "path": self._agent_reference(agent_json.parent.resolve()),
                         "roles": len(config["roles"]),
                         "skills": len(catalog.skills),
                         "archived": archived,
@@ -361,13 +451,28 @@ class JobManager:
         if len(instructions) > 10_000:
             raise ContractError("Instructions are too large.")
         with self._lock:
-            target = create(self.template_root / "generated" / name, profile, name, company)
-            if instructions.strip():
-                soul = target / "SOUL.md"
-                with lock(target / ".instructions.lock"):
-                    with soul.open("a", encoding="utf-8") as handle:
-                        handle.write("\n\n## Owner instructions\n\n" + instructions.strip() + "\n")
-        return next(agent for agent in self.agents(include_archived=True) if agent["path"] == str(target))
+            target = create(
+                self.generated_root / name,
+                profile,
+                name,
+                company,
+                storage_writer=self._storage_writer,
+            )
+            try:
+                if instructions.strip():
+                    soul = target / "SOUL.md"
+                    addition = "\n\n## Owner instructions\n\n" + instructions.strip() + "\n"
+                    with lock(target / ".instructions.lock"):
+                        if self._storage_writer is None:
+                            with soul.open("a", encoding="utf-8") as handle:
+                                handle.write(addition)
+                        else:
+                            self._storage_writer(soul, soul.read_bytes() + addition.encode("utf-8"))
+            except Exception:
+                shutil.rmtree(target, ignore_errors=True)
+                raise
+        reference = self._agent_reference(target)
+        return next(agent for agent in self.agents(include_archived=True) if agent["path"] == reference)
 
     def archive_agent(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict) or set(payload) != {"agent", "archived"}:
@@ -376,7 +481,7 @@ class JobManager:
             raise ContractError("agent must be text and archived must be boolean.")
         agent = self._agent_path(payload["agent"])
         registered = next((item for item in self.agents(include_archived=True)
-                           if Path(item["path"]).resolve() == agent), None)
+                           if self._agent_path(item["path"]) == agent), None)
         if registered is None:
             raise ContractError("Assistant path is not a registered top-level assistant pack.")
         self.assistant_settings.set_archived(agent, payload["archived"])
@@ -390,6 +495,8 @@ class JobManager:
             agent_path = self._agent_path(job.payload["agent"])
             workspace = self._workspace_path(job.payload["workspace"])
             backend_name = job.payload.get("backend", "demo")
+            if backend_name not in self.allowed_backends:
+                raise ContractError("Backend is disabled by the execution isolation policy.")
             model = job.payload.get("model") or None
             backend_type = {
                 "demo": DemoBackend,
@@ -399,10 +506,20 @@ class JobManager:
             if backend_type is None:
                 raise ContractError(f"Unknown backend: {backend_name}")
             if backend_name == "deepseek":
-                key = self.providers.api_key()
+                key = self._provider_api_key if self.public_mode else self.providers.api_key()
                 if not key:
                     raise ContractError("DeepSeek ist nicht eingerichtet. Bitte Provider-Einstellungen öffnen.")
-                backend = DeepSeekBackend(model, api_key=key, base_url="https://api.deepseek.com")
+                allowed_tools = (
+                    {"list_files", "read_file", "write_file", "edit_file"}
+                    if self.public_mode else None
+                )
+                backend_kwargs: dict[str, Any] = {
+                    "api_key": key,
+                    "base_url": "https://api.deepseek.com",
+                }
+                if allowed_tools is not None:
+                    backend_kwargs["allowed_tools"] = allowed_tools
+                backend = DeepSeekBackend(model, **backend_kwargs)
             else:
                 backend = DemoBackend() if backend_name == "demo" else backend_type(model)
             run_id = job.payload["run_id"]
@@ -412,7 +529,9 @@ class JobManager:
             run_dir = checkpoint if (checkpoint / "state.json").is_file() else None
             result = Engine(agent_path, workspace, backend,
                             require_approvals=backend_name in {"codex", "deepseek"} or job.payload.get("require_approvals", False),
-                            core_snapshot=job.payload.get("core_snapshot")).run(
+                            core_snapshot=job.payload.get("core_snapshot"),
+                            mutation_writer=self._mutation_writer,
+                            state_writer=self._storage_writer).run(
                 job.payload.get("execution_task", job.payload["task"]),
                 run_dir=run_dir,
                 new_run_id=run_id if run_dir is None else None,
@@ -447,6 +566,8 @@ class JobManager:
         require_approvals = backend_name in {"codex", "deepseek"} or payload.get("require_approvals", False)
         if backend_name not in {"demo", "codex", "deepseek"}:
             raise ContractError("Unknown backend.")
+        if backend_name not in self.allowed_backends:
+            raise ContractError("Backend is disabled by the execution isolation policy.")
         if len(payload.get("model", "")) > 200:
             raise ContractError("Model name is too large.")
         task = payload.get("task")
@@ -455,7 +576,9 @@ class JobManager:
         if len(task) > 20_000:
             raise ContractError("Task is too large.")
         agent_path = self._agent_path(str(payload.get("agent", "")))
-        self._workspace_path(str(payload.get("workspace", "")))
+        workspace_path = self._workspace_path(str(payload.get("workspace", "")))
+        agent_reference = self._agent_reference(agent_path)
+        workspace_reference = self._workspace_reference(workspace_path)
         request_id = payload.get("request_id", "")
         if request_id and not re.fullmatch(r"[0-9a-f]{32}", request_id):
             raise ContractError("request_id must be 32 lowercase hexadecimal characters.")
@@ -469,7 +592,7 @@ class JobManager:
                 # reread SOUL.md after the first reservation.
                 fields = ("agent", "workspace", "backend", "model", "task", "parent_job_id", "conversation_id")
                 proposed = {
-                    "agent": str(agent_path), "workspace": str(Path(payload["workspace"]).expanduser().resolve()),
+                    "agent": agent_reference, "workspace": workspace_reference,
                     "backend": str(payload.get("backend", "demo")), "model": str(payload.get("model", "")),
                     "task": task.strip(), "parent_job_id": payload.get("parent_job_id", ""),
                     "conversation_id": conversation_id,
@@ -499,11 +622,11 @@ class JobManager:
                 job = Job(
                     job_id,
                     {
-                        "agent": str(agent_path),
+                        "agent": agent_reference,
                         "run_id": uuid.uuid4().hex,
                         "backend": str(payload.get("backend", "demo")),
                         "model": str(payload.get("model", "")),
-                        "workspace": str(Path(payload["workspace"]).expanduser().resolve()),
+                        "workspace": workspace_reference,
                         "task": task.strip(),
                         "parent_job_id": payload.get("parent_job_id", ""),
                         "conversation_id": conversation_id,
@@ -533,10 +656,14 @@ class JobManager:
                         + "\n\nCurrent user task:\n" + task.strip()
                     )
                 self._check_capacity()
-                self._persist(job)
-                self.jobs[job_id] = job
-                job.thread = threading.Thread(target=self._run, args=(job,), daemon=True)
-                job.thread.start()
+                reserved = self._reserve_worker()
+                try:
+                    self._persist(job)
+                    self.jobs[job_id] = job
+                except Exception:
+                    self._release_worker(reserved)
+                    raise
+                self._launch(job, reserved)
                 return job
 
     def get(self, job_id: str) -> Job | None:
@@ -549,9 +676,48 @@ class JobManager:
         with self._lock:
             return sorted(self.jobs.values(), key=lambda job: job.created_at, reverse=True)[:limit]
 
+    def wait_for_workers(self, timeout: float) -> bool:
+        """Wait a bounded time for already-dispatched workers to release files."""
+
+        deadline = time.monotonic() + max(0.0, timeout)
+        with self._lock:
+            threads = [job.thread for job in self.jobs.values() if job.thread is not None]
+        for thread in threads:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            thread.join(remaining)
+        return all(not thread.is_alive() for thread in threads)
+
     def _check_capacity(self) -> None:
         if sum(job.status in {"queued", "running"} for job in self.jobs.values()) >= self.max_active:
             raise ContractError("All worker slots are busy. Wait for an active task to finish.")
+
+    def _reserve_worker(self) -> bool:
+        semaphore = self._worker_semaphore
+        if semaphore is None:
+            return False
+        if not semaphore.acquire(blocking=False):
+            raise ContractError("All tenant worker slots are busy. Wait for an active task to finish.")
+        return True
+
+    def _release_worker(self, reserved: bool) -> None:
+        if reserved and self._worker_semaphore is not None:
+            self._worker_semaphore.release()
+
+    def _run_reserved(self, job: Job, reserved: bool) -> None:
+        try:
+            self._run(job)
+        finally:
+            self._release_worker(reserved)
+
+    def _launch(self, job: Job, reserved: bool) -> None:
+        job.thread = threading.Thread(target=self._run_reserved, args=(job, reserved), daemon=True)
+        try:
+            job.thread.start()
+        except Exception:
+            self._release_worker(reserved)
+            raise
 
     def snapshot(self, job: Job) -> dict[str, Any]:
         with self._lock:
@@ -564,15 +730,102 @@ class JobManager:
                 value["result"] = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, ValueError, ContractError):
                 pass
+        if self.public_mode:
+            value["result"] = self._public_result(value.get("result"), payload)
+            value["error"] = self._public_redact(value.get("error", ""), payload)
         return value
 
+    def _public_redact(self, value: Any, payload: dict[str, Any]) -> Any:
+        """Remove host path identities recursively from a public response value."""
+        replacements: list[tuple[re.Pattern[str], str, int]] = []
+
+        def add_path(path: Path, replacement: str) -> None:
+            private = str(path)
+            normalized = private.replace("\\", "/")
+            pattern = re.escape(normalized).replace("/", r"[\\/]")
+            flags = re.IGNORECASE if os.name == "nt" else 0
+            replacements.append((re.compile(pattern, flags), replacement, len(private)))
+
+        try:
+            add_path(self._agent_path(payload.get("agent", "")), str(payload.get("agent", "")))
+        except (ContractError, OSError, ValueError):
+            pass
+        try:
+            add_path(self._workspace_path(payload.get("workspace", "")), str(payload.get("workspace", "")))
+        except (ContractError, OSError, ValueError):
+            pass
+        if self.workspace_root is not None:
+            add_path(self.workspace_root.parent, "<private-user-root>")
+        for root in self.agent_roots:
+            add_path(root, "<private-agent-root>")
+        replacements.sort(key=lambda item: item[2], reverse=True)
+
+        def redact(item: Any) -> Any:
+            if isinstance(item, str):
+                for pattern, public, _length in replacements:
+                    item = pattern.sub(lambda _match, replacement=public: replacement, item)
+                return item
+            if isinstance(item, list):
+                return [redact(child) for child in item]
+            if isinstance(item, dict):
+                return {str(key): redact(child) for key, child in item.items()}
+            return item
+
+        return redact(value)
+
+    def _public_result(self, result: Any, payload: dict[str, Any]) -> dict[str, Any] | None:
+        if not isinstance(result, dict):
+            return None
+        allowed = {
+            key: copy.deepcopy(result[key])
+            for key in (
+                "version", "run_id", "agent", "company", "backend", "status", "summary",
+                "history", "steps", "failures", "elapsed_seconds", "dirty", "reviewed",
+                "require_approvals",
+            )
+            if key in result
+        }
+        allowed["workspace"] = str(payload.get("workspace", ""))
+        in_flight = result.get("in_flight")
+        if isinstance(in_flight, dict):
+            allowed["in_flight"] = {
+                key: copy.deepcopy(in_flight[key])
+                for key in ("kind", "step", "decision")
+                if key in in_flight
+            }
+        else:
+            allowed["in_flight"] = None
+        pending = result.get("pending_approval")
+        if isinstance(pending, dict):
+            allowed["pending_approval"] = {
+                key: copy.deepcopy(pending[key])
+                for key in ("id", "tool", "arguments", "action_sha256")
+                if key in pending
+            }
+        else:
+            allowed["pending_approval"] = None
+        approvals = result.get("approvals")
+        if isinstance(approvals, list):
+            allowed["approvals"] = [
+                {
+                    key: copy.deepcopy(record[key])
+                    for key in ("id", "tool", "arguments", "decision", "at")
+                    if isinstance(record, dict) and key in record
+                }
+                for record in approvals
+                if isinstance(record, dict)
+            ]
+        return self._public_redact(allowed, payload)
+
     def configuration(self) -> dict[str, Any]:
-        readiness = codex_readiness()
+        readiness = {} if self.public_mode else codex_readiness()
         provider = self.provider_status()
-        codex_available = (readiness["installed"] and readiness["credentials_present"]
+        codex_available = ("codex" in self.allowed_backends and bool(readiness.get("installed"))
+                           and bool(readiness.get("credentials_present"))
                            and readiness.get("sandbox_configured", True))
-        return {"profiles": list(read_json(LIBRARY / "profiles.json")), "default_workspace": str(self.template_root / "workspace"), "backends": [
-            {"id": "demo", "label": "Offline-Demo", "available": True, "tool_approvals": True, "detail": "Deterministischer Funktionstest mit optionaler Freigabe der Dateiänderungen, kein Sprachmodell."},
+        default_workspace = "default" if self.public_mode else str(self.template_root / "workspace")
+        backends = [
+            {"id": "demo", "label": "Offline-Demo", "available": "demo" in self.allowed_backends, "tool_approvals": True, "detail": "Deterministischer Funktionstest mit optionaler Freigabe der Dateiänderungen, kein Sprachmodell."},
             {"id": "codex", "label": "Codex CLI", "available": codex_available,
              "readiness": readiness, "tool_approvals": True,
              "detail": "Lokale CLI und Zugangsdaten erkannt; Modellzugriff ist damit noch nicht bestätigt. Standard: gpt-5.6-luna mit niedrigem Reasoning und isolierter CLI-Konfiguration."
@@ -580,10 +833,24 @@ class JobManager:
                                      if not readiness.get("sandbox_configured", True)
                                      else "Lokale Codex-CLI oder Zugangsdaten fehlen. Erst installieren und anmelden."),
              "approval_detail": "Freigabemodus: Codex liefert read-only Vorschläge; ein allowlist-basierter Host-Executor führt freigegebene Aktionen aus. Die direkte Codex-CLI bietet keine per-tool interception."},
-            {"id": "deepseek", "label": "DeepSeek API", "available": provider["configured"], "tool_approvals": True, "readiness": provider, "detail": "API-Schlüssel in den Provider-Einstellungen einrichten. Modellzugriff ist erst durch einen erfolgreichen Auftrag bestätigt. Dateiänderungen und Tests benötigen eine konkrete Freigabe."},
-        ]}
+            {"id": "deepseek", "label": "DeepSeek API", "available": "deepseek" in self.allowed_backends and provider["configured"], "tool_approvals": True, "readiness": provider, "detail": "API-Schlüssel in den Provider-Einstellungen einrichten. Modellzugriff ist erst durch einen erfolgreichen Auftrag bestätigt. Dateiänderungen und Tests benötigen eine konkrete Freigabe."},
+        ]
+        if self.public_mode:
+            backends = [backend for backend in backends if backend["id"] in self.allowed_backends]
+        return {
+            "profiles": list(read_json(LIBRARY / "profiles.json")),
+            "default_workspace": default_workspace,
+            "public_multiuser": self.public_mode,
+            "backends": backends,
+        }
 
     def provider_status(self) -> dict[str, Any]:
+        if self.public_mode:
+            return {
+                "configured": bool(self._provider_api_key),
+                "source": "managed" if self._provider_api_key else "none",
+                "storage_available": False,
+            }
         try:
             return self.providers.status()
         except (ContractError, OSError, ValueError):
@@ -601,7 +868,8 @@ class JobManager:
         }
         if relative not in allowed:
             raise ContractError("Artifact was not reported by this task.")
-        path = safe_workspace_path(Path(job.payload["workspace"]), relative)
+        workspace = self._workspace_path(job.payload["workspace"])
+        path = safe_workspace_path(workspace, relative)
         try:
             with path.open("rb") as handle:
                 data = handle.read(2_000_001)
@@ -610,7 +878,7 @@ class JobManager:
         except PermissionError as exc:
             if job.payload.get("backend") != "codex":
                 raise ContractError("Artifact cannot be read.") from exc
-            data = read_codex_artifact(Path(job.payload["workspace"]), relative)
+            data = read_codex_artifact(workspace, relative)
         if len(data) > 2_000_000:
             raise ContractError("Artifact exceeds the 2 MB download limit; open it in the workspace.")
         return data
@@ -634,15 +902,19 @@ class JobManager:
             checkpoint = self._agent_path(job.payload["agent"]) / ".runs" / job.payload["run_id"] / "state.json"
             if not checkpoint.is_file() and not acknowledge_interruption:
                 raise ContractError("Missing checkpoint: inspect the workspace and acknowledge the unknown outcome before continuing.")
+            reserved = self._reserve_worker()
             job.payload["feedback"] = feedback.strip()
             job.payload.pop("approval_id", None)
             job.payload.pop("approval_decision", None)
             job.payload["acknowledge_interruption"] = bool(acknowledge_interruption)
             job.error = ""
             job.status = "queued"
-            self._persist(job)
-            job.thread = threading.Thread(target=self._run, args=(job,), daemon=True)
-            job.thread.start()
+            try:
+                self._persist(job)
+            except Exception:
+                self._release_worker(reserved)
+                raise
+            self._launch(job, reserved)
         return job
 
     def approval(self, job_id: str, approval_id: str, decision: str) -> Job:
@@ -672,13 +944,17 @@ class JobManager:
                     return job
                 raise ContractError("Approval is stale or the action outcome requires investigation.")
             self._check_capacity()
+            reserved = self._reserve_worker()
             job.payload.setdefault("approval_submissions", {})[approval_id] = decision
             job.payload.update(approval_id=approval_id, approval_decision=decision)
             job.error = ""
             job.status = "queued"
-            self._persist(job)
-            job.thread = threading.Thread(target=self._run, args=(job,), daemon=True)
-            job.thread.start()
+            try:
+                self._persist(job)
+            except Exception:
+                self._release_worker(reserved)
+                raise
+            self._launch(job, reserved)
         return job
 
 
@@ -689,8 +965,10 @@ def json_bytes(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False).encode("utf-8")
 
 
-def make_handler(manager: JobManager):
-    conversations = Conversations(manager)
+def make_handler(manager: JobManager | None, *, runtime_resolver=None):
+    if manager is None and runtime_resolver is None:
+        raise ValueError("A manager or public runtime resolver is required.")
+    local_conversations = Conversations(manager) if manager is not None else None
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "AgentKitCockpit/0.1"
@@ -713,7 +991,18 @@ def make_handler(manager: JobManager):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy", f"default-src 'self'; script-src {script_sources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            self.send_header("Content-Security-Policy", f"default-src 'self'; script-src {script_sources}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            for name, header_value in getattr(self, "_extra_response_headers", {}).items():
+                if name.lower() not in {
+                    "content-type", "content-length", "content-security-policy", "cache-control",
+                    "x-content-type-options", "x-frame-options", "referrer-policy",
+                }:
+                    self.send_header(name, header_value)
+            if not getattr(self, "_response_recorded", False):
+                callback = getattr(self, "_response_callback", None)
+                if callback is not None:
+                    callback(int(status))
+                self._response_recorded = True
             try:
                 self.end_headers()
                 self.wfile.write(body)
@@ -745,9 +1034,33 @@ def make_handler(manager: JobManager):
                 return False
             return True
 
+        def _prepare_request(self) -> bool:
+            # BaseHTTPRequestHandler may reuse one handler for a keep-alive
+            # connection. Response audit state is request-scoped.
+            self._response_recorded = False
+            self._response_callback = None
+            if runtime_resolver is None:
+                if not self._local_request():
+                    return False
+                self._active_manager = manager
+                self._active_conversations = local_conversations
+                return True
+            runtime = runtime_resolver(self)
+            if runtime is None:
+                return False
+            self._active_manager = runtime.manager
+            self._active_conversations = runtime.conversations
+            self._active_runtime = runtime
+            self._request_context = getattr(runtime, "context", None)
+            self._extra_response_headers = dict(getattr(runtime, "response_headers", {}))
+            self._response_callback = getattr(runtime, "response_callback", None)
+            return True
+
         def do_GET(self):  # noqa: N802
-            if not self._local_request():
+            if not self._prepare_request():
                 return
+            manager = self._active_manager
+            conversations = self._active_conversations
             parsed = urlparse(self.path)
             if parsed.path == "/favicon.ico":
                 self._send(HTTPStatus.NO_CONTENT, b"", "image/x-icon")
@@ -798,6 +1111,13 @@ def make_handler(manager: JobManager):
             if parsed.path == "/api/health":
                 self._send(HTTPStatus.OK, {"status": "ok", "local_only": True})
                 return
+            if parsed.path == "/api/session":
+                self._send(HTTPStatus.OK, {
+                    "authenticated": True,
+                    "public_multiuser": False,
+                    "csrf_token": "local-loopback",
+                })
+                return
             if parsed.path == "/api/config":
                 self._send(HTTPStatus.OK, manager.configuration())
                 return
@@ -830,8 +1150,10 @@ def make_handler(manager: JobManager):
             self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
 
         def do_POST(self):  # noqa: N802
-            if not self._local_request():
+            if not self._prepare_request():
                 return
+            manager = self._active_manager
+            conversations = self._active_conversations
             path = urlparse(self.path).path
             if path == "/api/agents/instructions":
                 try:
@@ -883,7 +1205,7 @@ def make_handler(manager: JobManager):
                 except (ContractError, OSError, ValueError) as exc:
                     self._send(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
-                self._send(HTTPStatus.ACCEPTED, job.public())
+                self._send(HTTPStatus.ACCEPTED, manager.snapshot(job))
                 return
             match = re.fullmatch(r"/api/conversations/([0-9a-f]{32})/messages", path)
             if path == "/api/conversations" or match:
@@ -923,7 +1245,7 @@ def make_handler(manager: JobManager):
                 except (ContractError, json.JSONDecodeError, OSError, ValueError) as exc:
                     self._send(HTTPStatus.BAD_REQUEST, {"error": f"{type(exc).__name__}: {exc}"})
                     return
-                self._send(HTTPStatus.ACCEPTED, job.public())
+                self._send(HTTPStatus.ACCEPTED, manager.snapshot(job))
                 return
             if path != "/api/jobs":
                 self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
@@ -933,7 +1255,7 @@ def make_handler(manager: JobManager):
             except (ContractError, json.JSONDecodeError, OSError, ValueError) as exc:
                 self._send(HTTPStatus.BAD_REQUEST, {"error": f"{type(exc).__name__}: {exc}"})
                 return
-            self._send(HTTPStatus.ACCEPTED, job.public())
+            self._send(HTTPStatus.ACCEPTED, manager.snapshot(job))
 
         def log_message(self, format: str, *args):
             return

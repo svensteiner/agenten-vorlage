@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - run: python -m pip install . ruff==0.15.5 coverage==7.13.5
+      - run: python -m pip install ".[execution]" ruff==0.15.5 coverage==7.13.5
       - run: python -m ruff check .
       - run: python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v
       - run: python -m coverage report --fail-under=75
@@ -71,7 +71,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install ".[e2e]"
       - run: python -m playwright install --with-deps chromium
-      - run: python -m unittest -v tests.test_browser_e2e
+      - run: python -m unittest -v tests.test_browser_e2e tests.test_public_browser_e2e
         env:
           E2E_ARTIFACT_DIR: ${{ runner.temp }}/agentkit-browser-evidence
       - if: always()
@@ -80,4 +80,109 @@ jobs:
           name: browser-e2e-evidence
           path: ${{ runner.temp }}/agentkit-browser-evidence
           if-no-files-found: warn
+
+  public-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install PyYAML==6.0.2
+      - run: python -m unittest -v tests.test_public_deployment
+      - name: Build the hash-locked public image
+        run: >-
+          docker build
+          --platform linux/amd64
+          --build-arg PYTHON_BASE_IMAGE=python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
+          --tag agentkit-public:ci
+          --file Dockerfile.public .
+      - name: Verify the public runtime excludes test execution dependencies
+        run: >-
+          docker run --rm --entrypoint python agentkit-public:ci
+          -c "import importlib.util; import cockpit.public_server; assert importlib.util.find_spec('pytest') is None"
+      - name: Validate Compose interpolation and file-backed secrets
+        shell: bash
+        run: |
+          set -eu
+          trap 'rm -rf deploy/public/secrets deploy/public/certs "$RUNNER_TEMP/agentkit-public.env"' EXIT
+          mkdir -p deploy/public/secrets deploy/public/certs
+          head -c 32 /dev/urandom > deploy/public/secrets/csrf_secret
+          head -c 32 /dev/urandom > deploy/public/secrets/identity_secret
+          head -c 32 /dev/urandom > deploy/public/secrets/session_cookie_secret
+          printf '{"deepseek_api_key":"ci-disabled"}\n' > deploy/public/secrets/provider_credentials.json
+          printf 'ci-oidc-client\n' > deploy/public/secrets/oidc_client_secret
+          printf 'ci-cert\n' > deploy/public/certs/tls.crt
+          printf 'ci-key\n' > deploy/public/certs/tls.key
+          cat > "$RUNNER_TEMP/agentkit-public.env" <<'EOF'
+          AGENTKIT_APP_IMAGE=registry.example.com/company/agentkit-public@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          AGENTKIT_OAUTH2_PROXY_IMAGE=quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          AGENTKIT_CADDY_IMAGE=caddy:2.11.4-alpine@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+          AGENTKIT_PUBLIC_HOST=agents.example.com
+          AGENTKIT_PUBLIC_ORIGIN=https://agents.example.com
+          AGENTKIT_PUBLIC_BACKENDS=demo
+          AGENTKIT_TENANT_ID=company
+          AGENTKIT_AUTH_ISSUER=https://identity.example.com/realms/company
+          AGENTKIT_AUTH_CLIENT_ID=agentkit-public
+          AGENTKIT_AUTH_ALLOWED_DOMAIN=example.com
+          AGENTKIT_AUTH_ALLOWED_GROUP=member
+          AGENTKIT_MAX_REQUESTS_PER_USER_PER_MINUTE=120
+          AGENTKIT_MAX_REQUESTS_PER_TENANT_PER_MINUTE=1000
+          AGENTKIT_MAX_CACHED_RUNTIMES=128
+          AGENTKIT_MAX_USERS_PER_TENANT=100
+          AGENTKIT_STORAGE_QUOTA_BYTES=268435456
+          AGENTKIT_STORAGE_QUOTA_FILES=10000
+          AGENTKIT_MAX_JOBS_PER_USER_PER_HOUR=20
+          AGENTKIT_MAX_JOBS_PER_TENANT_PER_HOUR=200
+          AGENTKIT_MAX_CONCURRENT_JOBS=4
+          AGENTKIT_MAX_ACTIVE_JOBS_PER_USER=2
+          AGENTKIT_MAX_HTTP_WORKERS=32
+          AGENTKIT_AUDIT_MAX_BYTES=8388608
+          EOF
+          python scripts/check_public_image_digests.py --env-file "$RUNNER_TEMP/agentkit-public.env"
+          docker compose --env-file "$RUNNER_TEMP/agentkit-public.env" \
+            -f deploy/public/docker-compose.production.yml config --quiet
+      - name: Start the public command as its image nonroot user
+        shell: bash
+        run: |
+          set -eu
+          data_dir="$RUNNER_TEMP/agentkit-public-data"
+          secret_dir="$RUNNER_TEMP/agentkit-public-secrets"
+          mkdir -p "$data_dir"
+          mkdir -p "$secret_dir"
+          chmod 0777 "$data_dir"
+          head -c 32 /dev/urandom > "$secret_dir/csrf_secret"
+          head -c 32 /dev/urandom > "$secret_dir/identity_secret"
+          printf '{"deepseek_api_key":"ci-disabled"}\n' > "$secret_dir/provider_credentials.json"
+          chmod 0644 "$secret_dir"/*
+          image_name=agentkit-public:ci
+          container_name=agentkit-public-ci
+          trap 'docker logs "$container_name" || true; docker rm -f "$container_name" >/dev/null 2>&1 || true' EXIT
+          docker run -d --platform linux/amd64 --name "$container_name" \
+            --user 10001:10001 --read-only --tmpfs /tmp:size=256m,noexec,nosuid,nodev \
+            -p 127.0.0.1:18766:8766 -v "$data_dir:/var/lib/agentkit" \
+            -v "$RUNNER_TEMP/agentkit-public-secrets/csrf_secret:/run/secrets/csrf_secret:ro" \
+            -v "$RUNNER_TEMP/agentkit-public-secrets/identity_secret:/run/secrets/identity_secret:ro" \
+            -v "$RUNNER_TEMP/agentkit-public-secrets/provider_credentials.json:/run/secrets/provider_credentials:ro" \
+            -e AGENTKIT_ENV=production -e AGENTKIT_PUBLIC=1 -e AGENTKIT_BIND=0.0.0.0 -e AGENTKIT_PORT=8766 \
+            -e AGENTKIT_DATA_DIR=/var/lib/agentkit -e AGENTKIT_PUBLIC_ORIGIN=https://agents.example.com \
+            -e AGENTKIT_PUBLIC_BACKENDS=demo -e AGENTKIT_TENANT_ID=company \
+            -e AGENTKIT_TRUSTED_PROXY_CIDRS=127.0.0.1/32 \
+            -e AGENTKIT_IDENTITY_USER_HEADER=X-Forwarded-Email -e AGENTKIT_IDENTITY_ROLES_HEADER=X-Forwarded-Groups \
+            -e AGENTKIT_CSRF_SECRET_FILE=/run/secrets/csrf_secret \
+            -e AGENTKIT_IDENTITY_SECRET_FILE=/run/secrets/identity_secret \
+            -e AGENTKIT_PROVIDER_CREDENTIALS_FILE=/run/secrets/provider_credentials \
+            "$image_name"
+          test "$(docker inspect --format '{{.Config.User}}' "$container_name")" = '10001:10001'
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:18766/api/readiness; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'public image did not become ready' >&2
+          exit 1
 

@@ -16,6 +16,12 @@ from agentkit.storage import save
 from cockpit.attachments import Attachments
 
 
+_PUBLIC_TEXT_EXTENSIONS = frozenset({
+    "txt", "md", "csv", "json", "yaml", "yml", "log", "py", "js", "ts",
+    "tsx", "jsx", "html", "css", "sql", "xml", "toml",
+})
+
+
 def identifier(value: Any) -> str:
     if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{32}", value):
         raise ContractError("A stable 32-character request_id is required.")
@@ -35,15 +41,21 @@ class Conversations:
         self.directory = manager.state_dir / "conversations"
         self.directory.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
-        self.attachments = Attachments(manager.state_dir)
+        self._storage_writer = getattr(manager, "_storage_writer", None)
+        self.attachments = Attachments(manager.state_dir, storage_writer=self._storage_writer)
 
     def _attachment_binding(self, value: dict) -> dict:
-        if Catalog(Path(value["agent"])).config["company"] != value["company"]:
+        if Catalog(self.manager._agent_path(value["agent"])).config["company"] != value["company"]:
             raise ContractError("Conversation cannot cross company boundaries.")
         return {"conversation_id": value["id"], "company": value["company"],
                 "agent": value["agent"], "workspace": value["workspace"]}
 
     def upload(self, conversation_id: str, payload: dict) -> dict:
+        if self.manager.public_mode:
+            name = payload.get("name") if isinstance(payload, dict) else None
+            extension = name.rsplit(".", 1)[-1].lower() if isinstance(name, str) and "." in name else ""
+            if extension not in _PUBLIC_TEXT_EXTENSIONS:
+                raise ContractError("Public mode accepts bounded UTF-8 text attachments only.")
         with self._lock:
             return self.attachments.put(self._attachment_binding(self._read(conversation_id)), payload)
 
@@ -115,11 +127,15 @@ class Conversations:
         title = payload.get("title", "Neuer Dialog").strip()
         if backend not in {"demo", "codex", "deepseek"} or len(model) > 200:
             raise ContractError("Invalid backend or model.")
+        if backend not in self.manager.allowed_backends:
+            raise ContractError("Backend is disabled by the execution isolation policy.")
         if not title or len(title) > 200:
             raise ContractError("Title must contain 1–200 characters.")
         catalog = Catalog(agent)
-        value = {"id": conversation_id, "title": title, "agent": str(agent),
-                 "workspace": str(workspace), "backend": backend, "model": model,
+        value = {"id": conversation_id, "title": title,
+                 "agent": self.manager._agent_reference(agent),
+                 "workspace": self.manager._workspace_reference(workspace),
+                 "backend": backend, "model": model,
                  "company": catalog.config["company"], "created_at": now(), "updated_at": now(), "turns": [],
                  "require_approvals": require_approvals}
         with self._lock:
@@ -130,7 +146,7 @@ class Conversations:
                 if previous.get("require_approvals", backend in {"codex", "deepseek"}) != require_approvals:
                     raise ContractError("request_id already identifies another approval policy.")
                 return self._metadata(previous)
-            save(self._path(conversation_id), value)
+            save(self._path(conversation_id), value, writer=self._storage_writer)
             return self._metadata(value)
 
     def _job(self, value: dict, turn: dict):
@@ -172,7 +188,7 @@ class Conversations:
         content = content.strip()
         with self._lock:
             value = self._read(conversation_id)
-            if Catalog(Path(value["agent"])).config["company"] != value["company"]:
+            if Catalog(self.manager._agent_path(value["agent"])).config["company"] != value["company"]:
                 raise ContractError("Conversation cannot cross company boundaries.")
             existing = next((turn for turn in value["turns"] if turn["id"] == request_id), None)
             if existing:
@@ -226,7 +242,7 @@ class Conversations:
                 existing["core_snapshot"] = core_snapshot
                 existing["assistant_revision"] = instructions["core_sha256"]
                 value["updated_at"] = now()
-                save(self._path(conversation_id), value)
+                save(self._path(conversation_id), value, writer=self._storage_writer)
             job_payload = {key: value[key] for key in ("agent", "workspace", "backend", "model")}
             job_payload["require_approvals"] = value.get(
                 "require_approvals", value["backend"] in {"codex", "deepseek"}

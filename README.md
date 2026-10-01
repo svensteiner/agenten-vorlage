@@ -5,21 +5,29 @@ anlegen, Modell und Workspace auswählen, Aufträge ausführen, Nachweise prüfe
 abgeschlossenen Ergebnissen aufbauen — mit dauerhaftem lokalem Verlauf.
 
 ```powershell
-python -m pip install -e .
+python -m pip install -e ".[execution]"
 .\Start-AI-Studio.ps1
 # http://127.0.0.1:8765
 ```
 
-Der aktuelle Stand ist ein **freigegebener lokaler Single-Owner-MVP** mit 11 von 11
-vollständig abgenommenen verbindlichen Bereichen (**100 % innerhalb des Produktscopes**). Die Demo funktioniert
-ohne Modellzugang; reale Codex-Luna-Läufe belegen Schreiben/Test/Review, Dialogkontext,
-gehärtete Wiederaufnahme, Repository-Audit und den öffentlichen GitHub-Connector.
-Öffentliche Bereitstellung, Mehrbenutzerbetrieb und die optionale hostile-web-gehärtete
-Browserlaufzeit gehören nicht zu dieser Freigabe.
+Der aktuelle Stand enthält zwei klar getrennte Betriebsarten. Der lokale
+Single-Owner-MVP ist mit 11 von 11 verbindlichen Bereichen abgenommen. Zusätzlich
+gibt es einen **öffentlichen Single-Tenant-Mehrbenutzer-Release-Candidate** hinter
+OIDC- und TLS-Proxy: getrennte Nutzerzustände, CSRF- und Origin-Schutz, Rollen,
+Rate- und Speichergrenzen, manipulationsgeprüfte Auditkette sowie eine gehärtete
+Container-Vorlage. Im öffentlichen Modus laufen nur Demo und optional DeepSeek mit
+begrenzten Text-/Dateiwerkzeugen; Codex, `run_pytest`, beliebiger Fremdcode und
+binäre Anhänge sind dort gesperrt.
+
+Der Quellstand ist lokal geprüft, aber eine konkrete Internet-Installation ist erst
+nach realer OIDC-/TLS-, Backup-, Last- und unabhängiger Sicherheitsabnahme freigegeben.
+Die Demo funktioniert ohne Modellzugang; reale Codex-Luna-Läufe belegen weiterhin den
+separaten lokalen Modus.
 Die 11/11-Zahl ist eine Funktionsumfangsquote, keine Fehlerwahrscheinlichkeit oder
 Code-Coverage; aktuell gemessen sind 80 % kombinierte Line-/Branch-Coverage.
 [Abnahme und offene Grenzen](docs/PRODUCT-READINESS.md),
 [Betrieb und Wiederherstellung](docs/OPERATIONS.md),
+[öffentliche Bereitstellung](docs/PUBLIC-DEPLOYMENT.md),
 [GitHub-Auswahl](docs/GITHUB-ADOPTION.md).
 
 DeepSeek, Codex und die Browser-Demo zeigen vor Dateiänderungen konkrete
@@ -67,7 +75,7 @@ Python 3.11 oder neuer. Aus diesem Verzeichnis:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m pip install -e ".[execution]"
 .\.venv\Scripts\python.exe -m agentkit profiles
 .\.venv\Scripts\python.exe -m agentkit init generated\mein-cto --profile developer --name mein-cto
 .\.venv\Scripts\python.exe -m agentkit run --agent generated\mein-cto --backend demo --task "Dynamischen Workflow demonstrieren"
@@ -93,6 +101,20 @@ python cockpit\server.py
 Die Oberfläche ist ein lokaler Bedienlayer. Company-weite Ziele und
 Agentenverwaltung bleiben in Paperclip; das Cockpit eignet sich für einzelne Aufträge und
 später als Paperclip-Adapter.
+
+## Öffentlicher Mehrbenutzerbetrieb
+
+Der öffentliche Einstiegspunkt ist `python -m cockpit.public_server`; er startet nur
+mit `AGENTKIT_PUBLIC=1` und gültigen dateibasierten Secrets. Er darf ausschließlich
+hinter dem mitgelieferten OIDC-/TLS-Proxy betrieben werden. Jeder Nutzer erhält einen
+opaken, getrennten Agenten-, Workspace- und Zustandsbaum. Browser erhalten nur
+Ressourcen-IDs, keine Hostpfade oder gespeicherten Modellfortsetzungen.
+
+Die produktionsnahe Compose-Vorlage, die vollständige Variablenliste, Secret-Erzeugung,
+Abnahmeschritte, Backup und Rollback stehen in
+[docs/PUBLIC-DEPLOYMENT.md](docs/PUBLIC-DEPLOYMENT.md). Für einen sicheren ersten
+Smoke-Test `AGENTKIT_PUBLIC_BACKENDS=demo` verwenden; DeepSeek erst nach Einspielen
+des serververwalteten Provider-Secrets aktivieren.
 
 In diesem Arbeitsordner sind `generated/mein-cto` und `generated/ai-studioxyz` bereits
 vorbereitet. Dafür den `init`-Schritt überspringen oder einen neuen Verzeichnisnamen wählen;
@@ -238,9 +260,9 @@ Für verteilte Worker/Container braucht es zusätzliche Isolation und einen zent
 
 - Die Offline-Demo und automatisierten Tests prüfen Routing, Review, Limits, Checkpoints,
   Sperren, Skill-Validierung und Adapterverträge.
-- Aktueller Gesamtstand: 245 Tests in 97,074 Sekunden ohne
-  Coverage-Instrumentierung, `OK`, ein erwarteter
-  Windows-Symlink-Skip; drei echte isolierte Chromium-Journeys, 80 % kombinierte
+- Aktueller Gesamtstand: 314 Tests in 201,690 Sekunden mit
+  Branch-Coverage-Instrumentierung, `OK`, drei erwartete
+  Windows-Symlink-Skips; fünf echte isolierte Chromium-Journeys, 80 % kombinierte
   Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, zehn
   Workflow-Trace-Szenarien und 19/19
   Offline-Release-Checks mit echter lokaler Windows-OCR bestanden

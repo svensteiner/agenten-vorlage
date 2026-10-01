@@ -571,14 +571,14 @@
           </div>
         </section>
         <div class="rail-footer">
-          Dein Workspace. Deine Kontrolle.<br />API-Schlüssel bleiben auf dem
+          <span id="workspaceRail">Dein Workspace. Deine Kontrolle.</span><br />API-Schlüssel bleiben auf dem
           Server.
         </div>
       </aside>
       <main class="main">
         <header class="topbar">
           <div>
-            <div class="eyebrow">Lokaler Arbeitsraum</div>
+            <div id="workspaceTopbar" class="eyebrow">Lokaler Arbeitsraum</div>
             <strong id="selectedAgent">AI Studio</strong>
           </div>
           <div>
@@ -688,7 +688,7 @@
                 </div>
                 <div class="card">
                   <h2>Artefakte</h2>
-                  <p class="hint">Dateipfade relativ zum Workspace.</p>
+                  <p id="artifactHint" class="hint">Dateipfade relativ zum Workspace.</p>
                   <ul id="artifacts" class="artifacts"></ul>
                 </div>
               </aside>
@@ -712,7 +712,7 @@
                 ><select id="backend" required></select>
               </div>
               <div>
-                <label for="workspace">Workspace · bestehender Ordner</label
+                <label id="workspaceLabel" for="workspace">Workspace · bestehender Ordner</label
                 ><input
                   id="workspace"
                   required
@@ -791,6 +791,8 @@
         posting: false,
         approvalPosting: false,
         online: false,
+         publicMode: false,
+         defaultWorkspace: "",
       };
       function loadPending() {
         try {
@@ -916,12 +918,21 @@
       }
       function connection(ok) {
         state.online = ok;
-        $("connection").textContent = ok
-          ? "Lokal verbunden"
+         $("connection").textContent = ok
+           ? (state.publicMode ? "Verbunden" : "Lokal verbunden")
           : "Verbindung unterbrochen";
         $("connection").dataset.state = ok ? "online" : "offline";
         $("retry").hidden = ok;
         controls();
+      }
+      function applyPublicUi() {
+        if (!state.publicMode) return;
+        document.title = "AI Studio · Öffentlicher Arbeitsbereich";
+        $("workspaceRail").textContent = "Dein Arbeitsbereich. Deine Kontrolle.";
+        $("workspaceTopbar").textContent = "Öffentlicher Arbeitsbereich";
+        $("workspaceLabel").textContent = "Workspace · verwalteter Bereich";
+        $("workspace").placeholder = "Standard-Arbeitsbereich";
+        $("artifactHint").textContent = "Artefaktpfade relativ zum Arbeitsbereich.";
       }
       function notice(message) {
         $("notice").textContent = message || "";
@@ -943,14 +954,29 @@
         $("approveAction").disabled = state.approvalPosting || !state.online;
         $("rejectAction").disabled = state.approvalPosting || !state.online;
       }
-      async function api(path, options = {}) {
+       let csrfToken = "";
+       let csrfRequest = null;
+       async function ensureCsrf() {
+         if (csrfToken) return;
+         if (!csrfRequest) csrfRequest = fetch("/api/session", { headers: { "Accept": "application/json" } }).then(async (response) => {
+           if (response.status === 404) return;
+           let data = null; try { data = await response.json(); } catch { throw new Error("Die Sitzung konnte nicht geprüft werden."); }
+           if (!response.ok || typeof data.csrf_token !== "string" || !data.csrf_token) throw new Error(data.error || "Die Sitzung konnte nicht geprüft werden.");
+           csrfToken = data.csrf_token;
+         }).finally(() => { csrfRequest = null; });
+         await csrfRequest;
+       }
+       async function api(path, options = {}) {
+         if (["POST", "PUT", "PATCH", "DELETE"].includes(String(options.method || "GET").toUpperCase())) await ensureCsrf();
         const abort = new AbortController();
         const timer = setTimeout(() => abort.abort(), 15000);
         try {
-          const response = await fetch(path, {
+           const headers = { "Content-Type": "application/json", ...options.headers };
+           if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+           const response = await fetch(path, {
             ...options,
             signal: abort.signal,
-            headers: { "Content-Type": "application/json", ...options.headers },
+             headers,
           });
           let data;
           try {
@@ -968,7 +994,9 @@
           if (error.name === "AbortError" || error instanceof TypeError) {
             connection(false);
             throw new Error(
-              "Keine Serverantwort. Prüfe den lokalen Server und verbinde dich erneut. Ein gesendeter Auftrag könnte bereits gestartet sein; prüfe zuerst den Verlauf.",
+              state.publicMode
+                ? "Keine Serverantwort. Prüfe deine Verbindung. Ein gesendeter Auftrag könnte bereits gestartet sein; prüfe zuerst den Verlauf."
+                : "Keine Serverantwort. Prüfe den lokalen Server und verbinde dich erneut. Ein gesendeter Auftrag könnte bereits gestartet sein; prüfe zuerst den Verlauf.",
             );
           }
           throw error;
@@ -980,7 +1008,7 @@
         if (state.approvalPosting) return;
         if (state.parentJobId) clearParent();
         const currentWorkspace = $("workspace").value.trim();
-        const defaultWorkspace = path + "/workspace";
+         const defaultWorkspace = state.publicMode ? (state.defaultWorkspace || "default") : path + "/workspace";
         if (!currentWorkspace || currentWorkspace === state.defaultWorkspace)
           $("workspace").value = defaultWorkspace;
         state.defaultWorkspace = defaultWorkspace;
@@ -1293,6 +1321,9 @@
           ]);
           state.agents = agents.agents || [];
           state.backends = config.backends || [];
+           state.publicMode = Boolean(config.public_multiuser);
+           state.defaultWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+           applyPublicUi();
           $("agentProfile").replaceChildren();
           for (const profile of config.profiles || []) {
             const option = el("option", profile);
