@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import tempfile
 import time
@@ -19,6 +20,61 @@ from agentkit.codex_artifacts import MAX_ARTIFACT_BYTES, read_codex_artifact  # 
 from agentkit.engine import Engine  # noqa: E402
 from agentkit.scaffold import create  # noqa: E402
 from agentkit.storage import save  # noqa: E402
+
+
+_BLOCKED_SUMMARY_LIMIT = 4096
+_HTTP_STATUS_RE = re.compile(
+    r"\bHTTP(?:/\d+(?:\.\d+)?)?(?:\s+status)?\s*[:=]?\s*(\d{3})\b",
+    re.IGNORECASE,
+)
+_SECRET_RE = re.compile(r"\b(?:sk|sess|key)-[A-Za-z0-9_-]{8,}\b", re.IGNORECASE)
+
+
+def _sanitize_blocked_summary(value: object) -> str:
+    """Bound and redact a provider summary before using it for diagnostics."""
+    summary = str(value or "")[:_BLOCKED_SUMMARY_LIMIT]
+    summary = re.sub(
+        r"(?i)(authorization\s*[:=]\s*bearer\s+)[^\s,;]+",
+        r"\1<redacted>",
+        summary,
+    )
+    return _SECRET_RE.sub("<redacted>", summary)
+
+
+def classify_blocked_summary(value: object) -> str:
+    """Return a stable, non-sensitive category for a blocked live run.
+
+    The provider's text is only inspected in memory. Callers should persist the
+    returned category, never the original summary.
+    """
+    summary = _sanitize_blocked_summary(value)
+    lowered = summary.lower()
+    status_match = _HTTP_STATUS_RE.search(summary)
+    status = int(status_match.group(1)) if status_match else None
+    if status in {401, 403} or any(
+        marker in lowered
+        for marker in ("authentication", "unauthorized", "forbidden", "invalid api key", "api key is invalid")
+    ):
+        return "provider_authentication"
+    if status is not None and 400 <= status <= 599:
+        return "provider_http"
+    if any(
+        marker in lowered
+        for marker in (
+            "timed out", "timeout", "connection", "dns", "name resolution",
+            "network", "ssl", "tls", "temporarily unavailable",
+        )
+    ):
+        return "provider_network"
+    if any(
+        marker in lowered
+        for marker in (
+            "contract", "structured", "schema", "invalid tool", "invalid json",
+            "invalid response", "no valid chat message",
+        )
+    ):
+        return "contract"
+    return "workflow_blocked"
 
 
 def _read_bounded(path: Path, max_bytes: int) -> bytes:
@@ -117,6 +173,8 @@ def main() -> int:
                           report_count=len(reports),
                           report_statuses=[item["report"].get("status") in {"success", "needs_revision", "blocked"} for item in reports])
             result["summary_sha256"] = hashlib.sha256(summary.encode("utf-8")).hexdigest()
+            if state["status"] == "blocked":
+                result["blocked_category"] = classify_blocked_summary(summary)
             source_bytes = _read_bounded(workspace / "FACT.txt", len(fact_bytes))
             result["source_unchanged"] = source_bytes == fact_bytes
             result["marker_in_final_summary"] = marker in summary

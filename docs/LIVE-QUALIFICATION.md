@@ -8,6 +8,18 @@ Die technischen Schreib-/Dialog-Szenarien verwendeten synthetische Dateien; die 
 repräsentativen Läufe nutzten echten Projekt-, Test- beziehungsweise Connector-Kontext.
 Keine echten Provider-Schlüssel wurden in Nachweisen gespeichert.
 
+## Sichere Diagnose bei blockiertem Provider-Lauf
+
+Wenn ein Live-Lauf mit `status=blocked` endet, schreibt `scripts/live_smoke.py`
+nur eine begrenzte Diagnoseklasse in den sanitisierten Nachweis:
+`provider_authentication` (HTTP 401/403 oder Authentifizierungsfehler),
+`provider_http` (andere HTTP-Fehler), `provider_network` (Netzwerk-/Timeout-
+Fehler), `contract` (ungültige strukturierte Providerantwort) oder
+`workflow_blocked` (fachliche Blockade ohne Providerursache). Der Summary-Text
+wird nur im Speicher geprüft, vorher begrenzt und um erkennbare Schlüssel sowie
+Bearer-Werte bereinigt. Rohe Providerantworten und Zugangsdaten werden nicht
+gespeichert.
+
 ## Nachweise
 
 | Prüfung | Ergebnis | Lokaler Nachweis |

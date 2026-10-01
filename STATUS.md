@@ -55,8 +55,14 @@ Rollen, Skills und Runtime bleiben getrennt.
 - Loopback-/Origin-Schutz, sichere DOM-Ausgabe, maximal vier aktive Aufträge und Server-Sperre.
 - DeepSeek erzwingt Read-only, Toolbudget und Deadline. Tests laufen ohne Server-Secrets
   in der Umgebung; Prozessbäume werden bei Timeout beendet.
+- Ein begrenzter DeepSeek-Live-Smoke am 01.10.2026 erreichte den offiziellen Endpoint,
+  wurde aber vor jeder Modellantwort mit HTTP 401 abgewiesen. Der Nachweis lautet daher
+  weiterhin `model_tested=false`; das abgelehnte Test-Credential wurde nach der Prüfung
+  aus dem lokalen Secret-Pfad entfernt und nie in Git oder Nachweisen gespeichert.
+  `live_smoke.py` weist solche Fälle jetzt ausschließlich als bereinigte Kategorie
+  `provider_authentication` aus.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Testsuite: 314 Tests in 201,690 Sekunden mit
+- Aktuelle vollständige Testsuite: 316 Tests in 205,554 Sekunden mit
   Branch-Coverage-Instrumentierung, Status OK;
   drei Windows-Symlink-Tests wurden mangels Berechtigung erwartbar übersprungen.
   Fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Navigation,
@@ -188,7 +194,7 @@ Rollen, Skills und Runtime bleiben getrennt.
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 314 Tests in 201,690 Sekunden mit
+  Aktuelle vollständige Suite: 316 Tests in 205,554 Sekunden mit
   Branch-Coverage-Instrumentierung, OK, drei erwartete
   Symlink-Skips; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.

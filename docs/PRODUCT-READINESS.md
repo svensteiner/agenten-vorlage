@@ -68,7 +68,7 @@ Produktionsentscheidung: **bereit zum Staging, noch nicht für offenen Internetv
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
 | Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Nutzerabläufe einschließlich 390-Pixel-Reflow; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 314 Tests in 201,690 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Reproduzierbare Offline-Abnahme | 316 Tests in 205,554 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
@@ -87,8 +87,11 @@ wegen unzuverlässiger Initialisierung auf Hosted-Runnern im separaten lokalen
 
 - **Demo:** vollständiger Offline-Ablauf, echte Dateien und HTTP-/Browserbedienung.
   Deterministische Fixture, kein Modell und keine beliebige Aufgabenlösung.
-- **DeepSeek:** API-/Tool-Verträge und lokale Subprozesse geprüft. Für diesen Release
-  kein Live-Aufruf: `DEEPSEEK_API_KEY` ist in der Serverumgebung nicht gesetzt.
+- **DeepSeek:** API-/Tool-Verträge und lokale Subprozesse geprüft. Ein begrenzter
+  Live-Smoke am 01.10.2026 erreichte den offiziellen Endpoint, wurde jedoch vor jeder
+  Modellantwort mit HTTP 401 abgewiesen. Damit bleibt `model_tested=false`; es ist kein
+  gültiger DeepSeek-Zugang konfiguriert. Der sanitisierten Nachweis enthält nur
+  `blocked_category=provider_authentication`, keine Providerantwort oder Zugangsdaten.
 - **Codex:** Adapterverträge und echte Timeout-/Exitcode-Prozesse geprüft. Der Adapter
   isoliert globale CLI-Einstellungen mit `--ignore-user-config` und passt das
   Anbieterschema an. Authentifizierung bleibt erhalten; globale Konfiguration unverändert.
@@ -219,8 +222,8 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Testsuite lief mit 314 Tests in
-201,690 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
+und behoben. Die aktuelle vollständige Testsuite lief mit 316 Tests in
+205,554 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
 Windows-Symlink-Skips); Ruff, zehn
 Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.

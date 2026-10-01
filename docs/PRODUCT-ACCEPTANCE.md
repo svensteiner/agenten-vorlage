@@ -28,7 +28,7 @@ installationsabhängige Go-live-Gates stehen in [PRODUCT-READINESS.md](PRODUCT-R
 | Persistenz/Wiederaufnahme | Vollständig | Prozessabbruch, unbekannter Ausgang, stabile IDs, Cold-Restore | Gehärteter Luna-Lauf terminierte den Kindprozess, persistierte `checkpoint_kind=planner`, verweigerte Resume ohne Ack und schloss nach Ack mit unverändertem Workspace ab |
 | Geheimnisse/Zugriff | Vollständig | Schlüssel nicht in Browser/Log/Testprozess; Herkunftsschutz; lokale Speicherung | Subprozessfilter, Origin/Host und CSP-Hashes; Windows-DPAPI mit Browser-Speichern/Reload/Entfernen und Manipulationstest |
 | Bedienung | Vollständig | Einrichten, arbeiten, Fehler erkennen und fortsetzen; responsive und tastaturbedienbar | Vier Hauptseiten responsive; 29/29 sichtbare interaktive Elemente benannt, Fokusführung, 62 Kontrastfälle und Reflow geprüft; fünf isolierte Chromium-E2E-Journeys laufen reproduzierbar |
-| Auslieferung | Vollständig | Reproduzierbare Installation, Release-Gate, Recovery-Anleitung und reale Anwendungsabnahme | Saubere Windows-/Python-3.12-Installation; 314 Tests, 80 % Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, isolierter Public-Lock-Dependency-Audit, zehn Workflow-Szenarien und 19/19 Offline-Release-Checks; drei getrennte reale Luna-Aufgaben dokumentiert |
+| Auslieferung | Vollständig | Reproduzierbare Installation, Release-Gate, Recovery-Anleitung und reale Anwendungsabnahme | Saubere Windows-/Python-3.12-Installation; 316 Tests, 80 % Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, isolierter Public-Lock-Dependency-Audit, zehn Workflow-Szenarien und 19/19 Offline-Release-Checks; drei getrennte reale Luna-Aufgaben dokumentiert |
 
 ## Bewertungsregel
 
