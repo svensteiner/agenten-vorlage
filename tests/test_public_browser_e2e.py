@@ -79,6 +79,8 @@ class PublicBrowserReleaseTests(unittest.TestCase):
             data_root=cls.root / "data",
             base_agents_root=ROOT / "agents",
             identity_secret=b"i" * 32,
+            identity_issuer="https://identity.example.test/realms/company",
+            identity_client_id="agentkit-public-browser-test",
             allowed_backends={"demo"},
             per_user_requests_per_minute=200,
             per_tenant_requests_per_minute=400,

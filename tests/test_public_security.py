@@ -107,6 +107,40 @@ class PublicSecurityTests(unittest.TestCase):
         context = validate_request("127.0.0.1", headers, config)
         self.assertEqual("company-a", context.tenant_id)
 
+    def test_oidc_subject_identity_is_independent_from_mutable_email(self):
+        config = PublicSecurityConfig(
+            public_origin=self.config.public_origin,
+            trusted_proxy_cidrs=self.config.trusted_proxy_cidrs,
+            csrf_secret=self.config.csrf_secret,
+            identity_user_header="X-Forwarded-User",
+        )
+        headers = dict(self.base_headers)
+        headers.pop("X-Agent-User")
+        headers["X-Forwarded-User"] = "stable-subject-123"
+        headers["X-Forwarded-Email"] = "old@example.test"
+        before = validate_request("127.0.0.1", headers, config)
+        headers["X-Forwarded-Email"] = "new@example.test"
+        after = validate_request("127.0.0.1", headers, config)
+        self.assertEqual(before, after)
+        self.assertEqual("stable-subject-123", after.user_id)
+
+    def test_oidc_subject_accepts_spec_limit_and_rejects_unsafe_values(self):
+        config = PublicSecurityConfig(
+            public_origin=self.config.public_origin,
+            trusted_proxy_cidrs=self.config.trusted_proxy_cidrs,
+            csrf_secret=self.config.csrf_secret,
+            identity_user_header="X-Forwarded-User",
+        )
+        headers = dict(self.base_headers)
+        headers.pop("X-Agent-User")
+        headers["X-Forwarded-User"] = "s" * 255
+        self.assertEqual("s" * 255, validate_request("127.0.0.1", headers, config).user_id)
+        for value in ("s" * 256, "subject with space", "subject\tvalue", "ümlaut"):
+            with self.subTest(value=value[:20]):
+                headers["X-Forwarded-User"] = value
+                with self.assertRaises(PublicSecurityError):
+                    validate_request("127.0.0.1", headers, config)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,7 @@ class PublicSecurityError(ValueError):
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@+-]{0,127}$", re.ASCII)
+_OIDC_SUBJECT = re.compile(r"^[\x21-\x7e]{1,255}$", re.ASCII)
 _ROLE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@+-]{0,63}$", re.ASCII)
 _HEADER_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,63}$", re.ASCII)
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
@@ -106,7 +107,12 @@ def _context_from_headers(headers: Mapping[str, str], config: PublicSecurityConf
     tenant = config.fixed_tenant_id or _validated_identity(
         _header(headers, config.identity_tenant_header), "tenant identity", _IDENTIFIER
     )
-    user = _validated_identity(_header(headers, config.identity_user_header), "user identity", _IDENTIFIER)
+    # OIDC Core permits a case-sensitive `sub` of up to 255 ASCII characters.
+    # It is hashed before filesystem use, so visible punctuation is safe here;
+    # controls, whitespace and non-ASCII data remain fail-closed.
+    user = _validated_identity(
+        _header(headers, config.identity_user_header), "user identity", _OIDC_SUBJECT
+    )
     raw_roles = _header(headers, config.identity_roles_header)
     if not raw_roles or raw_roles.startswith(",") or raw_roles.endswith(","):
         raise PublicSecurityError("invalid role identity")

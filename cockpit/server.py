@@ -94,6 +94,7 @@ class JobManager:
         worker_semaphore: threading.BoundedSemaphore | None = None,
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         storage_writer: Callable[[Path, bytes], None] | None = None,
+        coordination_reserver: Callable[[Path, Path], Any] | None = None,
     ):
         self.template_root = template_root.resolve()
         self.agent_roots = tuple(
@@ -124,6 +125,7 @@ class JobManager:
         self._worker_semaphore = worker_semaphore
         self._mutation_writer = mutation_writer
         self._storage_writer = storage_writer
+        self._coordination_reserver = coordination_reserver
         self.state_dir = (state_dir or self.template_root / "cockpit" / ".runs").resolve()
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.providers = ProviderSettings(self.state_dir)
@@ -531,7 +533,8 @@ class JobManager:
                             require_approvals=backend_name in {"codex", "deepseek"} or job.payload.get("require_approvals", False),
                             core_snapshot=job.payload.get("core_snapshot"),
                             mutation_writer=self._mutation_writer,
-                            state_writer=self._storage_writer).run(
+                            state_writer=self._storage_writer,
+                            coordination_reserver=self._coordination_reserver).run(
                 job.payload.get("execution_task", job.payload["task"]),
                 run_dir=run_dir,
                 new_run_id=run_id if run_dir is None else None,

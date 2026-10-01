@@ -6,7 +6,7 @@ import json
 import time
 import uuid
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Any, Callable, Protocol
 
 from .catalog import Catalog
 from .contracts import ContractError, read_json, validate
@@ -68,6 +68,7 @@ class Engine:
         core_snapshot: str | None = None,
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         state_writer: Callable[[Path, bytes], None] | None = None,
+        coordination_reserver: Callable[[Path, Path], Any] | None = None,
     ):
         self.catalog = Catalog(agent_dir)
         self.workspace = workspace.resolve()
@@ -76,6 +77,7 @@ class Engine:
         self.require_approvals = require_approvals
         self.mutation_writer = mutation_writer
         self.state_writer = state_writer
+        self.coordination_reserver = coordination_reserver
         if core_snapshot is not None and not isinstance(core_snapshot, str):
             raise ContractError("core_snapshot must be text.")
         if isinstance(core_snapshot, str) and len(core_snapshot) > self.limits["max_context_chars"]:
@@ -113,14 +115,48 @@ class Engine:
         directory = directory.resolve()
         if directory.parent != (self.catalog.root / ".runs").resolve():
             raise ContractError("Run checkpoints must remain inside this agent's .runs directory.")
-        directory.mkdir(parents=True, exist_ok=True)
-        with lock(directory / ".lock"), lock(self.workspace / ".agentkit.lock"):
-            if new_run_id is not None and (directory / "state.json").exists():
-                raise ContractError("Run ID already has a checkpoint; use resume explicitly.")
-            return self._locked(task, directory, feedback, acknowledge_interruption, approval_id, approval_decision)
+        reservation = None
+        try:
+            if self.coordination_reserver is not None:
+                reservation = self.coordination_reserver(directory, self.workspace)
+            directory.mkdir(parents=True, exist_ok=True)
+            with lock(directory / ".lock"), lock(self.workspace / ".agentkit.lock"):
+                if new_run_id is not None and (directory / "state.json").exists():
+                    raise ContractError("Run ID already has a checkpoint; use resume explicitly.")
+                result = self._locked(
+                    task,
+                    directory,
+                    feedback,
+                    acknowledge_interruption,
+                    approval_id,
+                    approval_decision,
+                    reservation=reservation,
+                )
+                # A completed checkpoint resumed without writing anything
+                # leaves a newly-created coordination reservation unused.
+                # Rollback is idempotent after commit and removes only files
+                # owned by this reservation.
+                if reservation is not None:
+                    reservation.rollback()
+                return result
+        except Exception:
+            if reservation is not None:
+                try:
+                    reservation.rollback()
+                except Exception:
+                    pass
+            raise
 
     def _locked(
-        self, task: str, directory: Path, feedback: str, acknowledge: bool, approval_id: str, approval_decision: str
+        self,
+        task: str,
+        directory: Path,
+        feedback: str,
+        acknowledge: bool,
+        approval_id: str,
+        approval_decision: str,
+        *,
+        reservation: Any = None,
     ) -> dict:
         path = directory / "state.json"
         config = self.catalog.config
@@ -259,10 +295,17 @@ class Engine:
         elapsed_before = state["elapsed_seconds"]
 
         def checkpoint() -> None:
+            nonlocal reservation
             state["elapsed_seconds"] = round(
                 elapsed_before + time.monotonic() - started, 3
             )
             save(path, state, writer=self.state_writer)
+            # Coordination files remain rollbackable until this first durable
+            # checkpoint succeeds.  After that point the run has an identity
+            # that must survive later execution failures and resume attempts.
+            if reservation is not None:
+                reservation.commit()
+                reservation = None
 
         def timeout() -> float:
             remaining = self.limits["max_seconds"] - (

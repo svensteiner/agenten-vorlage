@@ -260,7 +260,7 @@ Für verteilte Worker/Container braucht es zusätzliche Isolation und einen zent
 
 - Die Offline-Demo und automatisierten Tests prüfen Routing, Review, Limits, Checkpoints,
   Sperren, Skill-Validierung und Adapterverträge.
-- Aktueller Gesamtstand: 316 Tests in 205,554 Sekunden mit
+- Aktueller Gesamtstand: 352 Tests in 248,693 Sekunden mit
   Branch-Coverage-Instrumentierung, `OK`, drei erwartete
   Windows-Symlink-Skips; fünf echte isolierte Chromium-Journeys, 80 % kombinierte
   Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, zehn

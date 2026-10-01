@@ -1,6 +1,6 @@
 # GitHub adoption research
 
-Research date: 2026-09-30. This is a bounded architecture and licensing review, not a
+Research date: 2026-10-01. This is a bounded architecture and licensing review, not a
 recommendation to copy a repository or add a dependency. Claims marked **evidence** come
 from the linked repository at the observed revision; **assessment** is our interpretation.
 
@@ -18,7 +18,7 @@ provides a drop-in replacement for the current bounded local runner.
 Source: [repository](https://github.com/Anil-matcha/Open-Dots), [README](https://github.com/Anil-matcha/Open-Dots/blob/main/README.md),
 [MIT license](https://github.com/Anil-matcha/Open-Dots/blob/main/LICENSE).
 
-**Evidence.** The repository showed 103 commits at the observed revision and declares the
+**Evidence.** The repository showed 105 commits at the observed revision and declares the
 MIT license. Its README labels the project “Prototype / active development” and documents
 assistants, streaming chat, persistent conversations and a model adapter. The current server
 uses the Responses API and explicitly does not use Chat Completions. Browser access uses an
@@ -103,11 +103,11 @@ implementation review.
 
 ## Open-Dots refresh: exact current comparison
 
-Checked again on 2026-09-30 at Open-Dots revision
-`e8cf82b18dfc81bbdae4c47342229ae780b9e627` (2026-09-30 14:25:46 UTC) against the
+Checked again on 2026-10-01 at Open-Dots revision
+`5abe1b3d65d5176af936ed92de1b731634d2bcb5` (2026-10-01 07:03:56 UTC) against the
 [current Open-Dots README](https://github.com/Anil-matcha/Open-Dots/blob/main/README.md),
 its [action gateway](https://github.com/Anil-matcha/Open-Dots/blob/main/server/app/services/action_gateway.py)
-and the repository history. The observed revision had 103 commits and an MIT license. The
+and the repository history. The observed revision had 105 commits and an MIT license. The
 README still labels the product “Prototype / active development”. Its implemented product
 surface includes assistants, streaming chat, persistent conversations and a model adapter;
 inference uses the Responses API, with no Chat Completions path. Owner-token authentication
@@ -150,6 +150,21 @@ already match or strengthen the useful Open-Dots pattern; the adoption decision 
 preserve the AgentKit runtime and add compatible fields/contracts only when needed. No
 Open-Dots source, dependency, skill or runtime was copied, and its MIT license/attribution is
 therefore not being relied upon for implementation.
+
+The only Open-Dots change after the previously reviewed revision
+`e8cf82b18dfc81bbdae4c47342229ae780b9e627` updates two README video links. It changes no
+runtime, security or product contract, so no implementation was imported for that delta.
+
+## Open pull-request audit in this repository (1 October 2026)
+
+[PR #3](https://github.com/svensteiner/agenten-vorlage/pull/3) was inspected rather than
+merged blindly. It targets the historical `9b11c5c` product architecture, is currently a
+draft with merge conflicts and a failed CI check, and changes a separate `product/` runtime
+that the current AgentKit/Cockpit release replaced. Its useful operational themes—bounded
+resources, metrics, encrypted backups, restore drills, egress policy and production-safe
+proxy defaults—remain acceptance requirements for the current public adapter. Its source is
+not cherry-picked because doing so would reintroduce the obsolete runtime and bypass the
+current company/workspace binding, approval receipts and unknown-outcome semantics.
 
 ## Document extraction adopted (30 September 2026)
 

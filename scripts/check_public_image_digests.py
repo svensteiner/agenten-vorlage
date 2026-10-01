@@ -21,6 +21,12 @@ _NAMES = (
     "AGENTKIT_OAUTH2_PROXY_IMAGE",
     "AGENTKIT_CADDY_IMAGE",
 )
+_REQUIRED_IMAGE_NAMES = {
+    # The public identity contract relies on this vetted generic-OIDC mapping:
+    # SessionState.User and X-Forwarded-User are derived from `sub` in v7.15.4.
+    # A version change therefore requires a deliberate source review and gate update.
+    "AGENTKIT_OAUTH2_PROXY_IMAGE": "quay.io/oauth2-proxy/oauth2-proxy:v7.15.4",
+}
 
 
 def _read_env(path: Path) -> dict[str, str]:
@@ -48,6 +54,9 @@ def main() -> int:
         match = _DIGEST.fullmatch(value)
         if not match or match.group(2) == "0" * 64 or "REPLACE_WITH" in value:
             raise SystemExit(f"{name} must be a non-placeholder image@sha256 digest")
+        required_image = _REQUIRED_IMAGE_NAMES.get(name)
+        if required_image is not None and match.group(1) != required_image:
+            raise SystemExit(f"{name} must use the reviewed image {required_image}@sha256:...")
         images.append(value)
     if args.verify:
         for image in images:

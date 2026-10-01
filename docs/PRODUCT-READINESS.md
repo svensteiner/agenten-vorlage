@@ -36,7 +36,8 @@ Vor öffentlichem Go-live braucht **jede konkrete Installation** folgende Eviden
 1. realer OIDC-Login mit Domain-/Gruppenpolicy, Logout und Session-Rotation;
 2. reale DNS-/TLS-Kette sowie verifizierte Forwarded-Header am Proxy;
 3. verschlüsseltes Backup plus Restore-Probe des persistenten Volumes und der Secrets;
-4. repräsentativer Last-/Soak-Test mit beobachteten CPU-, RAM-, Queue- und Volume-Grenzen;
+4. repräsentativer Last-/Soak-Test mit beobachteten CPU-, RAM-, Queue- und Volume-Grenzen,
+   einer erzwungenen Volume-/Projektquote und Alarmierung vor freiem Speicherende;
 5. unabhängiger Security-/Penetrationstest einschließlich IDOR, CSRF, Header-Spoofing und Uploads;
 6. Monitoring/Alarmierung sowie ein getesteter Rollback auf ein unveränderliches Image;
 7. bei aktiviertem DeepSeek ein echter, budgetierter Provider-Smoke ohne Secret-/Pfadleck.
@@ -68,7 +69,7 @@ Produktionsentscheidung: **bereit zum Staging, noch nicht für offenen Internetv
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
 | Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Nutzerabläufe einschließlich 390-Pixel-Reflow; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 316 Tests in 205,554 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Reproduzierbare Offline-Abnahme | 352 Tests in 248,693 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
@@ -222,8 +223,8 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Testsuite lief mit 316 Tests in
-205,554 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
+und behoben. Die aktuelle vollständige Testsuite lief mit 352 Tests in
+248,693 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
 Windows-Symlink-Skips); Ruff, zehn
 Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.

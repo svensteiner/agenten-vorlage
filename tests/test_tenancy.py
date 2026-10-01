@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import tempfile
@@ -56,6 +57,102 @@ class TenantRuntimeProvisionerTests(unittest.TestCase):
         self.assertNotEqual(second.user_id, first.user_id)
         self.assertNotEqual(third.tenant_id, first.tenant_id)
         self.assertNotEqual(first.tenant_id, first.user_id)
+
+    def test_identity_namespace_binds_user_ids_without_persisting_raw_namespace(self):
+        namespace = "issuer=https://identity.example.test/realms/acme;client=agentkit"
+        provisioner = TenantRuntimeProvisioner(
+            self.data,
+            self.base,
+            identity_secret=b"test-secret-12345",
+            identity_namespace=namespace,
+        )
+        first = provisioner.provision("tenant", "subject-1")
+        marker = self.data / ".identity-namespace.sha256"
+        self.assertEqual(
+            hashlib.sha256(namespace.encode("utf-8")).hexdigest(),
+            marker.read_text(encoding="ascii"),
+        )
+        self.assertNotIn(namespace.encode("utf-8"), marker.read_bytes())
+        self.assertNotIn(namespace, repr(vars(provisioner)))
+
+        other_data = self.tmp / "other-data"
+        other = TenantRuntimeProvisioner(
+            other_data,
+            self.base,
+            identity_secret=b"test-secret-12345",
+            identity_namespace="issuer=https://identity.example.test/realms/other;client=agentkit",
+        )
+        self.assertNotEqual(first.user_id, other.provision("tenant", "subject-1").user_id)
+
+        restarted = TenantRuntimeProvisioner(
+            self.data,
+            self.base,
+            identity_secret=b"test-secret-12345",
+            identity_namespace=namespace,
+        )
+        self.assertEqual(first.user_root, restarted.provision("tenant", "subject-1").user_root)
+        with self.assertRaises(ValueError):
+            TenantRuntimeProvisioner(
+                self.data,
+                self.base,
+                identity_secret=b"test-secret-12345",
+                identity_namespace=namespace.replace("acme", "other"),
+            )
+
+    def test_missing_identity_namespace_marker_with_old_tenant_data_requires_migration(self):
+        self.provisioner.provision("tenant", "old-subject")
+        with self.assertRaisesRegex(ValueError, "migration"):
+            TenantRuntimeProvisioner(
+                self.data,
+                self.base,
+                identity_secret=b"test-secret-12345",
+                identity_namespace="issuer=https://identity.example.test;client=agentkit",
+            )
+
+    def test_corrupt_identity_namespace_marker_fails_closed(self):
+        marker = self.data / ".identity-namespace.sha256"
+        marker.write_text("not-a-sha256-marker", encoding="ascii")
+        with self.assertRaises(ValueError):
+            TenantRuntimeProvisioner(
+                self.data,
+                self.base,
+                identity_secret=b"test-secret-12345",
+                identity_namespace="issuer=https://identity.example.test;client=agentkit",
+            )
+
+    def test_identity_namespace_marker_initialization_is_concurrent_safe(self):
+        namespace = "issuer=https://identity.example.test;client=agentkit"
+        barrier = threading.Barrier(8)
+        results = []
+        errors = []
+        guard = threading.Lock()
+
+        def initialize():
+            try:
+                barrier.wait(timeout=2)
+                value = TenantRuntimeProvisioner(
+                    self.data,
+                    self.base,
+                    identity_secret=b"test-secret-12345",
+                    identity_namespace=namespace,
+                )
+                with guard:
+                    results.append(value)
+            except Exception as exc:  # pragma: no cover - assertion reports unexpected races
+                with guard:
+                    errors.append(exc)
+
+        threads = [threading.Thread(target=initialize) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=3)
+        self.assertFalse(errors, errors)
+        self.assertEqual(8, len(results))
+        self.assertEqual(
+            hashlib.sha256(namespace.encode("utf-8")).hexdigest(),
+            (self.data / ".identity-namespace.sha256").read_text(encoding="ascii"),
+        )
 
     def test_agent_snapshot_excludes_runtime_git_and_secret_state(self):
         paths = self.provisioner.provision("tenant", "user")
@@ -143,6 +240,59 @@ class TenantRuntimeProvisionerTests(unittest.TestCase):
         with self.assertRaises(RuntimeLimitError):
             limited.runtime("t", "v", lambda paths: paths)
         self.assertFalse((self.data / "tenants" / tenant_id / "users" / rejected_user_id).exists())
+
+    def test_per_tenant_user_limit_survives_restart_and_allows_existing_user(self):
+        limited = TenantRuntimeProvisioner(
+            self.data, self.base, identity_secret=b"test-secret-12345", max_users_per_tenant=1
+        )
+        first = limited.runtime("t", "u", lambda paths: paths)
+        restarted = TenantRuntimeProvisioner(
+            self.data, self.base, identity_secret=b"test-secret-12345", max_users_per_tenant=1
+        )
+        self.assertEqual(first.user_root, restarted.runtime("t", "u", lambda paths: paths).user_root)
+        with self.assertRaises(RuntimeLimitError):
+            restarted.runtime("t", "v", lambda paths: paths)
+
+    def test_per_tenant_user_limit_counts_evicted_persisted_users(self):
+        limited = TenantRuntimeProvisioner(
+            self.data, self.base, identity_secret=b"test-secret-12345", max_cached_runtimes=1, max_users_per_tenant=1
+        )
+        limited.runtime("t", "u", lambda paths: paths)
+        self.assertTrue(limited.evict_runtime("t", "u"))
+        with self.assertRaises(RuntimeLimitError):
+            limited.runtime("t", "v", lambda paths: paths)
+        limited.runtime("t", "u", lambda paths: paths)
+
+    def test_malformed_persisted_user_entry_fails_closed(self):
+        tenant_id, _user_id = self.provisioner.identity_ids("t", "u")
+        users = self.data / "tenants" / tenant_id / "users"
+        users.mkdir(parents=True)
+        (users / "unexpected").mkdir()
+        with self.assertRaises(ValueError):
+            self.provisioner.runtime("t", "u", lambda paths: paths)
+
+    def test_concurrent_new_users_cannot_bypass_persisted_limit(self):
+        limited = TenantRuntimeProvisioner(
+            self.data, self.base, identity_secret=b"test-secret-12345", max_users_per_tenant=1
+        )
+        outcomes = []
+        guard = threading.Lock()
+
+        def admit(user):
+            try:
+                limited.runtime("t", user, lambda paths: paths)
+                result = "accepted"
+            except RuntimeLimitError:
+                result = "rejected"
+            with guard:
+                outcomes.append(result)
+
+        workers = [threading.Thread(target=admit, args=(user,)) for user in ("u1", "u2")]
+        for worker in workers:
+            worker.start()
+        for worker in workers:
+            worker.join(timeout=2)
+        self.assertEqual(["accepted", "rejected"], sorted(outcomes))
 
     def test_identity_input_is_bounded(self):
         with self.assertRaises(IdentityError):

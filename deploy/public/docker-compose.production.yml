@@ -18,6 +18,9 @@ services:
     image: ${AGENTKIT_APP_IMAGE:?set AGENTKIT_APP_IMAGE to an immutable app image@sha256 digest}
     command: ["python", "-m", "cockpit.public_server"]
     restart: unless-stopped
+    # The gateway drains for 30s by default; leave a few seconds for Docker
+    # to deliver SIGTERM and for the process to close its listening socket.
+    stop_grace_period: 40s
     expose:
       - "8766"
     environment:
@@ -27,10 +30,14 @@ services:
       AGENTKIT_PUBLIC_ORIGIN: ${AGENTKIT_PUBLIC_ORIGIN:?set the HTTPS origin}
       AGENTKIT_PUBLIC_BACKENDS: ${AGENTKIT_PUBLIC_BACKENDS:-demo}
       AGENTKIT_TENANT_ID: ${AGENTKIT_TENANT_ID:?set the static tenant id}
+      AGENTKIT_AUTH_ISSUER: ${AGENTKIT_AUTH_ISSUER:?set the OIDC issuer URL}
+      AGENTKIT_AUTH_CLIENT_ID: ${AGENTKIT_AUTH_CLIENT_ID:?set the OIDC client id}
       AGENTKIT_AUTH_ALLOWED_DOMAIN: ${AGENTKIT_AUTH_ALLOWED_DOMAIN:?set the allowed email domain}
       AGENTKIT_AUTH_ALLOWED_GROUP: ${AGENTKIT_AUTH_ALLOWED_GROUP:?set the allowed OIDC group}
       AGENTKIT_TRUSTED_PROXY_CIDRS: ${AGENTKIT_TRUSTED_PROXY_CIDRS:-172.31.0.0/24}
-      AGENTKIT_IDENTITY_USER_HEADER: X-Forwarded-Email
+      # oauth2-proxy v7.15.4 maps the generic OIDC `sub` claim to this header.
+      # Keep storage identity independent from mutable/reassignable email addresses.
+      AGENTKIT_IDENTITY_USER_HEADER: X-Forwarded-User
       AGENTKIT_IDENTITY_ROLES_HEADER: X-Forwarded-Groups
       AGENTKIT_PROVIDER_CREDENTIALS_FILE: /run/secrets/provider_credentials
       AGENTKIT_CSRF_SECRET_FILE: /run/secrets/csrf_secret
@@ -46,6 +53,7 @@ services:
       AGENTKIT_MAX_CONCURRENT_JOBS: ${AGENTKIT_MAX_CONCURRENT_JOBS:-4}
       AGENTKIT_MAX_ACTIVE_JOBS_PER_USER: ${AGENTKIT_MAX_ACTIVE_JOBS_PER_USER:-2}
       AGENTKIT_MAX_HTTP_WORKERS: ${AGENTKIT_MAX_HTTP_WORKERS:-32}
+      AGENTKIT_DRAIN_TIMEOUT_SECONDS: ${AGENTKIT_DRAIN_TIMEOUT_SECONDS:-30}
       AGENTKIT_AUDIT_MAX_BYTES: ${AGENTKIT_AUDIT_MAX_BYTES:-8388608}
     secrets:
       - csrf_secret
@@ -90,6 +98,7 @@ services:
       - --redirect-url=${AGENTKIT_PUBLIC_ORIGIN:?set the HTTPS origin}/oauth2/callback
       - --whitelist-domain=${AGENTKIT_PUBLIC_HOST:?set the public DNS host}
       - --pass-user-headers=true
+      - --prefer-email-to-user=false
       - --pass-basic-auth=false
       - --pass-access-token=false
       - --pass-authorization-header=false
@@ -113,6 +122,9 @@ services:
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 1.0
     networks: [edge, frontend]
     depends_on:
       app:
@@ -138,6 +150,9 @@ services:
     cap_add: [NET_BIND_SERVICE]
     security_opt:
       - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 1.0
     networks: [edge]
     depends_on: [auth-proxy]
 

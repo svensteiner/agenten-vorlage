@@ -13,6 +13,8 @@ Der Public-Modus unterstützt:
 - einen serverseitig festgelegten Tenant mit mehreren getrennten Nutzern;
 - die Rollen `viewer`, `member`, `reviewer` und `tenant_admin` aus dem OIDC-`groups`-Claim;
 - Demo sowie optional DeepSeek mit `list_files`, `read_file`, `write_file` und `edit_file`;
+- begrenzte, nicht authentifizierte Vorschauen öffentlicher UTF-8-Textdateien über
+  `api.github.com` ohne Redirects oder GitHub-Schreibzugriff;
 - begrenzte UTF-8-Textanhänge, Dialoge, Freigaben und Artefakte;
 - sitzungsgebundenes CSRF, Origin-Prüfung, Rate-/Job-/Speichergrenzen und HMAC-Audit.
 
@@ -38,11 +40,13 @@ verteilte Limits.
   Build-/Runtime-Lockdateien sind absichtlich auf diese Plattform geschlossen;
 - öffentlicher DNS-Name und gültiges Zertifikat;
 - OIDC-Client mit Callback `https://HOST/oauth2/callback`;
-- OIDC-Claims `email` und `groups`;
+- OIDC-Claims `sub`, `email` und `groups`; `sub` muss beim gewählten Issuer dauerhaft,
+  eindeutig und nicht wiederverwendbar sein;
 - mindestens eine erlaubte Gruppe und interne Rollen als Gruppenwerte;
 - unveränderliche `image@sha256:...`-Referenzen für die gebaute App, ein aktuell
-  gepatchtes Debian-basiertes Python-Image, OAuth2 Proxy mindestens 7.15.4 und Caddy
-  mindestens 2.11.4;
+  gepatchtes Debian-basiertes Python-Image, den geprüften OAuth2 Proxy 7.15.4 und
+  Caddy mindestens 2.11.4; ein OAuth2-Proxy-Upgrade benötigt wegen des
+  Identitätsvertrags eine erneute Staging-Abnahme;
 - externes Backupziel, Monitoring und ein Secret-Store.
 
 Ein Nutzer muss Mitglied der konfigurierten `AGENTKIT_AUTH_ALLOWED_GROUP` sein und
@@ -77,14 +81,16 @@ Anfragen, Nutzer und Runtime-Cache, Speicher und Dateien, Jobs, parallele Worker
 Auditgröße. Der Public-Prozess validiert diese Werte beim Start und beendet sich bei
 fehlenden oder außerhalb der Grenzen liegenden Einstellungen.
 
-`AGENTKIT_PUBLIC_BACKENDS=demo` ist der sichere Standard. DeepSeek bleibt opt-in und
-benötigt neben dem Provider-Key eine separat freigegebene Egress-Netzwerkregel für den
-App-Container. Das Compose-Stack hängt ausschließlich die App an das eigene, nicht
-interne `egress`-Bridge-Netz (`172.32.0.0/24`); Caddy und OAuth2 Proxy erhalten dort
-keinen Netzwerkzugang. Vor Aktivierung muss der Docker-Host beziehungsweise die
-Cloud-Firewall ausgehende Verbindungen dieses Netzes auf `api.deepseek.com:443`
-begrenzen. Ohne diese Allowlist und einen erfolgreichen Egress-Smoke darf DeepSeek
-nicht aktiviert werden.
+`AGENTKIT_PUBLIC_BACKENDS=demo` ist der sichere Standard. Der öffentliche
+GitHub-Vorschauconnector benötigt `api.github.com:443`. DeepSeek bleibt opt-in und
+benötigt neben dem Provider-Key zusätzlich `api.deepseek.com:443`. Das Compose-Stack
+hängt ausschließlich die App an das eigene, nicht interne `egress`-Bridge-Netz
+(`172.32.0.0/24`); Caddy und OAuth2 Proxy erhalten dort keinen Netzwerkzugang. Vor
+Internetfreigabe muss der Docker-Host, ein kontrollierter Egress-Proxy oder die
+Cloud-Firewall ausgehende Verbindungen dieses Netzes auf `api.github.com:443` und,
+nur bei aktiviertem DeepSeek, `api.deepseek.com:443` begrenzen. Compose selbst
+erzwingt keine Zielhost-Allowlist. Ohne diese Regel und einen erfolgreichen
+Egress-Smoke darf der öffentliche Stack nicht freigegeben werden.
 
 ## 2. Secrets und Zertifikat
 
@@ -120,6 +126,22 @@ Eine Rotation des
 Identity-Secrets ändert die opaken Nutzerpfade und benötigt deshalb eine geplante
 Datenmigration.
 
+Die dauerhafte Nutzer-ID ist versioniert an `OIDC-Issuer + Client-ID + sub`
+gebunden. Beim ersten Start auf einem leeren Volume legt die App ausschließlich
+deren SHA-256-Marker `.identity-namespace.sha256` ab; Issuer, Client-ID, `sub` und
+E-Mail werden dort nicht gespeichert. Ein später geänderter Issuer oder Client
+beziehungsweise ein fehlender/manipulierter Marker bei vorhandenem Tenant-Zustand
+stoppt den Start. So kann ein gleichlautendes `sub` aus einem anderen Realm keine
+alten Daten übernehmen.
+
+Volumes aus einer älteren Version, die Nutzerpfade aus E-Mail-Adressen abgeleitet
+hat, werden bewusst nicht automatisch geöffnet. Für diesen Release entweder ein
+neues leeres `app_data`-Volume verwenden oder vorab eine separat geprüfte
+Offline-Migration anhand der administrativ bestätigten alten Nutzerzuordnung und
+des unveränderlichen `sub` durchführen. Eine Zuordnung nur über aktuelle oder alte
+E-Mail-Adressen ist unzulässig. Das alte Volume bis zum bestandenen Restore- und
+Isolationsnachweis unverändert sichern.
+
 ## 3. Konfiguration prüfen und Image bauen
 
 ```bash
@@ -151,8 +173,14 @@ Initialisierung, ersetzt aber nicht die Staging-Abnahme mit realem OIDC und TLS.
 Der TLS-Proxy entfernt eingehende `X-Forwarded-*`-Identitätsheader sowie alle
 `X-Agent-*`-Header vor dem Auth-Proxy; OAuth2 Proxy
 setzt danach ausschließlich die verifizierten `X-Forwarded-Email`, `X-Forwarded-Groups`
-und `X-Forwarded-User`-Werte. Der Auth-Proxy läuft mit
-`--skip-auth-strip-headers=false`. Der Edge begrenzt Request-Bodies auf 3 MiB. Das
+und `X-Forwarded-User`-Werte. Die App verwendet `X-Forwarded-User`, das beim
+gepinnten generischen OIDC-Proxy aus dem `sub`-Claim stammt, als dauerhafte
+Nutzeridentität. E-Mail bleibt nur Login-/Domainattribut und darf den Speicherbesitz
+nicht bestimmen. Der Auth-Proxy läuft mit `--prefer-email-to-user=false` und
+`--skip-auth-strip-headers=false`. Ein Proxy-Upgrade erfordert einen Staging-Nachweis,
+dass `X-Forwarded-User` weiterhin exakt den unveränderlichen `sub`-Wert liefert. Der
+Public-Prozess lehnt einen anderen User-Header beim Start ab. Der
+Edge begrenzt Request-Bodies auf 3 MiB. Das
 deckt den öffentlichen Upload-Vertrag ab; Rate-Limits bleiben zusätzlich in der App,
 weil Caddy ohne Zusatzmodul keinen verteilten Rate-Limiter bereitstellt.
 
@@ -189,6 +217,13 @@ Netzen. Die App besitzt kein Docker-Socket, keine Host-Workspaces, keine Linux-
 Capabilities und ein read-only Root-Dateisystem. Das persistente `app_data`-Volume
 ist die einzige schreibbare dauerhafte Datenfläche.
 
+Die Nutzerquoten begrenzen jeden einzelnen Nutzer, ersetzen aber keine harte Grenze
+für das gesamte Volume. Vor Go-live muss der Host beziehungsweise Storage-Anbieter
+eine Projekt-/Volumequote setzen, freien Speicher überwachen und rechtzeitig alarmieren.
+Kein Sidecar oder anderer Hostprozess darf während des Betriebs in `app_data` schreiben;
+diese exklusive Volume-Inhaberschaft ist Teil der Vertrauensgrenze für die pfadbasierte
+Symlink-/Reparse-Prüfung.
+
 `/api/health` belegt nur Prozess-Liveness. `/api/readiness` ist das Traffic-Gate und
 wird fail-closed, wenn ein unsicheres Backend aktiviert oder für DeepSeek kein
 Provider-Key vorhanden ist. Das Endpoint prüft keine externe DeepSeek-Erreichbarkeit;
@@ -199,21 +234,98 @@ deren Egress-Smoke gehört zur Staging-Abnahme.
 Vor Internetfreigabe alle Punkte mit einem realen Browser und mindestens zwei
 Identitäten belegen:
 
-1. OIDC Login, Logout, abgelaufene/rotierte Sitzung und Gruppenentzug;
+1. OIDC Login, Logout, abgelaufene/rotierte Sitzung und Gruppenentzug; dieselbe
+   Person behält nach einer E-Mail-Änderung ihre Daten, ein neu vergebener
+   E-Mail-Name übernimmt sie nicht; ein Teststart mit verändertem Issuer oder
+   Client bricht vor Nutzerzugriff ab;
 2. falscher Host, HTTP, direkte App-Verbindung und eingespeiste Identity-Header scheitern;
 3. Mutation ohne beziehungsweise mit falschem CSRF/Origin scheitert;
 4. Alice sieht Bobs Job, Dialog, Anhang und Artefakt nicht;
 5. `viewer` darf lesen, `member` starten, `reviewer` freigeben;
 6. Edge-Body-, Rate-, Job-, Upload-, Datei- und Volumengrenzen liefern kontrollierte Fehler;
 7. Demo endet nach Freigabe und Review; DeepSeek-Smoke nur bei aktiviertem Backend;
+   die automatisierte Staging-Abnahme ruft die unveränderlich gepinnte Open-Dots-
+   README über die GitHub-Vorschau ab und vergleicht Inhalt sowie Git-Blob-SHA mit
+   dem erwarteten Wert; der Connector erreicht ausschließlich `api.github.com:443`.
+   Die Redirect-Verweigerung ist separat durch lokale Vertragstests belegt;
 8. Antworten, Browser, Logs und Audit enthalten keine Hostpfade, Tokens oder Secrets;
-9. Last-/Soak-Test hält CPU, RAM, Threads und Volume innerhalb der Zielwerte;
+9. Last-/Soak-Test hält CPU, RAM, Threads und die erzwungene Volumequote innerhalb
+   der Zielwerte; Low-Space-Alarm und kontrollierte Quota-Fehler sind belegt;
 10. unabhängiger Security- und Penetrationstest bleibt ohne offenen hohen Befund.
 
 The repository tests are **not evidence** that an unknown public deployment is safe.
 Production acceptance still requires a **real
 OIDC provider**, real TLS, target-host backup/restore, representative load and
 **independent security and** penetration testing.
+
+### Automatisierte HTTPS-Staging-Abnahme
+
+Für einen bereits gestarteten Staging-Stack gibt es einen begrenzten Abnahmelauf.
+Er benötigt zwei getrennte OIDC-Sitzungen und erzeugt für Alice genau eine
+Demo-Konversation, die als Auditnachweis im Staging-Datenbestand verbleibt. Jede Cookie-
+Datei enthält ausschließlich den vollständigen Wert des `Cookie`-Headers (eine
+Zeile, zum Beispiel `_oauth2_proxy=...`); der Wert darf niemals als Argument,
+Umgebungsvariable, Ticket oder Ausgabe weitergegeben werden. Die Option
+`--live-staging` ist eine bewusste Bestätigung, dass der Befehl einen echten
+HTTPS-Endpunkt kontaktiert:
+
+```bash
+umask 077
+read -rsp 'Alice Cookie-Header: ' AGENTKIT_ALICE_COOKIE; printf '\n'
+printf '%s\n' "$AGENTKIT_ALICE_COOKIE" > /run/user/1000/agentkit-alice.cookie
+unset AGENTKIT_ALICE_COOKIE
+read -rsp 'Bob Cookie-Header: ' AGENTKIT_BOB_COOKIE; printf '\n'
+printf '%s\n' "$AGENTKIT_BOB_COOKIE" > /run/user/1000/agentkit-bob.cookie
+unset AGENTKIT_BOB_COOKIE
+python scripts/public_staging_acceptance.py \
+  --live-staging \
+  --origin https://agents.example.com \
+  --alice-cookie-file /run/user/1000/agentkit-alice.cookie \
+  --bob-cookie-file /run/user/1000/agentkit-bob.cookie
+```
+
+Bei einer internen Staging-CA kann zusätzlich `--ca-file /path/to/staging-ca.pem`
+verwendet werden. `--origin` muss exakt `https://HOST[:PORT]` sein; HTTP,
+Credentials, Pfade, Query- und Fragmentteile werden abgelehnt. Redirects werden
+nicht verfolgt. Antwortgrößen (standardmäßig 1 MiB, maximal 8 MiB) und Timeouts
+(standardmäßig 10 Sekunden, maximal 60 Sekunden) sind begrenzt. Die Ausgabe ist
+eine einzelne JSON-Zeile mit `ok`, `status`, `category`, booleschen Checks und
+gegebenenfalls anonymen Soak-Metriken. Cookies, CSRF-Werte, E-Mail-Adressen,
+Identitäten und Antwortkörper werden weder ausgegeben noch geloggt. Ein Exit-Code
+ungleich null bedeutet, dass die Abnahme fehlgeschlagen ist.
+
+Der Lauf prüft Health und Readiness mit Alices authentifizierter Edge-Sitzung,
+authentifiziert anschließend beide Sitzungen über
+`/api/session`, verlangt standardmäßig die Rolle `member` (weitere Rollen sind mit
+wiederholtem `--required-role` prüfbar), vergleicht die beiden Identitäten,
+überprüft das Entfernen eingespeister `X-Forwarded-*`-Identitätsheader, erzwingt
+die falsche-Origin-403-Antwort und erstellt anschließend anhand der öffentlichen
+`/api/config`-/`/api/agents`-Auswahl eine Demo-Konversation. Alice muss diese mit
+derselben ID lesen können, während sie für Bob 404 bleibt.
+Die Request-IDs sind pro Anfrage neu und werden nicht ausgegeben.
+
+Ein optionaler, ausschließlich lesender Readiness-Soak bleibt hart begrenzt:
+
+```bash
+python scripts/public_staging_acceptance.py \
+  --live-staging --origin https://agents.example.com \
+  --alice-cookie-file /run/user/1000/agentkit-alice.cookie \
+  --bob-cookie-file /run/user/1000/agentkit-bob.cookie \
+  --soak-duration 120 --soak-concurrency 4 --soak-requests 2000
+```
+
+Erfasst werden nur HTTP-Statusanzahlen sowie p50/p95/p99/max-Latenzen. Dauer,
+Parallelität und Gesamtanzahl sind begrenzt (15 Minuten, 16 Worker, 10.000
+Anfragen); auch ein nur über `--soak-requests` gesteuerter Lauf hat eine absolute
+15-Minuten-Grenze, und jede einzelne Anfrage wird auf die verbleibende Zeit gekappt.
+Ohne `--soak-requests` gilt ebenfalls das harte 10.000-Anfragen-Limit.
+Der Soak ist kein Last- oder Kapazitätsnachweis.
+
+Diese Abnahme kann Provider-Konfiguration und Provider-Erreichbarkeit, CPU/RAM,
+Volume-/Speicherreserven, Backup/Restore, Logout, Gruppenentzug oder
+Sitzungswiderruf sowie einen unabhängigen Security- oder Penetrationstest nicht
+beweisen. Diese Punkte müssen am Zielsystem separat geprüft und dokumentiert
+werden.
 
 ## Backup, Restore und Rollback
 

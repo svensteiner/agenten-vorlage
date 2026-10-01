@@ -62,7 +62,7 @@ Rollen, Skills und Runtime bleiben getrennt.
   `live_smoke.py` weist solche Fälle jetzt ausschließlich als bereinigte Kategorie
   `provider_authentication` aus.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Testsuite: 316 Tests in 205,554 Sekunden mit
+- Aktuelle vollständige Testsuite: 352 Tests in 248,693 Sekunden mit
   Branch-Coverage-Instrumentierung, Status OK;
   drei Windows-Symlink-Tests wurden mangels Berechtigung erwartbar übersprungen.
   Fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Navigation,
@@ -194,7 +194,7 @@ Rollen, Skills und Runtime bleiben getrennt.
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 316 Tests in 205,554 Sekunden mit
+  Aktuelle vollständige Suite: 352 Tests in 248,693 Sekunden mit
   Branch-Coverage-Instrumentierung, OK, drei erwartete
   Symlink-Skips; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.

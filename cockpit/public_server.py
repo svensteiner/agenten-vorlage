@@ -14,12 +14,13 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import shutil
-import threading
+import signal
 import tempfile
+import threading
 import time
 import uuid
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -51,6 +52,23 @@ _STABLE_ERRORS = frozenset({
     "authentication_required", "csrf_rejected", "forbidden", "rate_limited",
     "service_not_ready", "service_busy", "job_not_found", "not_found", "invalid_request", "quota_exceeded",
 })
+
+_DEFAULT_DRAIN_TIMEOUT_SECONDS = 30
+_MAX_DRAIN_TIMEOUT_SECONDS = 30
+_OVERLOAD_RESPONSE = (
+    b"HTTP/1.1 503 Service Unavailable\r\n"
+    b"Content-Type: application/json; charset=utf-8\r\n"
+    b"Content-Length: 24\r\n"
+    b"Connection: close\r\n"
+    b"Retry-After: 1\r\n"
+    b"Cache-Control: no-store\r\n"
+    b"\r\n"
+    b'{"error":"service_busy"}'
+)
+
+
+class _UserStorageQuotaExceeded(ContractError):
+    """Raised when persisted user data already exceeds its configured quota."""
 
 
 def _single_header(headers, name: str) -> str:
@@ -244,8 +262,14 @@ class WorkspaceQuota:
         allowed_root: Path | None = None,
         max_directories: int | None = None,
     ):
-        self.root = root.resolve()
-        self.allowed_root = (allowed_root or root).resolve()
+        raw_root = Path(root).absolute()
+        if raw_root.is_symlink() or bool(getattr(raw_root, "is_junction", lambda: False)()):
+            raise ValueError("Workspace quota root must not be a symlink or junction.")
+        raw_allowed = Path(allowed_root or root).absolute()
+        if raw_allowed.is_symlink() or bool(getattr(raw_allowed, "is_junction", lambda: False)()):
+            raise ValueError("Workspace quota root must not be a symlink or junction.")
+        self.root = raw_root.resolve()
+        self.allowed_root = raw_allowed.resolve()
         if not self.allowed_root.is_relative_to(self.root):
             raise ValueError("Workspace quota root must stay inside the user storage root.")
         self.max_bytes = max_bytes
@@ -254,6 +278,143 @@ class WorkspaceQuota:
         if self.max_directories < 0:
             raise ValueError("Storage directory quota must not be negative.")
         self._lock = threading.RLock()
+
+    @staticmethod
+    def _is_link(path: Path) -> bool:
+        return path.is_symlink() or bool(getattr(path, "is_junction", lambda: False)())
+
+    def _validate_path(self, value: Path, *, directory: bool = False) -> Path:
+        """Validate a prospective path and every existing ancestor."""
+
+        raw = Path(value).absolute()
+        if self._is_link(raw):
+            raise ContractError("Workspace quota cannot traverse links or junctions.")
+        candidate = raw.resolve(strict=False)
+        if not candidate.is_relative_to(self.root):
+            raise ContractError("Storage mutation escaped its quota root.")
+        current = self.root
+        if self._is_link(current):
+            raise ContractError("Workspace quota cannot traverse links or junctions.")
+        for part in candidate.relative_to(self.root).parts:
+            current = current / part
+            if current.exists() and self._is_link(current):
+                raise ContractError("Workspace quota cannot traverse links or junctions.")
+        if candidate.exists() and directory and not candidate.is_dir():
+            raise ContractError("Storage coordination path must be a directory.")
+        return candidate
+
+    class _Reservation:
+        def __init__(
+            self,
+            quota: "WorkspaceQuota",
+            files: tuple[tuple[Path, int, int], ...],
+            directories: tuple[tuple[Path, int, int], ...],
+        ):
+            self._quota = quota
+            self._files = files
+            self._directories = directories
+            self._committed = False
+
+        def commit(self) -> None:
+            with self._quota._lock:
+                self._committed = True
+
+        def rollback(self) -> None:
+            with self._quota._lock:
+                if self._committed:
+                    return
+                for path, device, inode in self._files:
+                    try:
+                        current = path.stat(follow_symlinks=False)
+                        if (current.st_dev, current.st_ino) == (device, inode) and path.is_file() and not self._quota._is_link(path):
+                            path.unlink()
+                    except OSError:
+                        pass
+                for path, device, inode in reversed(self._directories):
+                    try:
+                        current = path.stat(follow_symlinks=False)
+                        if (current.st_dev, current.st_ino) == (device, inode) and path.is_dir() and not self._quota._is_link(path):
+                            path.rmdir()
+                    except OSError:
+                        pass
+
+    def reserve_coordination(self, run_directory: Path, workspace: Path) -> "WorkspaceQuota._Reservation":
+        """Admit a run directory and both lock files as one quota mutation."""
+
+        with self._lock:
+            run_directory = self._validate_path(run_directory, directory=True)
+            workspace = self._validate_path(workspace, directory=True)
+            if not workspace.is_dir():
+                raise ContractError("Storage coordination workspace must be a directory.")
+            run_lock = run_directory / ".lock"
+            workspace_lock = workspace / ".agentkit.lock"
+            for path in (run_lock, workspace_lock):
+                self._validate_path(path)
+                if path.exists() and not path.is_file():
+                    raise ContractError("Storage coordination lock must be a regular file.")
+
+            missing_dirs: list[Path] = []
+            ancestor = run_directory
+            while not ancestor.exists():
+                if ancestor == self.root or not ancestor.is_relative_to(self.root):
+                    raise ContractError("Storage coordination escaped its quota root.")
+                missing_dirs.append(ancestor)
+                ancestor = ancestor.parent
+            if self._is_link(ancestor) or not ancestor.is_dir():
+                raise ContractError("Storage coordination parent must be a directory.")
+            new_files = tuple(path for path in (run_lock, workspace_lock) if not path.exists())
+            total, files, directories = self._measure()
+            if total + len(new_files) > self.max_bytes:
+                raise ContractError("Storage byte quota exceeded.")
+            if files + len(new_files) > self.max_files:
+                raise ContractError("Storage file quota exceeded.")
+            if directories + len(missing_dirs) > self.max_directories:
+                raise ContractError("Storage directory quota exceeded.")
+
+            created_dirs: list[Path] = []
+            created_files: list[Path] = []
+            try:
+                for path in reversed(missing_dirs):
+                    try:
+                        path.mkdir()
+                        created_dirs.append(path)
+                    except FileExistsError:
+                        if self._is_link(path) or not path.is_dir():
+                            raise ContractError("Storage coordination parent must be a directory.")
+                for path in new_files:
+                    try:
+                        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                        try:
+                            os.write(descriptor, b"0")
+                            os.fsync(descriptor)
+                        finally:
+                            os.close(descriptor)
+                        created_files.append(path)
+                    except FileExistsError:
+                        if self._is_link(path) or not path.is_file():
+                            raise ContractError("Storage coordination lock must be a regular file.")
+            except Exception:
+                # Both lock files are permanent infrastructure.  Once either
+                # pathname is published, another process may have opened it;
+                # unlinking it could strand that process on an unlinked inode
+                # and allow a replacement lock to be acquired.  Empty
+                # directories can still be cleaned up below, while a
+                # directory containing a permanent lock is retained.
+                for path in reversed(created_dirs):
+                    try:
+                        path.rmdir()
+                    except OSError:
+                        pass
+                raise
+            # Keep both the shared workspace lock and the per-run lock as
+            # bounded, permanent infrastructure.  Rollback never unlinks a
+            # lock pathname, so an already-open descriptor cannot be detached
+            # from the lock that later processes acquire.
+            directory_records = tuple(
+                (path, path.stat(follow_symlinks=False).st_dev, path.stat(follow_symlinks=False).st_ino)
+                for path in created_dirs
+            )
+            return self._Reservation(self, (), directory_records)
 
     def _measure(self) -> tuple[int, int, int]:
         total = 0
@@ -371,6 +532,22 @@ class PublicRuntime:
     response_callback: Any
 
 
+class _RequestAdmission:
+    """One authenticated request admitted before or during a drain."""
+
+    def __init__(self, application: "PublicApplication"):
+        self._application = application
+        self._lock = threading.Lock()
+        self._released = False
+
+    def release(self) -> None:
+        with self._lock:
+            if self._released:
+                return
+            self._released = True
+        self._application._release_request()
+
+
 @dataclass(slots=True)
 class _CachedRuntime:
     manager: JobManager
@@ -389,6 +566,8 @@ class PublicApplication:
         data_root: Path,
         base_agents_root: Path,
         identity_secret: bytes,
+        identity_issuer: str,
+        identity_client_id: str,
         allowed_backends: set[str] | frozenset[str] = frozenset({"demo"}),
         deepseek_api_key: str | None = None,
         per_user_requests_per_minute: int = 120,
@@ -407,6 +586,42 @@ class PublicApplication:
     ):
         self.security = security
         self.data_root = Path(data_root).resolve()
+        try:
+            parsed_issuer = urlparse(identity_issuer)
+            parsed_issuer.port
+        except (TypeError, ValueError) as exc:
+            raise ValueError("identity_issuer must be an exact HTTPS OIDC issuer") from exc
+        if (
+            not isinstance(identity_issuer, str)
+            or identity_issuer != identity_issuer.strip()
+            or parsed_issuer.scheme != "https"
+            or not parsed_issuer.netloc
+            or not parsed_issuer.hostname
+            or parsed_issuer.username is not None
+            or parsed_issuer.password is not None
+            or parsed_issuer.params
+            or parsed_issuer.query
+            or parsed_issuer.fragment
+            or any(ord(character) < 33 or ord(character) == 127 for character in identity_issuer)
+        ):
+            raise ValueError("identity_issuer must be an exact HTTPS OIDC issuer")
+        if (
+            not isinstance(identity_client_id, str)
+            or identity_client_id != identity_client_id.strip()
+            or not identity_client_id
+            or len(identity_client_id) > 512
+            or any(ord(character) < 33 or ord(character) == 127 for character in identity_client_id)
+        ):
+            raise ValueError("identity_client_id must be bounded non-empty text")
+        identity_namespace = json.dumps(
+            {
+                "client_id": identity_client_id,
+                "issuer": identity_issuer,
+                "scheme": "oidc-sub-v1",
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         self.allowed_backends = frozenset(allowed_backends)
         if not self.allowed_backends or not self.allowed_backends <= {"demo", "deepseek", "codex"}:
             raise ValueError("Public backend policy is invalid.")
@@ -442,10 +657,15 @@ class PublicApplication:
         self.max_active_jobs_per_user = max_active_jobs_per_user
         self.max_http_workers = max_http_workers
         self.worker_semaphore = threading.BoundedSemaphore(max_concurrent_jobs)
+        self._drain_lock = threading.Lock()
+        self._drain_condition = threading.Condition(self._drain_lock)
+        self._draining = False
+        self._active_requests = 0
         self.provisioner = TenantRuntimeProvisioner(
             self.data_root,
             base_agents_root,
             identity_secret=identity_secret,
+            identity_namespace=identity_namespace,
             max_cached_runtimes=max_cached_runtimes,
             max_users_per_tenant=max_users_per_tenant,
         )
@@ -459,17 +679,77 @@ class PublicApplication:
 
     def ready(self) -> bool:
         """Public readiness is false when an unsafe host executor is enabled."""
+        with self._drain_lock:
+            draining = self._draining
         return (
-            bool(self.allowed_backends)
+            not draining and bool(self.allowed_backends)
             and self.allowed_backends <= _SAFE_PUBLIC_BACKENDS
             and ("deepseek" not in self.allowed_backends or bool(self._deepseek_api_key))
             and self.audit.healthy()
         )
 
+    def is_draining(self) -> bool:
+        """Return whether the process is draining and closed to new work."""
+
+        with self._drain_lock:
+            return self._draining
+
+    def begin_drain(self) -> bool:
+        """Atomically stop admission of new authenticated requests.
+
+        Existing jobs are intentionally left untouched.  Their workers remain
+        observable and can finish through :meth:`wait_for_jobs`, preserving the
+        unknown-outcome semantics used by the runtime on abrupt termination.
+        """
+
+        with self._drain_lock:
+            already_draining = self._draining
+            self._draining = True
+            self._drain_condition.notify_all()
+            return not already_draining
+
+    def _admit_authenticated_request(self) -> _RequestAdmission | None:
+        """Atomically admit an authenticated request unless draining."""
+
+        with self._drain_lock:
+            if self._draining:
+                return None
+            # This check is part of the admission transaction.  Once admitted,
+            # a request is allowed to finish dispatching even if drain starts.
+            if not (
+                bool(self.allowed_backends)
+                and self.allowed_backends <= _SAFE_PUBLIC_BACKENDS
+                and ("deepseek" not in self.allowed_backends or bool(self._deepseek_api_key))
+                and self.audit.healthy()
+            ):
+                return None
+            self._active_requests += 1
+            return _RequestAdmission(self)
+
+    def _release_request(self) -> None:
+        with self._drain_condition:
+            if self._active_requests > 0:
+                self._active_requests -= 1
+            if self._active_requests == 0:
+                self._drain_condition.notify_all()
+
+    def _wait_for_requests(self, timeout: float) -> bool:
+        deadline = time.monotonic() + max(0.0, timeout)
+        with self._drain_condition:
+            while self._active_requests:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return False
+                self._drain_condition.wait(remaining)
+            return True
+
     def wait_for_jobs(self, timeout: float = 30.0) -> bool:
         """Drain active per-user workers before closing persistent storage."""
 
-        deadline = time.monotonic() + max(0.0, timeout)
+        timeout = min(max(0.0, timeout), _MAX_DRAIN_TIMEOUT_SECONDS)
+        deadline = time.monotonic() + timeout
+        if not self._wait_for_requests(timeout):
+            return False
         complete = True
         for runtime in self.provisioner.cached_runtimes():
             remaining = deadline - time.monotonic()
@@ -490,6 +770,8 @@ class PublicApplication:
             max_files=self.storage_quota_files,
             allowed_root=paths.workspaces_root,
         )
+        if not quota.within_limits():
+            raise _UserStorageQuotaExceeded("User storage quota is already exceeded.")
         manager = JobManager(
             template_root=TEMPLATE_ROOT,
             state_dir=paths.state_root,
@@ -503,6 +785,7 @@ class PublicApplication:
             worker_semaphore=self.worker_semaphore,
             mutation_writer=quota.write,
             storage_writer=quota.write_user,
+            coordination_reserver=quota.reserve_coordination,
         )
         return _CachedRuntime(manager, Conversations(manager), paths, quota)
 
@@ -548,6 +831,11 @@ class PublicApplication:
             reject(HTTPStatus.UNAUTHORIZED, "authentication_required")
             return None
         session_id = hashlib.sha256(session_values[0].encode("utf-8")).hexdigest()
+        admission = self._admit_authenticated_request()
+        if admission is None:
+            reject(HTTPStatus.SERVICE_UNAVAILABLE, "service_not_ready")
+            return None
+        handler._request_admission = admission
         try:
             verify_csrf(method, handler.headers, context, session_id, self.security)
         except PublicSecurityError:
@@ -579,11 +867,11 @@ class PublicApplication:
                     handler._extra_response_headers["Retry-After"] = str(decision.retry_after)
                     reject(HTTPStatus.TOO_MANY_REQUESTS, "rate_limited")
                     return None
-        if not self.ready():
-            reject(HTTPStatus.SERVICE_UNAVAILABLE, "service_not_ready")
-            return None
         try:
             cached = self.provisioner.runtime(context.tenant_id, context.user_id, self._factory)
+        except _UserStorageQuotaExceeded:
+            reject(HTTPStatus.INSUFFICIENT_STORAGE, "quota_exceeded")
+            return None
         except (RuntimeLimitError, OSError, ValueError):
             reject(HTTPStatus.SERVICE_UNAVAILABLE, "service_not_ready")
             return None
@@ -610,28 +898,46 @@ def make_public_handler(application: PublicApplication):
     class PublicHandler(base):
         server_version = "AgentKitPublic/1"
 
+        def _release_request_admission(self) -> None:
+            admission = getattr(self, "_request_admission", None)
+            if admission is not None:
+                self._request_admission = None
+                admission.release()
+
         def _send(self, status: int, value: Any, content_type: str = "application/json", *, download: bool = False, filename: str = ""):
-            self._extra_response_headers = {
-                **application.response_headers(getattr(self, "_request_id", uuid.uuid4().hex)),
-                **getattr(self, "_extra_response_headers", {}),
-            }
-            if int(status) == HTTPStatus.BAD_REQUEST and isinstance(value, dict):
-                raw_error = value.get("error")
-                if isinstance(raw_error, str) and "not found" in raw_error.lower():
-                    status = HTTPStatus.NOT_FOUND
-                    value = {"error": "not_found"}
-                elif isinstance(raw_error, str) and "worker slots are busy" in raw_error.lower():
-                    status = HTTPStatus.SERVICE_UNAVAILABLE
-                    value = {"error": "service_busy"}
-                    self._extra_response_headers["Retry-After"] = "1"
-                elif isinstance(raw_error, str) and "quota" in raw_error.lower():
-                    status = HTTPStatus.INSUFFICIENT_STORAGE
-                    value = {"error": "quota_exceeded"}
-            if int(status) >= 400 and isinstance(value, dict) and "error" in value:
-                code = value.get("error")
-                if code not in _STABLE_ERRORS:
-                    value = {"error": "invalid_request" if int(status) < 500 else "service_not_ready"}
-            return super()._send(status, value, content_type, download=download, filename=filename)
+            try:
+                self._extra_response_headers = {
+                    **application.response_headers(getattr(self, "_request_id", uuid.uuid4().hex)),
+                    **getattr(self, "_extra_response_headers", {}),
+                }
+                if int(status) == HTTPStatus.BAD_REQUEST and isinstance(value, dict):
+                    raw_error = value.get("error")
+                    if isinstance(raw_error, str) and "not found" in raw_error.lower():
+                        status = HTTPStatus.NOT_FOUND
+                        value = {"error": "not_found"}
+                    elif isinstance(raw_error, str) and "worker slots are busy" in raw_error.lower():
+                        status = HTTPStatus.SERVICE_UNAVAILABLE
+                        value = {"error": "service_busy"}
+                        self._extra_response_headers["Retry-After"] = "1"
+                    elif isinstance(raw_error, str) and "quota" in raw_error.lower():
+                        status = HTTPStatus.INSUFFICIENT_STORAGE
+                        value = {"error": "quota_exceeded"}
+                if int(status) >= 400 and isinstance(value, dict) and "error" in value:
+                    code = value.get("error")
+                    if code not in _STABLE_ERRORS:
+                        value = {"error": "invalid_request" if int(status) < 500 else "service_not_ready"}
+                return super()._send(status, value, content_type, download=download, filename=filename)
+            finally:
+                # A broken pipe, audit exception, or normal response must all
+                # release the same admission exactly once.
+                self._release_request_admission()
+
+        def finish(self):
+            try:
+                super().finish()
+            finally:
+                # Covers exceptions raised before a response can be emitted.
+                self._release_request_admission()
 
         def do_GET(self):  # noqa: N802
             path = urlparse(self.path).path
@@ -645,8 +951,9 @@ def make_public_handler(application: PublicApplication):
                 self._response_recorded = True
                 self._response_callback = None
                 self._extra_response_headers = application.response_headers(uuid.uuid4().hex)
-                status = HTTPStatus.OK if application.ready() else HTTPStatus.SERVICE_UNAVAILABLE
-                self._send(status, {"status": "ready" if application.ready() else "not_ready"})
+                ready = application.ready()
+                status = HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE
+                self._send(status, {"status": "ready" if ready else "not_ready"})
                 return
             if path == "/api/session":
                 if not self._prepare_request():
@@ -674,9 +981,19 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 128
 
-    def __init__(self, server_address, RequestHandlerClass, *, max_workers: int = 32):
+    def __init__(
+        self,
+        server_address,
+        RequestHandlerClass,
+        *,
+        max_workers: int = 32,
+        overload_send_timeout: float = 1.0,
+    ):
         if max_workers < 1 or max_workers > 256:
             raise ValueError("max_workers must be between 1 and 256")
+        if not 0.1 <= overload_send_timeout <= 10:
+            raise ValueError("overload_send_timeout must be between 0.1 and 10 seconds")
+        self.overload_send_timeout = overload_send_timeout
         self._worker_slots = threading.BoundedSemaphore(max_workers)
         super().__init__(server_address, RequestHandlerClass)
 
@@ -687,7 +1004,15 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
 
     def process_request(self, request, client_address):
         if not self._worker_slots.acquire(blocking=False):
-            self.shutdown_request(request)
+            try:
+                request.settimeout(self.overload_send_timeout)
+                request.sendall(_OVERLOAD_RESPONSE)
+            except OSError:
+                # The client may have disconnected while waiting in the
+                # accept queue.  Closing it is still the safe overload action.
+                pass
+            finally:
+                self.shutdown_request(request)
             return
         try:
             super().process_request(request, client_address)
@@ -706,10 +1031,80 @@ def _secret_file(name: str, *, minimum: int = 32) -> bytes:
     path = os.environ.get(name, "").strip()
     if not path:
         raise RuntimeError(f"{name} must name a deployment secret file.")
-    value = Path(path).read_bytes().strip()
+    # These files contain raw key material.  Whitespace bytes are valid key
+    # bytes and must not be removed or transformed on load.
+    value = Path(path).read_bytes()
     if len(value) < minimum:
         raise RuntimeError(f"{name} is too short.")
     return value
+
+
+def _identity_user_header() -> str:
+    """Return the one header backed by the vetted OIDC `sub` mapping."""
+
+    value = os.environ.get("AGENTKIT_IDENTITY_USER_HEADER", "X-Forwarded-User").strip()
+    if value.lower() != "x-forwarded-user":
+        raise RuntimeError(
+            "AGENTKIT_IDENTITY_USER_HEADER must be X-Forwarded-User for stable OIDC subject identity."
+        )
+    return "X-Forwarded-User"
+
+
+def _identity_roles_header() -> str:
+    """Return the one header populated from verified OIDC group claims."""
+
+    value = os.environ.get("AGENTKIT_IDENTITY_ROLES_HEADER", "X-Forwarded-Groups").strip()
+    if value.lower() != "x-forwarded-groups":
+        raise RuntimeError(
+            "AGENTKIT_IDENTITY_ROLES_HEADER must be X-Forwarded-Groups for verified OIDC roles."
+        )
+    return "X-Forwarded-Groups"
+
+
+def _identity_tenant_header() -> str:
+    """Return the only tenant header stripped by the vetted edge contract."""
+
+    value = os.environ.get("AGENTKIT_IDENTITY_TENANT_HEADER", "X-Agent-Tenant").strip()
+    if value.lower() != "x-agent-tenant":
+        raise RuntimeError(
+            "AGENTKIT_IDENTITY_TENANT_HEADER must be X-Agent-Tenant for the public proxy contract."
+        )
+    return "X-Agent-Tenant"
+
+
+def _install_shutdown_handlers(application: PublicApplication, server: BoundedThreadingHTTPServer):
+    """Install signal handlers without calling ``server.shutdown`` inline.
+
+    ``BaseServer.shutdown`` waits for ``serve_forever`` to leave its loop, so
+    invoking it from that same signal-handler thread can deadlock.  The handler
+    only marks the application draining and wakes a coordinator thread.
+    """
+
+    stop_requested = threading.Event()
+    previous_handlers = {}
+
+    def request_shutdown(_signum, _frame):
+        application.begin_drain()
+        stop_requested.set()
+
+    for signal_number in (signal.SIGTERM, signal.SIGINT):
+        previous_handlers[signal_number] = signal.getsignal(signal_number)
+        signal.signal(signal_number, request_shutdown)
+
+    def shutdown_coordinator():
+        stop_requested.wait()
+        server.shutdown()
+
+    coordinator = threading.Thread(target=shutdown_coordinator, name="public-server-shutdown", daemon=True)
+    coordinator.start()
+
+    def restore():
+        for signal_number, previous in previous_handlers.items():
+            signal.signal(signal_number, previous)
+        stop_requested.set()
+        coordinator.join(timeout=2)
+
+    return request_shutdown, restore
 
 
 def _provider_secret_file() -> str | None:
@@ -739,6 +1134,9 @@ def main() -> int:
     cidrs = tuple(value.strip() for value in os.environ.get("AGENTKIT_TRUSTED_PROXY_CIDRS", "").split(",") if value.strip())
     csrf_secret = _secret_file("AGENTKIT_CSRF_SECRET_FILE")
     identity_secret = _secret_file("AGENTKIT_IDENTITY_SECRET_FILE")
+    identity_tenant_header = _identity_tenant_header()
+    identity_user_header = _identity_user_header()
+    identity_roles_header = _identity_roles_header()
     def env_int(name: str, default: int, *, minimum: int, maximum: int) -> int:
         raw = os.environ.get(name, str(default)).strip()
         try:
@@ -749,19 +1147,27 @@ def main() -> int:
             raise RuntimeError(f"{name} must be between {minimum} and {maximum}.")
         return value
 
+    drain_timeout = env_int(
+        "AGENTKIT_DRAIN_TIMEOUT_SECONDS",
+        _DEFAULT_DRAIN_TIMEOUT_SECONDS,
+        minimum=1,
+        maximum=_MAX_DRAIN_TIMEOUT_SECONDS,
+    )
     application = PublicApplication(
         security=PublicSecurityConfig(
             public_origin=origin,
             trusted_proxy_cidrs=cidrs,
             csrf_secret=csrf_secret,
-            identity_tenant_header=os.environ.get("AGENTKIT_IDENTITY_TENANT_HEADER", "X-Agent-Tenant"),
-            identity_user_header=os.environ.get("AGENTKIT_IDENTITY_USER_HEADER", "X-Forwarded-Email"),
-            identity_roles_header=os.environ.get("AGENTKIT_IDENTITY_ROLES_HEADER", "X-Forwarded-Groups"),
+            identity_tenant_header=identity_tenant_header,
+            identity_user_header=identity_user_header,
+            identity_roles_header=identity_roles_header,
             fixed_tenant_id=os.environ.get("AGENTKIT_TENANT_ID", "").strip(),
         ),
         data_root=Path(os.environ.get("AGENTKIT_DATA_DIR", "/var/lib/agentkit")),
         base_agents_root=TEMPLATE_ROOT / "agents",
         identity_secret=identity_secret,
+        identity_issuer=os.environ.get("AGENTKIT_AUTH_ISSUER", ""),
+        identity_client_id=os.environ.get("AGENTKIT_AUTH_CLIENT_ID", ""),
         allowed_backends={value.strip() for value in os.environ.get("AGENTKIT_PUBLIC_BACKENDS", "demo").split(",") if value.strip()},
         deepseek_api_key=_provider_secret_file(),
         session_cookie_name=os.environ.get("AGENTKIT_SESSION_COOKIE_NAME", "_oauth2_proxy"),
@@ -780,14 +1186,17 @@ def main() -> int:
     )
     application.data_root.mkdir(parents=True, exist_ok=True)
     with lock(application.data_root / ".public-server.lock"):
-        server = BoundedThreadingHTTPServer((args.host, args.port), make_public_handler(application), max_workers=application.max_http_workers)
+        server = BoundedThreadingHTTPServer(
+            (args.host, args.port), make_public_handler(application), max_workers=application.max_http_workers
+        )
         print(f"AgentKit public gateway listening on {args.host}:{args.port}", flush=True)
+        _request_shutdown, restore_handlers = _install_shutdown_handlers(application, server)
         try:
             server.serve_forever()
-        except KeyboardInterrupt:
-            return 0
         finally:
-            application.wait_for_jobs(30)
+            application.begin_drain()
+            restore_handlers()
+            application.wait_for_jobs(drain_timeout)
             server.server_close()
     return 0
 

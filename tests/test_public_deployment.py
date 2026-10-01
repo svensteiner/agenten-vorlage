@@ -1,7 +1,10 @@
 """Static guardrails for the public deployment contract."""
 
-from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 import yaml
 
@@ -90,19 +93,34 @@ class PublicDeploymentContractTests(unittest.TestCase):
             self.assertIn("no-new-privileges:true", service["security_opt"], name)
             self.assertNotIn("/var/run/docker.sock", str(service.get("volumes", [])))
             self.assertNotEqual(service.get("privileged", False), True, name)
+            self.assertIn("pids_limit", service, name)
+            self.assertIn("mem_limit", service, name)
+            self.assertIn("cpus", service, name)
         self.assertNotIn("worker", self.services)
         self.assertNotIn("AGENTKIT_REQUIRE_ISOLATED_WORKER", self.compose_text)
+
+    def test_public_app_has_shutdown_budget_for_graceful_drain(self):
+        app = self.services["app"]
+        self.assertEqual("40s", app["stop_grace_period"])
+        self.assertEqual(
+            "${AGENTKIT_DRAIN_TIMEOUT_SECONDS:-30}",
+            app["environment"]["AGENTKIT_DRAIN_TIMEOUT_SECONDS"],
+        )
+        example = (ROOT / "deploy" / "public" / "public.env.example").read_text(encoding="utf-8")
+        self.assertIn("AGENTKIT_DRAIN_TIMEOUT_SECONDS=30", example)
 
     def test_public_identity_csrf_tenant_and_backend_policy_are_explicit(self):
         environment = self.services["app"]["environment"]
         self.assertEqual(environment["AGENTKIT_PUBLIC_BACKENDS"], "${AGENTKIT_PUBLIC_BACKENDS:-demo}")
         for key in (
             "AGENTKIT_TENANT_ID",
+            "AGENTKIT_AUTH_ISSUER",
+            "AGENTKIT_AUTH_CLIENT_ID",
             "AGENTKIT_AUTH_ALLOWED_DOMAIN",
             "AGENTKIT_AUTH_ALLOWED_GROUP",
         ):
             self.assertIn(":?", environment[key])
-        self.assertEqual(environment["AGENTKIT_IDENTITY_USER_HEADER"], "X-Forwarded-Email")
+        self.assertEqual(environment["AGENTKIT_IDENTITY_USER_HEADER"], "X-Forwarded-User")
         self.assertEqual(environment["AGENTKIT_IDENTITY_ROLES_HEADER"], "X-Forwarded-Groups")
         self.assertEqual(environment["AGENTKIT_CSRF_SECRET_FILE"], "/run/secrets/csrf_secret")
         self.assertEqual(environment["AGENTKIT_IDENTITY_SECRET_FILE"], "/run/secrets/identity_secret")
@@ -126,6 +144,7 @@ class PublicDeploymentContractTests(unittest.TestCase):
         for argument in (
             "--trusted-proxy-ip=172.30.0.0/24",
             "--pass-user-headers=true",
+            "--prefer-email-to-user=false",
             "--pass-basic-auth=false",
             "--pass-access-token=false",
             "--pass-authorization-header=false",
@@ -186,8 +205,13 @@ class PublicDeploymentContractTests(unittest.TestCase):
 
     def test_docs_state_safe_scope_and_external_acceptance(self):
         docs = (ROOT / "docs" / "PUBLIC-DEPLOYMENT.md").read_text(encoding="utf-8")
+        self.assertIn("api.github.com:443", docs)
         self.assertIn("api.deepseek.com:443", docs)
-        self.assertIn("eigene, nicht\ninterne `egress`-Bridge-Netz", docs)
+        self.assertIn("`sub`-Claim", docs)
+        self.assertIn("E-Mail-Änderung", docs)
+        self.assertIn(".identity-namespace.sha256", docs)
+        self.assertIn("nicht automatisch geöffnet", docs)
+        self.assertIn("eigene, nicht interne `egress`-Bridge-Netz", docs)
         for phrase in (
             "excludes Codex execution",
             "run_pytest",
@@ -211,6 +235,35 @@ class PublicDeploymentContractTests(unittest.TestCase):
         self.assertIn("check_public_image_digests.py", workflow)
         self.assertIn("--platform linux/amd64", workflow)
         self.assertIn("/api/readiness", workflow)
+
+    def test_digest_gate_rejects_unreviewed_oauth_proxy_version(self):
+        digest = "a" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / "public.env"
+
+            def check(proxy: str) -> subprocess.CompletedProcess[str]:
+                env_file.write_text(
+                    "\n".join(
+                        (
+                            f"AGENTKIT_APP_IMAGE=registry.example/app@sha256:{digest}",
+                            f"AGENTKIT_OAUTH2_PROXY_IMAGE={proxy}@sha256:{digest}",
+                            f"AGENTKIT_CADDY_IMAGE=caddy:2.11.4-alpine@sha256:{digest}",
+                        )
+                    ),
+                    encoding="utf-8",
+                )
+                return subprocess.run(
+                    [sys.executable, str(ROOT / "scripts" / "check_public_image_digests.py"), "--env-file", str(env_file)],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+
+            rejected = check("quay.io/oauth2-proxy/oauth2-proxy:v7.16.0")
+            self.assertNotEqual(0, rejected.returncode)
+            self.assertIn("reviewed image", rejected.stderr)
+            accepted = check("quay.io/oauth2-proxy/oauth2-proxy:v7.15.4")
+            self.assertEqual(0, accepted.returncode, accepted.stderr)
 
 
 if __name__ == "__main__":

@@ -1,17 +1,38 @@
 import base64
 import json
+import os
+import signal
+import socket
+import subprocess
+import sys
 import tempfile
 import threading
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from agentkit.contracts import ContractError
+from agentkit.backends import DemoBackend
+from agentkit.engine import Engine
+from agentkit.scaffold import create
+from agentkit.storage import lock as storage_lock
 from cockpit.public_security import PublicSecurityConfig
 from cockpit.public_security import AuthContext
-from cockpit.public_server import AuditLog, PublicApplication, WorkspaceQuota, make_public_handler
+from cockpit.public_server import (
+    AuditLog,
+    BoundedThreadingHTTPServer,
+    PublicApplication,
+    WorkspaceQuota,
+    _install_shutdown_handlers,
+    _identity_roles_header,
+    _identity_tenant_header,
+    _identity_user_header,
+    _secret_file,
+    make_public_handler,
+)
 from cockpit.server import ThreadingHTTPServer
 
 
@@ -96,6 +117,137 @@ class PublicAuditLogTests(unittest.TestCase):
 
 
 class WorkspaceQuotaTests(unittest.TestCase):
+    def test_engine_rolls_back_coordination_files_when_checkpoint_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            agent = create(root / "agents" / "pack", "developer", "pack", "Example Company")
+            workspace = root / "workspaces" / "default"
+            workspace.mkdir(parents=True)
+            quota = WorkspaceQuota(
+                root,
+                allowed_root=root / "workspaces",
+                max_bytes=10_000_000,
+                max_files=10_000,
+                max_directories=10_000,
+            )
+            run_id = "c" * 32
+
+            def fail_checkpoint(_path: Path, _data: bytes) -> None:
+                raise ContractError("Storage quota writer failed")
+
+            with self.assertRaises(ContractError):
+                Engine(
+                    agent,
+                    workspace,
+                    DemoBackend(),
+                    state_writer=fail_checkpoint,
+                    coordination_reserver=quota.reserve_coordination,
+                ).run("will fail before durable checkpoint", new_run_id=run_id)
+            run_directory = agent / ".runs" / run_id
+            self.assertTrue((run_directory / ".lock").is_file())
+            # Both lock files are permanent bounded infrastructure; removing
+            # either during rollback could strand another run's open
+            # descriptor on an unlinked inode.
+            self.assertTrue((workspace / ".agentkit.lock").is_file())
+
+    def test_coordination_rollback_preserves_shared_lock_after_second_run_opens_it(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            workspace = root / "workspaces" / "default"
+            workspace.mkdir(parents=True)
+            quota = WorkspaceQuota(root, allowed_root=root / "workspaces", max_bytes=100, max_files=10, max_directories=20)
+            first = quota.reserve_coordination(root / "agents" / "a" / ".runs" / ("a" * 32), workspace)
+            shared_lock = workspace / ".agentkit.lock"
+            inode = shared_lock.stat().st_ino
+            second = quota.reserve_coordination(root / "agents" / "b" / ".runs" / ("b" * 32), workspace)
+            with shared_lock.open("rb"):
+                first.rollback()
+            second.rollback()
+            self.assertTrue(shared_lock.is_file())
+            self.assertEqual(inode, shared_lock.stat().st_ino)
+
+    def test_coordination_reservation_admits_locks_atomically_and_rolls_back(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            workspace = root / "workspaces" / "default"
+            workspace.mkdir(parents=True)
+            quota = WorkspaceQuota(
+                root, allowed_root=root / "workspaces", max_bytes=2, max_files=2, max_directories=6
+            )
+            run_directory = root / "agents" / "pack" / ".runs" / ("a" * 32)
+            reservation = quota.reserve_coordination(run_directory, workspace)
+            self.assertTrue((run_directory / ".lock").is_file())
+            self.assertTrue((workspace / ".agentkit.lock").is_file())
+            reservation.rollback()
+            self.assertTrue(run_directory.is_dir())
+            self.assertTrue((run_directory / ".lock").is_file())
+            self.assertTrue((workspace / ".agentkit.lock").is_file())
+
+    def test_coordination_rollback_cannot_replace_run_lock_held_by_another_process(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            workspace = root / "workspaces" / "default"
+            workspace.mkdir(parents=True)
+            quota = WorkspaceQuota(root, allowed_root=root / "workspaces", max_bytes=100, max_files=10, max_directories=20)
+            run_directory = root / "agents" / "pack" / ".runs" / ("r" * 32)
+            reservation = quota.reserve_coordination(run_directory, workspace)
+            run_lock = run_directory / ".lock"
+            ready = Path(temporary) / "ready"
+            release = Path(temporary) / "release"
+            child_code = (
+                "import sys,time\n"
+                "from pathlib import Path\n"
+                "from agentkit.storage import lock\n"
+                "run_lock=Path(sys.argv[1])\n"
+                "ready=Path(sys.argv[2])\n"
+                "release=Path(sys.argv[3])\n"
+                "with lock(run_lock):\n"
+                "    ready.write_text('ready', encoding='ascii')\n"
+                "    while not release.exists():\n"
+                "        time.sleep(0.01)\n"
+            )
+            child = subprocess.Popen(
+                [sys.executable, "-c", child_code, str(run_lock), str(ready), str(release)],
+                cwd=ROOT,
+            )
+            try:
+                deadline = time.monotonic() + 10
+                while not ready.exists():
+                    if child.poll() is not None:
+                        self.fail(f"lock holder exited with status {child.returncode}")
+                    if time.monotonic() >= deadline:
+                        self.fail("lock holder did not acquire the run lock")
+                    time.sleep(0.01)
+                inode = run_lock.stat().st_ino
+                reservation.rollback()
+                self.assertTrue(run_lock.is_file())
+                self.assertEqual(inode, run_lock.stat().st_ino)
+                with self.assertRaises(RuntimeError):
+                    with storage_lock(run_lock):
+                        pass
+            finally:
+                release.write_text("release", encoding="ascii")
+                try:
+                    child.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    child.kill()
+                    child.wait(timeout=10)
+            self.assertEqual(0, child.returncode)
+
+    def test_coordination_reservation_does_not_replace_existing_lock_inode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            workspace = root / "workspaces" / "default"
+            workspace.mkdir(parents=True)
+            existing = workspace / ".agentkit.lock"
+            existing.write_bytes(b"existing")
+            inode = existing.stat().st_ino
+            quota = WorkspaceQuota(root, allowed_root=root / "workspaces", max_bytes=100, max_files=3, max_directories=5)
+            reservation = quota.reserve_coordination(root / "agents" / ".runs" / ("b" * 32), workspace)
+            reservation.rollback()
+            self.assertEqual(inode, existing.stat().st_ino)
+            self.assertEqual(b"existing", existing.read_bytes())
+
     def test_prospective_write_is_atomic_and_cannot_cross_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "workspaces"
@@ -195,6 +347,8 @@ class PublicServerTests(unittest.TestCase):
             data_root=Path(self.temporary.name) / "data",
             base_agents_root=ROOT / "agents",
             identity_secret=b"i" * 32,
+            identity_issuer="https://identity.example.test/realms/company",
+            identity_client_id="agentkit-public-test",
             allowed_backends={"demo"},
             per_user_requests_per_minute=100,
             per_tenant_requests_per_minute=200,
@@ -334,6 +488,201 @@ class PublicServerTests(unittest.TestCase):
         status, _headers, value = self.request("/api/agents")
         self.assertEqual(401, status)
         self.assertEqual({"error": "authentication_required"}, value)
+
+    def test_public_identity_namespace_is_hashed_and_rejects_provider_change(self):
+        self.session("stable-subject")
+        marker = Path(self.temporary.name) / "data" / ".identity-namespace.sha256"
+        marker_value = marker.read_text(encoding="ascii")
+        self.assertRegex(marker_value, r"^[0-9a-f]{64}$")
+        self.assertNotIn("identity.example.test", marker_value)
+        self.assertNotIn("agentkit-public-test", marker_value)
+        with self.assertRaisesRegex(ValueError, "corrupt or mismatched"):
+            PublicApplication(
+                security=self.app.security,
+                data_root=Path(self.temporary.name) / "data",
+                base_agents_root=ROOT / "agents",
+                identity_secret=b"i" * 32,
+                identity_issuer="https://replacement-issuer.example.test",
+                identity_client_id="agentkit-public-test",
+                allowed_backends={"demo"},
+            )
+
+    def test_drain_fails_readiness_and_rejects_new_authenticated_requests(self):
+        status, _headers, value = self.request("/api/readiness")
+        self.assertEqual((200, {"status": "ready"}), (status, value))
+        headers = self.identity("draining-user")
+        self.assertTrue(self.app.begin_drain())
+        self.assertFalse(self.app.ready())
+        self.assertFalse(self.app.begin_drain())
+
+        status, _response_headers, value = self.request("/api/readiness")
+        self.assertEqual((503, {"status": "not_ready"}), (status, value))
+        status, _response_headers, value = self.request("/api/session", headers=headers)
+        self.assertEqual((503, {"error": "service_not_ready"}), (status, value))
+        status, _response_headers, value = self.request("/api/health")
+        self.assertEqual((200, {"status": "ok"}), (status, value))
+
+    def test_drain_waits_for_admitted_request_and_rejects_late_admission(self):
+        admission = self.app._admit_authenticated_request()
+        self.assertIsNotNone(admission)
+        self.app.begin_drain()
+        self.assertIsNone(self.app._admit_authenticated_request())
+        finished = threading.Event()
+
+        def wait_for_drain():
+            self.app.wait_for_jobs(1)
+            finished.set()
+
+        waiter = threading.Thread(target=wait_for_drain)
+        waiter.start()
+        self.assertFalse(finished.wait(timeout=0.1))
+        admission.release()
+        self.assertTrue(finished.wait(timeout=2))
+        admission.release()
+        waiter.join(timeout=2)
+
+    def test_signal_shutdown_helper_drains_and_restores_handlers(self):
+        class FakeServer:
+            def __init__(self):
+                self.shutdown_called = threading.Event()
+
+            def shutdown(self):
+                self.shutdown_called.set()
+
+        server = FakeServer()
+        previous = {number: signal.getsignal(number) for number in (signal.SIGTERM, signal.SIGINT)}
+        _handler, restore = _install_shutdown_handlers(self.app, server)
+        try:
+            _handler(signal.SIGTERM, None)
+            self.assertTrue(self.app.is_draining())
+            self.assertTrue(server.shutdown_called.wait(timeout=2))
+        finally:
+            restore()
+        for number, expected in previous.items():
+            self.assertIs(signal.getsignal(number), expected)
+
+    def test_wait_for_jobs_caps_timeout_to_container_grace_budget(self):
+        with mock.patch.object(self.app, "_wait_for_requests", return_value=True) as wait_for_requests:
+            with mock.patch.object(self.app.provisioner, "cached_runtimes", return_value=[]):
+                self.assertTrue(self.app.wait_for_jobs(300))
+        wait_for_requests.assert_called_once_with(30)
+
+    def test_readiness_route_evaluates_application_once(self):
+        with mock.patch.object(self.app, "ready", return_value=True) as ready:
+            status, _headers, value = self.request("/api/readiness")
+        self.assertEqual((200, {"status": "ready"}), (status, value))
+        ready.assert_called_once_with()
+
+    def test_bounded_server_returns_controlled_overload_response(self):
+        server = BoundedThreadingHTTPServer(
+            ("127.0.0.1", 0), make_public_handler(self.app), max_workers=1, overload_send_timeout=0.2
+        )
+        held = server._worker_slots.acquire(blocking=False)
+        self.assertTrue(held)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        client = socket.create_connection(("127.0.0.1", server.server_port), timeout=2)
+        try:
+            client.sendall(
+                f"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1:{server.server_port}\r\n\r\n".encode()
+            )
+            response_parts = []
+            while True:
+                chunk = client.recv(4096)
+                if not chunk:
+                    break
+                response_parts.append(chunk)
+            response = b"".join(response_parts)
+            self.assertIn(b"HTTP/1.1 503 Service Unavailable", response)
+            self.assertIn(b"Connection: close", response)
+            self.assertIn(b"Retry-After: 1", response)
+            self.assertIn(b"Cache-Control: no-store", response)
+            self.assertIn(b'{"error":"service_busy"}', response)
+        finally:
+            client.close()
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+            if held:
+                server._worker_slots.release()
+
+    def test_secret_file_preserves_raw_key_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "identity-secret"
+            expected = b"\x00 leading and trailing \n\xff"
+            path.write_bytes(expected)
+            with mock.patch.dict(os.environ, {"AGENTKIT_TEST_SECRET_FILE": str(path)}):
+                self.assertEqual(expected, _secret_file("AGENTKIT_TEST_SECRET_FILE", minimum=len(expected)))
+
+    def test_public_entrypoint_rejects_mutable_email_identity_header(self):
+        with mock.patch.dict(os.environ, {"AGENTKIT_IDENTITY_USER_HEADER": "X-Forwarded-User"}):
+            self.assertEqual("X-Forwarded-User", _identity_user_header())
+        with mock.patch.dict(os.environ, {"AGENTKIT_IDENTITY_USER_HEADER": "X-Forwarded-Email"}):
+            with self.assertRaisesRegex(RuntimeError, "stable OIDC subject"):
+                _identity_user_header()
+
+    def test_public_entrypoint_rejects_unvetted_role_and_tenant_headers(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "AGENTKIT_IDENTITY_ROLES_HEADER": "X-Forwarded-Groups",
+                "AGENTKIT_IDENTITY_TENANT_HEADER": "X-Agent-Tenant",
+            },
+        ):
+            self.assertEqual("X-Forwarded-Groups", _identity_roles_header())
+            self.assertEqual("X-Agent-Tenant", _identity_tenant_header())
+        with mock.patch.dict(os.environ, {"AGENTKIT_IDENTITY_ROLES_HEADER": "X-Agent-Roles"}):
+            with self.assertRaisesRegex(RuntimeError, "verified OIDC roles"):
+                _identity_roles_header()
+        with mock.patch.dict(os.environ, {"AGENTKIT_IDENTITY_TENANT_HEADER": "X-Tenant"}):
+            with self.assertRaisesRegex(RuntimeError, "public proxy contract"):
+                _identity_tenant_header()
+
+    def test_persisted_over_quota_user_receives_controlled_507(self):
+        self.app.provisioner.provision("tenant-a", "over-quota")
+        self.app.storage_quota_bytes = 1
+
+        status, _response_headers, value = self.request(
+            "/api/session",
+            headers=self.identity("over-quota"),
+        )
+
+        self.assertEqual((507, {"error": "quota_exceeded"}), (status, value))
+
+    def test_public_github_preview_requires_member_and_uses_bounded_connector(self):
+        preview = {
+            "name": "github-README.md.txt",
+            "size": 7,
+            "content_base64": "Zml4dHVyZQ==",
+            "text": "fixture",
+            "source": {"blob_sha": "a" * 40},
+        }
+        payload = {
+            "owner": "Anil-matcha",
+            "repo": "Open-Dots",
+            "path": "README.md",
+            "ref": "5abe1b3d65d5176af936ed92de1b731634d2bcb5",
+        }
+        member_headers, member_token = self.session("github-member", roles="member")
+        with mock.patch("cockpit.server.preview_file", return_value=preview) as connector:
+            status, _response_headers, value = self.request(
+                "/api/connectors/github/preview",
+                headers={**member_headers, "Origin": ORIGIN, "X-CSRF-Token": member_token},
+                method="POST",
+                body=payload,
+            )
+            self.assertEqual((200, preview), (status, value))
+            connector.assert_called_once_with(payload)
+
+            viewer_headers, viewer_token = self.session("github-viewer", roles="viewer")
+            status, _response_headers, value = self.request(
+                "/api/connectors/github/preview",
+                headers={**viewer_headers, "Origin": ORIGIN, "X-CSRF-Token": viewer_token},
+                method="POST",
+                body=payload,
+            )
+            self.assertEqual((403, {"error": "forbidden"}), (status, value))
+            connector.assert_called_once_with(payload)
 
     def test_authenticated_surface_uses_resource_ids_and_csrf(self):
         headers, token = self.session("alice")
@@ -504,6 +853,8 @@ class PublicServerTests(unittest.TestCase):
             data_root=Path(self.temporary.name) / "unsafe",
             base_agents_root=ROOT / "agents",
             identity_secret=b"u" * 32,
+            identity_issuer="https://identity.example.test/realms/company",
+            identity_client_id="agentkit-public-test",
             allowed_backends={"codex"},
         )
         self.assertFalse(unsafe.ready())
@@ -512,6 +863,8 @@ class PublicServerTests(unittest.TestCase):
             data_root=Path(self.temporary.name) / "missing-secret",
             base_agents_root=ROOT / "agents",
             identity_secret=b"m" * 32,
+            identity_issuer="https://identity.example.test/realms/company",
+            identity_client_id="agentkit-public-test",
             allowed_backends={"deepseek"},
         )
         self.assertFalse(missing_secret.ready())
@@ -520,6 +873,8 @@ class PublicServerTests(unittest.TestCase):
             data_root=Path(self.temporary.name) / "managed",
             base_agents_root=ROOT / "agents",
             identity_secret=b"d" * 32,
+            identity_issuer="https://identity.example.test/realms/company",
+            identity_client_id="agentkit-public-test",
             allowed_backends={"deepseek"},
             deepseek_api_key="managed-test-key",
         )

@@ -11,10 +11,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import shutil
 import stat
 import threading
+import time
 import uuid
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -116,6 +118,8 @@ class TenantRuntimeProvisioner(Generic[T]):
             "workspace",
         }
     )
+    _IDENTITY_NAMESPACE_MARKER = ".identity-namespace.sha256"
+    _USER_NAMESPACE_HMAC_VERSION = b"user-namespace-v1\0"
 
     def __init__(
         self,
@@ -123,6 +127,7 @@ class TenantRuntimeProvisioner(Generic[T]):
         base_agents_root: os.PathLike[str] | str,
         *,
         identity_secret: bytes | str | None = None,
+        identity_namespace: str = "",
         max_cached_runtimes: int = 64,
         max_users_per_tenant: int = 100,
     ) -> None:
@@ -143,6 +148,7 @@ class TenantRuntimeProvisioner(Generic[T]):
         if not isinstance(identity_secret, bytes) or len(identity_secret) < 16:
             raise ValueError("identity_secret must contain at least 16 bytes")
         self._identity_secret = identity_secret
+        self._identity_namespace_digest = self._initialize_identity_namespace(identity_namespace)
         self.max_cached_runtimes = max_cached_runtimes
         self.max_users_per_tenant = max_users_per_tenant
         self._provision_lock = threading.RLock()
@@ -150,6 +156,119 @@ class TenantRuntimeProvisioner(Generic[T]):
         self._runtime_admission_lock = threading.Lock()
         self._runtime_cache: OrderedDict[tuple[str, str], T] = OrderedDict()
         self._tenant_users: dict[str, set[str]] = {}
+
+    def _tenant_data_exists(self) -> bool:
+        """Return whether the data root already contains tenant state."""
+
+        tenants_root = self.data_root / "tenants"
+        if not tenants_root.exists():
+            return False
+        if _is_reparse_point(tenants_root) or not tenants_root.is_dir():
+            raise ValueError("tenant storage must be a directory without reparse points")
+        try:
+            return any(tenants_root.iterdir())
+        except OSError as exc:
+            raise ValueError("tenant storage cannot be inspected") from exc
+
+    @classmethod
+    def _read_identity_namespace_marker(cls, marker: Path, expected: bytes) -> None:
+        """Validate a marker, tolerating a concurrent writer's short first read."""
+
+        for attempt in range(20):
+            if _is_reparse_point(marker):
+                raise ValueError("identity namespace marker must not be a symlink or reparse point")
+            try:
+                value = marker.read_bytes()
+            except FileNotFoundError as exc:
+                raise ValueError("identity namespace marker disappeared") from exc
+            if value == expected:
+                return
+            # A creator can publish the marker inode before its fsync/write has
+            # completed. Retry only malformed short values; every other mismatch
+            # is a deliberate fail-closed namespace mismatch.
+            if len(value) < len(expected) and attempt < 19:
+                time.sleep(0.005)
+                continue
+            raise ValueError("identity namespace marker is corrupt or mismatched")
+
+    def _create_identity_namespace_marker(self, marker: Path, value: bytes) -> None:
+        """Create the marker exactly once, without ever storing the namespace."""
+
+        descriptor = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        try:
+            written = os.write(descriptor, value)
+            if written != len(value):
+                raise OSError("identity namespace marker write was incomplete")
+            os.fsync(descriptor)
+        except Exception:
+            try:
+                os.unlink(marker)
+            except OSError:
+                pass
+            raise
+        finally:
+            os.close(descriptor)
+
+    def _initialize_identity_namespace(self, identity_namespace: str) -> bytes | None:
+        """Bind user IDs to a deployment namespace and validate its marker."""
+
+        if identity_namespace == "":
+            return None
+        if (
+            not isinstance(identity_namespace, str)
+            or not identity_namespace.strip()
+            or "\x00" in identity_namespace
+            or len(identity_namespace) > 4096
+        ):
+            raise ValueError("identity_namespace must be a bounded non-empty string")
+
+        digest = hashlib.sha256(identity_namespace.encode("utf-8")).digest()
+        marker_value = digest.hex().encode("ascii")
+        marker = self.data_root / self._IDENTITY_NAMESPACE_MARKER
+        if _is_reparse_point(marker):
+            raise ValueError("identity namespace marker must not be a symlink or reparse point")
+        try:
+            self._read_identity_namespace_marker(marker, marker_value)
+        except ValueError as exc:
+            if marker.exists():
+                # A concurrent initializer may have created the marker after
+                # the first read observed it as missing. Re-read before
+                # treating the marker as corrupt or mismatched.
+                self._read_identity_namespace_marker(marker, marker_value)
+                return digest
+            if self._tenant_data_exists():
+                raise ValueError("identity namespace marker is missing; migration is required") from exc
+            try:
+                self._create_identity_namespace_marker(marker, marker_value)
+            except FileExistsError:
+                # Another process won the create race. Read its complete marker
+                # and enforce the same namespace before admitting this process.
+                self._read_identity_namespace_marker(marker, marker_value)
+        return digest
+
+    def _persisted_user_ids(self, tenant_id: str) -> set[str]:
+        """Return canonical persisted users, failing closed on corruption."""
+
+        tenant_root = self.data_root / "tenants" / tenant_id
+        users_root = tenant_root / "users"
+        if _is_reparse_point(tenant_root) or _is_reparse_point(users_root):
+            raise ValueError("tenant user storage must not be a symlink or reparse point")
+        if not users_root.exists():
+            return set()
+        if not users_root.is_dir():
+            raise ValueError("tenant user storage must be a directory")
+        found: set[str] = set()
+        try:
+            entries = tuple(users_root.iterdir())
+        except OSError as exc:
+            raise ValueError("tenant user storage cannot be inspected") from exc
+        for entry in entries:
+            if not re.fullmatch(r"u_[0-9a-f]{32}", entry.name):
+                raise ValueError("tenant user storage contains a malformed entry")
+            if _is_reparse_point(entry) or not entry.is_dir():
+                raise ValueError("tenant user storage contains an unsafe entry")
+            found.add(entry.name)
+        return found
 
     def _load_or_create_secret(self) -> bytes:
         secret_path = self.data_root / ".identity-key"
@@ -176,7 +295,16 @@ class TenantRuntimeProvisioner(Generic[T]):
         # 128 opaque bits avoid Windows MAX_PATH failures once nested agent
         # resources are copied, while retaining a negligible collision risk.
         tenant = hmac.new(self._identity_secret, b"tenant\0" + tenant_identity.encode(), hashlib.sha256).hexdigest()[:32]
-        user = hmac.new(self._identity_secret, b"user\0" + user_identity.encode(), hashlib.sha256).hexdigest()[:32]
+        if self._identity_namespace_digest is None:
+            user_message = b"user\0" + user_identity.encode()
+        else:
+            user_message = (
+                self._USER_NAMESPACE_HMAC_VERSION
+                + self._identity_namespace_digest
+                + b"\0"
+                + user_identity.encode()
+            )
+        user = hmac.new(self._identity_secret, user_message, hashlib.sha256).hexdigest()[:32]
         return f"t_{tenant}", f"u_{user}"
 
     def _validate_base_tree(self) -> None:
@@ -227,6 +355,10 @@ class TenantRuntimeProvisioner(Generic[T]):
             _assert_directory(tenant_root.parent, "tenant root parent")
             tenant_root.mkdir(parents=True, exist_ok=True)
             _assert_directory(tenant_root, "tenant root")
+            users_root = tenant_root / "users"
+            _assert_directory(users_root, "tenant users root")
+            users_root.mkdir(parents=True, exist_ok=True)
+            _assert_directory(users_root, "tenant users root")
             user_root.mkdir(parents=True, exist_ok=True)
             _assert_directory(user_root, "user root")
             agents_root = user_root / "agents"
@@ -342,8 +474,8 @@ class TenantRuntimeProvisioner(Generic[T]):
                 if cached is not None:
                     self._runtime_cache.move_to_end(key)
                     return cached
-                active_users = sum(1 for cached_tenant, _ in self._runtime_cache if cached_tenant == tenant_id)
-                if active_users >= self.max_users_per_tenant:
+                persisted_users = self._persisted_user_ids(tenant_id)
+                if user_id not in persisted_users and len(persisted_users) >= self.max_users_per_tenant:
                     raise RuntimeLimitError("tenant user limit exceeded")
                 if len(self._runtime_cache) >= self.max_cached_runtimes:
                     raise RuntimeLimitError("runtime cache limit exceeded")
