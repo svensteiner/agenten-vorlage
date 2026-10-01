@@ -1,0 +1,4 @@
+# Vendored upstream resources are byte-pinned. Keep their source bytes stable
+# across Windows checkouts so UPSTREAM.json hashes remain reproducible.
+agentkit/library/skills/** text eol=lf
+agentkit/library/skills/**/UPSTREAM.json text eol=lf

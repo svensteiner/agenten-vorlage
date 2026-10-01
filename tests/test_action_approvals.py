@@ -15,10 +15,22 @@ from agentkit.scaffold import create
 class ActionApprovalTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
+        # Keep Codex construction hermetic on Windows; production sandbox
+        # validation still reads and validates this real fixture config.
+        self.codex_home = Path(self.tmp.name) / "codex-home"
+        self.codex_home.mkdir()
+        (self.codex_home / "config.toml").write_text(
+            '[windows]\nsandbox = "unelevated"\n', encoding="utf-8"
+        )
+        self._codex_home = patch.dict(
+            os.environ, {"CODEX_HOME": str(self.codex_home)}, clear=False
+        )
+        self._codex_home.start()
         self.agent = create(Path(self.tmp.name) / "agent", "developer", "agent", "company")
         self.workspace = self.agent / "workspace"
 
     def tearDown(self):
+        self._codex_home.stop()
         self.tmp.cleanup()
 
     def test_approve_exact_demo_writes_once_per_proposal(self):

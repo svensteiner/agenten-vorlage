@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -88,7 +89,10 @@ class ImageAttachmentTests(unittest.TestCase):
         self.assertNotIn("extraction_method", text)
         self.assertNotIn("language", text)
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows OCR is only available on Windows")
+    @unittest.skipUnless(
+        sys.platform == "win32" and os.environ.get("AGENTKIT_RUN_REAL_OCR", "1") == "1",
+        "real Windows OCR requires AGENTKIT_RUN_REAL_OCR=1 on a Windows host",
+    )
     def test_real_windows_ocr_fixture_flows_through_conversation_and_restart(self):
         from agentkit.scaffold import create
         from cockpit.conversations import Conversations

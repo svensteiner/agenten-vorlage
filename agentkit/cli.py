@@ -68,6 +68,14 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Windows can inherit a legacy console code page even when the CLI is
+    # launched with redirected pipes.  JSON results may contain Unicode from
+    # workflow instructions (for example, the ``→`` arrow), so make the
+    # process streams explicitly UTF-8 before argparse or any output runs.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="backslashreplace")
     args = parser().parse_args(argv)
     try:
         if args.command == "profiles":

@@ -77,8 +77,11 @@ Die fünf Playwright-Journeys laufen gegen isolierte temporäre Serverzustände 
 prüfen Navigation, zugängliche Namen, mobilen Reflow, Archivieren/Wiederherstellen,
 zweistufige Demo-Freigaben, fehlgeschlagenes Review, Reparatur, Download, Reload sowie
 Authentifizierung und Trennung zweier öffentlicher Nutzersitzungen.
-CI erzeugt Trace und Screenshot als Workflow-Artefakte. Der aktuelle Remote-Lauf konnte
-wegen eines externen GitHub-Billing-/Spending-Limits noch keine Schritte starten.
+CI erzeugt Trace und Screenshot als Workflow-Artefakte. Der Public-Deployment-Job baut
+zusätzlich das Public-Image, prüft dessen Dependency-Scope, interpoliert Compose und startet
+den Public-Server als Nonroot-Prozess bis zur Readiness. Echte WinRT-OCR bleibt
+wegen unzuverlässiger Initialisierung auf Hosted-Runnern im separaten lokalen
+`verify_release.py --windows-ocr`-Gate.
 
 ## Backend-Nachweise
 

@@ -73,11 +73,12 @@ Rollen, Skills und Runtime bleiben getrennt.
   Workspace-Pfads im 390-Pixel-Dialog und belegt die Korrektur. DeepSeek akzeptiert
   nur HTTPS-Basis-URLs ohne eingebettete Zugangsdaten, Query oder Fragment und folgt
   keinen Redirects; Bearer-Zugangsdaten bleiben an den konfigurierten Provider gebunden.
-- GitHub Actions erzwingt jetzt Ruff, einen Coverage-Floor, Plattformtests,
-  Workflow-Trace, Windows-OCR, Bandit ab mittlerer Schwere, Dependency-Audit,
-  Wheel-Neuinstallation und einen Chromium-E2E-Job.
-  Der aktuelle externe Actions-Lauf startete wegen eines Billing-/Spending-Limits des
-  GitHub-Kontos keine Schritte; er ist daher kein grüner Remote-CI-Nachweis.
+- GitHub Actions erzwingt Ruff, einen Coverage-Floor, Python-3.11/3.12-
+  Plattformtests, Workflow-Trace, Bandit ab mittlerer Schwere, Dependency-Audit,
+  Wheel-Neuinstallation, Chromium-E2E sowie Build und Nonroot-Start des Public-Images.
+  Die zwei echten WinRT-OCR-Fixtures bleiben wegen unzuverlässiger Initialisierung auf
+  Hosted-Runnern im expliziten lokalen Gate `verify_release.py --windows-ocr`; der
+  plattformunabhängige OCR-Vertrag läuft weiterhin in CI.
 - Navigierbare Workflow-Spur aus echten Checkpoints: Freigaben, Nacharbeit,
   laufende Schritte, ungeklärte Ausgänge und Abschluss. Zehn Zustandsfälle geprüft;
   Computer Use: Demo mit zwei Freigaben, Neustart, Korrektur, Review und Download;

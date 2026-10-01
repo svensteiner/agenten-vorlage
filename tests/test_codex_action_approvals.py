@@ -14,10 +14,24 @@ from agentkit.storage import save
 class CodexActionApprovalTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
+        # CodexBackend validates the Windows sandbox configuration at
+        # construction time.  Keep these fixture-only tests independent of
+        # the developer/CI user's real ~/.codex directory while exercising
+        # the production validation unchanged.
+        self.codex_home = Path(self.tmp.name) / "codex-home"
+        self.codex_home.mkdir()
+        (self.codex_home / "config.toml").write_text(
+            '[windows]\nsandbox = "unelevated"\n', encoding="utf-8"
+        )
+        self._codex_home = patch.dict(
+            os.environ, {"CODEX_HOME": str(self.codex_home)}, clear=False
+        )
+        self._codex_home.start()
         self.agent = create(Path(self.tmp.name) / "agent", "developer", "agent", "company")
         self.workspace = self.agent / "workspace"
 
     def tearDown(self):
+        self._codex_home.stop()
         self.tmp.cleanup()
 
     @staticmethod

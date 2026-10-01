@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 import struct
@@ -17,7 +18,10 @@ def png(width=10, height=10, color=True):
 
 
 class ImageExtractTests(unittest.TestCase):
-    @unittest.skipUnless(sys.platform == "win32", "Windows OCR required")
+    @unittest.skipUnless(
+        sys.platform == "win32" and os.environ.get("AGENTKIT_RUN_REAL_OCR", "1") == "1",
+        "real Windows OCR requires AGENTKIT_RUN_REAL_OCR=1 on a Windows host",
+    )
     def test_real_local_windows_ocr_fixture(self):
         for filename in ("reference.png", "reference.jpg"):
             fixture = Path(__file__).parent / "fixtures" / "ocr" / filename

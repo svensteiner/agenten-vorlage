@@ -9,8 +9,9 @@ Commits, MIT, README und Implementierungsgrenzen am 30.09.2026; Details in
 [GITHUB-ADOPTION.md](GITHUB-ADOPTION.md)).
 Open-Dots beschreibt einen lokal betriebenen Arbeitsraum mit Assistenten, Chat, Werkzeugen,
 Freigaben, Connectoren und optionaler Computerlaufzeit. Ein Mehrbenutzer-SaaS, mobile Clients
-und ein globaler Scheduler sind keine bestehenden Referenzfunktionen; sie bleiben mögliche
-Erweiterungen. Öffentliche Bereitstellung wird durch das aktuelle Produkt nicht freigegeben.
+und ein globaler Scheduler sind keine bestehenden Referenzfunktionen. Dieses Repository hat
+zusätzlich einen getrennt bewerteten Single-Tenant-Mehrbenutzer-Release-Candidate; dessen
+installationsabhängige Go-live-Gates stehen in [PRODUCT-READINESS.md](PRODUCT-READINESS.md).
 
 ## Lokaler Single-Owner-MVP: Bereiche und Nachweise
 
@@ -46,11 +47,12 @@ interception der Codex CLI.
 
 Die 11/11-Quote ist eine binäre Abdeckung des vereinbarten Funktionsumfangs, keine
 statistische Zuverlässigkeits- oder Code-Coverage-Aussage. Die aktuelle kombinierte
-Line-/Branch-Coverage beträgt 80 %. Browser-E2E und lokale Release-Gates sind jetzt in
-GitHub Actions konfiguriert; ein erfolgreicher Remote-Lauf steht wegen des externen
-Billing-/Spending-Limits des GitHub-Kontos noch aus.
+Line-/Branch-Coverage beträgt 80 %. GitHub Actions führt die Plattform-, Package-,
+Browser- und Public-Container-Gates aus. Echte Windows-OCR bleibt wegen der WinRT-
+Initialisierung auf Hosted-Runnern ein separat protokolliertes lokales Release-Gate.
 
-Diese Freigabe gilt nicht für Mehrbenutzerbetrieb oder öffentliche Bereitstellung.
-Authentifizierte beziehungsweise breite Schreibconnectoren, visuelle Bildanalyse,
-OCR gescannter PDFs, mobile Clients und eine hostile-web-gehärtete Computer-Sandbox
-sind Erweiterungen außerhalb dieses MVP-Umfangs.
+Die 11/11-Freigabe bewertet weiterhin nur den lokalen Single-Owner-MVP. Für den
+Single-Tenant-Mehrbenutzerbetrieb gilt der separate Public-Release-Candidate mit sieben
+externen Zielsystem-Gates. Authentifizierte beziehungsweise breite Schreibconnectoren,
+visuelle Bildanalyse, OCR gescannter PDFs, mobile Clients und eine hostile-web-gehärtete
+Computer-Sandbox bleiben Erweiterungen außerhalb dieses MVP-Umfangs.
