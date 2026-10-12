@@ -22,7 +22,10 @@ class PublicRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.user_root = Path(self.temporary.name)
-        shutil.copytree(ROOT / "agents", self.user_root / "agents")
+        shutil.copytree(
+            ROOT / "agents", self.user_root / "agents",
+            ignore=shutil.ignore_patterns(".runs", "__pycache__"),
+        )
         (self.user_root / "generated").mkdir()
         (self.user_root / "workspaces" / "default").mkdir(parents=True)
         self.manager = JobManager(

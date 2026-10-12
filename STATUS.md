@@ -17,6 +17,15 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Reale Coding-Abnahme am 12.10.2026: Luna reparierte `unique_ordered` in einem
+  isolierten Projekt, drei unveraenderte Tests bestanden und die separate read-only
+  Rolle pruefte das Artefakt. Run `1f030bb10e4b45d2a7ed50d870bd7676` abgeschlossen.
+  Ein vorheriger Live-Lauf deckte widerspruechliche Inspektions-/Vorschlagsrechte auf;
+  der Adapter-Prompt ist korrigiert. LF-Vorschlaege fuer einheitliche CRLF-Dateien
+  funktionieren jetzt ohne Aenderung der Zeilenenden; mehrdeutige Edits bleiben gesperrt.
+  Der erfolgreiche Lauf benoetigte Feedback bei gemischten Zeilenenden; daraus folgt
+  kein Nachweis unbeaufsichtigter Bearbeitung beliebiger Repositories.
+
 - `x-growth-agent` bildet Strategie, Research, Content, Verifikation, Operator-Grenze und
   Reporting des bestehenden Marketingbots als portables AgentKit-Paket ab. Live-X-Aktionen
   verbleiben in der bestehenden Marketingbot-Pipeline.

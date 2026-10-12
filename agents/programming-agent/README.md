@@ -24,7 +24,19 @@ wesentlichen Schritt aktuell. Bestehende große Dateien werden über gezielte ex
 ein vollständiges Überschreiben aus einer Teilansicht wird vom DeepSeek-Adapter blockiert. Nach
 Unterbrechungen wird der Checkpoint zuerst inspiziert und nur mit neuem Feedback fortgesetzt.
 
-## Schnelltest
+## Reale Ausfuehrungsabnahme am 12.10.2026
+
+Ein isolierter Bugfix-Auftrag mit Codex `gpt-5.6-luna` wurde abgeschlossen
+(`1f030bb10e4b45d2a7ed50d870bd7676`, drei Rollen-/Planungsschritte, Review bestanden).
+Vorher scheiterten zwei von drei unveraenderten Tests; danach bestanden alle drei,
+sowohl im hostseitigen `run_pytest` als auch bei separater `unittest`-Nachpruefung.
+Der Lauf erforderte konkretes Feedback zu gemischten Zeilenenden nach drei abgewiesenen
+Edits. Er belegt einen echten Python-Bugfix, keine allgemeine Autonomiequote.
+Der Codex-Worker darf mit nativen read-only Werkzeugen untersuchen; Schreib- und
+Testaktionen werden weiterhin vom Host nach Freigabe ausgefuehrt. Einheitliche
+CRLF-Dateien behalten ihre Zeilenenden bei LF-formatierten Edit-Vorschlaegen.
+
+## Offline-Schnelltest
 
 Aus dem Root der Agenten-Vorlage:
 

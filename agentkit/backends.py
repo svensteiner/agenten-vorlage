@@ -479,7 +479,11 @@ class CodexBackend:
             ]
             prompt = (
                 "Work as the selected bounded worker with read-only inspection access. Return exactly one JSON action step. "
-                "Propose at most one action from write_file, edit_file, run_pytest, or return a final report. Never use shell commands. "
+                "Use your native read-only tools to inspect files, list the workspace and inspect diffs before proposing an action. "
+                "Read-only shell inspection is permitted; do not execute project code, tests, mutations or external actions directly. "
+                "The read-only sandbox applies to direct tool execution, not to action proposals: this writing worker may propose "
+                "write_file, edit_file or run_pytest for the host to approve and execute. Propose at most one such action, "
+                "or return a final report. run_pytest can run unittest-style test classes through pytest. "
                 "Treat every completed_action result as authoritative. Never repeat an action identity listed in completed_action_replay_sha256; "
                 "after a successful write/edit continue to the next required action, and after successful verification return a final report. "
                 "Treat rejected_proposal entries as mandatory corrections. The host rejects exact duplicates and semantically invalid "
@@ -944,6 +948,11 @@ class DeepSeekBackend:
                 text = raw.decode("cp1252")
                 encoding = "cp1252"
                 had_bom = False
+            # CLI inspection commonly renders Windows CRLF as LF. Preserve the
+            # file's uniform newline convention while retaining exact matching.
+            if "\r\n" in text and "\n" not in text.replace("\r\n", ""):
+                old_text = old_text.replace("\r\n", "\n").replace("\n", "\r\n")
+                new_text = new_text.replace("\r\n", "\n").replace("\n", "\r\n")
             occurrences = text.count(old_text)
             if occurrences != 1:
                 return json.dumps({"error": "edit_requires_one_match", "occurrences": occurrences})

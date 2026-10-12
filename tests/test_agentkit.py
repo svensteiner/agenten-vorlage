@@ -582,6 +582,24 @@ class AgentKitTests(unittest.TestCase):
         self.assertIn('"edited": "target.txt"', result)
         self.assertEqual("alpha\ngamma\n", path.read_text(encoding="utf-8"))
 
+    def test_edit_preserves_crlf_and_rejects_ambiguous_matches(self):
+        path = self.workspace / "target.txt"
+        backend = DeepSeekBackend(api_key="test-only-key")
+        context = {"workspace": str(self.workspace), "sandbox": "workspace-write"}
+        path.write_bytes(b"alpha\r\nbeta\r\n")
+        result = backend._run_tool("edit_file", {
+            "path": "target.txt", "old_text": "alpha\nbeta\n", "new_text": "alpha\ngamma\n"
+        }, context, 5)
+        self.assertIn('"edited"', result)
+        self.assertEqual(b"alpha\r\ngamma\r\n", path.read_bytes())
+        original = b"beta\r\nbeta\r\n"
+        path.write_bytes(original)
+        result = backend._run_tool("edit_file", {
+            "path": "target.txt", "old_text": "beta\n", "new_text": "gamma\n"
+        }, context, 5)
+        self.assertIn("edit_requires_one_match", result)
+        self.assertEqual(original, path.read_bytes())
+
     def test_deepseek_refuses_large_existing_file_rewrite(self):
         path = self.workspace / "large.py"
         path.write_text("x" * 2_000, encoding="utf-8")

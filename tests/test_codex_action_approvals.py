@@ -67,8 +67,13 @@ class CodexActionApprovalTests(unittest.TestCase):
 
     def test_running_becomes_awaiting_before_any_codex_write(self):
         with patch("agentkit.backends.codex_command", return_value=["codex"]), \
-             patch.object(CodexBackend, "_call", side_effect=[self.decision(), self.proposal(path="created.txt", content="safe")]):
+             patch.object(CodexBackend, "_call", side_effect=[self.decision(), self.proposal(path="created.txt", content="safe")]) as call:
             state = self.engine().run("create file")
+        worker_prompt, _, worker_context, _ = call.call_args.args
+        self.assertEqual("read-only", worker_context["sandbox"])
+        self.assertIn("native read-only tools", worker_prompt)
+        self.assertIn("not to action proposals", worker_prompt)
+        self.assertNotIn("Never use shell commands", worker_prompt)
         self.assertEqual("awaiting_approval", state["status"])
         self.assertIsNone(state["in_flight"])
         self.assertFalse((self.workspace / "created.txt").exists())
