@@ -2,6 +2,44 @@
 
 ## Aktueller Stand, 13.10.2026
 
+### Ergebnis des anschließenden Coding-Tests
+
+Die autonome Umsetzung hat die Abnahme nicht bestanden. Nachdem reine
+Promptänderungen keinen belastbaren Qualitätsgewinn zeigten, sollte Qwen zuerst
+Verhaltenstests für einen begrenzten Fakten- und Überarbeitungsschritt schreiben.
+Dieser Schritt sollte höchstens zwei Modellaufrufe verwenden, eine geänderte
+Fassung nochmals bestätigen lassen und bei Fehlern ohne alten Ersatztext enden.
+
+- Qwen Coder Next im 8192-Kontext: erster Versuch mit tatsächlichem
+  300-Sekunden-Zeitfehler; erneuter Streaming-Versuch schrieb Tests und reparierte
+  einen eigenen Syntaxfehler. Die fachliche Prüfung fand anschließend falsche
+  Exception-Erwartungen und ungeeignete Grenzwert-/Bestätigungsfälle.
+- Auch die überarbeitete Fassung hatte keinen funktionierenden Aufrufzähler und
+  erwartete die Annahme einer 200-Zeichen-Fassung trotz der 190-Zeichen-Grenze.
+- Die kompakte Gegenprobe mit Qwen 30B erfand andere Parameter, gab den Prüfer
+  mit falscher Signatur vor und verwendete Objekte statt der vereinbarten Texte.
+  Das unabhängige Code-Review lehnte diese Fassung ab.
+
+Diese Testdateien wurden als abgelehnte Belege außerhalb der privaten Testsuite
+gesichert. Es entstand kein freigabefähiger neuer Prüfschritt. Ein erwarteter
+Importfehler wegen eines noch fehlenden Moduls war lediglich der dokumentierte
+RED-Schritt und kein Nachweis sinnvoller Tests. Die erfolgreichen 166 vorhandenen
+Schutztests schließen die verworfenen neuen Tests ausdrücklich nicht ein.
+
+Frische Abschlussprüfung: **166 geschützte Tests bestanden in 5,52 Sekunden**;
+**502 von 502 manifestierten Original-Quelldateien unverändert**, keine fehlenden
+Dateien oder Hashabweichungen. Scoped Git-Status der ursprünglichen Zielquellen
+war leer. Kein Kandidat wurde in den laufenden Bot übernommen, kein Browser
+gestartet, keine Veröffentlichung ausgelöst und kein Bot-Neustart veranlasst.
+Der Dauerlauf-Prozess war beim abschließenden Read-only-Check vorhanden.
+
+Lokale Belege: `qwen-refiner-tests-rejected-v2.py`,
+`qwen-refiner-tests-rejected-qwen30.py`, zugehörige Aider-Protokolle,
+`qwen-refiner-red.log`, `qwen-safety-final-valid-20261013.log` und
+`marketingbot-source-502-final-20261013.json` unter `.runs/qualification/`.
+Sie bleiben privat. Das Ergebnis ist ein negativer Autonomietest mit
+Operatorunterstützung, kein erledigter Verbesserungsauftrag.
+
 Die Blindbewertungen normaler X-Generierung verfehlten die vereinbarten
 Freigabekriterien. Je Vergleich wurden 18 Ausgaben als neun Paare aus drei
 Belegbriefings und drei Wiederholungen geprüft. Die Zeichenlängen wurden mit

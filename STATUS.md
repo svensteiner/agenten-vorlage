@@ -17,6 +17,15 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Der autonome Qwen-Änderungsauftrag hat die Abnahme nicht bestanden. Auch die
+  anschließenden Tests für einen begrenzten Fakten-/Überarbeitungsschritt waren
+  nach mehreren Versuchen unbrauchbar: falsche API, fehlende echte Bestätigung,
+  ungeeignete Fixtures und fehlerhafte Zählung. Unabhängiges Review: nicht
+  freigeben. Kein neuer Prüfschritt wurde implementiert oder aktiviert. Die
+  verworfenen Testdateien liegen außerhalb der isolierten Testsuite als Belege.
+  Abschlusskontrolle: 166 geschützte Tests bestanden in 5,52 Sekunden; alle
+  502 manifestierten Original-Quelldateien stimmen weiterhin überein. Die
+  Qualifikation belegt keinen vollständig selbstständigen Coding-Erfolg.
 - Aktuelle Blindqualifikation der normalen Standalone-X-Generierungsentwürfe mit
   Haiku 4.5: 3/9 Präferenzen für den Kandidaten, 8 Hard-Fail-Paare und −0,444
   mittlerer Dimensionsvorsprung. Sieben von neun Kandidatenentwürfen überschritten
@@ -24,9 +33,9 @@ zurueckgestellt.
   bestanden. Das bewertet generierte Entwürfe, nicht tatsächlich veröffentlichte
   Posts oder deren Reichweite. Details: docs/QWEN-MARKETING-QUALIFICATION.md.
 - Die aktuelle Prompt-/Tonfassung liegt nur in einer privaten Qualifikationskopie;
-  166 geschützte Tests bestanden. Ein neuer, begrenzter semantischer Prüf- und
-  Überarbeitungsschritt wird dort mit TDD entwickelt, ist aber nicht in das
-  Originalprodukt übernommen. Der bestehende Produktions-Gate bleibt unverändert.
+  166 geschützte Tests bestanden. Der Versuch, einen begrenzten semantischen
+  Prüf- und Überarbeitungsschritt mit TDD zu entwickeln, hat bereits bei den
+  neuen Tests die Abnahme verfehlt. Der bestehende Produktions-Gate bleibt unverändert.
   Die 502 manifestierten Original-Quelldateien blieben unverändert; kein Neustart
   und keine Veröffentlichung. Die Arbeit erfolgte mit Operatorunterstützung;
   ein autonomer Marketingzyklus ist nicht nachgewiesen.
