@@ -11,6 +11,16 @@ from agentkit.contracts import ContractError
 
 
 class OllamaBackendTests(unittest.TestCase):
+    def test_invalid_read_names_give_a_concrete_correction_before_io(self):
+        backend = OllamaBackend(base_url='http://192.168.0.101:11434/v1')
+        with patch.object(backend, '_workspace_path', side_effect=AssertionError('must not read')):
+            result = json.loads(backend._run_tool('read_file',
+                {'path':'app.py','start_line':101,'end_line':'DO_NOT_ECHO'}, {}, 5))
+        self.assertEqual('invalid_read_range', result['error'])
+        self.assertEqual(['end_line'], result['unexpected_arguments'])
+        self.assertEqual({'path':'relative/file.py','start_line':101,'max_lines':100}, result['example'])
+        self.assertNotIn('DO_NOT_ECHO', json.dumps(result))
+
     def test_optional_trace_keeps_source_content_out_and_is_bounded(self):
         backend=OllamaBackend(base_url='http://192.168.0.101:11434/v1')
         with tempfile.TemporaryDirectory() as temporary:

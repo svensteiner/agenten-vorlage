@@ -88,7 +88,12 @@ class OllamaBackend(ApiBackend):
         start, count = arguments.get('start_line',1), arguments.get('max_lines',100)
         if (type(start) is not int or type(count) is not int or start < 1 or not 1 <= count <= 200
                 or (name == 'read_file' and set(arguments) - {'path','start_line','max_lines'})):
-            return json.dumps({'error':'invalid_read_range','hint':'Use path, optional integer start_line >= 1 and max_lines between 1 and 200. No other arguments. No file was read.'})
+            return json.dumps({
+                'error':'invalid_read_range',
+                'hint':'Use only path, optional integer start_line >= 1 and integer max_lines between 1 and 200. end_line is not supported. No file was read.',
+                'unexpected_arguments':[key[:40] for key in sorted(set(arguments) - {'path','start_line','max_lines'})[:8]],
+                'example':{'path':'relative/file.py','start_line':101,'max_lines':100},
+            })
         target = self._workspace_path(context, arguments.get('path',''))
         try:
             if not target.is_file() or target.stat().st_size > 2_000_000:
