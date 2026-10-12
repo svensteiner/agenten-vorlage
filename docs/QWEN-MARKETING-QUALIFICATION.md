@@ -2,38 +2,48 @@
 
 ## Aktueller Stand, 13.10.2026
 
-Die Blindbewertung der normalen X-Generierung erfüllt die vereinbarten
-Freigabekriterien nicht. Pro Modellpfad wurden 18 Ausgaben als neun Paare aus
-drei identischen Belegbriefings und drei Wiederholungen verglichen. Die
-Zeichenlängen wurden mit Python-Unicode-Zählung nachgeprüft; diese Prüfung änderte
-die Bewertungen nicht.
+Die Blindbewertungen normaler X-Generierung verfehlten die vereinbarten
+Freigabekriterien. Je Vergleich wurden 18 Ausgaben als neun Paare aus drei
+Belegbriefings und drei Wiederholungen geprüft. Die Zeichenlängen wurden mit
+Python-Unicode-Zählung nachgeprüft.
 
-| Modellpfad | Kandidat bevorzugt | Kandidaten-Hard-Fails | Mittlerer Vorsprung über fünf Dimensionen | Kosten |
+| Modellpfad/Kandidat | Kandidat bevorzugt | Hard-Fail-Paare | Mittlerer Vorsprung über fünf Dimensionen | Kosten |
 |---|---:|---:|---:|---:|
-| Lokales Qwen 30B | 4/9 | 9 | +0,156 | lokal |
-| OpenRouter Haiku 4.5 | 5/9 | 6 | +0,489 | rund 0,078 USD |
+| Lokales Qwen 30B, frühere Fassung | 4/9 | 9 | +0,156 | lokal |
+| OpenRouter Haiku 4.5, frühere Fassung | 5/9 | 6 | +0,489 | rund 0,078 USD |
+| OpenRouter Haiku 4.5, reparierter Prompt v2 | 5/9 | 8 | −0,156 | rund 0,0575 USD |
+| OpenRouter Haiku 4.5, Prompt-/Tonfassung v3 | 3/9 | 8 | −0,444 | rund 0,0571 USD |
 
 Freigabe erfordert null Kandidaten-Hard-Fails, mindestens 7/9 Präferenzen und
-mindestens +0,5 mittleren Vorsprung. Beide Modellpfade verfehlen die Kriterien.
-Der Haiku-Kandidat liegt auch beim Mittelwert knapp unter der Grenze. Die
-Bewertungen gelten nur für diese Beispiele. Sie belegen keine Impressions,
-Replies, Engagement oder Reichweite auf X.
-
+mindestens +0,5 mittleren Vorsprung. Auch v3 verfehlte alle drei Kriterien.
+Alle neun v2-Kandidaten überschritten die im Prompt gesetzte Obergrenze von
+190 Zeichen (Längen: 196–292). Die Blindbewertung markierte als Längenfehler
+jedoch nur Texte über 240 Zeichen; fünf weitere Überschreitungen der echten
+Promptgrenze wurden dadurch nicht als Längen-Hard-Fail gezählt. Die Bewertungen
+gelten nur für diese Beispiele und belegen keine Impressions, Replies,
+Engagement oder Reichweite auf X. In v3 galt >190 Zeichen als Hard-Fail; sieben
+von neun Kandidatenentwürfen waren zu lang. Auch zwei Entwürfe mit höchstens
+190 Zeichen enthielten unbelegte Aussagen. Die Werte beziehen sich auf
+generierte Entwürfe vor der bestehenden Tournament- und Qualitätsprüfung, nicht
+auf tatsächlich veröffentlichte Posts oder deren Performance.
 Qwen hat eine Persona-Änderung und vier passende Tests in einer privaten
 Qualifikationskopie erstellt. Beim ersten privaten Kandidaten bestanden 138 von
 140 Tests. Zwei beanstandeten fehlende Persona- und Formulierungsanker:
 Wingsurfer/Sportler sowie „Fehlt diese Zuständigkeit“ und „Kein erzwungenes
-Entweder-oder“. Diese Fassung wurde nachgebessert; der unabhängig geprüfte
-reparierte Prompt besteht nun alle 140 Schutztests. Die separat gemeldeten
+Entweder-oder“. Diese Fassung wurde nachgebessert und bestand danach 140
+Schutztests. Die aktuelle private Prompt-/Tonfassung besteht 166 geschützte
+Tests. Die separat gemeldeten
 Baseline-Zahlen von 3 Fehlschlägen und 1 Erfolg stammen aus einem anderen
 Vergleich. Nichts davon wurde in den Original-Bot übernommen.
 
-Drei kontrollierte Vorher-/Nachher-Prompt-Captures mit identischen
-Belegbriefings, Stimmen und Formaten sind erfasst. Tatsächliche Modell-Ausgaben
-wurden noch nicht verglichen. Es gab keine Übernahme in den Original-Bot, keinen
-Neustart und keine Veröffentlichung. Die Arbeit erfolgte mit
-Operatorunterstützung; ein autonomer Marketingzyklus ist nicht nachgewiesen.
-
+Die Prompt-Captures und Modellantworten bleiben private Qualifikationsartefakte.
+Die v3-Ausgabebewertung verfehlte die Freigabekriterien. Ein neuer begrenzter
+semantischer Prüf- und Überarbeitungsschritt wird privat mit TDD entwickelt; er
+ist noch nicht in das Produkt übernommen. Der bestehende Produktions-Gate bleibt
+unverändert. Die 502 manifestierten Original-Quelldateien blieben unverändert;
+es gab keine Übernahme in den Original-Bot, keinen Neustart und keine
+Veröffentlichung. Die Arbeit erfolgte mit Operatorunterstützung; ein autonomer
+Marketingzyklus ist nicht nachgewiesen.
 Letzter gemeldeter Laufzeitstand: 405 Tests bestanden, drei Skips und 19
 Offline-Gates bestanden. Ein frischer Hashcheck verglich die 502 Einträge des
 bestehenden Manifests `.runs/qualification/qwen-marketing-baseline.json` mit den

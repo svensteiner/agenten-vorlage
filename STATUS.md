@@ -17,17 +17,19 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
-- Aktuelle Blindqualifikation der normalen Marketingbot-X-Generierung: weder lokales
-  Qwen 30B noch Haiku 4.5 erfüllt die Freigabekriterien. Qwen: 4/9 Präferenzen,
-  9 Kandidaten-Hard-Fails, +0,156 mittlerer Dimensionsvorsprung. Haiku: 5/9,
-  6 Hard-Fails, +0,489; protokollierte Kosten rund 0,078 USD. Es gab keine
-  Übernahme in den Original-Bot und keine Veröffentlichung. Details und ältere
-  Fehlerprotokolle: docs/QWEN-MARKETING-QUALIFICATION.md.
-- Der reparierte Prompt liegt nur in einer privaten Botkopie; alle 140
-  Schutztests bestanden. Drei kontrollierte Vorher-/Nachher-Prompt-Captures mit
-  identischen Belegbriefings, Stimmen und Formaten liegen vor. Tatsächliche
-  Modell-Ausgaben wurden noch nicht verglichen. Der Original-Bot blieb unberührt;
-  die Arbeit erfolgte mit Operatorunterstützung.
+- Aktuelle Blindqualifikation der normalen Standalone-X-Generierungsentwürfe mit
+  Haiku 4.5: 3/9 Präferenzen für den Kandidaten, 8 Hard-Fail-Paare und −0,444
+  mittlerer Dimensionsvorsprung. Sieben von neun Kandidatenentwürfen überschritten
+  190 Zeichen; auch kürzere Entwürfe hatten unbelegte Aussagen. Freigabe nicht
+  bestanden. Das bewertet generierte Entwürfe, nicht tatsächlich veröffentlichte
+  Posts oder deren Reichweite. Details: docs/QWEN-MARKETING-QUALIFICATION.md.
+- Die aktuelle Prompt-/Tonfassung liegt nur in einer privaten Qualifikationskopie;
+  166 geschützte Tests bestanden. Ein neuer, begrenzter semantischer Prüf- und
+  Überarbeitungsschritt wird dort mit TDD entwickelt, ist aber nicht in das
+  Originalprodukt übernommen. Der bestehende Produktions-Gate bleibt unverändert.
+  Die 502 manifestierten Original-Quelldateien blieben unverändert; kein Neustart
+  und keine Veröffentlichung. Die Arbeit erfolgte mit Operatorunterstützung;
+  ein autonomer Marketingzyklus ist nicht nachgewiesen.
 - Laufzeitabnahme: 405 Tests bestanden, drei Skips; zusätzlich 19 Offline-Gates
   bestanden. Der ältere Stand von 404 Tests ist überholt.
 - Historischer Qwen-Arbeitsstand bis 12.10.2026: kein autonomer Erfolg.
