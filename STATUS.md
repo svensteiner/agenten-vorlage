@@ -22,7 +22,16 @@ zurueckgestellt.
   Kontext-/Werkzeuggrenzen, eine 512-Item-Freigabegrenze und die Verwechslung eines
   Live-X-Holds mit isolierter Codearbeit wurden sichtbar. Bounded Reads, Literalsuche
   und eine begrenzte 4096-Item-Bindung (weiterhin 8 MiB) wurden ergaenzt. Eine
-  Wiederholungsabnahme mit explizitem 65536-Modellkontext laeuft. Kleine erfolgreiche
+  Wiederholungsabnahme mit explizitem 65536-Modellkontext scheiterte erneut an
+  Anfrageabbruechen nach wiederholter Recherche. Eine weitere kurze Gegenprobe
+  fuehrte sechs bestehende Redaktionstests erfolgreich aus, scheiterte aber vor
+  dem Schreiben eines vorgeschlagenen neuen Tests an der Kontextgrenze.
+  Keine Qwen-Produktaenderung wurde umgesetzt oder in den Live-Bot uebernommen;
+  502 Original-Quelldateien sind hashgeprueft unveraendert, Bot und Scheduler laufen.
+  Die optionale begrenzte Werkzeugdiagnose ist best-effort und kann erfolgreiche
+  Mutationen nicht durch eigene I/O-Fehler verdecken. Laufzeitabnahme: 404 Tests,
+  drei Skips; 19 Offline-Gates bestanden. Details: docs/QWEN-MARKETING-QUALIFICATION.md.
+  Kleine erfolgreiche
   Coding-Fixtures beweisen weiterhin keine zuverlaessige autonome Projektverbesserung.
 
 - Native Anthropic-Abnahme am 12.10.2026 bestanden: Haiku 4.5 erledigte Run
