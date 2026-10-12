@@ -1,4 +1,52 @@
-# Reale Qwen-Abnahme am Marketingbot, 12.10.2026
+# Reale Qwen-Abnahme am Marketingbot
+
+## Aktueller Stand, 13.10.2026
+
+Die Blindbewertung der normalen X-Generierung erfüllt die vereinbarten
+Freigabekriterien nicht. Pro Modellpfad wurden 18 Ausgaben als neun Paare aus
+drei identischen Belegbriefings und drei Wiederholungen verglichen. Die
+Zeichenlängen wurden mit Python-Unicode-Zählung nachgeprüft; diese Prüfung änderte
+die Bewertungen nicht.
+
+| Modellpfad | Kandidat bevorzugt | Kandidaten-Hard-Fails | Mittlerer Vorsprung über fünf Dimensionen | Kosten |
+|---|---:|---:|---:|---:|
+| Lokales Qwen 30B | 4/9 | 9 | +0,156 | lokal |
+| OpenRouter Haiku 4.5 | 5/9 | 6 | +0,489 | rund 0,078 USD |
+
+Freigabe erfordert null Kandidaten-Hard-Fails, mindestens 7/9 Präferenzen und
+mindestens +0,5 mittleren Vorsprung. Beide Modellpfade verfehlen die Kriterien.
+Der Haiku-Kandidat liegt auch beim Mittelwert knapp unter der Grenze. Die
+Bewertungen gelten nur für diese Beispiele. Sie belegen keine Impressions,
+Replies, Engagement oder Reichweite auf X.
+
+Qwen hat eine Persona-Änderung und vier passende Tests in einer privaten
+Qualifikationskopie erstellt. Beim ersten privaten Kandidaten bestanden 138 von
+140 Tests. Zwei beanstandeten fehlende Persona- und Formulierungsanker:
+Wingsurfer/Sportler sowie „Fehlt diese Zuständigkeit“ und „Kein erzwungenes
+Entweder-oder“. Diese Fassung wurde nachgebessert; der unabhängig geprüfte
+reparierte Prompt besteht nun alle 140 Schutztests. Die separat gemeldeten
+Baseline-Zahlen von 3 Fehlschlägen und 1 Erfolg stammen aus einem anderen
+Vergleich. Nichts davon wurde in den Original-Bot übernommen.
+
+Drei kontrollierte Vorher-/Nachher-Prompt-Captures mit identischen
+Belegbriefings, Stimmen und Formaten sind erfasst. Tatsächliche Modell-Ausgaben
+wurden noch nicht verglichen. Es gab keine Übernahme in den Original-Bot, keinen
+Neustart und keine Veröffentlichung. Die Arbeit erfolgte mit
+Operatorunterstützung; ein autonomer Marketingzyklus ist nicht nachgewiesen.
+
+Letzter gemeldeter Laufzeitstand: 405 Tests bestanden, drei Skips und 19
+Offline-Gates bestanden. Ein frischer Hashcheck verglich die 502 Einträge des
+bestehenden Manifests `.runs/qualification/qwen-marketing-baseline.json` mit den
+manifestierten Quelldateien im Originalprojekt: 502 Treffer, null Abweichungen,
+fehlende oder abgelehnte Pfade. Es wurden keine Zugangsdaten oder Profile
+geprüft. Der Check attestiert nur die gelisteten Dateien, nicht sonstige Dateien
+oder Prozesszustände. Der Scheduler wurde zuletzt schlafend gemeldet, nächster
+Lauf 12:20 Uhr (Europe/Vienna); daraus folgt keine Aussage über einen früheren
+Child-Prozess oder eine PID.
+
+**Ergebnis: autonome Marketingverbesserung nicht nachgewiesen; Live-Freigabe nicht bestanden.**
+
+## Historischer Stand bis 12.10.2026
 
 **Ergebnis: autonomer Projektauftrag nicht bestanden.** Kein Nachweis besserer Posts.
 
@@ -54,14 +102,17 @@ Die Abnahme wurde mit Operatorhilfe wiederholt; selbst ein spaeterer Erfolg
 dieser Versuche waere kein Beleg vollkommen unbeaufsichtigter Arbeit.
 Werkzeugprotokolle und Checkpoints bleiben lokal unter `.runs/qualification/`.
 
-Schutzpruefung: 502 Original-Quelldateien hashgeprueft unveraendert; Bot und
-Scheduler weiterhin aktiv. In der Kopie entstanden testbedingte Diagnoseartefakte,
+Ein früherer Schutzcheck meldete 502 unveränderte Original-Quelldateien; Bot und
+Scheduler wurden damals als aktiv gemeldet. Der frische Manifestvergleich oben
+bestätigt jetzt die 502 gelisteten Quelldateien. Er sagt nichts über den heutigen
+Prozessstatus aus. In der Kopie entstanden testbedingte Diagnoseartefakte,
 aber keine Qwen-Quellcodeaenderung. Der kuratierte Testbaseline umfasste 81 bestandene
 Tests. Der breitere Unit-Baseline hatte schon vorher 23 Fehler, 3860 bestandene
 Tests, 11 Skips und 5 erwartete Fehler; er war keine vollstaendig gruene Abnahme.
 
-Verbesserte Laufzeit: begrenzte Zeilenreads/Literalsuche, weiterhin endliche
+Damals geprüfte Laufzeit: begrenzte Zeilenreads/Literalsuche, weiterhin endliche
 Workspace-Bindung sowie optionale begrenzte Werkzeugdiagnose ohne Quelltexte.
 Diagnose-I/O kann erfolgreiche Aktionen nicht verdecken. Die unabhaengig gepruefte
-Laufzeit besteht 404 Tests mit drei Skips und 19 Offline-Abnahmepruefungen. Diese
-Laufzeitnachweise beweisen keine autonome Marketingverbesserung durch Qwen.
+Laufzeit bestand damals 404 Tests mit drei Skips und 19 Offline-Abnahmeprüfungen.
+Der aktuelle gemeldete Prüfstand von 405 Tests, drei Skips und 19 Gates steht oben.
+Diese Laufzeitnachweise beweisen keine autonome Marketingverbesserung durch Qwen.

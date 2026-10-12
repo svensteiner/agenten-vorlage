@@ -2,7 +2,7 @@
 schema: agent-status/v1
 project: agenten-vorlage
 status: active
-last_updated: "2026-10-12"
+last_updated: "2026-10-13"
 ---
 
 # AI Studio — Projektstatus
@@ -17,8 +17,21 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
-- Reale groessere Qwen-Abnahme am Marketingbot: bisher NICHT autonom erfolgreich.
-  Die isolierte Kopie blieb ohne Qwen-Quellcodeaenderungen; Live-Code unveraendert.
+- Aktuelle Blindqualifikation der normalen Marketingbot-X-Generierung: weder lokales
+  Qwen 30B noch Haiku 4.5 erfüllt die Freigabekriterien. Qwen: 4/9 Präferenzen,
+  9 Kandidaten-Hard-Fails, +0,156 mittlerer Dimensionsvorsprung. Haiku: 5/9,
+  6 Hard-Fails, +0,489; protokollierte Kosten rund 0,078 USD. Es gab keine
+  Übernahme in den Original-Bot und keine Veröffentlichung. Details und ältere
+  Fehlerprotokolle: docs/QWEN-MARKETING-QUALIFICATION.md.
+- Der reparierte Prompt liegt nur in einer privaten Botkopie; alle 140
+  Schutztests bestanden. Drei kontrollierte Vorher-/Nachher-Prompt-Captures mit
+  identischen Belegbriefings, Stimmen und Formaten liegen vor. Tatsächliche
+  Modell-Ausgaben wurden noch nicht verglichen. Der Original-Bot blieb unberührt;
+  die Arbeit erfolgte mit Operatorunterstützung.
+- Laufzeitabnahme: 405 Tests bestanden, drei Skips; zusätzlich 19 Offline-Gates
+  bestanden. Der ältere Stand von 404 Tests ist überholt.
+- Historischer Qwen-Arbeitsstand bis 12.10.2026: kein autonomer Erfolg.
+  Die damalige isolierte Kopie blieb ohne Qwen-Quellcodeaenderungen; Live-Code unveraendert.
   Kontext-/Werkzeuggrenzen, eine 512-Item-Freigabegrenze und die Verwechslung eines
   Live-X-Holds mit isolierter Codearbeit wurden sichtbar. Bounded Reads, Literalsuche
   und eine begrenzte 4096-Item-Bindung (weiterhin 8 MiB) wurden ergaenzt. Eine
@@ -26,11 +39,12 @@ zurueckgestellt.
   Anfrageabbruechen nach wiederholter Recherche. Eine weitere kurze Gegenprobe
   fuehrte sechs bestehende Redaktionstests erfolgreich aus, scheiterte aber vor
   dem Schreiben eines vorgeschlagenen neuen Tests an der Kontextgrenze.
-  Keine Qwen-Produktaenderung wurde umgesetzt oder in den Live-Bot uebernommen;
-  502 Original-Quelldateien sind hashgeprueft unveraendert, Bot und Scheduler laufen.
+  Frischer Check gegen das bestehende Manifest: 502 Quelldateien stimmen überein;
+  null Abweichungen, fehlende oder abgelehnte Pfade. Er umfasst nur die gelisteten
+  Dateien und sagt nichts über nicht gelistete Dateien oder Prozess-PIDs aus.
   Die optionale begrenzte Werkzeugdiagnose ist best-effort und kann erfolgreiche
-  Mutationen nicht durch eigene I/O-Fehler verdecken. Laufzeitabnahme: 404 Tests,
-  drei Skips; 19 Offline-Gates bestanden. Details: docs/QWEN-MARKETING-QUALIFICATION.md.
+  Mutationen nicht durch eigene I/O-Fehler verdecken. Die aktualisierte Laufzeit-
+  und Marketingqualifikation steht in docs/QWEN-MARKETING-QUALIFICATION.md.
   Kleine erfolgreiche
   Coding-Fixtures beweisen weiterhin keine zuverlaessige autonome Projektverbesserung.
 
