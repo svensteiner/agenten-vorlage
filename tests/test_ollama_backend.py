@@ -11,6 +11,25 @@ from agentkit.contracts import ContractError
 
 
 class OllamaBackendTests(unittest.TestCase):
+    def test_bounded_reads_large_files_without_silent_truncation(self):
+        backend = OllamaBackend(base_url='http://192.168.0.101:11434/v1')
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary,'large.py')
+            path.write_text('x' * 100 + '\n',encoding='utf-8')
+            path.write_text(path.read_text() * 3000,encoding='utf-8')
+            result=json.loads(backend._run_tool('read_file',{'path':'large.py','start_line':101,'max_lines':200}, {'workspace':temporary},5))
+            self.assertLessEqual(len(result['content']),12000)
+            self.assertTrue(result['truncated'])
+            self.assertEqual(result['end_line']+1,result['next_line'])
+            self.assertEqual(3000,result['total_lines'])
+            matches=json.loads(backend._run_tool('search_file',{'path':'large.py','text':'xxx'},{'workspace':temporary},5))
+            self.assertEqual(20,len(matches['matches']))
+            self.assertTrue(matches['truncated'])
+            self.assertEqual(3000,matches['total_matches'])
+            past_end=json.loads(backend._run_tool('read_file',{'path':'large.py','start_line':3001},{'workspace':temporary},5))
+            self.assertEqual('start_line_out_of_range',past_end['error'])
+            invalid=json.loads(backend._run_tool('read_file',{'path':'large.py','start_line':True},{'workspace':temporary},5))
+            self.assertEqual('invalid_read_range',invalid['error'])
     def test_private_endpoint_without_credentials_and_binding(self):
         with patch.dict('os.environ', {'AGENTKIT_API_KEY': 'cloud-secret', 'AGENTKIT_OLLAMA_BASE_URL': 'http://192.168.0.101:11434/v1'}):
             backend = OllamaBackend()

@@ -66,6 +66,13 @@ uebertraegt Code/Modellnachrichten im LAN unverschluesselt. Kein Cloud-Fallback.
 Ein schluesselloser Server sollte nur im vertrauenswuerdigen privaten Netz erreichbar sein.
 Der oeffentliche Mehrnutzer-Modus bietet diesen Adapter nicht an.
 
+Fuer groessere Quellprojekte liest Ollama Dateien in Zeilenbereichen: standardmaessig
+100, maximal 200 Zeilen und 12.000 Zeichen pro Antwort. `next_line` und `truncated`
+machen fehlenden Kontext sichtbar. `search_file` sucht literal und liefert maximal
+20 kurze Treffer mit Zeilennummern. Dateien sind auf 2 MB begrenzt. Ungueltige
+Bereichsargumente liefern eine korrigierbare Fehlerantwort ohne Dateizugriff;
+Workspace-/Berechtigungsverletzungen bleiben harte Fehler.
+
 ```powershell
 $env:AGENTKIT_OLLAMA_BASE_URL = "http://<private-IP>:11434/v1"
 & .\Start-Coding-Agent.ps1 -Backend ollama -Workspace "C:\Pfad\zum\projekt-worktree"

@@ -107,7 +107,7 @@ def workspace_fingerprint(workspace: Path) -> str:
             if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
                 raise ContractError("Linked paths are not supported in approval workspaces.")
             items.append(item)
-            if len(items) > 512:
+            if len(items) > 4096:
                 raise ContractError("Workspace is too large to safely fingerprint for approval.")
     for item in sorted(items, key=lambda p: str(p).lower()):
         try:

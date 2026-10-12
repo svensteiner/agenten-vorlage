@@ -17,6 +17,14 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Reale groessere Qwen-Abnahme am Marketingbot: bisher NICHT autonom erfolgreich.
+  Die isolierte Kopie blieb ohne Qwen-Quellcodeaenderungen; Live-Code unveraendert.
+  Kontext-/Werkzeuggrenzen, eine 512-Item-Freigabegrenze und die Verwechslung eines
+  Live-X-Holds mit isolierter Codearbeit wurden sichtbar. Bounded Reads, Literalsuche
+  und eine begrenzte 4096-Item-Bindung (weiterhin 8 MiB) wurden ergaenzt. Eine
+  Wiederholungsabnahme mit explizitem 65536-Modellkontext laeuft. Kleine erfolgreiche
+  Coding-Fixtures beweisen weiterhin keine zuverlaessige autonome Projektverbesserung.
+
 - Native Anthropic-Abnahme am 12.10.2026 bestanden: Haiku 4.5 erledigte Run
   `dd23c252e06347fc9879c3fb34cd7aee` mit einer gezielten `app.py`-Aenderung,
   unveraendertem bestandenem Test und separatem read-only Review. Hostpruefung

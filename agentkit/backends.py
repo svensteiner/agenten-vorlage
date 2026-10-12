@@ -1354,6 +1354,8 @@ class DeepSeekBackend:
             "Do not implement or spawn agents. Use only registered roles and assigned skills. "
             "Return a decision JSON object. review_pending requires a reviewer after the last edit.\n"
             "For finish, task must summarize the verified outcome and actual evidence, not repeat the original request or instructions.\n"
+            "Use only actual successful reports and completed_actions as evidence. Missing or failed reports are not implementation success. "
+            "Never invent changed files, test counts or diffs in a delegated assignment. Do not ask a reviewer to approve nonexistent changes.\n"
             + json.dumps(self._provider_context(context), ensure_ascii=False)
         )
         return self._call(prompt, "decision", context, timeout)
