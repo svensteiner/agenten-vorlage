@@ -15,6 +15,7 @@ import threading
 import tempfile
 import time
 import uuid
+import webbrowser
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from http import HTTPStatus
@@ -95,6 +96,10 @@ class JobManager:
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         storage_writer: Callable[[Path, bytes], None] | None = None,
         coordination_reserver: Callable[[Path, Path], Any] | None = None,
+        default_workspace: Path | None = None,
+        preferred_agent: str = "",
+        preferred_backend: str = "",
+        starter_task: str = "",
     ):
         self.template_root = template_root.resolve()
         self.agent_roots = tuple(
@@ -112,9 +117,23 @@ class JobManager:
         self.public_mode = bool(public_mode)
         if self.public_mode and self.workspace_root is None:
             raise ValueError("Public mode requires a server-controlled workspace root.")
+        if default_workspace is not None and self.public_mode:
+            raise ValueError("Public mode controls its own default workspace.")
+        self.default_workspace = default_workspace.resolve() if default_workspace else None
+        if self.default_workspace is not None and not self.default_workspace.is_dir():
+            raise ValueError("The configured default workspace must be an existing directory.")
         self.allowed_backends = frozenset(allowed_backends or {"demo", "codex", "deepseek"})
         if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek"}:
             raise ValueError("allowed_backends contains an unsupported backend.")
+        if preferred_agent and not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", preferred_agent):
+            raise ValueError("preferred_agent must be a canonical assistant id.")
+        if preferred_backend and preferred_backend not in self.allowed_backends:
+            raise ValueError("preferred_backend must be enabled.")
+        if not isinstance(starter_task, str) or len(starter_task) > 12_000:
+            raise ValueError("starter_task must be bounded text.")
+        self.preferred_agent = preferred_agent
+        self.preferred_backend = preferred_backend
+        self.starter_task = starter_task.strip()
         if provider_api_key is not None and (
             not isinstance(provider_api_key, str)
             or not provider_api_key.strip()
@@ -823,10 +842,15 @@ class JobManager:
     def configuration(self) -> dict[str, Any]:
         readiness = {} if self.public_mode else codex_readiness()
         provider = self.provider_status()
+        profiles = read_json(LIBRARY / "profiles.json")
         codex_available = ("codex" in self.allowed_backends and bool(readiness.get("installed"))
                            and bool(readiness.get("credentials_present"))
                            and readiness.get("sandbox_configured", True))
-        default_workspace = "default" if self.public_mode else str(self.template_root / "workspace")
+        default_workspace = (
+            "default"
+            if self.public_mode
+            else str(self.default_workspace or (self.template_root / "workspace"))
+        )
         backends = [
             {"id": "demo", "label": "Offline-Demo", "available": "demo" in self.allowed_backends, "tool_approvals": True, "detail": "Deterministischer Funktionstest mit optionaler Freigabe der Dateiänderungen, kein Sprachmodell."},
             {"id": "codex", "label": "Codex CLI", "available": codex_available,
@@ -841,9 +865,21 @@ class JobManager:
         if self.public_mode:
             backends = [backend for backend in backends if backend["id"] in self.allowed_backends]
         return {
-            "profiles": list(read_json(LIBRARY / "profiles.json")),
+            "profiles": list(profiles),
+            "profile_catalog": [
+                {
+                    "id": profile_id,
+                    "description": profile["description"],
+                    "roles": profile["roles"],
+                    "require_review": profile["require_review"],
+                }
+                for profile_id, profile in profiles.items()
+            ],
             "default_workspace": default_workspace,
             "public_multiuser": self.public_mode,
+            "preferred_agent": "" if self.public_mode else self.preferred_agent,
+            "preferred_backend": "" if self.public_mode else self.preferred_backend,
+            "starter_task": "" if self.public_mode else self.starter_task,
             "backends": backends,
         }
 
@@ -1270,15 +1306,28 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the local AgentKit Cockpit")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--default-workspace", type=Path)
+    parser.add_argument("--preferred-agent", default="")
+    parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek"), default="")
+    parser.add_argument("--starter-task", default="")
+    parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()
     if args.host not in {"127.0.0.1", "localhost"}:
         parser.error("This single-owner server only supports loopback: --host 127.0.0.1")
     state_dir = TEMPLATE_ROOT / "cockpit" / ".runs"
     state_dir.mkdir(parents=True, exist_ok=True)
     with lock(state_dir / ".server.lock"):
-        manager = JobManager()
+        manager = JobManager(
+            default_workspace=args.default_workspace,
+            preferred_agent=args.preferred_agent,
+            preferred_backend=args.preferred_backend,
+            starter_task=args.starter_task,
+        )
         server = ThreadingHTTPServer((args.host, args.port), make_handler(manager))
-        print(f"AI Studio: http://{args.host}:{args.port}", flush=True)
+        url = f"http://{args.host}:{args.port}"
+        print(f"AI Studio: {url}", flush=True)
+        if args.open_browser:
+            webbrowser.open(url)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

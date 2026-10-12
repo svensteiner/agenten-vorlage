@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "id": "x-growth-agent",
+  "company": "AI_Studioxyz",
+  "profile": "marketing",
+  "require_review": true,
+  "limits": {
+    "max_steps": 10,
+    "max_failures": 3,
+    "max_seconds": 1800,
+    "call_timeout": 300,
+    "max_context_chars": 120000
+  },
+  "roles": {
+    "strategist": {
+      "description": "Waehlt aus echten X-Outcomes die naechste messbare Wachstumshypothese",
+      "instructions": "roles/strategist.md",
+      "skills": ["session-analysis", "goal-selection"],
+      "sandbox": "read-only",
+      "can_review": false
+    },
+    "researcher": {
+      "description": "Findet belegbare AI-, Finance- und Automationsthemen fuer X",
+      "instructions": "roles/researcher.md",
+      "skills": ["topic-research"],
+      "sandbox": "read-only",
+      "can_review": false
+    },
+    "content-editor": {
+      "description": "Erstellt kleine, pruefbare X-Kandidaten und Wachstumsartefakte",
+      "instructions": "roles/content-editor.md",
+      "skills": ["content-draft"],
+      "sandbox": "workspace-write",
+      "can_review": false
+    },
+    "verifier": {
+      "description": "Prueft Inhalt, Evidenz, Messbarkeit und Account-Risiko als separate read-only Rolle",
+      "instructions": "roles/verifier.md",
+      "skills": ["quality-review", "evidence-report"],
+      "sandbox": "read-only",
+      "can_review": true
+    },
+    "operator": {
+      "description": "Bereitet hoechstens eine kontrollierte X-Aktion fuer die bestehende Pipeline vor",
+      "instructions": "roles/operator.md",
+      "skills": ["live-action"],
+      "sandbox": "read-only",
+      "can_review": false
+    },
+    "reporter": {
+      "description": "Verdichtet Laufdaten zu einem ehrlichen Wachstumsbericht",
+      "instructions": "roles/reporter.md",
+      "skills": ["evidence-report", "session-analysis"],
+      "sandbox": "read-only",
+      "can_review": false
+    }
+  }
+}

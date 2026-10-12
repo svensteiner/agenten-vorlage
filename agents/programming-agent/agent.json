@@ -25,7 +25,7 @@
       "can_review": false
     },
     "reviewer": {
-      "description": "Artefakte und Nachweise unabhaengig auf Erfuellung pruefen",
+      "description": "Artefakte und Nachweise in einer separaten read-only Rolle auf Erfuellung pruefen",
       "instructions": "roles/reviewer.md",
       "skills": [
         "review-deliverable",

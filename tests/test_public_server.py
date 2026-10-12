@@ -583,8 +583,11 @@ class PublicServerTests(unittest.TestCase):
         thread.start()
         client = socket.create_connection(("127.0.0.1", server.server_port), timeout=2)
         try:
+            body = b"x" * (128 * 1024)
             client.sendall(
-                f"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1:{server.server_port}\r\n\r\n".encode()
+                f"POST /api/health HTTP/1.1\r\nHost: 127.0.0.1:{server.server_port}\r\n"
+                f"Content-Length: {len(body)}\r\n\r\n".encode()
+                + body
             )
             response_parts = []
             while True:

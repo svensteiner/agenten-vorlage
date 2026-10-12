@@ -68,8 +68,8 @@ Produktionsentscheidung: **bereit zum Staging, noch nicht für offenen Internetv
 | Installation | Frische Windows-/Python-3.12-Umgebung, reguläres Wheel, isolierter CLI-Demostart und Launcher/HTTP-Demo samt Neustart; INSTALLATION-QUALIFICATION.md |
 | Öffentliche GitHub-Dateien | Echter Open-Dots-README-Abruf mit Blob-/Attachment-Hash; Browser-Vorschau/Import und realer Luna-Workflow mit Review-Repair-Recovery bestanden; keine Authentifizierung oder Schreibaktion |
 | Repräsentative reale Aufgaben | Drei getrennte Luna-Nachweise: read-only-Repository-Audit, echte 19-Test-/Feedback-Recovery und GitHub-Connector-Analyse mit finalem Reviewer-Erfolg |
-| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Nutzerabläufe einschließlich 390-Pixel-Reflow; keine formale Screenreader-Zertifizierung |
-| Reproduzierbare Offline-Abnahme | 352 Tests in 248,693 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs; zehn Workflow-Trace-Szenarien; 19/19 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
+| Bedienung und Accessibility | Responsive Browserabnahme; 29/29 sichtbare interaktive Elemente benannt, Tastaturfokus und Dialog-Fokusführung geprüft, 62 sichtbare Textfälle mit bestandenem WCAG-Kontrast; sechs isolierte Chromium-Journeys prüfen lokale und öffentliche Nutzerabläufe einschließlich 390-Pixel-Reflow und Launcher-Voreinstellungen; keine formale Screenreader-Zertifizierung |
+| Reproduzierbare Offline-Abnahme | 376 Tests in 209,230 s mit Branch-Coverage-Instrumentierung, OK, drei erwartete Windows-Symlink-Skips; 80 % kombinierte Line-/Branch-Coverage; Ruff und Bandit ohne mittlere/hohe Befunde; Dependency-Audit ohne bekannte Schwachstellen; zehn Workflow-Trace-Szenarien; 20/20 Offline-Release-Checks mit --windows-ocr (`offline_only=true`, `model_tested=false`); Live-Luna-Nachweise separat |
 
 Die Browser-Abnahme erstellte `generated/studio-smoke`, startete eine Demo und prüfte
 Erstellen → Review fehlgeschlagen → Korrektur → Review bestanden → Abschluss.
@@ -223,10 +223,10 @@ zwei weitere reale Aufgaben; der GitHub-Lauf belegt dynamisches Review-Repair-Re
 Der gehärtete Resume-Lauf bestand mit tatsächlicher Kindprozessbeendigung und
 unverändertem Workspace.
 Der zusätzlich gefundene Checkpoint-Konflikt unter Windows wurde reproduziert
-und behoben. Die aktuelle vollständige Testsuite lief mit 352 Tests in
-248,693 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
+und behoben. Die aktuelle vollständige Testsuite lief mit 376 Tests in
+209,230 Sekunden mit Branch-Coverage-Instrumentierung durch (OK, drei erwartete
 Windows-Symlink-Skips); Ruff, zehn
-Workflow-Trace-Szenarien sowie 19/19 Offline-Release-Checks mit echter lokaler
+Workflow-Trace-Szenarien sowie 20/20 Offline-Release-Checks mit echter lokaler
 Windows-OCR bestanden.
 Die neue grafische Workflow-Spur wurde mit Computer Use inklusive zwei Freigaben,
 Neustart, Nacharbeit, Review, Download und mobiler Ansicht abgenommen.

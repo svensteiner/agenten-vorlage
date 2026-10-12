@@ -23,7 +23,7 @@ Fehlt ein Pflichtfakt, wird `blocked` oder eine klar abgegrenzte Rückfrage erze
 2. `tax-advisor` ordnet Sachverhalt, Berechnung, Beleg- und Buchungsvorschlag.
 3. `bmd-operator` erstellt mit freigegebenem Adapter oder Exportformat eine Vorschau bzw.
    Importdatei. Ohne Adapter bleibt der Schritt ein Bedien-/Importplan.
-4. `tax-reviewer` prüft unabhängig Fakten, Quelle, Summen, Steuerkennzeichen,
+4. `tax-reviewer` prüft als separate read-only Rolle Fakten, Quelle, Summen, Steuerkennzeichen,
    Belegverknüpfung, BMD-Parameter und Vollmacht.
 5. Nach `needs_revision` wird nur die konkrete Abweichung repariert und erneut geprüft.
 

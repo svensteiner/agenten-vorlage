@@ -35,7 +35,7 @@ in einem separat übergebenen Git-Workspace.
 
 Bei einem echten Auftrag zuerst `STATUS.md` im Ziel-Workspace lesen und die Akzeptanzkriterien
 bestätigen, dann den kleinsten implementierbaren Schritt mit gezieltem Edit ausführen, testen
-und unabhängig reviewen. Nach jeder Unterbrechung zuerst den Zustand prüfen; nie blind wiederholen.
+und durch die separate read-only Reviewer-Rolle prüfen. Nach jeder Unterbrechung zuerst den Zustand prüfen; nie blind wiederholen.
 
 ## Offene Blocker
 

@@ -10,6 +10,31 @@ python -m pip install -e ".[execution]"
 # http://127.0.0.1:8765
 ```
 
+## Jetzt selbst mit echten Agenten arbeiten
+
+Der X-Wachstumsagent erzeugt aus dem laufenden Marketingbot einen kuratierten Snapshot
+ohne Code, Zugangsdaten oder Browserprofile. Er startet mit Codex und einer vorbereiteten
+read-only Wachstumsanalyse:
+
+```powershell
+& .\Start-Marketing-Agent.ps1
+```
+
+Der Coding-Agent startet mit einem sicheren Beispiel-Workspace. Fuer echte Arbeit einen
+isolierten Checkout oder Git-Worktree angeben:
+
+```powershell
+& .\Start-Coding-Agent.ps1 -Workspace "C:\Pfad\zum\projekt-worktree"
+```
+
+Beide Launcher oeffnen AI Studio, waehlen den passenden Agenten und fuellen einen ersten
+Auftrag vor. Der Text bleibt vor dem Absenden editierbar. Codex- und DeepSeek-Laeufe zeigen
+schreibende Aktionen und Tests einzeln zur Freigabe; Codeaenderungen muessen danach ein
+Review durch eine separate read-only Rolle bestehen. Der Marketing-Launcher startet keinen
+zweiten Bot-Prozess und fuehrt selbst keine Live-X-Aktion aus. AI Studio ist im lokalen Modus
+ein Single-Owner-Server. Vor dem Wechsel zwischen den beiden Launchern den laufenden Server
+beenden; Startpraeferenzen und der kuratierte Workspace werden beim Start geladen.
+
 Der aktuelle Stand enthält zwei klar getrennte Betriebsarten. Der lokale
 Single-Owner-MVP ist mit 11 von 11 verbindlichen Bereichen abgenommen. Zusätzlich
 gibt es einen **öffentlichen Single-Tenant-Mehrbenutzer-Release-Candidate** hinter
@@ -171,7 +196,38 @@ Rollen und Skills bleiben portabel. Siehe den [konkreten Startweg](docs/DEEPSEEK
 übergeben werden. Das ist **nativer Harness-Betrieb**, kein implementierter DSH-Backendadapter:
 AgentKit-Limits und Sperren wirken dort nicht; die entsprechenden Regeln muss der Host tragen.
 
-## Neue Agenten und Skills
+## Agenten-Baukasten
+
+Alle Agenten verwenden dieselbe Laufzeit. Ein Profil ist ein getesteter Satz aus Rollen,
+Skills, Sandbox-Grenzen und Review-Gates. Ein Skill ist ein portables `SKILL.md`-Paket;
+er fuegt einer Rolle Fachwissen hinzu, ohne den Runner zu forken. So entstehen aus demselben
+Baukasten ein Coding-Agent und ein Buchhaltungsagent:
+
+```powershell
+python -m agentkit init generated\mein-coding-agent --profile developer --name mein-coding-agent --company AI_Studioxyz
+python -m agentkit init generated\mein-buchhaltungsagent --profile bmd-tax-advisor --name mein-buchhaltungsagent --company AI_Studioxyz
+```
+
+In AI Studio zeigt **Assistent erstellen** zu jedem Profil die enthaltenen Rollen und das
+Review-Gate. Der Agent wird als eigenes portables Paket erzeugt; die gemeinsame Engine bleibt
+unveraendert.
+
+Fuer eine freie Zusammenstellung lassen sich Bibliotheksrollen und Zusatzskills direkt stecken:
+
+```powershell
+python -m agentkit init generated\buchhaltung-custom `
+  --role tax-advisor --role bmd-operator --role tax-reviewer --role researcher `
+  --skill researcher:bookkeeping-review `
+  --name buchhaltung-custom --company AI_Studioxyz
+
+python -m agentkit init generated\coding-mit-finanzpruefung `
+  --profile developer --skill researcher:bookkeeping-review `
+  --name coding-mit-finanzpruefung --company AI_Studioxyz
+```
+
+Jede gewaehlte Rolle bringt ihre Standardskills mit; `--skill ROLLE:SKILL` steckt weitere
+gepruefte Bibliotheksbausteine dazu. Skills sind Anweisungs- und Wissenspakete. Reale Buchungen,
+X-Posts oder Deployments benoetigen weiterhin einen getrennten, freigegebenen Adapter.
 
 Eine erste konkrete Ausarbeitung liegt bereits unter
 [`agents/programming-agent`](<C:/Users/botrunner/Documents/ChatGPT/AGenten vorlage/agents/programming-agent>).
@@ -181,15 +237,19 @@ Der nächste konkrete Agent liegt unter
 Er ist für BMD NTCS und österreichische Steuerberatung vorbereitet, nutzt aber ohne einen
 freigegebenen Adapter nur Preview-/Importpläne und keine echte Verbuchung.
 
-| Profil | Geeignet für |
+| Wiederverwendbares Profil | Geeignet für |
 |---|---|
-| `developer` | Implementierung, Debugging, Recherche und unabhängiges Review |
+| `developer` | Implementierung, Debugging, Recherche und Review durch eine separate read-only Rolle |
 | `research` | Recherche mit Quellen und Entscheidungsvorlagen |
 | `marketing` | Content-Entwürfe mit Recherche und Review |
 | `sales` | Lead-Qualifizierung und Antwortentwürfe |
 | `support` | Supportanalyse und Antwortentwürfe |
 | `company` | Koordinator mit allen sieben Spezialisten |
 | `bmd-tax-advisor` | BMD-Workflow, österreichische Steuerrecherche, kontrolliertes Lernen und Vier-Augen-Review |
+
+Die fertigen Pakete `programming-agent`, `x-growth-agent` und `bmd-tax-advisor` sind konkrete
+Zusammenstellungen aus diesen Bausteinen. `x-growth-agent` hat zusaetzliche, speziell fuer den
+Marketingbot entwickelte Rollen und Skills.
 
 ```powershell
 .\.venv\Scripts\python.exe -m agentkit init generated\mein-cmo --profile marketing --name mein-cmo --company AI_Studioxyz
@@ -260,17 +320,17 @@ Für verteilte Worker/Container braucht es zusätzliche Isolation und einen zent
 
 - Die Offline-Demo und automatisierten Tests prüfen Routing, Review, Limits, Checkpoints,
   Sperren, Skill-Validierung und Adapterverträge.
-- Aktueller Gesamtstand: 352 Tests in 248,693 Sekunden mit
+- Aktueller Gesamtstand: 376 Tests in 209,230 Sekunden mit
   Branch-Coverage-Instrumentierung, `OK`, drei erwartete
-  Windows-Symlink-Skips; fünf echte isolierte Chromium-Journeys, 80 % kombinierte
+  Windows-Symlink-Skips; sechs echte isolierte Chromium-Journeys, 80 % kombinierte
   Line-/Branch-Coverage, Ruff, Bandit ohne mittlere/hohe Befunde, zehn
-  Workflow-Trace-Szenarien und 19/19
+  Workflow-Trace-Szenarien und 20/20
   Offline-Release-Checks mit echter lokaler Windows-OCR bestanden
   (`offline_only=true`, `model_tested=false`).
 - Der Codex-Adapter ist gegen die installierte CLI-Hilfe und mit Prozess-/Vertragstests geprüft.
   Ein vollständiger gpt-5.6-luna/low-Live-Schreibablauf bestand am 30.09.2026 mit
   isolierter Konfiguration, elevated-Windows-Sandbox, Python-Byteprüfung,
-  unabhängigem Review und sicherem Artefaktexport. Reale Repository-, Test-Recovery-
+  separatem read-only Review und sicherem Artefaktexport. Reale Repository-, Test-Recovery-
   und GitHub-Connector-Aufgaben bestanden ebenfalls. Der gehärtete Planner-Abbruch/
   Resume-Lauf terminierte den Kindprozess, verweigerte die unbestätigte Wiederaufnahme
   und schloss nach Bestätigung mit unverändertem Workspace ab.

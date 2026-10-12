@@ -11,7 +11,7 @@ Code-Kopie erweitert werden können.
 - wählt dynamisch zwischen Recherche, Implementierung, Debugging und Review;
 - arbeitet mit kleinen, überprüfbaren Änderungen;
 - führt passende Tests aus und meldet echte Evidenz;
-- lässt Codeänderungen vor dem Abschluss unabhängig prüfen.
+- lässt Codeänderungen vor dem Abschluss durch eine separate read-only Rolle prüfen.
 
 Der Agent darf lokal entwickeln und testen. Deployments, Veröffentlichungen, externe Nachrichten,
 Käufe und irreversible Datenänderungen bleiben außerhalb dieses ersten Agenten. In AI_Studioxyz
@@ -42,6 +42,13 @@ Review gezielt überarbeitet und danach erneut geprüft wird. Der Checkpoint lie
 
 Codex CLI installieren und anmelden, dann für ein echtes Repository einen isolierten Workspace
 angeben:
+
+```powershell
+& .\Start-Coding-Agent.ps1 -Workspace "C:\Pfad\zum\projekt-worktree"
+```
+
+Der Launcher oeffnet die Browseroberflaeche mit diesem Agenten, Codex und einem
+test-/revieworientierten Startauftrag. Der direkte CLI-Weg bleibt ebenfalls verfuegbar:
 
 ```powershell
 python -m agentkit run `

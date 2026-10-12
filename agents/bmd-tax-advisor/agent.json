@@ -36,7 +36,7 @@
       "can_review": false
     },
     "tax-reviewer": {
-      "description": "Steuerliche, buchhalterische und BMD-Ergebnisse unabhängig prüfen",
+      "description": "Steuerliche, buchhalterische und BMD-Ergebnisse in einer separaten read-only Rolle prüfen",
       "instructions": "roles/tax-reviewer.md",
       "skills": [
         "austrian-tax-research",

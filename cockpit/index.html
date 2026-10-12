@@ -751,8 +751,9 @@
           pattern="[a-z0-9][a-z0-9-]*"
           maxlength="64"
           placeholder="mein-assistent"
-        /><label for="agentProfile">Profil</label
+        /><label for="agentProfile">Profil · Rollen- und Skill-Bausteine</label
         ><select id="agentProfile" required></select
+        ><p id="agentProfileHint" class="hint"></p
         ><label for="agentCompany">Unternehmen</label
         ><input
           id="agentCompany"
@@ -793,6 +794,10 @@
         online: false,
          publicMode: false,
          defaultWorkspace: "",
+         configuredWorkspace: "",
+         preferredAgent: "",
+         preferredBackend: "",
+         profileCatalog: [],
       };
       function loadPending() {
         try {
@@ -1008,12 +1013,16 @@
         if (state.approvalPosting) return;
         if (state.parentJobId) clearParent();
         const currentWorkspace = $("workspace").value.trim();
-         const defaultWorkspace = state.publicMode ? (state.defaultWorkspace || "default") : path + "/workspace";
+        const item = state.agents.find((a) => a.path === path);
+        const defaultWorkspace = state.publicMode
+          ? (state.defaultWorkspace || "default")
+          : item?.id === state.preferredAgent && state.configuredWorkspace
+            ? state.configuredWorkspace
+            : path + "/workspace";
         if (!currentWorkspace || currentWorkspace === state.defaultWorkspace)
           $("workspace").value = defaultWorkspace;
         state.defaultWorkspace = defaultWorkspace;
         $("agent").value = path;
-        const item = state.agents.find((a) => a.path === path);
         $("selectedAgent").textContent = item?.id || "AI Studio";
         for (const b of $("agents").children)
           b.classList.toggle("active", b.dataset.path === path);
@@ -1054,6 +1063,7 @@
         if (state.agents.length)
           selectAgent(
             (
+              state.agents.find((a) => a.id === state.preferredAgent) ||
               state.agents.find((a) => a.id === "programming-agent") ||
               state.agents[0]
             ).path,
@@ -1322,14 +1332,21 @@
           state.agents = agents.agents || [];
           state.backends = config.backends || [];
            state.publicMode = Boolean(config.public_multiuser);
-           state.defaultWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+           state.configuredWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+           state.defaultWorkspace = state.configuredWorkspace;
+           state.preferredAgent = typeof config.preferred_agent === "string" ? config.preferred_agent : "";
+           state.preferredBackend = typeof config.preferred_backend === "string" ? config.preferred_backend : "";
            applyPublicUi();
+          state.profileCatalog = Array.isArray(config.profile_catalog)
+            ? config.profile_catalog
+            : (config.profiles || []).map((id) => ({ id, description: "", roles: [] }));
           $("agentProfile").replaceChildren();
-          for (const profile of config.profiles || []) {
-            const option = el("option", profile);
-            option.value = profile;
+          for (const profile of state.profileCatalog) {
+            const option = el("option", profile.description ? `${profile.id} · ${profile.description}` : profile.id);
+            option.value = profile.id;
             $("agentProfile").append(option);
           }
+          updateProfileHint();
           renderAgents();
           $("backend").replaceChildren();
           for (const b of state.backends) {
@@ -1341,8 +1358,11 @@
             o.disabled = !b.available;
             $("backend").append(o);
           }
-          const first = state.backends.find((b) => b.available);
+          const first = state.backends.find((b) => b.id === state.preferredBackend && b.available)
+            || state.backends.find((b) => b.available);
           if (first) $("backend").value = first.id;
+          if (!$("task").value && typeof config.starter_task === "string")
+            $("task").value = config.starter_task;
           state.ready = true;
           backendHint();
           await loadHistory();
@@ -1446,8 +1466,16 @@
       });
       $("createAgent").onclick = () => {
         $("agentError").textContent = "";
+        updateProfileHint();
         $("agentDialog").showModal();
       };
+      function updateProfileHint() {
+        const profile = state.profileCatalog.find((item) => item.id === $("agentProfile").value);
+        $("agentProfileHint").textContent = profile
+          ? `${profile.roles.length} Rollen: ${profile.roles.join(", ")}${profile.require_review ? " · mit Review-Gate" : ""}`
+          : "";
+      }
+      $("agentProfile").addEventListener("change", updateProfileHint);
       $("cancelAgent").onclick = () => $("agentDialog").close();
       $("agentForm").addEventListener("submit", async (event) => {
         event.preventDefault();

@@ -2,18 +2,30 @@
 schema: agent-status/v1
 project: agenten-vorlage
 status: active
-last_updated: "2026-10-01"
+last_updated: "2026-10-12"
 ---
 
 # AI Studio — Projektstatus
 
 ## Aktueller Auftrag
 
-AI Studio zusätzlich als öffentlich erreichbaren, sicheren Single-Tenant-
-Mehrbenutzerbetrieb auslieferbar machen. AgentKit bleibt der portable Ausführungskern;
-Rollen, Skills und Runtime bleiben getrennt.
+Zwei Agenten fuer die direkte eigene Nutzung fertigstellen: zuerst den Marketingbot als
+messbaren X-Wachstumsagenten, danach den Coding-Agenten. Beide bleiben Zusammensetzungen aus
+derselben AgentKit-Laufzeit, austauschbaren Rollen und Skills; der vorhandene BMD-/Steueragent
+belegt denselben Baukasten fuer Buchhaltung. Die Miet-/Mehrnutzerplattform ist bewusst
+zurueckgestellt.
 
 ## Letzter bestätigter Stand
+
+- `x-growth-agent` bildet Strategie, Research, Content, Verifikation, Operator-Grenze und
+  Reporting des bestehenden Marketingbots als portables AgentKit-Paket ab. Live-X-Aktionen
+  verbleiben in der bestehenden Marketingbot-Pipeline.
+- `Start-Marketing-Agent.ps1` erzeugt einen kuratierten, credential-bereinigten Snapshot
+  der Marketingbot-Messdaten. `Start-Coding-Agent.ps1` nutzt einen explizit gewaehlten
+  Entwicklungs-Workspace. Beide oeffnen AI Studio mit Codex und editierbarem Startauftrag.
+- Ein aktueller echter Codex-Luna-Schreibworkflow bestand am 12.10.2026 mit dynamischer
+  Planung, zwei erfolgreichen Rollenberichten, separatem read-only Review und bytegenau
+  verifiziertem Artefakt. Die Offline-Demo bleibt nur eine deterministische Test-Fixture.
 
 - Öffentlicher Release-Candidate: OIDC-Proxy-Vertrauensgrenze, exakter HTTPS-Origin,
   sitzungsgebundenes CSRF, Rollen (`viewer`, `member`, `reviewer`, `tenant_admin`),
@@ -62,17 +74,17 @@ Rollen, Skills und Runtime bleiben getrennt.
   `live_smoke.py` weist solche Fälle jetzt ausschließlich als bereinigte Kategorie
   `provider_authentication` aus.
 - Resume ist an Agentenverzeichnis, Run-ID, Company, Workspace und Backend gebunden.
-- Aktuelle vollständige Testsuite: 352 Tests in 248,693 Sekunden mit
+- Aktuelle vollständige Testsuite: 376 Tests in 209,230 Sekunden mit
   Branch-Coverage-Instrumentierung, Status OK;
   drei Windows-Symlink-Tests wurden mangels Berechtigung erwartbar übersprungen.
-  Fünf isolierte Chromium-Journeys prüfen lokale und öffentliche Navigation,
+  Sechs isolierte Chromium-Journeys prüfen lokale und öffentliche Navigation,
   Accessibility/Reflow, Nutzertrennung, Assistentenarchivierung sowie Demo-Freigaben,
   Review-Recovery, Download und Reload.
   Gemessene kombinierte Line-/Branch-Coverage: 80 %; diese Zahl ist ein
   Regressionssignal und keine Produktreifequote. Ruff, Bandit ohne mittlere/hohe
   Befunde, isolierter Audit der Public-Dependency-Locks ohne bekannte CVEs, zehn
   Workflow-Trace-Szenarien und
-  19/19 Offline-Release-Checks mit
+  20/20 Offline-Release-Checks mit
   `--windows-ocr` bestanden (`offline_only=true`, `model_tested=false`); reale
   Luna-Nachweise sind separat dokumentiert.
 - Der reproduzierbare Browserlauf fand einen 26-Pixel-Überlauf eines langen
@@ -131,13 +143,13 @@ Rollen, Skills und Runtime bleiben getrennt.
 - Codex-Adapter isoliert globale CLI-Konfiguration, behält Authentifizierung und
   Rollen-Sandbox; expliziter Standard gpt-5.6-luna/low ohne Fast-Tier-Override.
 - Reale Codex-Live-Qualifizierung mit gpt-5.6-luna/low und elevated-Sandbox
-  bestanden: drei Schritte, Developer plus unabhängiger Reviewer, lokale
+  bestanden: drei Schritte, Developer plus separate read-only Reviewer-Rolle, lokale
   Python-Byteprüfung, exakter Marker `STUDIO-FACT-4729` und bytegleich exportiertes
   Ergebnisartefakt in 101,61 Sekunden. Der Export nutzt den offiziellen App-Server
   read-only, ohne Netzwerk, mit Größen- und SHA-256-Prüfung.
 - Repräsentative reale Repository-Prüfung mit Computer Use und gpt-5.6-luna bestanden:
   echter Repository-Kontext read-only, `STATUS.md`, `docs/PRODUCT-ACCEPTANCE.md` und
-  `docs/PRODUCT-READINESS.md`, Researcher gefolgt von unabhängigem Reviewer,
+  `docs/PRODUCT-READINESS.md`, Researcher gefolgt von separater read-only Reviewer-Rolle,
   drei Schritte in 93,0 Sekunden, `reviewed=true`, `dirty=false`. Ergebnis enthält
   drei Risiken und konkrete Prüfaktionen; sanitisiertes Evidenzartefakt:
   `.runs/qualification/codex-luna-repository-audit.json` (Run
@@ -169,7 +181,7 @@ Rollen, Skills und Runtime bleiben getrennt.
 - Codex-Freigaben laufen als read-only strukturierte Vorschläge mit lokalem Allowlist-
   Host-Executor; native per-tool interception der Codex CLI wird nicht behauptet.
   Echter gpt-5.6-luna-Lauf mit CLI 0.159.2 bestand genau eine `write_file`- und eine
-  `run_pytest`-Genehmigung, unabhängiges Review, exakten Git-Diff nur für `app.py`,
+  `run_pytest`-Genehmigung, separates read-only Review, exakten Git-Diff nur für `app.py`,
   Digest-/Continuation-Bindung und laufweiten no-replay-Schutz; ein separater
   Reject-Lauf blieb ohne Workspace-Mutation. Nachweis:
   `docs/evidence/codex-luna-action-approvals.json`.
@@ -187,16 +199,16 @@ Rollen, Skills und Runtime bleiben getrennt.
 - Der sichere Artefaktexport liest ausschließlich ein bereits vom Auftrag gemeldetes
   Workspace-Artefakt über den offiziellen Codex-App-Server. Die Ausführung ist
   read-only und netzwerkfrei; Pfad, 2-MB-Grenze, Länge und SHA-256 werden geprüft.
-- Der abschließende Luna-Lauf bestand Schreiben, Python-Test, unabhängiges Review,
+- Der abschließende Luna-Lauf bestand Schreiben, Python-Test, separates read-only Review,
   Markerprüfung und bytegleichen Export von `RESULT.txt`. Nachweis:
   `.runs/qualification/codex-luna-artifact-export-qualified.json`.
 - Der gehärtete Planner-Abbruch/Resume-Lauf bestand vollständig. Nachweis:
   `.runs/qualification/codex-luna-live-resume-hardened.json`.
 - Intermittierender Windows-Fehler beim atomaren Checkpoint-Austausch reproduziert
   und durch begrenzte Wiederholung behoben. Dauerhafte Fehler bleiben sichtbar.
-  Aktuelle vollständige Suite: 352 Tests in 248,693 Sekunden mit
+  Aktuelle vollständige Suite: 376 Tests in 209,230 Sekunden mit
   Branch-Coverage-Instrumentierung, OK, drei erwartete
-  Symlink-Skips; Ruff, zehn Workflow-Trace-Szenarien und 19/19 Offline-Release-Checks
+  Symlink-Skips; Ruff, zehn Workflow-Trace-Szenarien und 20/20 Offline-Release-Checks
   inklusive lokaler Windows-OCR bestanden.
   Die historische direkte Host-Lesesperre wird ohne ACL-Änderung oder Sandbox-Bypass
   durch den begrenzten read-only-Export behandelt. Globale CLI unverändert;

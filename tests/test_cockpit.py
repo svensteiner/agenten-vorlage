@@ -54,6 +54,41 @@ class CockpitHttpTests(unittest.TestCase):
             if not configured:
                 self.assertIn("Windows-Sandbox", backend["detail"])
 
+    def test_configuration_exposes_composable_profile_parts(self):
+        data = self.get_json("/api/config")
+        profiles = {item["id"]: item for item in data["profile_catalog"]}
+        self.assertEqual(data["profiles"], list(profiles))
+        self.assertIn("developer", profiles)
+        self.assertIn("bmd-tax-advisor", profiles)
+        self.assertIn("developer", profiles["developer"]["roles"])
+        self.assertIn("tax-advisor", profiles["bmd-tax-advisor"]["roles"])
+        self.assertTrue(profiles["bmd-tax-advisor"]["require_review"])
+
+    def test_local_configuration_exposes_first_run_preferences(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            manager = JobManager(
+                state_dir=workspace / "state",
+                default_workspace=workspace,
+                preferred_agent="programming-agent",
+                preferred_backend="codex",
+                starter_task="Create a measured growth plan.",
+            )
+            config = manager.configuration()
+        self.assertEqual(str(workspace.resolve()), config["default_workspace"])
+        self.assertEqual("programming-agent", config["preferred_agent"])
+        self.assertEqual("codex", config["preferred_backend"])
+        self.assertEqual("Create a measured growth plan.", config["starter_task"])
+
+    def test_local_configuration_rejects_missing_default_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing"
+            with self.assertRaises(ValueError):
+                JobManager(
+                    state_dir=Path(directory) / "state",
+                    default_workspace=missing,
+                )
+
     def test_demo_job_runs_through_http(self):
         with tempfile.TemporaryDirectory() as directory:
             payload = {

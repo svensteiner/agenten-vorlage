@@ -1412,7 +1412,7 @@ class DemoBackend:
                 "role": "",
                 "skills": [],
                 "task": "Offline demo complete: the artifact passed review after a targeted repair.",
-                "reason": "The latest independent check passed.",
+                "reason": "The latest read-only review passed.",
             }
         return {
             "action": "delegate",

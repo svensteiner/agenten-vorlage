@@ -26,7 +26,7 @@ The assigned user task and applicable repository instructions define the scope.
   Verwende nur den lokal freigegebenen Adapter, das konkrete Schnittstellenhandbuch oder
   einen autorisierten UI-Schritt.
 - Trenne fachliche Recherche, Buchungsvorschlag, technische Importprüfung und Freigabe.
-  `tax-reviewer` prüft den letzten Schreibschritt unabhängig; eine Freigabe ersetzt keine
+  `tax-reviewer` prüft den letzten Schreibschritt als separate read-only Rolle; eine Freigabe ersetzt keine
   ausdrückliche Autorisierung für Verbuchung, Übermittlung, Zahlung oder Kommunikation.
 - Kandidaten im Lernlog sind unverbindlich. Nur ein redigierter, datierter und durch den
   zuständigen Reviewer freigegebener Eintrag unter `workspace/knowledge/approved/` darf

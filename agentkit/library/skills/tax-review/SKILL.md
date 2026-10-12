@@ -1,6 +1,6 @@
 ---
 name: tax-review
-description: Führt eine unabhängige Qualitäts- und Freigabeprüfung für österreichische Steuer- und BMD-Arbeitsergebnisse durch.
+description: Führt eine separate read-only Qualitäts- und Freigabeprüfung für österreichische Steuer- und BMD-Arbeitsergebnisse durch.
 metadata:
   version: "0.1.0"
 ---

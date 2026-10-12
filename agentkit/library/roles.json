@@ -1,6 +1,6 @@
 {
   "developer": {"description": "Code implementieren, Fehler beheben, Tests ausfuehren", "instructions": "roles/developer.md", "skills": ["implement-feature", "debug-systematically", "verification-before-completion"], "sandbox": "workspace-write", "can_review": false},
-  "reviewer": {"description": "Artefakte und Nachweise unabhaengig auf Erfuellung pruefen", "instructions": "roles/reviewer.md", "skills": ["review-deliverable", "verification-before-completion"], "sandbox": "read-only", "can_review": true},
+  "reviewer": {"description": "Artefakte und Nachweise in einer separaten read-only Rolle auf Erfuellung pruefen", "instructions": "roles/reviewer.md", "skills": ["review-deliverable", "verification-before-completion"], "sandbox": "read-only", "can_review": true},
   "researcher": {"description": "Primaerquellen und lokale Materialien untersuchen, Optionen vergleichen", "instructions": "roles/researcher.md", "skills": ["research-brief"], "sandbox": "read-only", "can_review": false},
   "product": {"description": "Produktziel, Umfang und Abnahmekriterien konkretisieren", "instructions": "roles/product.md", "skills": ["product-brief", "research-brief"], "sandbox": "workspace-write", "can_review": false},
   "marketing": {"description": "Belegbare Marketing- und Produkttexte entwerfen", "instructions": "roles/marketing.md", "skills": ["content-draft", "research-brief"], "sandbox": "workspace-write", "can_review": false},
@@ -8,5 +8,5 @@
   "support": {"description": "Supportfaelle untersuchen und Kundenantworten vorbereiten", "instructions": "roles/support.md", "skills": ["customer-response", "research-brief"], "sandbox": "workspace-write", "can_review": false},
   "tax-advisor": {"description": "Österreichische Steuer- und Buchhaltungsfragen fachlich vorbereiten", "instructions": "roles/tax-advisor.md", "skills": ["austrian-tax-research", "bookkeeping-review", "learning-log", "verification-before-completion"], "sandbox": "workspace-write", "can_review": false},
   "bmd-operator": {"description": "BMD-NTCS-Arbeitsschritte vorbereiten, prüfen und über einen freigegebenen Adapter ausführen", "instructions": "roles/bmd-operator.md", "skills": ["bmd-workflow", "bookkeeping-review", "learning-log"], "sandbox": "workspace-write", "can_review": false},
-  "tax-reviewer": {"description": "Steuerliche, buchhalterische und BMD-Ergebnisse unabhängig prüfen", "instructions": "roles/tax-reviewer.md", "skills": ["austrian-tax-research", "bookkeeping-review", "tax-review", "verification-before-completion"], "sandbox": "read-only", "can_review": true}
+  "tax-reviewer": {"description": "Steuerliche, buchhalterische und BMD-Ergebnisse in einer separaten read-only Rolle prüfen", "instructions": "roles/tax-reviewer.md", "skills": ["austrian-tax-research", "bookkeeping-review", "tax-review", "verification-before-completion"], "sandbox": "read-only", "can_review": true}
 }

@@ -7,6 +7,7 @@ import unittest
 import uuid
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+from unittest.mock import patch
 
 from agentkit.scaffold import create
 from cockpit.server import JobManager, ThreadingHTTPServer, make_handler
@@ -256,6 +257,78 @@ class BrowserReleaseTests(unittest.TestCase):
             "() => document.querySelector('#jobStatus')?.textContent.trim() === 'Abgeschlossen'",
             timeout=10_000,
         )
+        self.assertEqual([], console_errors)
+
+    def test_first_run_preferences_select_agent_workspace_codex_and_task(self):
+        preferred_workspace = self.root / "marketing-workspace"
+        preferred_workspace.mkdir(exist_ok=True)
+        manager = JobManager(
+            self.root,
+            self.root / "preferred-state",
+            default_workspace=preferred_workspace,
+            preferred_agent="programming-agent",
+            preferred_backend="codex",
+            starter_task="Create a measured seven-day growth plan.",
+        )
+        server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(manager))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        def cleanup_server() -> None:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+        self.addCleanup(cleanup_server)
+        page, console_errors = self.new_page()
+        with patch(
+            "cockpit.server.codex_readiness",
+            return_value={
+                "installed": True,
+                "credentials_present": True,
+                "sandbox_configured": True,
+            },
+        ):
+            page.goto(
+                f"http://127.0.0.1:{server.server_port}/",
+                wait_until="domcontentloaded",
+            )
+            self.wait_until_connected(page)
+            page.wait_for_function("() => document.querySelector('#backend')?.value === 'codex'")
+            self.assertEqual(
+                "programming-agent",
+                page.locator("#agent option:checked").text_content(),
+            )
+            self.assertEqual("codex", page.locator("#backend").input_value())
+            self.assertTrue(
+                os.path.samefile(
+                    preferred_workspace,
+                    Path(page.locator("#workspace").input_value()),
+                )
+            )
+            self.assertEqual(
+                "Create a measured seven-day growth plan.",
+                page.locator("#task").input_value(),
+            )
+
+            page.goto(
+                f"http://127.0.0.1:{server.server_port}/chat",
+                wait_until="domcontentloaded",
+            )
+            self.wait_until_connected(page)
+            page.wait_for_function("() => document.querySelector('#backend')?.value === 'codex'")
+            self.assertEqual(
+                "programming-agent",
+                page.locator("#agent option:checked").text_content(),
+            )
+            self.assertTrue(
+                os.path.samefile(
+                    preferred_workspace,
+                    Path(page.locator("#workspace").input_value()),
+                )
+            )
+            self.assertEqual(
+                "Create a measured seven-day growth plan.",
+                page.locator("#message").input_value(),
+            )
         self.assertEqual([], console_errors)
 
     def test_assistant_archive_restore_survives_reload(self):

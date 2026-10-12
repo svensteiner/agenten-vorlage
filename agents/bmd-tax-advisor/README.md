@@ -14,7 +14,7 @@ FinanzOnline-Übermittlung, Zahlung oder Mandantenkommunikation selbstständig a
 
 - `tax-advisor`: Sachverhalt, österreichische Primärquellen, Beleg- und Buchungsvorschlag
 - `bmd-operator`: BMD-Preview, Import-/Exportvertrag und technische Plausibilisierung
-- `tax-reviewer`: unabhängiges Review mit Vier-Augen-Gate
+- `tax-reviewer`: separate read-only Prüfung mit Vier-Augen-Gate
 - `researcher`: Quellen und lokale Unterlagen mit Standdatum untersuchen
 - `austrian-tax-research`, `bookkeeping-review`, `bmd-workflow`, `learning-log` und
   `tax-review`: fachliche Regeln, die im Agentenpaket portabel kopiert sind

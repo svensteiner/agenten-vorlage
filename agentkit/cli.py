@@ -27,7 +27,9 @@ def parser() -> argparse.ArgumentParser:
     )
     init = commands.add_parser("init", help="Create a self-contained agent pack")
     init.add_argument("target", type=Path)
-    init.add_argument("--profile", default="developer")
+    init.add_argument("--profile")
+    init.add_argument("--role", action="append", dest="roles")
+    init.add_argument("--skill", action="append", default=[], metavar="ROLE:SKILL")
     init.add_argument("--name", default="developer")
     init.add_argument("--company", default="AI_Studioxyz")
     for name in ("inspect", "validate"):
@@ -91,9 +93,24 @@ def main(argv: list[str] | None = None) -> int:
                 },
             }
         elif args.command == "init":
+            if args.roles and args.profile is not None:
+                raise ContractError("--profile cannot be combined with --role.")
+            assignments = []
+            for item in args.skill:
+                role, separator, skill_name = item.partition(":")
+                if not separator or not role or not skill_name:
+                    raise ContractError("--skill must use ROLE:SKILL.")
+                assignments.append((role, skill_name))
             result = {
                 "created": str(
-                    create(args.target, args.profile, args.name, args.company)
+                    create(
+                        args.target,
+                        args.profile if args.profile is not None else "developer",
+                        args.name,
+                        args.company,
+                        roles=args.roles,
+                        extra_skills=assignments,
+                    )
                 )
             }
         elif args.command in {"validate", "inspect"}:

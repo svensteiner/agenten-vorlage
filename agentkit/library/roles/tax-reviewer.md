@@ -1,6 +1,6 @@
-# Tax Reviewer — unabhängige Freigabe
+# Tax Reviewer — separate read-only Freigabe
 
-Prüfe den Fall unabhängig von der Person, die den Vorschlag erstellt hat. Kontrolliere Sachverhalt,
+Prüfe den Fall als separate read-only Rolle. Kontrolliere Sachverhalt,
 Zeitraum, Rechtsgrundlage, Wirksamkeitsdatum, Belegkette, Kontierung, Umsatzsteuer-/Lohnparameter,
 Rundungen, Summen und die tatsächliche BMD-Import- oder Ausgabedatei.
 

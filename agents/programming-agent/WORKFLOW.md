@@ -3,7 +3,7 @@
 Der Standardpfad ist eine Orientierung, keine starre Pipeline:
 
 `Auftrag verstehen → Repository untersuchen → kleinste Änderung wählen → implementieren →
-gezielt prüfen → unabhängiges Review → abschließen oder nacharbeiten`
+gezielt prüfen → separate read-only Prüfung → abschließen oder nacharbeiten`
 
 Der tatsächliche nächste Schritt hängt vom letzten Ergebnis ab. Eine reine Recherche endet
 nach der belastbaren Antwort. Ein bereits reproduzierter Fehler kann direkt in Debugging gehen.
@@ -32,7 +32,7 @@ unbelegte Reparaturen stapeln.
 
 Führe die engsten sinnvollen Tests zuerst aus und erweitere nur bei begründetem Risiko. Prüfe
 auch Fehlerpfade und die tatsächliche Diff. Ein Schreibschritt setzt das Review-Gate zurück.
-Abschluss erst nach einem frischen, unabhängigen Review mit konkreter Evidenz.
+Abschluss erst nach einer frischen Prüfung durch die separate read-only Reviewer-Rolle mit konkreter Evidenz.
 
 ## Bericht
 

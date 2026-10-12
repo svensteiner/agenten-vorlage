@@ -17,6 +17,7 @@ import os
 import re
 import shutil
 import signal
+import socket
 import tempfile
 import threading
 import time
@@ -65,6 +66,9 @@ _OVERLOAD_RESPONSE = (
     b"\r\n"
     b'{"error":"service_busy"}'
 )
+# The edge proxy rejects bodies above 3 MiB. Allow additional room for headers
+# so every request admitted by that boundary can be drained without buffering it.
+_OVERLOAD_DRAIN_BYTES = (3 * 1024 * 1024) + (64 * 1024)
 
 
 class _UserStorageQuotaExceeded(ContractError):
@@ -1004,15 +1008,31 @@ class BoundedThreadingHTTPServer(ThreadingHTTPServer):
 
     def process_request(self, request, client_address):
         if not self._worker_slots.acquire(blocking=False):
+            deadline = time.monotonic() + self.overload_send_timeout
             try:
                 request.settimeout(self.overload_send_timeout)
                 request.sendall(_OVERLOAD_RESPONSE)
+                # Windows can reset a just-closed TCP connection when inbound
+                # request bytes remain unread, discarding the 503 we sent. End
+                # the response first, then drain any request admitted by the
+                # edge-size boundary within the same timeout.
+                request.shutdown(socket.SHUT_WR)
+                drained = 0
+                while drained < _OVERLOAD_DRAIN_BYTES:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    request.settimeout(remaining)
+                    chunk = request.recv(min(4096, _OVERLOAD_DRAIN_BYTES - drained))
+                    if not chunk:
+                        break
+                    drained += len(chunk)
             except OSError:
                 # The client may have disconnected while waiting in the
                 # accept queue.  Closing it is still the safe overload action.
                 pass
             finally:
-                self.shutdown_request(request)
+                self.close_request(request)
             return
         try:
             super().process_request(request, client_address)

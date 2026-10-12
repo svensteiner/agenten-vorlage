@@ -276,7 +276,8 @@
       const state = {
         agents: [], backends: [], conversations: [], current: null, currentId: null,
         online: false, ready: false, newMode: false, saving: false, loading: false,
-        pollTimer: null, epoch: 0, pending: null, defaultWorkspace: "", workspaceAuto: true,
+        pollTimer: null, epoch: 0, pending: null, defaultWorkspace: "", configuredWorkspace: "",
+        preferredAgent: "", preferredBackend: "", starterTask: "", workspaceAuto: true,
         attachments: [], pendingAttachmentIds: [], fileBusy: false, persistenceError: false, githubPreview: null,
         publicMode: false,
       };
@@ -583,7 +584,12 @@
       }
       function agentLabel(path) { return state.agents.find((item) => item.path === path || item.id === path)?.id || path || "Assistent"; }
       function backendLabel(id) { return state.backends.find((item) => item.id === id)?.label || id || "Backend"; }
-      function workspaceDefault(agentPath) { return state.publicMode ? (state.defaultWorkspace || "default") : (agentPath ? `${agentPath}/workspace` : ""); }
+      function workspaceDefault(agentPath) {
+        if (state.publicMode) return state.defaultWorkspace || "default";
+        const agent = state.agents.find((item) => item.path === agentPath || item.id === agentPath);
+        if (agent?.id === state.preferredAgent && state.configuredWorkspace) return state.configuredWorkspace;
+        return agentPath ? `${agentPath}/workspace` : "";
+      }
       function renderList() {
         const list = $("conversationList");
         list.replaceChildren();
@@ -609,7 +615,9 @@
           option.value = item.path || item.id;
           agents.append(option);
         }
-        const preferredAgent = state.agents.find((item) => item.id === "programming-agent") || state.agents[0];
+        const preferredAgent = state.agents.find((item) => item.id === state.preferredAgent)
+          || state.agents.find((item) => item.id === "programming-agent")
+          || state.agents[0];
         if (preferredAgent) agents.value = preferredAgent.path || preferredAgent.id;
         const backends = $("backend");
         backends.replaceChildren();
@@ -617,7 +625,8 @@
           const option = el("option", `${item.label || item.id}${item.available === false ? " · nicht verfügbar" : ""}`);
           option.value = item.id; option.disabled = item.available === false; backends.append(option);
         }
-        const firstBackend = state.backends.find((item) => item.available !== false);
+        const firstBackend = state.backends.find((item) => item.id === state.preferredBackend && item.available !== false)
+          || state.backends.find((item) => item.available !== false);
         if (firstBackend) backends.value = firstBackend.id;
         updateBackendHint();
       }
@@ -747,11 +756,14 @@
       function newConversation() {
         if (state.saving || state.fileBusy) return;
         clearTimeout(state.pollTimer); state.epoch++; state.currentId = null; state.newMode = true; clearAttachments();
-        const agent = state.agents.find((item) => item.id === "programming-agent") || state.agents[0];
+        const agent = state.agents.find((item) => item.id === state.preferredAgent)
+          || state.agents.find((item) => item.id === "programming-agent")
+          || state.agents[0];
         $("agent").value = agent?.path || agent?.id || "";
         state.defaultWorkspace = workspaceDefault($("agent").value); state.workspaceAuto = true;
         $("workspace").value = state.defaultWorkspace;
-        $("title").value = ""; $("model").value = ""; $("message").value = "";
+        $("title").value = ""; $("model").value = "";
+        $("message").value = state.starterTask || "";
         state.current = { metadata: { title: "Neuer Dialog", agent: $("agent").value, backend: $("backend").value, workspace: $("workspace").value }, messages: [], active_job_id: null };
         renderList(); renderCurrent(); $("message").focus();
       }
@@ -900,7 +912,11 @@
           const [config, agents] = await Promise.all([api("/api/config"), api("/api/agents")]);
           state.backends = config.backends || []; state.agents = agents.agents || [];
           state.publicMode = Boolean(config.public_multiuser);
-          state.defaultWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+          state.configuredWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
+          state.defaultWorkspace = state.configuredWorkspace;
+          state.preferredAgent = typeof config.preferred_agent === "string" ? config.preferred_agent : "";
+          state.preferredBackend = typeof config.preferred_backend === "string" ? config.preferred_backend : "";
+          state.starterTask = typeof config.starter_task === "string" ? config.starter_task : "";
           applyPublicUi();
           populateOptions(); await loadConversations(); state.ready = true;
           const pending = pendingRead();
