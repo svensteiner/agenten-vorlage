@@ -4,7 +4,7 @@ agent_id: programming-agent
 company: AI_Studioxyz
 profile: developer
 status: production
-last_updated: "2026-09-17"
+last_updated: "2026-10-12"
 ---
 
 # Programming Agent — aktueller Status
@@ -24,8 +24,17 @@ in einem separat übergebenen Git-Workspace.
   verweigert blindes Überschreiben großer Dateien. Das produktive Tool-Budget beträgt 48 Aufrufe.
 - Das Cockpit persistiert Aufträge lokal, listet die Run-Historie und kann blockierte Läufe mit
   Feedback und Interruption-Bestätigung fortsetzen.
-- Letzte Vorlage-Verifikation: `python -m unittest discover -q` → 43 bestanden; Ruff,
-  Kompilierung und `agentkit validate` → bestanden.
+- Letzte vollständige Runtime-Verifikation: 379 Tests bestanden, drei erwartete
+  Windows-Symlink-Skips; kombinierte Line-/Branch-Coverage 80 %. Ruff, Bandit und
+  `agentkit validate` bestanden. Coverage ist keine Produktreifequote.
+- Reale Luna-Abnahme `7f459565f22340b3abb71860087feacb`: gezielter Python-Bugfix,
+  drei unveraenderte Tests bestanden, Statusbericht nach Review selbst korrigiert,
+  erneutes Review bestanden. Kein inhaltliches Korrekturfeedback des Operators.
+  Die Tests wurden separat bytegenau geprueft; der Workspace hatte keine Git-Baseline.
+- Anschliessende Live-Git-Abnahme bestanden: committed Ausgangsstand, exakt eine
+  Dateiaenderung, Hosttest, separates Diff-Review, unabhaengiger pytest-Aufruf und
+  null Aenderungen im Ablehnungsfall. Nachweis: docs/CODING-AGENT-ACCEPTANCE.md im
+  Root der Vorlage. `Start-Coding-Agent.ps1 -Task` uebernimmt konkrete Arbeitsauftraege.
 - Validierung:
   `python -m agentkit validate --agent agents\programming-agent`
 - Demo:

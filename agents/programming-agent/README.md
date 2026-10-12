@@ -38,6 +38,11 @@ am Statusbericht nach Review und erneutes erfolgreiches Review (fuenf Schritte).
 Der Host gab ausschliesslich Aktionen im isolierten Testprojekt frei; die Testdatei
 blieb bytegenau unveraendert. Mangels Git-Baseline konnte der Reviewer dies nur anhand
 der verfuegbaren Aktionshistorie beurteilen; die separate Hostpruefung bestaetigte es.
+Die anschliessende Git-Abnahme bestand mit committed Ausgangsstand: genau eine
+Codeaenderung, erfolgreicher Test, separates Review des echten Diffs, bytegenaues
+Ergebnis und unveraenderte Testdatei. Ein zweiter Lauf bestaetigte null Aenderungen
+nach abgewiesener Schreibfreigabe. Nachweis und Grenzen:
+[`docs/CODING-AGENT-ACCEPTANCE.md`](../../docs/CODING-AGENT-ACCEPTANCE.md).
 Der Codex-Worker darf mit nativen read-only Werkzeugen untersuchen; Schreib- und
 Testaktionen werden weiterhin vom Host nach Freigabe ausgefuehrt. Einheitliche
 CRLF-Dateien behalten ihre Zeilenenden bei LF-formatierten Edit-Vorschlaegen.
@@ -64,6 +69,16 @@ angeben:
 ```powershell
 & .\Start-Coding-Agent.ps1 -Workspace "C:\Pfad\zum\projekt-worktree"
 ```
+
+Ein konkreter Arbeitsauftrag kann direkt mitgegeben werden:
+
+```powershell
+& .\Start-Coding-Agent.ps1 -Workspace "C:\Pfad\zum\projekt-worktree" `
+  -Task "Behebe den beschriebenen Fehler, ergaenze passende Tests und pruefe den Diff."
+```
+
+Der Auftrag erscheint editierbar in AI Studio. Dort startest du ihn und siehst
+die konkreten Schreib-/Testvorschlaege, Ergebnisse und Review-Schritte.
 
 Der Launcher oeffnet die Browseroberflaeche mit diesem Agenten, Codex und einem
 test-/revieworientierten Startauftrag. Der direkte CLI-Weg bleibt ebenfalls verfuegbar:
