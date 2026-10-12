@@ -1017,7 +1017,10 @@ class DeepSeekBackend:
         }
         if tools:
             payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            payload["tool_choice"] = (
+                "required" if getattr(self, "require_tool_observation", False)
+                and not any(message.get("role") == "tool" for message in messages) else "auto"
+            )
         elif getattr(self, "json_mode", True):
             payload["response_format"] = {"type": "json_object"}
         body = json.dumps(payload).encode("utf-8")
@@ -1262,6 +1265,22 @@ class DeepSeekBackend:
                 result = self._parse_structured_content(content)
                 validate(result, contract)
             except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                if contract == "report" and getattr(self, "repair_structured_report", False) and tool_count:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise RuntimeError("Provider report repair deadline exhausted.") from exc
+                    repair_messages = messages + [
+                        {"role": "assistant", "content": content},
+                        {"role": "user", "content": "Return only the final report JSON matching the original system schema, based on the actual tool results above. No new actions. Include status, summary, artifacts, evidence and next_actions. Do not invent observations."},
+                    ]
+                    self._validate_messages(repair_messages)
+                    repair = self._chat(repair_messages, remaining, tools=None)
+                    try:
+                        result = self._parse_structured_content(repair.get("content", ""))
+                        validate(result, contract)
+                    except (TypeError, ValueError, json.JSONDecodeError) as repair_exc:
+                        raise ContractError("Provider structured report repair failed.") from repair_exc
+                    return result
                 raise ContractError("DeepSeek returned no valid structured JSON response.") from exc
             return result
         raise RuntimeError("DeepSeek tool-call limit exhausted.")
@@ -1334,6 +1353,7 @@ class DeepSeekBackend:
             "Choose exactly one next action for this bounded dynamic workflow. "
             "Do not implement or spawn agents. Use only registered roles and assigned skills. "
             "Return a decision JSON object. review_pending requires a reviewer after the last edit.\n"
+            "For finish, task must summarize the verified outcome and actual evidence, not repeat the original request or instructions.\n"
             + json.dumps(self._provider_context(context), ensure_ascii=False)
         )
         return self._call(prompt, "decision", context, timeout)

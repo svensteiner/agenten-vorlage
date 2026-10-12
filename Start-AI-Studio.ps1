@@ -4,7 +4,7 @@ param(
     [int]$Port = 8765,
     [string]$DefaultWorkspace = "",
     [string]$PreferredAgent = "",
-    [ValidateSet("", "demo", "codex", "deepseek", "api", "anthropic")]
+    [ValidateSet("", "demo", "codex", "deepseek", "api", "anthropic", "ollama")]
     [string]$PreferredBackend = "",
     [string]$StarterTask = "",
     [switch]$OpenBrowser
@@ -12,6 +12,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$localOllamaConfig = Join-Path $Root "cockpit\.runs\ollama.json"
+if ((Test-Path -LiteralPath $localOllamaConfig -PathType Leaf) -and -not $env:AGENTKIT_OLLAMA_BASE_URL) {
+    $localOllamaSettings = Get-Content -LiteralPath $localOllamaConfig -Raw | ConvertFrom-Json
+    $env:AGENTKIT_OLLAMA_BASE_URL = [string]$localOllamaSettings.base_url
+    $env:AGENTKIT_OLLAMA_MODEL = [string]$localOllamaSettings.model
+}
 $venvPython = Join-Path $Root ".venv\Scripts\python.exe"
 if (Test-Path -LiteralPath $venvPython -PathType Leaf) {
     $Python = $venvPython

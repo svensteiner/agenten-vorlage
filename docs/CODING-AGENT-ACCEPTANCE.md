@@ -24,6 +24,17 @@ Codex verwendet standardmaessig `gpt-5.6-luna` mit niedriger Reasoning-Stufe.
 
 ## Eigener Auftrag
 
+Lokale Ollama-Abnahme am 12.10.2026: `qwen3-coder-next:latest` bestand Run
+`df57342460d54280b6ef7fcb0ca91475` mit exakter `app.py`-Aenderung, bestandenem
+Hosttest und separatem read-only Review. Testdatei und STATUS.md blieben unveraendert;
+Git zeigte nur `app.py`. Lokale Evidenz: `.runs/qualification/ollama-qwen-proof.json`.
+Die Erstabnahme erkannte einen erfundenen Erfolgsbericht ohne Werkzeugausfuehrung.
+Der lokale Adapter verlangt jetzt eine Werkzeugbeobachtung vor einem Worker-Bericht.
+Eine weitere Abnahme fuehrte Edit und Test aus, scheiterte aber am JSON-Bericht;
+die begrenzte Formatkorrektur verwendet vorhandene Beobachtungen ohne neue Aktionen.
+Diese Schutzmassnahmen und die erfolgreiche Abnahme beweisen keinen allgemeinen
+Schutz vor jeder unbelegten Modellbehauptung. Die konkrete Host-Abnahme bleibt notwendig.
+
 Native Anthropic-Abnahme am 12.10.2026: Haiku 4.5 bestand Run
 `dd23c252e06347fc9879c3fb34cd7aee` in einem isolierten Git-Testprojekt.
 Der Host genehmigte einen exakten `edit_file`-Vorschlag fuer `app.py` und einen

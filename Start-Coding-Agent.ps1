@@ -3,7 +3,7 @@ param(
     [ValidateRange(1, 65535)]
     [int]$Port = 8765,
     [string]$Workspace = (Join-Path $PSScriptRoot "agents\programming-agent\workspace"),
-    [ValidateSet("codex", "deepseek", "api", "anthropic")]
+    [ValidateSet("codex", "deepseek", "api", "anthropic", "ollama")]
     [string]$Backend = "codex",
     [ValidateNotNullOrEmpty()]
     [ValidateScript({ -not [string]::IsNullOrWhiteSpace($_) })]

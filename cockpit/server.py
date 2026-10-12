@@ -30,6 +30,7 @@ sys.path.insert(0, str(TEMPLATE_ROOT))
 from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, codex_readiness  # noqa: E402
 from agentkit.api_backend import ApiBackend  # noqa: E402
 from agentkit.anthropic_backend import AnthropicBackend  # noqa: E402
+from agentkit.ollama_backend import OllamaBackend  # noqa: E402
 from agentkit.approvals import safe_workspace_path  # noqa: E402
 from agentkit.catalog import Catalog  # noqa: E402
 from agentkit.codex_artifacts import read_codex_artifact  # noqa: E402
@@ -124,11 +125,11 @@ class JobManager:
         self.default_workspace = default_workspace.resolve() if default_workspace else None
         if self.default_workspace is not None and not self.default_workspace.is_dir():
             raise ValueError("The configured default workspace must be an existing directory.")
-        defaults = {"demo", "codex", "deepseek"} if self.public_mode else {"demo", "codex", "deepseek", "api", "anthropic"}
+        defaults = {"demo", "codex", "deepseek"} if self.public_mode else {"demo", "codex", "deepseek", "api", "anthropic", "ollama"}
         self.allowed_backends = frozenset(allowed_backends or defaults)
-        if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek", "api", "anthropic"}:
+        if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek", "api", "anthropic", "ollama"}:
             raise ValueError("allowed_backends contains an unsupported backend.")
-        if self.public_mode and self.allowed_backends & {"api", "anthropic"}:
+        if self.public_mode and self.allowed_backends & {"api", "anthropic", "ollama"}:
             raise ValueError("Custom API providers are available only in local mode.")
         if preferred_agent and not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", preferred_agent):
             raise ValueError("preferred_agent must be a canonical assistant id.")
@@ -531,6 +532,7 @@ class JobManager:
                 "deepseek": DeepSeekBackend,
                 "api": ApiBackend,
                 "anthropic": AnthropicBackend,
+                "ollama": OllamaBackend,
             }.get(backend_name)
             if backend_type is None:
                 raise ContractError(f"Unknown backend: {backend_name}")
@@ -559,7 +561,7 @@ class JobManager:
             checkpoint = agent_path / ".runs" / run_id
             run_dir = checkpoint if (checkpoint / "state.json").is_file() else None
             result = Engine(agent_path, workspace, backend,
-                            require_approvals=backend_name in {"codex", "deepseek", "api", "anthropic"} or job.payload.get("require_approvals", False),
+                            require_approvals=backend_name in {"codex", "deepseek", "api", "anthropic", "ollama"} or job.payload.get("require_approvals", False),
                             core_snapshot=job.payload.get("core_snapshot"),
                             mutation_writer=self._mutation_writer,
                             state_writer=self._storage_writer,
@@ -595,8 +597,8 @@ class JobManager:
         backend_name = payload.get("backend", "demo")
         # Codex and DeepSeek own an approval-enabled execution path. Demo
         # remains opt-in so existing fixture jobs can still run unattended.
-        require_approvals = backend_name in {"codex", "deepseek", "api", "anthropic"} or payload.get("require_approvals", False)
-        if backend_name not in {"demo", "codex", "deepseek", "api", "anthropic"}:
+        require_approvals = backend_name in {"codex", "deepseek", "api", "anthropic", "ollama"} or payload.get("require_approvals", False)
+        if backend_name not in {"demo", "codex", "deepseek", "api", "anthropic", "ollama"}:
             raise ContractError("Unknown backend.")
         if backend_name not in self.allowed_backends:
             raise ContractError("Backend is disabled by the execution isolation policy.")
@@ -888,6 +890,15 @@ class JobManager:
             backends.append({"id": "anthropic", "label": "Anthropic Claude", "available": anthropic_status["configured"],
                              "tool_approvals": True, "readiness": anthropic_status,
                              "detail": "Native Anthropic Messages API. Standard: Claude Haiku 4.5. Schluessel lokal geschuetzt; Schreib- und Testaktionen benoetigen Freigaben."})
+        if not self.public_mode and "ollama" in self.allowed_backends:
+            try:
+                OllamaBackend()
+                ollama_available = True
+            except (ContractError, ValueError):
+                ollama_available = False
+            backends.append({"id": "ollama", "label": "Lokale KI · Ollama", "available": ollama_available,
+                             "tool_approvals": True,
+                             "detail": "Privater Ollama-Modellserver. Standard: Qwen3 Coder Next. Kein Cloud-Fallback. HTTP im lokalen Netz ist unverschluesselt; Schreib- und Testaktionen benoetigen Freigaben."})
         return {
             "profiles": list(profiles),
             "profile_catalog": [
@@ -1336,7 +1347,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--default-workspace", type=Path)
     parser.add_argument("--preferred-agent", default="")
-    parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek", "api", "anthropic"), default="")
+    parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek", "api", "anthropic", "ollama"), default="")
     parser.add_argument("--starter-task", default="")
     parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()

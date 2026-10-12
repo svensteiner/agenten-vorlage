@@ -55,6 +55,28 @@ gehen ausschliesslich an die konfigurierte Adresse. Gemini-spezifische Zusatzfun
 Azure-Sonderauthentifizierung und unverschluesselte
 lokale HTTP-Endpunkte werden von diesem Adapter nicht angeboten.
 
+## Privater Ollama-Server
+
+`ollama` verbindet den Agenten mit einer expliziten privaten IP oder Loopback-IP.
+`AGENTKIT_OLLAMA_BASE_URL` enthaelt URL, Port und `/v1`;
+`AGENTKIT_OLLAMA_MODEL` ist optional und standardmaessig `qwen3-coder-next:latest`.
+Ein echter API-Schluessel ist nicht erforderlich. Der Kompatibilitaetswert `ollama`
+ist kein Zugangsschutz. HTTP ist nur fuer diesen privaten Adapter erlaubt und
+uebertraegt Code/Modellnachrichten im LAN unverschluesselt. Kein Cloud-Fallback.
+Ein schluesselloser Server sollte nur im vertrauenswuerdigen privaten Netz erreichbar sein.
+Der oeffentliche Mehrnutzer-Modus bietet diesen Adapter nicht an.
+
+```powershell
+$env:AGENTKIT_OLLAMA_BASE_URL = "http://<private-IP>:11434/v1"
+& .\Start-Coding-Agent.ps1 -Backend ollama -Workspace "C:\Pfad\zum\projekt-worktree"
+```
+
+Fuer spaetere Launcher-Starts kann lokal `cockpit/.runs/ollama.json` mit
+`base_url` und `model` hinterlegt werden. Die Datei bleibt ausserhalb von Git.
+Explizite Prozessvariablen haben Vorrang. Workers muessen vor einem Bericht echte
+Werkzeuge verwenden; eine fehlerhafte finale JSON-Ausgabe darf einmal innerhalb
+des bestehenden Zeit-/Kontextlimits ohne weitere Werkzeuge korrigiert werden.
+
 ## Native Anthropic Messages
 
 `anthropic` verwendet ausschliesslich `https://api.anthropic.com/v1/messages`.
