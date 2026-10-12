@@ -64,6 +64,16 @@ class CockpitHttpTests(unittest.TestCase):
         self.assertIn("tax-advisor", profiles["bmd-tax-advisor"]["roles"])
         self.assertTrue(profiles["bmd-tax-advisor"]["require_review"])
 
+    def test_custom_api_configuration_is_available_without_exposing_key(self):
+        with patch.dict(os.environ, {"AGENTKIT_API_KEY": "private-fixture-key",
+                                     "AGENTKIT_API_MODEL": "fixture-model",
+                                     "AGENTKIT_API_BASE_URL": "https://provider.example/v1"}):
+            data = self.get_json("/api/config")
+        backend = next(item for item in data["backends"] if item["id"] == "api")
+        self.assertTrue(backend["available"])
+        self.assertTrue(backend["tool_approvals"])
+        self.assertNotIn("private-fixture-key", json.dumps(data))
+
     def test_local_configuration_exposes_first_run_preferences(self):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)

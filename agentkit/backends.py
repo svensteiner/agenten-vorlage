@@ -479,6 +479,8 @@ class CodexBackend:
             ]
             prompt = (
                 "Work as the selected bounded worker with read-only inspection access. Return exactly one JSON action step. "
+                "Explicit assignment file restrictions take precedence over general handoff instructions: "
+                "if STATUS.md is excluded, do not create or update it; report handoff evidence in the final report instead. "
                 "Use your native read-only tools to inspect files, list the workspace and inspect diffs before proposing an action. "
                 "Read-only shell inspection is permitted; do not execute project code, tests, mutations or external actions directly. "
                 "The read-only sandbox applies to direct tool execution, not to action proposals: this writing worker may propose "
@@ -569,9 +571,10 @@ class CodexBackend:
         prompt = (
             "Execute this bounded assignment using the selected role/skills. Do not spawn more agents. "
             "Preserve others' work. Treat worker reports as claims to verify. "
-            "Read the target workspace STATUS.md before the first edit; if it is missing, create a "
-            "concise one before changing source code, then update it after each meaningful run with "
-            "evidence, blockers and the next action. "
+            "Explicit assignment file restrictions take precedence over general handoff instructions: "
+            "if STATUS.md is excluded, do not create or update it; report handoff evidence in the final report instead. "
+            "Read the target workspace STATUS.md before the first edit if it exists. Create or update it "
+            "only when the assignment permits that file; otherwise include evidence, blockers and next action in the report. "
             "Return only the report schema JSON. artifacts are existing files RELATIVE to the workspace; "
             "put URLs and commands/results in evidence. Report failures honestly; do not fabricate test output. "
             "Do not publish, deploy, message others, purchase, or delete unrelated files.\n"
@@ -1015,7 +1018,7 @@ class DeepSeekBackend:
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
-        else:
+        elif getattr(self, "json_mode", True):
             payload["response_format"] = {"type": "json_object"}
         body = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
@@ -1126,7 +1129,7 @@ class DeepSeekBackend:
     def _call(self, prompt: str, contract: str, context: dict, timeout: float) -> dict:
         if not self.api_key:
             raise ContractError(
-                "DEEPSEEK_API_KEY is not set. Configure it only in the local environment."
+                "Provider API key is not set. Configure the selected provider locally."
             )
         schema_text = json.dumps(schema(contract), ensure_ascii=False)
         system = (
@@ -1339,9 +1342,12 @@ class DeepSeekBackend:
         prompt = (
             "Execute the selected bounded assignment using only the given role and skills. "
             "Preserve other work. Verify claims and return only the report JSON. "
-            "Read the target workspace STATUS.md before the first edit; if it is missing, create a "
-            "concise one before changing source code, then update it after each meaningful run with "
-            "evidence, blockers and the next action. "
+            "artifacts must contain only exact existing file paths RELATIVE to the workspace, "
+            "such as app.py, with no annotations, Markdown, descriptions or URLs. Put explanations in evidence. "
+            "Explicit assignment file restrictions take precedence over general handoff instructions: "
+            "if STATUS.md is excluded, do not create or update it; report handoff evidence in the final report instead. "
+            "Read the target workspace STATUS.md before the first edit if it exists. Create or update it "
+            "only when the assignment permits that file; otherwise include evidence, blockers and next action in the report. "
             "Do not publish, deploy, message, purchase or delete unrelated files.\n"
             + json.dumps(
                 {"assignment": decision, "context": self._provider_context(context)},

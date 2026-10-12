@@ -4,7 +4,7 @@ param(
     [int]$Port = 8765,
     [string]$DefaultWorkspace = "",
     [string]$PreferredAgent = "",
-    [ValidateSet("", "demo", "codex", "deepseek")]
+    [ValidateSet("", "demo", "codex", "deepseek", "api", "anthropic")]
     [string]$PreferredBackend = "",
     [string]$StarterTask = "",
     [switch]$OpenBrowser

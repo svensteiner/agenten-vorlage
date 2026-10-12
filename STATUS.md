@@ -17,6 +17,13 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Native Anthropic-Abnahme am 12.10.2026 bestanden: Haiku 4.5 erledigte Run
+  `dd23c252e06347fc9879c3fb34cd7aee` mit einer gezielten `app.py`-Aenderung,
+  unveraendertem bestandenem Test und separatem read-only Review. Hostpruefung
+  bestaetigt genau eine geaenderte Datei und unveraenderte Tests/STATUS.md.
+  Eigene Chat-Completions-APIs und native Anthropic Messages sind lokal waehlbar;
+  API-Protokoll-Fixtures ersetzen keinen Live-Nachweis fuer weitere Anbieter.
+
 - Reale Coding-Abnahme am 12.10.2026: Luna reparierte `unique_ordered` in einem
   isolierten Projekt, drei unveraenderte Tests bestanden und die separate read-only
   Rolle pruefte das Artefakt. Run `1f030bb10e4b45d2a7ed50d870bd7676` abgeschlossen.

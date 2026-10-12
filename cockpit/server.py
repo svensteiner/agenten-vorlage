@@ -28,6 +28,8 @@ TEMPLATE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TEMPLATE_ROOT))
 
 from agentkit.backends import CodexBackend, DeepSeekBackend, DemoBackend, codex_readiness  # noqa: E402
+from agentkit.api_backend import ApiBackend  # noqa: E402
+from agentkit.anthropic_backend import AnthropicBackend  # noqa: E402
 from agentkit.approvals import safe_workspace_path  # noqa: E402
 from agentkit.catalog import Catalog  # noqa: E402
 from agentkit.codex_artifacts import read_codex_artifact  # noqa: E402
@@ -122,9 +124,12 @@ class JobManager:
         self.default_workspace = default_workspace.resolve() if default_workspace else None
         if self.default_workspace is not None and not self.default_workspace.is_dir():
             raise ValueError("The configured default workspace must be an existing directory.")
-        self.allowed_backends = frozenset(allowed_backends or {"demo", "codex", "deepseek"})
-        if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek"}:
+        defaults = {"demo", "codex", "deepseek"} if self.public_mode else {"demo", "codex", "deepseek", "api", "anthropic"}
+        self.allowed_backends = frozenset(allowed_backends or defaults)
+        if not self.allowed_backends or not self.allowed_backends <= {"demo", "codex", "deepseek", "api", "anthropic"}:
             raise ValueError("allowed_backends contains an unsupported backend.")
+        if self.public_mode and self.allowed_backends & {"api", "anthropic"}:
+            raise ValueError("Custom API providers are available only in local mode.")
         if preferred_agent and not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", preferred_agent):
             raise ValueError("preferred_agent must be a canonical assistant id.")
         if preferred_backend and preferred_backend not in self.allowed_backends:
@@ -148,6 +153,7 @@ class JobManager:
         self.state_dir = (state_dir or self.template_root / "cockpit" / ".runs").resolve()
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.providers = ProviderSettings(self.state_dir)
+        self.anthropic_provider = ProviderSettings(self.state_dir, "anthropic")
         self.assistant_settings = AssistantSettings(
             self.state_dir,
             storage_writer=self._storage_writer,
@@ -523,6 +529,8 @@ class JobManager:
                 "demo": DemoBackend,
                 "codex": CodexBackend,
                 "deepseek": DeepSeekBackend,
+                "api": ApiBackend,
+                "anthropic": AnthropicBackend,
             }.get(backend_name)
             if backend_type is None:
                 raise ContractError(f"Unknown backend: {backend_name}")
@@ -541,6 +549,8 @@ class JobManager:
                 if allowed_tools is not None:
                     backend_kwargs["allowed_tools"] = allowed_tools
                 backend = DeepSeekBackend(model, **backend_kwargs)
+            elif backend_name == "anthropic":
+                backend = AnthropicBackend(model, api_key=self.anthropic_provider.api_key())
             else:
                 backend = DemoBackend() if backend_name == "demo" else backend_type(model)
             run_id = job.payload["run_id"]
@@ -549,7 +559,7 @@ class JobManager:
             checkpoint = agent_path / ".runs" / run_id
             run_dir = checkpoint if (checkpoint / "state.json").is_file() else None
             result = Engine(agent_path, workspace, backend,
-                            require_approvals=backend_name in {"codex", "deepseek"} or job.payload.get("require_approvals", False),
+                            require_approvals=backend_name in {"codex", "deepseek", "api", "anthropic"} or job.payload.get("require_approvals", False),
                             core_snapshot=job.payload.get("core_snapshot"),
                             mutation_writer=self._mutation_writer,
                             state_writer=self._storage_writer,
@@ -585,8 +595,8 @@ class JobManager:
         backend_name = payload.get("backend", "demo")
         # Codex and DeepSeek own an approval-enabled execution path. Demo
         # remains opt-in so existing fixture jobs can still run unattended.
-        require_approvals = backend_name in {"codex", "deepseek"} or payload.get("require_approvals", False)
-        if backend_name not in {"demo", "codex", "deepseek"}:
+        require_approvals = backend_name in {"codex", "deepseek", "api", "anthropic"} or payload.get("require_approvals", False)
+        if backend_name not in {"demo", "codex", "deepseek", "api", "anthropic"}:
             raise ContractError("Unknown backend.")
         if backend_name not in self.allowed_backends:
             raise ContractError("Backend is disabled by the execution isolation policy.")
@@ -864,6 +874,20 @@ class JobManager:
         ]
         if self.public_mode:
             backends = [backend for backend in backends if backend["id"] in self.allowed_backends]
+        elif "api" in self.allowed_backends:
+            try:
+                ApiBackend()
+                api_available = True
+            except (ContractError, ValueError):
+                api_available = False
+            backends.append({"id": "api", "label": "Eigene Modell-API", "available": api_available,
+                             "tool_approvals": True,
+                             "detail": "Anbieterunabhaengige Chat-Completions-API. Servervariablen AGENTKIT_API_BASE_URL, AGENTKIT_API_KEY und AGENTKIT_API_MODEL einrichten. Modellzugriff ist erst nach einem erfolgreichen Auftrag bestaetigt."})
+        if not self.public_mode and "anthropic" in self.allowed_backends:
+            anthropic_status = self.anthropic_provider.status()
+            backends.append({"id": "anthropic", "label": "Anthropic Claude", "available": anthropic_status["configured"],
+                             "tool_approvals": True, "readiness": anthropic_status,
+                             "detail": "Native Anthropic Messages API. Standard: Claude Haiku 4.5. Schluessel lokal geschuetzt; Schreib- und Testaktionen benoetigen Freigaben."})
         return {
             "profiles": list(profiles),
             "profile_catalog": [
@@ -1017,7 +1041,9 @@ def make_handler(manager: JobManager | None, *, runtime_resolver=None):
             script_sources = "'none'"
             if content_type == "text/html":
                 script_sources = " ".join(
-                    "'sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode("ascii") + "'"
+                    "'sha256-" + base64.b64encode(hashlib.sha256(
+                        script.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+                    ).digest()).decode("ascii") + "'"
                     for script in re.findall(rb"<script>(.*?)</script>", body, flags=re.DOTALL)
                 ) or "'none'"
             self.send_response(status)
@@ -1110,8 +1136,9 @@ def make_handler(manager: JobManager | None, *, runtime_resolver=None):
             if parsed.path == "/assistants":
                 self._send(HTTPStatus.OK, (Path(__file__).parent / "assistants.html").read_bytes(), "text/html")
                 return
-            if parsed.path == "/api/providers/deepseek":
-                self._send(HTTPStatus.OK, manager.provider_status())
+            if parsed.path in {"/api/providers/deepseek", "/api/providers/anthropic"}:
+                status = manager.provider_status() if parsed.path.endswith("deepseek") else manager.anthropic_provider.status()
+                self._send(HTTPStatus.OK, status)
                 return
             if parsed.path == "/api/agents/instructions":
                 try:
@@ -1213,19 +1240,20 @@ def make_handler(manager: JobManager | None, *, runtime_resolver=None):
                     return
                 self._send(HTTPStatus.OK, preview)
                 return
-            if path == "/api/providers/deepseek":
+            if path in {"/api/providers/deepseek", "/api/providers/anthropic"}:
                 try:
+                    settings = manager.providers if path.endswith("deepseek") else manager.anthropic_provider
                     body = self._body()
                     if body.get("action") == "save" and set(body) == {"action", "api_key"}:
-                        manager.providers.save(body["api_key"])
+                        settings.save(body["api_key"])
                     elif body == {"action": "clear"}:
-                        manager.providers.clear()
+                        settings.clear()
                     else:
                         raise ContractError("Invalid provider operation.")
                 except (ContractError, OSError, ValueError):
                     self._send(HTTPStatus.BAD_REQUEST, {"error": "Provider-Einstellung konnte nicht gespeichert werden. Schlüssel und lokale Speicherberechtigung prüfen."})
                     return
-                self._send(HTTPStatus.OK, manager.provider_status())
+                self._send(HTTPStatus.OK, manager.provider_status() if path.endswith("deepseek") else settings.status())
                 return
             attachment_match = re.fullmatch(r"/api/conversations/([0-9a-f]{32})/attachments", path)
             if attachment_match:
@@ -1308,7 +1336,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--default-workspace", type=Path)
     parser.add_argument("--preferred-agent", default="")
-    parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek"), default="")
+    parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek", "api", "anthropic"), default="")
     parser.add_argument("--starter-task", default="")
     parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()

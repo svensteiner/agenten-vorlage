@@ -95,7 +95,7 @@
         <header class="topbar"><span id="workspaceTopbar" class="eyebrow">Lokaler Arbeitsraum</span><span id="connection" class="connection" data-state="offline" role="status">Verbindung wird geprüft …</span></header>
         <div class="content">
           <p id="notice" class="notice" role="alert" hidden></p>
-          <section class="intro"><div class="eyebrow">Provider</div><h1>DeepSeek API</h1><p id="providerIntro">Verwalte den lokalen Zugang für DeepSeek. Speichern führt keinen Modellaufruf aus; laufende Aufträge behalten den Schlüssel, mit dem sie gestartet wurden.</p></section>
+          <section class="intro"><div class="eyebrow">Provider</div><h1>Modell-Anbieter</h1><p id="providerIntro">Verwalte deine lokalen Zugänge für DeepSeek und Anthropic. Speichern führt keinen Modellaufruf aus; laufende Aufträge behalten den Schlüssel, mit dem sie gestartet wurden.</p></section>
           <section class="card status-card" aria-labelledby="statusTitle">
             <div class="status-row"><h2 id="statusTitle">Aktueller Status</h2><span id="statusValue" class="status-value">Wird geladen …</span></div>
             <p id="statusDetail" class="status-detail">Der Schlüssel wird niemals im Browser angezeigt. Ein gespeicherter Schlüssel hat Vorrang vor einer gesetzten Umgebungsvariable. Entfernen löscht nur den gespeicherten Schlüssel; eine Umgebungsvariable bleibt aktiv.</p>
@@ -104,7 +104,7 @@
           <section class="card form-card" aria-labelledby="saveTitle">
             <h2 id="saveTitle">API-Schlüssel speichern</h2>
             <p id="saveIntro">Der Schlüssel wird für dein Windowskonto lokal verschlüsselt. Es wird kein Modelltest ausgeführt; ein bestätigter Modellzugriff ist damit noch nicht nachgewiesen.</p>
-            <label for="apiKey">DeepSeek API-Schlüssel</label>
+            <label for="providerSelect">Anbieter</label><select id="providerSelect"><option value="deepseek">DeepSeek</option><option value="anthropic">Anthropic Claude</option></select><label for="apiKey">API-Schlüssel des gewählten Anbieters</label>
             <div class="secret-row"><input id="apiKey" type="password" maxlength="512" autocomplete="off" spellcheck="false" placeholder="Schlüssel hier eingeben" /><button id="saveKey" class="primary" type="button">Schlüssel speichern</button></div>
             <p class="hint">Der Eingabewert wird nach jeder Anfrage aus dem Formular entfernt.</p>
             <div class="actions"><button id="clearKey" class="danger" type="button">Gespeicherten Schlüssel entfernen</button><button id="retry" type="button" hidden>Erneut laden</button></div>
@@ -131,6 +131,7 @@
       }
       function controls() {
         const available = Boolean(state.status?.storage_available);
+        $("providerSelect").disabled = state.busy || state.loading || state.publicMode;
         $("saveKey").disabled = state.busy || state.loading || !state.online || !available;
         $("clearKey").disabled = state.busy || state.loading || !state.online || !available;
         $("apiKey").disabled = state.busy || state.loading || !state.online || !available;
@@ -181,7 +182,7 @@
         if (state.loading || state.busy) return;
         state.loading = true; state.loadError = false; controls(); showNotice("");
         try {
-          const [status, config] = await Promise.all([api("/api/providers/deepseek"), api("/api/config")]);
+          const [status, config] = await Promise.all([api("/api/providers/" + $("providerSelect").value), api("/api/config")]);
           state.publicMode = Boolean(config.public_multiuser);
           applyPublicUi();
           renderStatus(status);
@@ -195,13 +196,14 @@
         try {
           const body = action === "save" ? { action, api_key: $("apiKey").value } : { action };
           if (action === "save" && !body.api_key.trim()) { showNotice("Gib einen API-Schlüssel ein."); return; }
-          renderStatus(await api("/api/providers/deepseek", { method: "POST", body: JSON.stringify(body) }));
+          renderStatus(await api("/api/providers/" + $("providerSelect").value, { method: "POST", body: JSON.stringify(body) }));
         } catch (error) { showNotice(error.message); }
         finally { $("apiKey").value = ""; state.busy = false; controls(); }
       }
       $("saveKey").onclick = () => mutate("save");
       $("clearKey").onclick = () => mutate("clear");
       $("retry").onclick = loadStatus;
+      $("providerSelect").onchange = () => { $("apiKey").value = ""; loadStatus(); };
       loadStatus();
     </script>
   </body>

@@ -24,6 +24,16 @@ Codex verwendet standardmaessig `gpt-5.6-luna` mit niedriger Reasoning-Stufe.
 
 ## Eigener Auftrag
 
+Native Anthropic-Abnahme am 12.10.2026: Haiku 4.5 bestand Run
+`dd23c252e06347fc9879c3fb34cd7aee` in einem isolierten Git-Testprojekt.
+Der Host genehmigte einen exakten `edit_file`-Vorschlag fuer `app.py` und einen
+`run_pytest`-Aufruf. Ein Test bestand, das separate read-only Review bestaetigte
+Diff und Testnachweis. Ergebnisbytes entsprachen exakt der erwarteten Korrektur;
+nur `app.py` war geaendert. Testdatei und STATUS.md blieben unveraendert.
+Maschinenlesbare lokale Evidenz: `.runs/qualification/anthropic-native-final-proof.json`.
+Dieser Nachweis betrifft denselben begrenzten Python-Auftrag ueber einen zweiten
+Modellanbieter und erweitert nicht die unten genannten Aussagegrenzen.
+
 Im Root der Vorlage:
 
 ```powershell

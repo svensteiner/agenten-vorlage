@@ -95,7 +95,7 @@ class Conversations:
             "id", "title", "agent", "company", "workspace", "backend", "model", "created_at", "updated_at"
         )}
         result["require_approvals"] = value.get(
-            "require_approvals", value["backend"] in {"codex", "deepseek"}
+            "require_approvals", value["backend"] in {"codex", "deepseek", "api", "anthropic"}
         )
         return result
 
@@ -122,10 +122,10 @@ class Conversations:
         # Codex and DeepSeek are approval-enabled backends. The policy is
         # backend-owned and cannot be disabled by a client retry; Demo keeps
         # its existing opt-in behavior for fixture runs.
-        require_approvals = backend in {"codex", "deepseek"} or payload.get("require_approvals", False)
+        require_approvals = backend in {"codex", "deepseek", "api", "anthropic"} or payload.get("require_approvals", False)
         model = payload.get("model", "")
         title = payload.get("title", "Neuer Dialog").strip()
-        if backend not in {"demo", "codex", "deepseek"} or len(model) > 200:
+        if backend not in {"demo", "codex", "deepseek", "api", "anthropic"} or len(model) > 200:
             raise ContractError("Invalid backend or model.")
         if backend not in self.manager.allowed_backends:
             raise ContractError("Backend is disabled by the execution isolation policy.")
@@ -143,7 +143,7 @@ class Conversations:
                 previous = self._read(conversation_id)
                 if any(previous[key] != value[key] for key in ("title", "agent", "workspace", "backend", "model", "company")):
                     raise ContractError("request_id already identifies another conversation.")
-                if previous.get("require_approvals", backend in {"codex", "deepseek"}) != require_approvals:
+                if previous.get("require_approvals", backend in {"codex", "deepseek", "api", "anthropic"}) != require_approvals:
                     raise ContractError("request_id already identifies another approval policy.")
                 return self._metadata(previous)
             save(self._path(conversation_id), value, writer=self._storage_writer)
@@ -245,7 +245,7 @@ class Conversations:
                 save(self._path(conversation_id), value, writer=self._storage_writer)
             job_payload = {key: value[key] for key in ("agent", "workspace", "backend", "model")}
             job_payload["require_approvals"] = value.get(
-                "require_approvals", value["backend"] in {"codex", "deepseek"}
+                "require_approvals", value["backend"] in {"codex", "deepseek", "api", "anthropic"}
             )
             job_payload.update(task=content, request_id=request_id)
             self.manager.start(job_payload, conversation_id=conversation_id, execution_task=task,

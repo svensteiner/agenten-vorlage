@@ -80,6 +80,11 @@ Ein konkreter Arbeitsauftrag kann direkt mitgegeben werden:
 Der Auftrag erscheint editierbar in AI Studio. Dort startest du ihn und siehst
 die konkreten Schreib-/Testvorschlaege, Ergebnisse und Review-Schritte.
 
+Weitere Modellanbieter: `-Backend api` verwendet eine frei konfigurierte
+Chat-Completions-API; `-Backend deepseek` verwendet den bisherigen DeepSeek-Zugang.
+`-Backend anthropic` verwendet die native Messages-API und standardmaessig Haiku 4.5.
+Konfiguration und Protokollgrenzen: [docs/MODEL-APIS.md](../../docs/MODEL-APIS.md).
+
 Der Launcher oeffnet die Browseroberflaeche mit diesem Agenten, Codex und einem
 test-/revieworientierten Startauftrag. Der direkte CLI-Weg bleibt ebenfalls verfuegbar:
 

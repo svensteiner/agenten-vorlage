@@ -89,9 +89,12 @@ class _Dpapi:
 
 
 class ProviderSettings:
-    def __init__(self, state_dir: str | Path):
+    def __init__(self, state_dir: str | Path, provider: str = "deepseek"):
+        if provider not in {"deepseek", "anthropic"}:
+            raise ContractError("Unsupported credential provider.")
+        self.provider = provider
         self.state_dir = Path(state_dir)
-        self.path = self.state_dir / "providers" / "deepseek.json"
+        self.path = self.state_dir / "providers" / f"{provider}.json"
         self._dpapi = _Dpapi()
         self._lock = threading.RLock()
 
@@ -99,9 +102,8 @@ class ProviderSettings:
     def storage_available(self) -> bool:
         return self._dpapi.available
 
-    @staticmethod
-    def _environment_key() -> str | None:
-        value = os.environ.get("DEEPSEEK_API_KEY")
+    def _environment_key(self) -> str | None:
+        value = os.environ.get(f"{self.provider.upper()}_API_KEY")
         return value if _valid_key(value) else None
 
     def _stored_key(self) -> tuple[bool, str | None]:
@@ -152,7 +154,7 @@ class ProviderSettings:
 
     def save(self, api_key: str) -> None:
         if not _valid_key(api_key):
-            raise ContractError("DeepSeek API key must be 1–512 ASCII characters without whitespace or control characters.")
+            raise ContractError("Provider API key must be 1–512 ASCII characters without whitespace or control characters.")
         with self._lock:
             if not self.storage_available:
                 raise ContractError("Protected provider storage is unavailable on this platform.")

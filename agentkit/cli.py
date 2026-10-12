@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 from .backends import CodexBackend, DeepSeekBackend, DemoBackend, codex_readiness
+from .api_backend import ApiBackend
+from .anthropic_backend import AnthropicBackend
 from .catalog import Catalog
 from .contracts import ContractError, LIBRARY, read_json
 from .engine import Engine
@@ -52,8 +54,8 @@ def parser() -> argparse.ArgumentParser:
         cmd.add_argument(
             "--workspace", type=Path, help="Defaults to the pack's workspace directory"
         )
-        cmd.add_argument("--backend", choices=("demo", "codex", "deepseek"), default="demo")
-        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported backend write/test actions; always enabled for Codex and DeepSeek")
+        cmd.add_argument("--backend", choices=("demo", "codex", "deepseek", "api", "anthropic"), default="demo")
+        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported backend write/test actions; always enabled for Codex, DeepSeek and API")
         cmd.add_argument(
             "--model",
             help="Optional model override; Codex defaults to gpt-5.6-luna with low reasoning; DeepSeek uses its provider default",
@@ -137,9 +139,10 @@ def main(argv: list[str] | None = None) -> int:
             if args.backend == "demo":
                 backend = DemoBackend()
             else:
-                backend = {"codex": CodexBackend, "deepseek": DeepSeekBackend}[args.backend](args.model)
+                backend = {"codex": CodexBackend, "deepseek": DeepSeekBackend, "api": ApiBackend,
+                           "anthropic": AnthropicBackend}[args.backend](args.model)
             workspace = args.workspace or args.agent / "workspace"
-            require_approvals = args.backend in {"codex", "deepseek"} or args.require_approvals
+            require_approvals = args.backend in {"codex", "deepseek", "api", "anthropic"} or args.require_approvals
             engine = Engine(args.agent, workspace, backend, require_approvals=require_approvals)
             if args.command == "run":
                 result = engine.run(args.task)

@@ -91,6 +91,21 @@ class BrowserReleaseTests(unittest.TestCase):
     def wait_until_connected(page) -> None:
         page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
 
+    def test_provider_settings_switches_to_anthropic_without_console_errors(self):
+        page, errors = self.new_page()
+        page.goto(self.base_url + "/settings")
+        try:
+            self.wait_until_connected(page)
+        except Exception as exc:
+            self.fail(f"Settings did not connect: {errors}; notice={page.locator('#notice').text_content()}; {exc}")
+        page.locator("#providerSelect").wait_for(state="visible")
+        with page.expect_response(lambda response: "/api/providers/anthropic" in response.url) as pending:
+            page.locator("#providerSelect").select_option("anthropic")
+        self.assertEqual(200, pending.value.status)
+        self.assertEqual("anthropic", page.locator("#providerSelect").input_value())
+        self.assertEqual("", page.locator("#apiKey").input_value())
+        self.assertEqual([], errors)
+
     def assert_accessible_controls(self, page) -> None:
         unnamed = page.evaluate(
             r"""

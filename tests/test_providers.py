@@ -24,6 +24,20 @@ class _FakeDpapi:
 
 
 class ProviderSettingsTests(unittest.TestCase):
+    def test_credentials_are_isolated_between_providers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            deepseek = ProviderSettings(folder)
+            anthropic = ProviderSettings(folder, "anthropic")
+            deepseek._dpapi = _FakeDpapi()
+            anthropic._dpapi = _FakeDpapi()
+            deepseek.save("deepseek-fixture")
+            anthropic.save("anthropic-fixture")
+            self.assertEqual("deepseek-fixture", deepseek.api_key())
+            self.assertEqual("anthropic-fixture", anthropic.api_key())
+            self.assertNotEqual(deepseek.path, anthropic.path)
+            anthropic.clear()
+            self.assertEqual("deepseek-fixture", deepseek.api_key())
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name)
