@@ -32,6 +32,12 @@ Vorher scheiterten zwei von drei unveraenderten Tests; danach bestanden alle dre
 sowohl im hostseitigen `run_pytest` als auch bei separater `unittest`-Nachpruefung.
 Der Lauf erforderte konkretes Feedback zu gemischten Zeilenenden nach drei abgewiesenen
 Edits. Er belegt einen echten Python-Bugfix, keine allgemeine Autonomiequote.
+Die Wiederholungsabnahme `7f459565f22340b3abb71860087feacb` bestand danach ohne
+inhaltliches Korrekturfeedback: gezielter Edit, drei Tests, selbststaendige Nacharbeit
+am Statusbericht nach Review und erneutes erfolgreiches Review (fuenf Schritte).
+Der Host gab ausschliesslich Aktionen im isolierten Testprojekt frei; die Testdatei
+blieb bytegenau unveraendert. Mangels Git-Baseline konnte der Reviewer dies nur anhand
+der verfuegbaren Aktionshistorie beurteilen; die separate Hostpruefung bestaetigte es.
 Der Codex-Worker darf mit nativen read-only Werkzeugen untersuchen; Schreib- und
 Testaktionen werden weiterhin vom Host nach Freigabe ausgefuehrt. Einheitliche
 CRLF-Dateien behalten ihre Zeilenenden bei LF-formatierten Edit-Vorschlaegen.

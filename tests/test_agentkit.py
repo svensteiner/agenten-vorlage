@@ -316,10 +316,11 @@ class AgentKitTests(unittest.TestCase):
     def test_call_gets_remaining_wall_time_budget(self):
         self.change_limits(max_seconds=1, call_timeout=10)
         backend = SequenceBackend([decision("blocked", "")])
-        with patch.object(backend, "decide", wraps=backend.decide) as call:
+        with patch("agentkit.engine.time.monotonic", side_effect=[100.0] + [100.25] * 100), \
+             patch.object(backend, "decide", wraps=backend.decide) as call:
             self.run_backend(backend)
-            self.assertGreater(call.call_args.args[1], 0)
-            self.assertLessEqual(call.call_args.args[1], 1)
+            call.assert_called_once()
+            self.assertAlmostEqual(call.call_args.args[1], 0.75)
 
     def test_elapsed_budget_survives_resume(self):
         state = self.run_backend(SequenceBackend([decision("blocked", "")]))
@@ -599,6 +600,24 @@ class AgentKitTests(unittest.TestCase):
         }, context, 5)
         self.assertIn("edit_requires_one_match", result)
         self.assertEqual(original, path.read_bytes())
+
+    def test_mixed_newline_edit_recovers_with_single_line_span(self):
+        path = self.workspace / "target.py"
+        original = b"def value():\n    return 1\r\n"
+        path.write_bytes(original)
+        backend = DeepSeekBackend(api_key="test-only-key")
+        context = {"workspace": str(self.workspace), "sandbox": "workspace-write"}
+        result = backend._run_tool("edit_file", {
+            "path": "target.py", "old_text": "def value():\n    return 1\n",
+            "new_text": "def value():\n    return 2\n",
+        }, context, 5)
+        self.assertIn("preferably without newlines", result)
+        self.assertEqual(original, path.read_bytes())
+        result = backend._run_tool("edit_file", {
+            "path": "target.py", "old_text": "return 1", "new_text": "return 2",
+        }, context, 5)
+        self.assertIn('"edited"', result)
+        self.assertEqual(b"def value():\n    return 2\r\n", path.read_bytes())
 
     def test_deepseek_refuses_large_existing_file_rewrite(self):
         path = self.workspace / "large.py"

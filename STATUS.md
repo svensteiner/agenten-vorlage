@@ -25,6 +25,14 @@ zurueckgestellt.
   funktionieren jetzt ohne Aenderung der Zeilenenden; mehrdeutige Edits bleiben gesperrt.
   Der erfolgreiche Lauf benoetigte Feedback bei gemischten Zeilenenden; daraus folgt
   kein Nachweis unbeaufsichtigter Bearbeitung beliebiger Repositories.
+- Wiederholungsabnahme `7f459565f22340b3abb71860087feacb`: Luna waehlt ohne
+  Korrekturfeedback direkt einen newline-freien Edit, besteht drei Tests, aktualisiert
+  STATUS.md, arbeitet einen Review-Befund selbst nach und besteht das erneute Review.
+  Fuenf Schritte, Testdatei bytegenau unveraendert. Die fehlende Git-Baseline bleibt
+  im Modellbericht sichtbar; unveraenderte Tests wurden separat durch den Host geprueft.
+  Der bestehende Live-Smoke akzeptiert jetzt auch gezielte Edits, aber nur bei exakt
+  erwarteten Ergebnisbytes. Ein CI-Flake im Ein-Sekunden-Budgettest wird mit einer
+  kontrollierten Uhr und exakter Restzeitpruefung beseitigt.
 
 - `x-growth-agent` bildet Strategie, Research, Content, Verifikation, Operator-Grenze und
   Reporting des bestehenden Marketingbots als portables AgentKit-Paket ab. Live-X-Aktionen

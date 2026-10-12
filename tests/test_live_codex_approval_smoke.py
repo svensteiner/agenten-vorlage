@@ -47,6 +47,18 @@ class LiveCodexApprovalSmokeTests(unittest.TestCase):
         pending = {"tool": "write_file", "arguments": {"path": "app.py", "content": MODULE.EXPECTED_APP.decode()}}
         self.assertEqual("reject", MODULE.policy_decision(pending, original=MODULE.ORIGINAL_APP, expected=MODULE.EXPECTED_APP, reject=True))
 
+    def test_policy_accepts_targeted_edit_only_when_final_bytes_are_exact(self):
+        args = {"path": "app.py", "old_text": "'before'", "new_text": "'after'"}
+        pending = {"tool": "edit_file", "arguments": args}
+        self.assertTrue(MODULE.allowed_action(pending, original=MODULE.ORIGINAL_APP, expected=MODULE.EXPECTED_APP))
+        for overrides in ({"new_text": "'after'; raise RuntimeError()"}, {"old_text": ""},
+                          {"path": "test_app.py"}, {"extra": "hidden"}):
+            with self.subTest(overrides=overrides):
+                self.assertFalse(MODULE.allowed_action(
+                    {"tool": "edit_file", "arguments": {**args, **overrides}},
+                    original=MODULE.ORIGINAL_APP, expected=MODULE.EXPECTED_APP,
+                ))
+
     def test_sequence_policy_allows_exactly_one_mutation_then_one_test(self):
         write = {"tool": "write_file", "arguments": {
             "path": "app.py", "content": MODULE.EXPECTED_APP.decode()

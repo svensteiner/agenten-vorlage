@@ -47,11 +47,13 @@ def allowed_action(pending: dict, *, original: bytes, expected: bytes) -> bool:
     if tool == "write_file":
         return args == {"path": "app.py", "content": expected.decode("utf-8")}
     if tool == "edit_file":
-        return args == {
-            "path": "app.py",
-            "old_text": original.decode("utf-8"),
-            "new_text": expected.decode("utf-8"),
-        }
+        if set(args) != {"path", "old_text", "new_text"} or args["path"] != "app.py":
+            return False
+        old_text, new_text = args["old_text"], args["new_text"]
+        if not isinstance(old_text, str) or not old_text or not isinstance(new_text, str):
+            return False
+        source = original.decode("utf-8")
+        return source.count(old_text) == 1 and source.replace(old_text, new_text).encode("utf-8") == expected
     if tool == "run_pytest":
         return args == {"path": "test_app.py"}
     return False

@@ -484,6 +484,9 @@ class CodexBackend:
                 "The read-only sandbox applies to direct tool execution, not to action proposals: this writing worker may propose "
                 "write_file, edit_file or run_pytest for the host to approve and execute. Propose at most one such action, "
                 "or return a final report. run_pytest can run unittest-style test classes through pytest. "
+                "For edits choose the smallest unique exact old_text span, preferably without newline characters; "
+                "shell text output may hide CRLF or mixed line endings. If edit_requires_one_match is returned, "
+                "reinspect the file and narrow the span rather than retrying the same whole-function replacement. "
                 "Treat every completed_action result as authoritative. Never repeat an action identity listed in completed_action_replay_sha256; "
                 "after a successful write/edit continue to the next required action, and after successful verification return a final report. "
                 "Treat rejected_proposal entries as mandatory corrections. The host rejects exact duplicates and semantically invalid "
@@ -955,7 +958,11 @@ class DeepSeekBackend:
                 new_text = new_text.replace("\r\n", "\n").replace("\n", "\r\n")
             occurrences = text.count(old_text)
             if occurrences != 1:
-                return json.dumps({"error": "edit_requires_one_match", "occurrences": occurrences})
+                return json.dumps({
+                    "error": "edit_requires_one_match", "occurrences": occurrences,
+                    "hint": "Reinspect the file and choose a smaller unique exact span, preferably without newlines. "
+                            "Text inspection may normalize CRLF or mixed line endings; no bytes were changed.",
+                })
             updated = text.replace(old_text, new_text)
             target = self._workspace_path(context, arguments.get("path", ""))
             DeepSeekBackend._write_mutation(
