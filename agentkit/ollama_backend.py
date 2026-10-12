@@ -7,6 +7,8 @@ import ipaddress
 import io
 import json
 import os
+import threading
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from .api_backend import ApiBackend
@@ -18,6 +20,25 @@ class OllamaBackend(ApiBackend):
     require_tool_observation = True
     repair_structured_report = True
     supported_tools = ApiBackend.supported_tools | {'search_file'}
+    _trace_lock = threading.Lock()
+
+    @classmethod
+    def _trace_tool(cls, event: dict) -> None:
+        destination = os.environ.get('AGENTKIT_OLLAMA_TOOL_TRACE')
+        if not destination:
+            return
+        encoded = (json.dumps(event, ensure_ascii=True) + '\n').encode('utf-8')
+        path = Path(destination)
+        try:
+            with cls._trace_lock:
+                if path.exists() and path.stat().st_size + len(encoded) > 1_048_576:
+                    return
+                with path.open('ab') as stream:
+                    stream.write(encoded)
+        except OSError:
+            # Optional diagnostics must never change a tool's outcome, notably
+            # after a mutation but before the host records completion.
+            return
 
     @staticmethod
     def _tool_specs(sandbox: str = "read-only") -> list[dict]:
@@ -38,6 +59,24 @@ class OllamaBackend(ApiBackend):
         return specs
 
     def _run_tool(self, name: str, arguments: dict, context: dict, timeout: float) -> str:
+        event = {'tool':str(name)[:80], 'path':str(arguments.get('path',''))[:240],
+                 'start_line':str(arguments.get('start_line',''))[:30],
+                 'max_lines':str(arguments.get('max_lines',''))[:30]}
+        self._trace_tool(dict(event,phase='request'))
+        try:
+            result = self._run_tool_impl(name, arguments, context, timeout)
+        except Exception as exc:
+            self._trace_tool(dict(event,phase='exception',error_type=type(exc).__name__))
+            raise
+        try:
+            value = json.loads(result)
+        except (TypeError,ValueError):
+            value = {}
+        self._trace_tool(dict(event,phase='result',error=str(value.get('error',''))[:80] if isinstance(value,dict) else '',
+                              result_bytes=len(result.encode('utf-8'))))
+        return result
+
+    def _run_tool_impl(self, name: str, arguments: dict, context: dict, timeout: float) -> str:
         if name not in {'read_file','search_file'}:
             return super()._run_tool(name, arguments, context, timeout)
         if name not in self.allowed_tools or timeout <= 0:

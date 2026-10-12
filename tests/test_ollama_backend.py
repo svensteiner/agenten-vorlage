@@ -11,6 +11,30 @@ from agentkit.contracts import ContractError
 
 
 class OllamaBackendTests(unittest.TestCase):
+    def test_optional_trace_keeps_source_content_out_and_is_bounded(self):
+        backend=OllamaBackend(base_url='http://192.168.0.101:11434/v1')
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/'app.py').write_text('private-source-content',encoding='utf-8')
+            trace=root/'trace.jsonl'
+            with patch.dict('os.environ',{'AGENTKIT_OLLAMA_TOOL_TRACE':str(trace)}):
+                backend._run_tool('read_file',{'path':'app.py'},{'workspace':temporary},5)
+                self.assertNotIn('private-source-content',trace.read_text())
+                self.assertEqual(['request','result'],[json.loads(line)['phase'] for line in trace.read_text().splitlines()])
+                trace.write_bytes(b'x' * 1_048_576)
+                backend._run_tool('read_file',{'path':'app.py'},{'workspace':temporary},5)
+                self.assertEqual(1_048_576,trace.stat().st_size)
+
+    def test_trace_failure_cannot_hide_a_successful_mutation(self):
+        backend=OllamaBackend(base_url='http://192.168.0.101:11434/v1')
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            # A directory cannot be opened as an append-only trace file.
+            with patch.dict('os.environ',{'AGENTKIT_OLLAMA_TOOL_TRACE':temporary}):
+                result=json.loads(backend._run_tool('write_file',{'path':'new.py','content':'pass\n'},
+                    {'workspace':temporary,'sandbox':'workspace-write'},5))
+            self.assertIn('written',result)
+            self.assertEqual('pass\n',(root/'new.py').read_text())
     def test_bounded_reads_large_files_without_silent_truncation(self):
         backend = OllamaBackend(base_url='http://192.168.0.101:11434/v1')
         with tempfile.TemporaryDirectory() as temporary:
