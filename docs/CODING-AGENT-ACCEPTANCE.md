@@ -34,6 +34,16 @@ Maschinenlesbare lokale Evidenz: `.runs/qualification/anthropic-native-final-pro
 Dieser Nachweis betrifft denselben begrenzten Python-Auftrag ueber einen zweiten
 Modellanbieter und erweitert nicht die unten genannten Aussagegrenzen.
 
+Eine anschliessende UI-Abnahme zeigte eine Evidenzluecke: Der API-Agent konnte
+Dateien lesen, hatte aber keinen Git-Inspektionsadapter. Ein Modellbericht leitete
+Git-Aussagen unzulaessig aus dem Dateibestand ab. `inspect_git` liefert jetzt den
+tatsaechlichen Status und `diff HEAD` read-only mit Repository-Root-Pruefung.
+Ein instrumentierter echter Haiku-Lauf `eb524a729474416eb3377959085297db`
+bestaetigte einen realen Werkzeugaufruf mit genau ` M app.py`, vollstaendigem
+Diff von `before` zu `after` und erfolgreichem Review. Lokale Host-Evidenz:
+`.runs/qualification/native-git-tool-proof.json`. AI Studio wurde mit dem neuen
+Stand neu gestartet; UI-Auftrag `a98e460224084d1cb87ead35ef619327` abgeschlossen.
+
 Im Root der Vorlage:
 
 ```powershell

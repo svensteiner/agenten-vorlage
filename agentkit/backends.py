@@ -1342,6 +1342,8 @@ class DeepSeekBackend:
         prompt = (
             "Execute the selected bounded assignment using only the given role and skills. "
             "Preserve other work. Verify claims and return only the report JSON. "
+            "Never infer Git cleanliness, changed paths or diff contents from a file inventory or file reads. "
+            "Use inspect_git when available for requested Git evidence; if unavailable or truncated, report that gap. "
             "artifacts must contain only exact existing file paths RELATIVE to the workspace, "
             "such as app.py, with no annotations, Markdown, descriptions or URLs. Put explanations in evidence. "
             "Explicit assignment file restrictions take precedence over general handoff instructions: "

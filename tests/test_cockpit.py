@@ -185,6 +185,8 @@ class CockpitHttpTests(unittest.TestCase):
         scripts = re.findall(rb"<script>(.*?)</script>", body, flags=re.DOTALL)
         self.assertTrue(scripts)
         for script in scripts:
+            # HTML parsing normalizes CRLF and lone CR before CSP hashing.
+            script = script.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
             digest = base64.b64encode(hashlib.sha256(script).digest()).decode("ascii")
             self.assertIn("'sha256-" + digest + "'", script_policy)
 

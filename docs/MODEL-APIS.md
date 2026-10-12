@@ -65,6 +65,11 @@ Die lokale Schluesselablage ist unter Windows mit CurrentUser-DPAPI geschuetzt.
 Transportfehler wechseln nicht still zu einem anderen Anbieter. Freigaben, Workspace-
 Grenzen, Testnachweise und separates Review gelten weiterhin.
 
+Die lokalen Adapter `api` und `anthropic` bieten `inspect_git` als read-only
+Werkzeug fuer den echten Git-Status und `diff HEAD` des Workspace-Roots an.
+Fehlende Git-Repositories, uebergeordnete Repository-Roots, Zeitlimits und gekuerzte
+Ausgaben sind keine vollstaendigen Nachweise. Dateilisten allein belegen keinen Diff.
+
 ```powershell
 & .\Start-Coding-Agent.ps1 -Backend anthropic -Workspace "C:\Pfad\zum\projekt-worktree"
 ```

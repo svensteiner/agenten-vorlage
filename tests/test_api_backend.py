@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +17,32 @@ from agentkit.scaffold import create
 class ApiBackendTests(unittest.TestCase):
     def backend(self, **kwargs):
         return ApiBackend("test-model", api_key="fixture-key", base_url="https://provider.example/v1", **kwargs)
+
+    @unittest.skipUnless(shutil.which("git"), "Git required")
+    def test_git_inspection_reads_real_diff_and_rejects_parent_repository(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            def git(*args):
+                subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+            git("init")
+            (root / "app.py").write_text("before\n", encoding="utf-8")
+            git("add", "app.py")
+            git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "baseline")
+            (root / "app.py").write_text("after\n", encoding="utf-8")
+            backend = self.backend()
+            result = json.loads(backend._run_tool("inspect_git", {}, {"workspace": str(root), "sandbox": "read-only"}, 10))
+            self.assertEqual("ok", result["status"])
+            self.assertIn(" M app.py", result["git_status"])
+            self.assertIn("-before", result["diff_head"])
+            self.assertIn("+after", result["diff_head"])
+            self.assertFalse(result["truncated"])
+            self.assertEqual("after\n", (root / "app.py").read_text())
+            child = root / "child"
+            child.mkdir()
+            result = json.loads(backend._run_tool("inspect_git", {}, {"workspace": str(child)}, 10))
+            self.assertEqual("workspace_is_not_git_root", result["reason"])
+            with self.assertRaises(ContractError):
+                backend._run_tool("inspect_git", {"command": "reset"}, {"workspace": str(root)}, 10)
 
     def test_request_uses_selected_provider_and_tools(self):
         backend = self.backend()
