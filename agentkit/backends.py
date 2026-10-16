@@ -31,6 +31,10 @@ from .approvals import (
 )
 
 
+class _DuplicateJSONKeyError(json.JSONDecodeError):
+    """An ambiguous object must never reach a permissive parser fallback."""
+
+
 class _NoProviderRedirect(urllib.request.HTTPRedirectHandler):
     """Keep bearer credentials bound to the explicitly configured provider."""
 
@@ -1316,11 +1320,22 @@ class DeepSeekBackend:
         start, end = content.find("{"), content.rfind("}")
         if start >= 0 and end > start:
             candidates.append(content[start : end + 1])
+
+        def reject_duplicate_keys(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise _DuplicateJSONKeyError("Duplicate JSON object key", content, 0)
+                result[key] = value
+            return result
+
         for candidate in candidates:
             if candidate.lower().startswith("json\n"):
                 candidate = candidate[5:].lstrip()
             try:
-                result = json.loads(candidate)
+                result = json.loads(candidate, object_pairs_hook=reject_duplicate_keys)
+            except _DuplicateJSONKeyError:
+                raise
             except json.JSONDecodeError:
                 continue
             if isinstance(result, dict):
@@ -1333,8 +1348,19 @@ class DeepSeekBackend:
             return raw_arguments
         try:
             result = cls._parse_structured_content(raw_arguments)
+        except _DuplicateJSONKeyError:
+            raise
         except (TypeError, ValueError, json.JSONDecodeError):
-            result = ast.literal_eval(raw_arguments)
+            tree = ast.parse(raw_arguments, mode="eval")
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Dict):
+                    keys = set()
+                    for key_node in node.keys:
+                        key = ast.literal_eval(key_node)
+                        if key in keys:
+                            raise ValueError("Duplicate tool argument object key")
+                        keys.add(key)
+            result = ast.literal_eval(tree)
         if not isinstance(result, dict):
             raise TypeError("Tool arguments must be an object")
         return result

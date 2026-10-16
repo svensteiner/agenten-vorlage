@@ -10,6 +10,9 @@ keine weitere Nachricht an. Die Offline-Demo demonstriert zwei getrennte Dateifr
 
 - Vorschlag und Modellfortsetzung werden vor der Aktion dauerhaft gespeichert.
 - Freigaben sind an Run, Agent, Company, Workspace, Backend und Modell gebunden.
+- Bei explizitem Modellrouting umfasst die Modellbindung auch Reparaturmodell,
+  Reviewmodell und Eskalationsschwelle. Eine geaenderte Policy entwertet die
+  ausstehende Freigabe; die ausgewaehlte Route steht im Worker-Checkpoint.
 - Eine Dateiprüfsumme bindet die Freigabe an den beobachteten Workspace. Änderungen
   verhindern die Ausführung; ein veralteter Vorschlag kann weiterhin abgelehnt werden.
 - Die unterstützte Prüfsumme umfasst höchstens 512 Einträge und 8 MiB Dateiinhalte.

@@ -24,6 +24,23 @@ Ein Plan ist eine veränderliche Hypothese. Nach jedem Ergebnis entscheidet das 
 Die Engine kennt keine Fach-Schlüsselwörter und keinen fest verdrahteten Aufgabenablauf.
 Nur die ausdrücklich als Demo benannte Backend-Fixture besitzt deterministische Auswahlregeln.
 
+## Beobachtungsbasierte Modellwahl
+
+Der optionale `EscalatingBackend` umschliesst bereits konfigurierte Backends
+desselben Providers. Er fuehrt pro Entscheidung oder Worker-Schritt genau einen
+Backend-Aufruf aus. Planen bleibt primaer; registrierte Reviewer koennen ein
+eigenes Modell nutzen. Wiederholte `needs_revision`-Berichte aktivieren ein
+Reparaturmodell; ein erfolgreicher Review mit Evidenz setzt die Episode zurueck.
+Ein erfolgreicher Entwicklerbericht allein setzt sie nicht zurueck, da eine
+anschliessende Review weiterhin Nacharbeit fordern kann. `blocked` und Exceptions
+sind keine Eskalationssignale. Der Adapter wiederholt keine unbekannten Aktionen.
+
+Die Engine schreibt die Modellroute vor dem Dispatch in den Checkpoint. Eine
+ausstehende Freigabe bindet bei Routing an die vollstaendige Modellpolicy samt
+Schwelle; bei normalen Backends bleibt die bisherige Modellbindung unveraendert.
+Die Auswahl erhaelt alle Engine-Limits und die bestehende Unterbrechungsbehandlung.
+Sie ist ueber CLI/Python verfuegbar; das Cockpit setzt weiterhin ein festes Modell.
+
 ## Verträge
 
 - `Backend.decide(context, timeout)` liefert `delegate`, `finish` oder `blocked`.

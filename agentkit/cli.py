@@ -12,6 +12,7 @@ from .backends import CodexBackend, DeepSeekBackend, DemoBackend, codex_readines
 from .api_backend import ApiBackend
 from .anthropic_backend import AnthropicBackend
 from .ollama_backend import OllamaBackend
+from .routing import EscalatingBackend
 from .catalog import Catalog
 from .contracts import ContractError, LIBRARY, read_json
 from .engine import Engine
@@ -61,6 +62,10 @@ def parser() -> argparse.ArgumentParser:
             "--model",
             help="Optional model override; Codex defaults to gpt-5.6-luna with low reasoning; DeepSeek uses its provider default",
         )
+        cmd.add_argument("--repair-model", help="Explicit model for assignments after repeated needs_revision reports")
+        cmd.add_argument("--review-model", help="Explicit model for registered independent reviewer roles")
+        cmd.add_argument("--repair-after", type=int, choices=range(1, 11), default=2,
+                         help="Revision reports before model escalation (default: 2)")
         if name == "run":
             cmd.add_argument("--task", required=True)
         else:
@@ -138,10 +143,18 @@ def main(argv: list[str] | None = None) -> int:
                     "The demo fixture requires one workspace-writing worker and one read-only reviewer."
                 )
             if args.backend == "demo":
+                if args.repair_model or args.review_model:
+                    raise ContractError("Model routing requires a model backend, not the demo fixture.")
                 backend = DemoBackend()
             else:
-                backend = {"codex": CodexBackend, "deepseek": DeepSeekBackend, "api": ApiBackend,
-                           "anthropic": AnthropicBackend, "ollama": OllamaBackend}[args.backend](args.model)
+                backend_type = {"codex": CodexBackend, "deepseek": DeepSeekBackend, "api": ApiBackend,
+                                "anthropic": AnthropicBackend, "ollama": OllamaBackend}[args.backend]
+                backend = backend_type(args.model)
+                if args.repair_model or args.review_model:
+                    backend = EscalatingBackend(backend,
+                        recovery=backend_type(args.repair_model) if args.repair_model else None,
+                        reviewer=backend_type(args.review_model) if args.review_model else None,
+                        repair_after=args.repair_after)
             workspace = args.workspace or args.agent / "workspace"
             require_approvals = args.backend in {"codex", "deepseek", "api", "anthropic", "ollama"} or args.require_approvals
             engine = Engine(args.agent, workspace, backend, require_approvals=require_approvals)

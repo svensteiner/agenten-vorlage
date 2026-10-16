@@ -195,6 +195,40 @@ bestand: **408 Tests ausgeführt, drei übersprungen, keine Fehler**, in
 220,472 Sekunden. Der vorherige fehlgeschlagene Lauf bleibt als Beleg erhalten.
 Das unabhängige Review und Ruff fanden keine blockierenden Befunde.
 
+### Modellrouting und begrenzter nativer Coding-Nachweis, 17.10.
+
+CLI/Python unterstuetzen jetzt explizite Primaer-, Reparatur- und Reviewmodelle
+innerhalb desselben Providers. Zwei abgeschlossene `needs_revision`-Berichte
+aktivieren standardmaessig das Reparaturmodell. Nur ein erfolgreicher Reviewer
+mit Evidenz setzt die Episode zurueck; ein Entwicklererfolg allein nicht.
+Der Engine-Fixture-Nachweis fuehrt ueber zwei Revisionen, staerkere Reparatur,
+separates Review und Abschluss bei unveraenderten Schritt-/Fehlerzaehlern.
+Policyaenderungen verwerfen ausstehende Freigaben. Exceptions werden nicht
+als Anlass fuer automatische Wiederholung unbekannter Aktionen verwendet.
+
+Der reale isolierte Auftrag `e380a25d382e45acb4da58d1472d1cf6` aenderte nur den
+Koerper des strukturierten JSON-Parsers: Primaermodell `gpt-6-luna`, separates
+Review `gpt-6.1-sol`, drei Schritte, null Fehler, 80,141 Sekunden. Alle 245
+geschuetzten Dateien blieben unveraendert; Hostpruefungen bestaetigten den
+Methodenbereich, die eingefrorenen Tests und fuenf erfolgreiche Testmethoden.
+Keine Host-Reparaturhilfe waehrend dieses Laufs. Die Eingangsprobleme wurden
+vorher durch 15 scheiternde Duplicate-Key-Unterfaelle reproduziert. Es gab
+keine Live-Eskalation, weil das Primaermodell den begrenzten Auftrag bestand.
+Das Experiment deaktivierte Aktionsfreigaben im isolierten Workspace; die CLI
+erhaelt ihre bestehenden Freigaben. Kein Nachweis unbeaufsichtigten allgemeinen
+Programmierens oder einer OS-isolierten Ausfuehrung beliebigen Fremdcodes.
+
+Ein anschliessendes unabhaengiges Python-Review fand einen zusaetzlichen Bypass
+ueber den Python-Literal-Ersatzparser. Diese weitere Korrektur stammt vom Host,
+nicht aus dem obigen Modelllauf. Sie propagiert Duplicate-JSON-Fehler vor beiden
+Fallbacks und prueft Python-Literal-Dictionaries rekursiv vor der Auswertung.
+Fuenf Unterfaelle scheiterten vor der Korrektur. Anschliessend bestanden die
+19 gezielten Routing-/CLI-/Parsertests, Ruff und 20 Offline-Gates. Die negativen
+Marketing-Qualitaetsnachweise bleiben davon unberuehrt und offen.
+Der abschliessende Gesamtlauf nach dieser Korrektur bestand: 426 Tests,
+drei erwartete Symlink-Skips, keine Fehler in 205,529 Sekunden. Python- und
+Security-Review fanden keine blockierenden Befunde in den geaenderten Bereichen.
+
 Verbindliche Prüfungen bei Laufzeitänderungen:
 
 ```powershell

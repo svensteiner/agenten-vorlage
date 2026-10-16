@@ -198,7 +198,7 @@ class Engine:
                     raise ContractError("approval_decision must be approve or reject.")
                 current_binding = binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
                                           workspace=str(self.workspace), backend=self.backend.name,
-                                          model=getattr(self.backend, "model", None),
+                                          model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)),
                                           fingerprint=workspace_fingerprint(self.workspace) if approval_decision == "approve"
                                           else pending.get("binding", {}).get("workspace_fingerprint", ""))
                 validate_binding(pending, current_binding)
@@ -422,7 +422,7 @@ class Engine:
                         "continuation_sha256": continuation_digest(continuation),
                         "binding": binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
                             workspace=str(self.workspace), backend=self.backend.name,
-                            model=getattr(self.backend, "model", None), fingerprint=workspace_fingerprint(self.workspace)),
+                            model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)), fingerprint=workspace_fingerprint(self.workspace)),
                         "continuation": continuation,
                     }
                     state["pending_approval"] = approval
@@ -443,6 +443,10 @@ class Engine:
                 state.pop("approval_resume", None)
                 state.pop("approved_action", None)
                 checkpoint()
+                execution_route = getattr(self.backend, "execution_route", None)
+                if execution_route is not None:
+                    record["model_route"] = execution_route(decision, ctx)
+                    checkpoint()
                 report = self.backend.execute(decision, ctx, timeout())
                 validate(report, "report")
                 for artifact in report["artifacts"]:

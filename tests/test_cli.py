@@ -8,6 +8,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock, patch
+from types import SimpleNamespace
 
 from agentkit import cli
 from agentkit.scaffold import create
@@ -17,6 +18,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentKitCliTests(unittest.TestCase):
+    def test_explicit_model_routing_is_wired_without_disabling_approvals(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = create(Path(temp_name) / "agent", "developer", "agent", "company")
+            def backend(model):
+                return SimpleNamespace(name="codex", model=model, supports_action_approvals=True)
+            with patch.object(cli, "CodexBackend", side_effect=backend), \
+                 patch.object(cli, "Engine") as engine, redirect_stdout(StringIO()):
+                engine.return_value.run.return_value = {"status": "blocked"}
+                result = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+                    "--model", "cheap", "--repair-model", "repair", "--review-model", "review",
+                    "--repair-after", "1", "--task", "bounded"])
+                self.assertEqual(2, result)
+                routed = engine.call_args.args[2]
+                self.assertEqual("cheap", routed.model)
+                self.assertEqual("repair", routed.recovery.model)
+                self.assertEqual("review", routed.reviewer.model)
+                self.assertEqual(1, routed.repair_after)
+                self.assertTrue(engine.call_args.kwargs["require_approvals"])
+
     def run_cli(self, *args):
         env = os.environ.copy()
         env.pop("DEEPSEEK_API_KEY", None)

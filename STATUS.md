@@ -17,6 +17,26 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Modellrouting: CLI/Python koennen ein guenstiges Primaermodell, ein explizites
+  Reparaturmodell nach wiederholtem `needs_revision` und ein separates Reviewmodell
+  verwenden. Freigaben binden an die gesamte Modellpolicy; Budget, Reviewpflicht
+  und die Behandlung unbekannter Aktionsausgaenge bleiben erhalten. Das Cockpit
+  verwendet weiterhin ein festes Modell. Eskalation ist per Engine-Fixture belegt.
+- Echter begrenzter Coding-Auftrag ohne Host-Reparaturhilfe: `gpt-6-luna` reparierte
+  den JSON-Parser, `gpt-6.1-sol` pruefte separat. Drei Schritte, null Fehler,
+  80,141 Sekunden; 245 geschuetzte Dateien unveraendert. Der Live-Lauf benoetigte
+  keine Eskalation. Unabhaengige Hostpruefungen bestaetigten den erlaubten
+  Methodenbereich und die unveraenderten eingefrorenen Tests. Das isolierte
+  Experiment lief ohne Aktionsfreigaben; die produktive CLI behaelt sie bei.
+- Ein anschliessendes Python-Review fand einen weiteren Argumentparser-Bypass.
+  Dieser wurde separat durch den Host behoben: doppelte JSON- und Python-Literal-
+  Schluessel werden rekursiv abgewiesen, gueltige Literale bleiben unterstuetzt.
+  Fuenf neue Regressionsfaelle scheiterten vor dieser Korrektur. Danach bestanden
+  19 gezielte Tests, Ruff und 20 Offline-Gates; unabhaengiges Python-Review ohne
+  schwere Befunde. Das ist kein Nachweis allgemeiner autonomer Zuverlaessigkeit.
+  Abschliessender Gesamtlauf nach der Bypass-Korrektur: 426 Tests ausgefuehrt,
+  drei erwartete Symlink-Skips, keine Fehler, 205,529 Sekunden. Das separate
+  Security-Review fand ebenfalls keinen blockierenden Befund in diesem Scope.
 - Weitere Abnahme am 17.10.: Der groessere Coding-Teilauftrag erreichte nach
   ausdruecklich protokollierter Host-Hilfe `completed` mit separatem Review
   (`46c643d7a43b4cf592e93ca95b3495e5`, sieben Schritte, 538 geschuetzte Dateien

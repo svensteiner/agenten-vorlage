@@ -186,6 +186,29 @@ Der reale Qualifikationslauf schrieb und prüfte `RESULT.txt` bytegleich und exp
 den Marker `STUDIO-FACT-4729` in 101,61 Sekunden. Details:
 [Live-Qualifizierung](docs/LIVE-QUALIFICATION.md).
 
+### Modelle fuer Reparatur und Review
+
+CLI und Python-API koennen ein ausdruecklich konfiguriertes Reparaturmodell und
+ein separates Reviewmodell verwenden:
+
+```powershell
+python -m agentkit run --agent generated\mein-cto --backend codex --model gpt-6-luna --repair-model gpt-6.1-sol --review-model gpt-6.1-sol --task "Behebe den reproduzierten Fehler und pruefe die Regressionen."
+```
+
+Der Planer bleibt beim primaeren Modell. Nach standardmaessig zwei abgeschlossenen
+`needs_revision`-Berichten seit dem letzten erfolgreichen, belegten Review werden
+weitere Worker-Auftraege an das Reparaturmodell gegeben. `--repair-after` setzt
+die Schwelle auf 1 bis 10. Das Reviewmodell wird anhand der registrierten
+Reviewfaehigkeit gewaehlt. Provider, Zeit-/Schritt-/Fehlerbudgets und Freigaben
+bleiben erhalten; Exceptions und unbekannte Ausgaenge werden nicht automatisch
+wiederholt. Die ausgefuehrte Modellauswahl steht in `history[].model_route`.
+
+Beim Fortsetzen einer ausstehenden Freigabe dieselben Routingoptionen angeben;
+eine geaenderte Modellpolicy macht die alte Freigabe ungueltig. Die Optionen
+funktionieren auch mit den anderen Modellbackends, wechseln aber keinen Provider.
+Die Laufzeit kennt keine aktuellen Modellpreise und erzwingt damit keine
+Geldausgabenobergrenze. Die Browseroberflaeche verwendet weiterhin ein festes Modell.
+
 ## DeepSeek Harness
 
 Dein vorgeschlagener [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
