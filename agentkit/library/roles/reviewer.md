@@ -20,3 +20,10 @@ one of those items is missing or contradictory.
 Return needs_revision for actionable defects, blocked for unavailable critical evidence,
 and success only with explicit evidence for the requested outcome. Include file locations.
 
+For model-backed changes, distinguish fixture/schema coverage from actual configured
+provider responses and task-level output quality. Keep rejected, missing and failed
+samples in fixed-cohort comparisons; no output is not evidence of high quality.
+Record the model, source version and measured request/cost data when available.
+Label host-assisted recovery separately from unassisted execution. An earlier review
+does not establish acceptance for later code, prompt or provider changes.
+

@@ -22,6 +22,85 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+### Weitere Reparatur und echter Providervergleich
+
+Der neue begrenzte Coding-Auftrag `46c643d7a43b4cf592e93ca95b3495e5` bestand
+zunaechst 62 Tests, scheiterte aber zu Recht an der unabhaengigen Review: Ein
+linker Bereichsoperand konnte ausgetauscht werden. Eine zweite Gegenpruefung
+fand ausgelassene Ziffern-Identifier am Stringende. Nach drei Fehlerberichten
+stoppte die Engine am Fehlerbudget. Der Host vereinfachte danach den Parser
+und ergaenzte Regressionen. Mit protokollierter Host-Hilfe wurde derselbe Lauf
+ohne Erhoehung seiner Zeit-/Schrittgrenzen fortgesetzt: sieben Schritte,
+`completed`, `reviewed: true`, 538 geschuetzte Dateien und die reparierte Quelle
+im letzten Abschnitt unveraendert. Die separate Reviewerrolle bestaetigte den
+aktuellen Quellstand im vereinbarten Umfang. Das ist ein assistierter, begrenzter Abschluss,
+kein unassistierter Projektnachweis. Quell-SHA256 dieses Abschlusses:
+`1ec5c6944ed0679245f638388ef446e0ef4bb06cd3ca04e2c8095457ee7b48e6`.
+
+Die spaetere Fassung ergaenzt einen expliziten Providervertrag und erkennt genau
+eine vollstaendige aeussere JSON-Codeblockhuelle. Der erste neue Huellentestlauf
+scheiterte vor der Parseraenderung in zwei Faellen und bestand vier negative
+Kontrollen. Prosa vor/nach JSON, mehrere Bloecke und doppelte Schluessel bleiben
+verboten; alle inneren Schema-/Zitat-/Bestaetigungs-/Laengengrenzen bleiben aktiv.
+72 aktuelle Modultests bestanden; die Aenderung wurde separat unabhaengig geprueft.
+Der abschliessende Hostlauf bestand mit 238 ausgewaehlten Tests in 17,17 Sekunden
+und 96 % Modul-Line-Coverage. Das ist keine vollstaendige Bot-Gesamtsuite.
+Der native Abschluss der aelteren Quelle ist kein Reviewnachweis fuer spaetere
+Prompt- oder Parseraenderungen.
+
+**Grenze:** Ganze Zahlenfolgen und Operatoren werden syntaktisch geprueft.
+Zahlenmenge oder exakte Zitatpraesenz beweisen nicht, welcher Aussage eine Zahl
+zugeordnet ist. Diese Semantik muss der Reviewerdurchgang bewerten; auch dessen
+Zustimmung ist keine Wahrheitsgarantie.
+
+Der feste Vergleich verwendet alle neun bereits vorhandenen Kandidaten,
+dieselben drei Quellbriefs und jeweils hoechstens zwei Revieweraufrufe. Es
+werden keine erfolgreichen Faelle nachtraeglich ausgewaehlt und keine fehlenden
+Ausgaben aus dem Nenner entfernt. Quelle, Output-Guard und Korpus sind vor dem
+Modellaufruf per SHA256 gebunden und danach erneut geprueft. Es gab keine
+Veroeffentlichung oder Originalbot-Aenderung.
+
+| Variante | Akzeptierte Ausgaben | API-Requests | Gemeldete USD |
+|---|---:|---:|---:|
+| V1 | 0/9 | 9 | 0,019194 |
+| V2, expliziter Roh-JSON-Prompt | 0/9 | 9 | 0,018747 |
+| V3, Providerhuelle und kuerzere Einzelpunkte | 6/9 | 18 | 0,031386 |
+
+Eine gesonderte Einzelfalldiagnose verbrauchte einen Request und 0,002154 USD.
+Zusammen 37 Requests und 0,071481 USD, keine unbekannten Kosten. Das sind nur
+die gemeldeten Haiku-Kosten, nicht die nativen Codex-Aufrufe. Reservierungen
+bleiben lokale Schaetzungen statt Provider-Ausgabensperren.
+
+**Blinde Gegenpruefung: nicht bestanden.** Ein separater Reviewer erhielt nur
+18 zufaellig angeordnete A/B-Paare mit Evidenz und der bisherigen Fuenf-Dimensionen-
+Rubrik. Der Zuordnungsschluessel wurde ihm nicht gegeben. Alle neun Faelle wurden
+sowohl gegen den alten Stand als auch gegen die bisherigen Kandidaten geprueft:
+
+| Vergleich | V3 bevorzugt | Harte V3-Fehler | Mittlerer Score-Abstand |
+|---|---:|---:|---:|
+| Alter Stand | 5/9 | 3/9 | -0,911 |
+| Bisherige Kandidaten | 6/9 | 3/9 | -0,978 |
+
+Die drei fehlenden Ausgaben gelten als harte Fehler. Fuer die sechs vorhandenen
+Texte meldete der Reviewer keine harten Inhaltsfehler, aber schwache Eigenstaendigkeit
+und wenig nichttriviale Einsicht. Die vorab bestehende Abnahme verlangt null harte
+Fehler, mindestens 7/9 Praeferenzen und mindestens +0,5 Score-Abstand: nicht erreicht.
+Die iterative feste Kohorte ist Entwicklungsevidenz, kein frischer Holdout und
+kein Nachweis fuer reale X-Reichweite oder Produktionsreife.
+
+Private Belege: `refiner-context-agent-20261017.json`,
+`refiner-context-reviewed-20261017.json`, `refiner-context-v2-red-20261017.log`,
+`refiner-envelope-red-20261017.log`, `refiner-v3-frozen72-20261017.log`,
+`refiner-quality-fixed9[-v2|-v3]-20261017.json`,
+`refiner-quality-v3-blind-grades-20261017.json`,
+`refiner-quality-v3-verdict-20261017.json` unter `.runs/qualification/`.
+
+Die portable Reviewer-Rolle fordert diese Trennung von Fixtures, Providerverhalten
+und fachlichen Ergebnissen nun ausdruecklich. 20 strukturelle Offline-Gates
+bestanden; sie pruefen keinen Provider und kein Modell.
+
+### Planergrenze und vorausgegangene Projektfortsetzung
+
 Der native Codex-Planer erwartet jetzt ausdruecklich kein Dispatch-Werkzeug:
 er gibt `action: delegate` als JSON zurueck und der Host startet die Rolle.
 Native Unteragenten sind fuer beide Verträge deaktiviert, das Shell-Werkzeug
@@ -29,7 +108,7 @@ nur fuer den Planer. Die Worker-Sandbox und die Review-Grenze bleiben erhalten.
 Zwei Regressionstests pruefen CLI-Flags und den Delegationsvertrag; der neue
 Delegationstest scheiterte vor der Promptkorrektur und bestand danach.
 Das unabhaengige Python-Review fand keine schweren Befunde; Ruff und alle
-20 Release-Gates bestanden. Der abschliessende Gesamtlauf fuehrte 410 Tests aus,
+20 Offline-Release-Gates bestanden. Der abschliessende Gesamtlauf fuehrte 410 Tests aus,
 drei wurden uebersprungen, keine Fehler (221,908 Sekunden).
 
 Die echte Fortsetzung `ea94e2f6e5c146228ea67889c085f912` delegierte danach

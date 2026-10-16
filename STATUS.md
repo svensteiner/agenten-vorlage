@@ -17,12 +17,38 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Weitere Abnahme am 17.10.: Der groessere Coding-Teilauftrag erreichte nach
+  ausdruecklich protokollierter Host-Hilfe `completed` mit separatem Review
+  (`46c643d7a43b4cf592e93ca95b3495e5`, sieben Schritte, 538 geschuetzte Dateien
+  unveraendert). Das belegt einen assistierten Abschluss, keine unbeaufsichtigte
+  Gesamtzuverlaessigkeit. Danach wurden Providerformat und Prompt weiterentwickelt;
+  die alte native Review gilt nicht pauschal fuer diese spaetere Fassung.
+- Das isolierte Pruefmodul hat jetzt 72 gezielte Tests: Zahlzeichen bleiben
+  samt benachbarten Operanden erhalten; ein einzelner JSON-Codeblock darf als
+  Providerhuelle dienen, aber Prosa, mehrere Bloecke und doppelte Schluessel nicht.
+  Parser-Aenderungen wurden unabhaengig geprueft. Zahlen-Syntax und exakte Zitate
+  beweisen weiterhin keine semantische Wahrheit. Der Reviewer-Prompt verlangt
+  deshalb auch die korrekte Zuordnung jeder Zahl zu ihrer Aussage.
+  Abschliessender Hostlauf: 238 ausgewaehlte Tests bestanden in 17,17 Sekunden,
+  96 % Modul-Line-Coverage; kein Nachweis einer vollstaendig gruenen Bot-Gesamtsuite.
+- Echte Haiku-Vergleiche widerlegen eine Freigabe: V1 und V2 lieferten jeweils
+  null akzeptierte Ausgaben aus neun Faellen, V3 sechs aus neun. In der verblindeten
+  Gesamtbewertung gewinnt V3 gegen den alten Stand 5/9, gegen die bisherige
+  Promptfassung 6/9; drei fehlende Ausgaben zaehlen als harte Fehler. Beide
+  Gesamt-Scores verschlechtern sich. Kein Marketingqualitaetsnachweis und keine
+  Integration in den Originalbot. Providervergleiche samt Einzelfalldiagnose:
+  37 Requests, gemeldete 0,071481 USD, keine unbekannten Kosten. Native Codex-Kosten
+  sind darin nicht enthalten. Alle negativen Versuche bleiben erhalten.
+- Die portable Reviewer-Rolle unterscheidet jetzt ausdruecklich Unit-/Schema-
+  Nachweise von echten Providerausgaben und fachlicher Ergebnisqualitaet; fehlende
+  oder verworfene Faelle bleiben im Nenner. 20 strukturelle Offline-Gates
+  bestanden; sie pruefen keinen Provider und kein Modell.
 - Agentic-Nacharbeit am 17.10.: Der Codex-Planer delegiert explizit durch
   Entscheidungs-JSON an den Host; ein fehlendes natives Dispatch-Werkzeug ist
   kein Blocker. Native Unteragenten sind deaktiviert, das Shell-Werkzeug nur
   im Planer. Worker berichten ihren eigenen Schritt; das ausstehende separate
   Review allein macht eine erfolgreiche Implementierung nicht fehlerhaft.
-  Unabhaengiges Python-Review ohne schwere Befunde, Ruff und 20 Release-Gates
+  Unabhaengiges Python-Review ohne schwere Befunde, Ruff und 20 Offline-Release-Gates
   bestanden. Abschliessender Gesamtlauf: 410 Tests ausgefuehrt, drei Skips,
   keine Fehler, 221,908 Sekunden.
 - Die echte Projektfortsetzung delegierte nach der Korrektur an Developer und
