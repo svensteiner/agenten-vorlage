@@ -17,6 +17,25 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Reale Marketingbot-Integration in isolierter Kopie von `origin/master`:
+  Coding-Lauf `b666a676170b4ff9acca97334f589bc3` endete nach drei Revisionen
+  ohne Abnahme. Der separate Reviewer fand eine flache Record-Kopie, die das
+  Reparaturmodell behob; ein Test scheiterte weiterhin am Windows-Langpfad.
+  Unabhaengige Hostpruefung fand zusaetzlich eine entfernte Scrape-Rueckgabe,
+  einen moeglichen zweiten Draw nach einem Record-API-Fehler und fehlenden Any-Import.
+  Drei neue Regressionstests waren zuerst rot; nach getrennten Hostkorrekturen
+  bestanden 99 gezielte Tests. Python-/Security-Review ohne weitere Blocker.
+  Quellenbindung bleibt unverifiziert und ersetzt keine Freigabe. 879 geschuetzte
+  Quelldateien und eingefrorene Tests unveraendert; kein Git-Verweis in der Kopie.
+  Marketingbot-Implementierung mit Dokumentation nach `master` gepusht:
+  `3ccb2e7e`. Erster voller Hostlauf: 4.451 bestanden, neun Fehler (acht wie
+  Baseline, ein zusaetzlicher intermittierender Mehrprozess-Kontosperrentest).
+  Dessen gezielte Wiederholung bestand; Ursache noch offen. Die acht bekannten
+  Fehler auf aktuelle Gatekeeper-/DOM-Vorbedingungen und die dokumentierte
+  Quality-first-Policy zurueckgefuehrt; nach Testkorrekturen 67 gezielte Tests
+  bestanden, unabhaengiges Review ohne schwere Befunde. Vollstaendiger neuer
+  Vergleich noch laufend. Kein Deployment und
+  kein autonom bestandener Projektauftrag; die Originalinstallation unveraendert.
 - Source-first-Agentenlauf `a66058b400bb4abeb6b4576bc84331c2` ist ohne Host-
   Reparaturhilfe abgeschlossen: zehn Schritte, zwei abgelehnte Reviews, danach
   automatische staerkere Reparatur und finales separates Review. Alle zwoelf
