@@ -16,8 +16,8 @@ flowchart TD
     E --> C
     D -->|finish| G{Evidenz und aktuelles Review vorhanden?}
     G -->|ja| F[Ergebnis]
-    G -->|nein| B[Blocker und Checkpoint]
-    D -->|blocked| B
+    G -->|nein: Ablehnung als Beobachtung| C
+    D -->|blocked| B[Blocker und Checkpoint]
 ```
 
 Ein Plan ist eine veränderliche Hypothese. Nach jedem Ergebnis entscheidet das Modell neu.
@@ -70,6 +70,15 @@ wenn sein Bericht später einen Fehler meldet. Nur eine nachfolgende erfolgreich
 mit Evidenz hebt das Review-Gate auf. Ein fehlgeschlagenes Review entwertet es wieder.
 Die Engine überprüft existierende Artefaktpfade, aber kann den Wahrheitsgehalt einer Modellbehauptung
 nicht generell beweisen. Für kritische Produkte zusätzliche deterministische Abnahmetests im Host.
+
+Ein verfrühter `finish` ohne erfolgreichen, belegten Abschlussbericht oder mit
+ausstehendem Review beendet den Lauf nicht sofort. Die Engine speichert im
+betreffenden Verlaufseintrag `completion_rejected`, zählt einen Fehlschlag und
+lässt den Planer anhand dieser Beobachtung weiterarbeiten. So kann er fehlende
+Nachweise oder ein unabhängiges Review selbst nachholen. Ursprünglicher Auftrag,
+Nutzerfeedback, Rollenrechte und Review-Anforderungen bleiben erhalten. Wiederholte
+unbegründete Abschlussversuche verbrauchen das bestehende Fehler-/Schrittbudget;
+unbekannte Werkzeugausgänge werden dadurch nicht erneut ausgeführt.
 
 Die Engine unterstützt nur read-only und workspace-write als Codex-Sandboxauswahl. Auftragsgrenzen,
 externe Kommunikation und Veröffentlichungen sind zusätzlich im Prompt definiert. Für untrusted

@@ -152,14 +152,57 @@ class AgentKitTests(unittest.TestCase):
             with self.subTest(reports=reports):
                 state = self.run_backend(SequenceBackend(decisions, reports))
                 self.assertEqual("blocked", state["status"])
-                self.assertIn("evidence", state["summary"])
+                self.assertIn("evidence", state["history"][-1]["completion_rejected"])
 
     def test_writes_require_review(self):
         state = self.run_backend(
             SequenceBackend([decision(), decision("finish", "")], [report()])
         )
         self.assertEqual("blocked", state["status"])
-        self.assertIn("subsequent review", state["summary"])
+        self.assertIn("subsequent review", state["history"][-1]["completion_rejected"])
+
+    def test_premature_finish_replans_to_gather_evidence(self):
+        backend = SequenceBackend(
+            [decision("finish", ""), decision(role="researcher"), decision("finish", "")],
+            [report()],
+        )
+        original_decide = backend.decide
+        observations = []
+        def observe(context, timeout):
+            observations.append(json.loads(json.dumps(context)))
+            return original_decide(context, timeout)
+        backend.decide = observe
+        state = self.run_backend(backend)
+        self.assertEqual("completed", state["status"])
+        self.assertEqual(1, state["failures"])
+        self.assertEqual(1, backend.calls)
+        self.assertIn("evidence", observations[1]["history"][-1]["completion_rejected"])
+        self.assertEqual(observations[0]["task"], observations[1]["task"])
+        self.assertEqual(observations[0]["feedback"], observations[1]["feedback"])
+        self.assertIsNone(state["in_flight"])
+
+    def test_premature_finish_replans_to_independent_review(self):
+        backend = SequenceBackend(
+            [decision(), decision("finish", ""), decision(role="reviewer"), decision("finish", "")],
+            [report(), report()],
+        )
+        state = self.run_backend(backend)
+        self.assertEqual("completed", state["status"])
+        self.assertEqual(2, backend.calls)
+        self.assertTrue(state["reviewed"])
+        self.assertEqual(1, state["failures"])
+        self.assertIn("review", state["history"][1]["completion_rejected"])
+
+    def test_repeated_premature_finish_exhausts_failure_budget_without_execution(self):
+        self.change_limits(max_failures=2)
+        backend = SequenceBackend([decision("finish", "")] * 5)
+        state = self.run_backend(backend)
+        self.assertEqual("blocked", state["status"])
+        self.assertIn("Failure budget", state["summary"])
+        self.assertEqual(2, state["failures"])
+        self.assertEqual(2, state["steps"])
+        self.assertEqual(0, backend.calls)
+        self.assertIsNone(state["in_flight"])
 
     def test_edit_invalidates_previous_review(self):
         choices = [
@@ -311,7 +354,7 @@ class AgentKitTests(unittest.TestCase):
             feedback="Workspace inspected after pause",
         )
         self.assertEqual("blocked", resumed["status"])
-        self.assertIn("subsequent review", resumed["summary"])
+        self.assertIn("subsequent review", resumed["history"][-1]["completion_rejected"])
 
     def test_call_gets_remaining_wall_time_budget(self):
         self.change_limits(max_seconds=1, call_timeout=10)

@@ -372,22 +372,26 @@ class Engine:
                     break
                 if decision["action"] == "finish":
                     reports = [h["report"] for h in state["history"] if "report" in h]
+                    completion_error = None
                     if (
                         not reports
                         or reports[-1]["status"] != "success"
                         or not reports[-1]["evidence"]
                     ):
-                        raise ContractError(
-                            "Completion requires a successful, evidence-bearing final report."
-                        )
-                    if (
+                        completion_error = "Completion requires a successful, evidence-bearing final report."
+                    elif (
                         config["require_review"]
                         and state["dirty"]
                         and not state["reviewed"]
                     ):
-                        raise ContractError(
-                            "Completion refused: changes require a successful subsequent review."
-                        )
+                        completion_error = "Completion refused: changes require a successful subsequent review."
+                    if completion_error is not None:
+                        # A rejected finish has no external effects. Let the planner
+                        # repair the evidence gap, within the existing failure budget.
+                        record["completion_rejected"] = completion_error
+                        state["failures"] += 1
+                        checkpoint()
+                        continue
                     state.update(status="completed", summary=decision["task"])
                     break
                 instructions = self.catalog.selected(

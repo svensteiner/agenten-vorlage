@@ -2,7 +2,7 @@
 schema: agent-status/v1
 project: agenten-vorlage
 status: active
-last_updated: "2026-10-13"
+last_updated: "2026-10-16"
 ---
 
 # AI Studio — Projektstatus
@@ -17,6 +17,26 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Agentic-Nacharbeit am 16.10.: Ein verfrühter Abschluss ohne Evidenz oder Review
+  wird jetzt als dauerhafte Beobachtung an den Planer zurückgegeben. Er kann die
+  fehlende Arbeit innerhalb bestehender Budgets selbst nachholen; Review-Pflicht,
+  Firmenbindung und Schutz vor Wiederholung unbekannter Aktionen bleiben erhalten.
+  Drei neue Verhaltenstests; 62 gezielte Laufzeittests bestanden. Unabhängiges
+  Python-Review ohne schwerwiegenden Befund. Die Engine erreichte 92 % kombinierte
+  Line-/Branch-Coverage in der gesamten Testsuite.
+- Ein echter Codex-Lauf mit `gpt-6-luna` bestand nach Präzisierung der Reviewer-Rolle:
+  vier Schritte, zwei Berichte, separates Review, Quelldatei unverändert und
+  Ergebnisbytes unabhängig über read-only Export bestätigt. Zwei vorausgehende
+  Live-Versuche scheiterten; der kleine Dateiauftrag beweist keine beliebige
+  Projekt- oder Marketingautonomie. Lokaler Nachweis:
+  `.runs/qualification/agentic-live-codex-review-clarified-20261016.json`.
+- Die Gesamtsuite mit Coverage hatte 408 Tests und einen intermittierenden
+  Browserfehler; die Engine-Tests bestanden. Der Browser-Test wartete irrtümlich
+  nur auf die noch sichtbare erste Freigabe. Er wartet nun auf die nächste
+  Freigabe-ID; beide Browser-Tests bestanden danach. Der endgültige Gesamtlauf
+  bestand: 408 Tests ausgeführt, drei übersprungen, keine Fehler, 220,472 Sekunden.
+  20 Offline-Release-Gates bestanden.
+  Offene Gesamtabnahme: docs/AGENTIC-ACCEPTANCE.md. „100 % agentic“ bleibt unbewiesen.
 - Der autonome Qwen-Änderungsauftrag hat die Abnahme nicht bestanden. Auch die
   anschließenden Tests für einen begrenzten Fakten-/Überarbeitungsschritt waren
   nach mehreren Versuchen unbrauchbar: falsche API, fehlende echte Bestätigung,
@@ -39,8 +59,8 @@ zurueckgestellt.
   Die 502 manifestierten Original-Quelldateien blieben unverändert; kein Neustart
   und keine Veröffentlichung. Die Arbeit erfolgte mit Operatorunterstützung;
   ein autonomer Marketingzyklus ist nicht nachgewiesen.
-- Laufzeitabnahme: 405 Tests bestanden, drei Skips; zusätzlich 19 Offline-Gates
-  bestanden. Der ältere Stand von 404 Tests ist überholt.
+- Aktuelle Laufzeitabnahme: 408 Tests ausgeführt, drei Skips; zusätzlich 20
+  Offline-Gates bestanden. Ältere Stände von 404/405 Tests sind überholt.
 - Historischer Qwen-Arbeitsstand bis 12.10.2026: kein autonomer Erfolg.
   Die damalige isolierte Kopie blieb ohne Qwen-Quellcodeaenderungen; Live-Code unveraendert.
   Kontext-/Werkzeuggrenzen, eine 512-Item-Freigabegrenze und die Verwechslung eines

@@ -169,9 +169,12 @@ class PublicBrowserReleaseTests(unittest.TestCase):
         approval.wait_for(state="visible", timeout=10_000)
         self.assertEqual("write_file", page.locator("#approvalTool").inner_text())
         self.assertNotIn(str(self.root), page.locator("#approvalArguments").inner_text())
+        first_approval = page.locator("#approvalHint").inner_text()
         page.locator("#approveAction").click()
         page.wait_for_function(
-            "() => document.querySelector('#approvalCard')?.hidden === false",
+            "previous => document.querySelector('#approvalCard')?.hidden === false && "
+            "document.querySelector('#approvalHint')?.textContent !== previous",
+            arg=first_approval,
             timeout=10_000,
         )
         page.locator("#approveAction").click()

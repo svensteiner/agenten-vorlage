@@ -87,6 +87,10 @@ Jeder Agent besteht aus **Identität + Rollen + ausgewählten Skills + austausch
 Der Workflow wählt nach jedem Ergebnis den nächsten Schritt; es gibt keine feste Kette
 aus Planer, Entwickler und Tester.
 
+Verfrühte Abschlüsse werden zur begrenzten Nacharbeit an den Planer zurückgegeben.
+Den aktuellen Nachweisstand und die verbleibenden Anforderungen an vollständige
+Autonomie dokumentiert die [Agentic-Abnahme](docs/AGENTIC-ACCEPTANCE.md).
+
 Für den direkten Wiedereinstieg einer LLM steht der aktuelle Projektstand in
 [`STATUS.md`](<C:/Users/botrunner/Documents/ChatGPT/AGenten vorlage/STATUS.md>).
 
