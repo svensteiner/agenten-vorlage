@@ -17,6 +17,19 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Weitere Marketing-Gegenprobe: Redaktion und reine Bestaetigungspruefung wurden
+  im isolierten Modul getrennt. V4 lieferte 7/9 technisch akzeptierte Texte,
+  bestand aber wegen unbelegter Empfehlungen und einer fragwuerdigen Lockerung
+  menschlicher Pruefung nicht. Nach expliziter Quellenbindung und Erhalt aller
+  menschlichen Kontrollen lieferte V5 nur 4/9 akzeptierte Texte. Bereits die
+  fuenf fehlenden Ausgaben verletzen die Abnahme; keine weitere bezahlte
+  Blindbewertung und keine Integration in den Originalbot. Beide negativen
+  Varianten bleiben erhalten: zusammen 34 Requests, gemeldete 0,075815 USD,
+  keine unbekannten Kosten. 72 bestehende Modulpruefungen bleiben gruen.
+  Die geprueften Regeln zu Quellen, bedingten Vorschlaegen und unveraendertem
+  finalem Review wurden in Skill und X-Agentenrollen uebernommen. Das belegt
+  verbesserte Vorgaben, keine verbesserte reale Textqualitaet. Naechster Schritt:
+  quellenbasierter Neuentwurf statt wiederholtem Polieren problematischer Drafts.
 - Modellrouting: CLI/Python koennen ein guenstiges Primaermodell, ein explizites
   Reparaturmodell nach wiederholtem `needs_revision` und ein separates Reviewmodell
   verwenden. Freigaben binden an die gesamte Modellpolicy; Budget, Reviewpflicht

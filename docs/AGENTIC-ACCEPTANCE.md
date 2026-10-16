@@ -22,6 +22,33 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+### Redaktion und Bestaetigungspruefung getrennt: Abnahme weiterhin negativ
+
+V4 entfernte die kuenstliche Wortzahl und trennte Redaktionsauftrag von finaler
+Faktenpruefung. Sie lieferte 7/9 technisch akzeptierte Texte (17 Haiku-Aufrufe,
+0,036265 USD), bestand aber keine fachliche Abnahme. Das Code-/Promptreview fand
+eine zu breite Erlaubnis fuer als Fragen oder Vorschlaege markierte Empfehlungen.
+Die Ausgaben bestaetigten die Gefahr: ein Text stellte infrage, ob menschliche
+Pruefung sinnvoll bleibe. Diese Variante wurde nicht uebernommen.
+
+V5 verlangt ausdruecklich, dass Bedingungen und Begruendungen jeder Empfehlung
+aus zitierter Evidenz folgen und vorgegebene menschliche Pruefungen erhalten
+bleiben. Keine blockierenden Promptreview-Befunde; die bestehenden 72 Tests
+bestanden. Der vollstaendige feste Providervergleich lieferte jedoch nur 4/9
+akzeptierte Texte (17 Aufrufe, 0,039550 USD). Fuenf fehlende Texte verletzen bereits
+die vorab festgelegte Null-Fehler-Grenze. Deshalb keine weitere Blindbewertung,
+kein Holdout-Erfolgsnachweis und keine normale Bot-Integration. Quellen und
+Output-Guard blieben in beiden Vergleichen per Hash gebunden und unveraendert;
+keine Requests mit unbekannten Kosten. Native Codex-Kosten sind nicht enthalten.
+
+Die portable `content-draft`-Anleitung und die Rollen `content-editor`/`verifier`
+uebernehmen die engeren Quellen- und Kontrollregeln. Die Anleitung verbessert
+den Arbeitsvertrag, beweist aber keinen Modell- oder Reichweitenerfolg. Die
+Komponentenstrategie braucht einen quellenbasierten Neuentwurf statt weiteres
+Polieren von Drafts mit bereits unbelegten Behauptungen. Private Belege:
+`refiner-quality-fixed9-v4-20261017.json`, `refiner-quality-fixed9-v5-20261017.json`
+und `refiner-editor-split-tests-20261017.log` unter `.runs/qualification/`.
+
 ### Weitere Reparatur und echter Providervergleich
 
 Der neue begrenzte Coding-Auftrag `46c643d7a43b4cf592e93ca95b3495e5` bestand
