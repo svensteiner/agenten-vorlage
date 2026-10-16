@@ -2,7 +2,7 @@
 schema: agent-status/v1
 project: agenten-vorlage
 status: active
-last_updated: "2026-10-16"
+last_updated: "2026-10-17"
 ---
 
 # AI Studio — Projektstatus
@@ -17,6 +17,23 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Agentic-Nacharbeit am 17.10.: Der Codex-Planer delegiert explizit durch
+  Entscheidungs-JSON an den Host; ein fehlendes natives Dispatch-Werkzeug ist
+  kein Blocker. Native Unteragenten sind deaktiviert, das Shell-Werkzeug nur
+  im Planer. Worker berichten ihren eigenen Schritt; das ausstehende separate
+  Review allein macht eine erfolgreiche Implementierung nicht fehlerhaft.
+  Unabhaengiges Python-Review ohne schwere Befunde, Ruff und 20 Release-Gates
+  bestanden. Abschliessender Gesamtlauf: 410 Tests ausgefuehrt, drei Skips,
+  keine Fehler, 221,908 Sekunden.
+- Die echte Projektfortsetzung delegierte nach der Korrektur an Developer und
+  Reviewer. Das staerkere separate Review fand zweimal quadratische Laufzeit;
+  der guenstigere Developer reparierte jeweils gezielt und meldete 53 gruene
+  Tests. Der Host bestaetigte am Zwischenstand 219 Tests und 96 % Line-Coverage.
+  Der Lauf endete korrekt am kumulativen Schrittlimit 16, vor der letzten Review;
+  alle 537 geschuetzten Dateien unveraendert. Das ist ein belegter Repair-Zyklus,
+  kein vollstaendig abgenommener autonomer Projektabschluss. Zusaetzliche
+  Gegenproben mit getrennten Zahlenoperatoren bleiben offen. Keine Integration
+  des neuen Moduls in den Originalbot und keine neue Marketingqualitaetsfreigabe.
 - Weitere Agentic-Abnahme am 16.10.: Der Codex-Planer verwechselte im größeren
   Marketingbot-Auftrag seine read-only Sitzung mit den Rechten aller Rollen und
   blockierte vor der Delegation. Der gemeinsame Planer-Prompt trennt diese Rechte

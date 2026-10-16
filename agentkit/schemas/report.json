@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "required": ["status", "summary", "artifacts", "evidence", "next_actions"],
   "properties": {
-    "status": {"type": "string", "enum": ["success", "needs_revision", "blocked"]},
+    "status": {"type": "string", "enum": ["success", "needs_revision", "blocked"], "description": "Status of this worker assignment only. A pending separate host review is a next_action, not a defect by itself. Never hide actual defects or failed checks."},
     "summary": {"type": "string", "minLength": 1, "maxLength": 12000},
     "artifacts": {"type": "array", "maxItems": 40, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
     "evidence": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},

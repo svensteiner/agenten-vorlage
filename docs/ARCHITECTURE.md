@@ -27,7 +27,17 @@ Nur die ausdrücklich als Demo benannte Backend-Fixture besitzt deterministische
 ## Verträge
 
 - `Backend.decide(context, timeout)` liefert `delegate`, `finish` oder `blocked`.
+- Delegation erfolgt durch das zurueckgegebene Entscheidungs-JSON. Der Host
+  startet die angegebene registrierte Rolle; der Planer braucht kein natives
+  Dispatch- oder Unteragentenwerkzeug.
 - `Backend.execute(decision, context, timeout)` liefert `success`, `needs_revision` oder `blocked`.
+- Der Bericht bewertet den zugewiesenen Worker-Schritt. Ein noch ausstehendes
+  separates Host-Review ist eine Folgeaktion, kein Implementierungsfehler an sich.
+  Tatsächliche Defekte oder fehlgeschlagene Prüfungen verlangen weiterhin Nacharbeit.
+- Im Codex-Adapter wird das native Shell-Werkzeug für Planeraufrufe per CLI-Flag
+  deaktiviert. Native Unteragenten sind deaktiviert; die AgentKit-Laufzeit
+  dispatcht die registrierten Rollen selbst. Worker behalten ihre rollengebundene
+  Shell-Ausführung und Sandbox. Das ist keine allgemeine Isolation beliebiger Tools.
 - JSON-Schemas prüfen Form und Größen. Die Engine prüft zusätzlich Rollen-/Skill-Zuordnung,
   Artefaktpfade, Abschluss-Evidenz und den Review-Stand.
 - Skill-Metadaten werden zuerst angeboten; nur ausgewählte Skill-Bodies gehen in den Worker-Kontext.

@@ -759,6 +759,41 @@ class AgentKitTests(unittest.TestCase):
                 [sys.executable, "-c", "raise SystemExit(7)"], "", self.workspace, 5
             )
 
+    def test_codex_planner_delegates_through_returned_json(self):
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), patch(
+            "agentkit.backends._windows_sandbox_selection", return_value="unelevated"
+        ):
+            backend = CodexBackend()
+        with patch.object(backend, "_call", return_value=decision()) as call:
+            backend.decide({"workspace": str(self.workspace)}, 5)
+        prompt = call.call_args.args[0]
+        self.assertIn('"action":"delegate"', prompt)
+        self.assertIn("No dispatcher tool is required", prompt)
+        self.assertIn("host consumes your returned JSON", prompt)
+
+    def test_codex_disables_native_planner_shell_and_nested_agents(self):
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), patch(
+            "agentkit.backends._windows_sandbox_selection", return_value="unelevated"
+        ):
+            backend = CodexBackend()
+        captured = []
+        def fake_run(args, prompt, cwd, timeout):
+            captured.append(args)
+            value = decision() if prompt == "plan" else report()
+            Path(args[args.index("--output-last-message") + 1]).write_text(json.dumps(value), encoding="utf-8")
+            return ""
+        with patch("agentkit.backends.run_process", side_effect=fake_run):
+            backend._call("plan", "decision", {"workspace": str(self.workspace)}, 5)
+            backend._call("work", "report", {"workspace": str(self.workspace), "sandbox": "workspace-write"}, 5)
+        planner, worker = [
+            {args[i + 1] for i, value in enumerate(args[:-1]) if value == "--disable"}
+            for args in captured
+        ]
+        self.assertIn("shell_tool", planner)
+        self.assertNotIn("shell_tool", worker)
+        self.assertIn("multi_agent", planner)
+        self.assertIn("multi_agent", worker)
+
     def test_process_output_is_bounded_while_subprocess_runs(self):
         command = (
             "import sys; "

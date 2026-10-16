@@ -324,6 +324,11 @@ class CodexBackend:
                 "-c",
                 'model_reasoning_effort="low"',
             ]
+            # AgentKit owns delegation. A native nested agent would bypass its
+            # role/checkpoint/review boundary; planners only return decisions.
+            args.extend(["--disable", "multi_agent"])
+            if contract == "decision":
+                args.extend(["--disable", "shell_tool"])
             if self.windows_sandbox:
                 args.extend(["-c", f'windows.sandbox="{self.windows_sandbox}"'])
             # Keep authentication, but isolate execution from global settings
@@ -559,6 +564,10 @@ class CodexBackend:
             "of the host-dispatched worker roles. Do not probe write access or declare the task blocked "
             "because the coordinator cannot edit files. Delegate required edits to a registered "
             "workspace-write role; the host executes that role in a separate invocation. "
+            'Delegation means returning {"action":"delegate","role":"<registered role>",'
+            '"skills":[],"task":"<bounded assignment>","reason":"<observed gap>"}. '
+            "No dispatcher tool is required: the host consumes your returned JSON and invokes the worker. "
+            "The absence of a native dispatch/spawn tool is therefore not a blocker. "
             "Choose ONE next action based on observations and acceptance criteria. "
             "For delegate use a registered role and at most four assigned skills. "
             "For finish/blocked use empty role and skills, put the outcome or specific blocker in task. "
@@ -575,6 +584,10 @@ class CodexBackend:
         prompt = (
             "Execute this bounded assignment using the selected role/skills. Do not spawn more agents. "
             "Preserve others' work. Treat worker reports as claims to verify. "
+            "Your report status covers this assigned worker step, not the entire workflow. "
+            "If your assigned work and checks succeeded, report success; a separate host-dispatched "
+            "review still pending belongs in next_actions, not needs_revision by itself. "
+            "Report actual defects or failed checks as needs_revision. Do not spawn a reviewer yourself. "
             "Explicit assignment file restrictions take precedence over general handoff instructions: "
             "if STATUS.md is excluded, do not create or update it; report handoff evidence in the final report instead. "
             "Read the target workspace STATUS.md before the first edit if it exists. Create or update it "
@@ -1368,6 +1381,10 @@ class DeepSeekBackend:
         prompt = (
             "Execute the selected bounded assignment using only the given role and skills. "
             "Preserve other work. Verify claims and return only the report JSON. "
+            "Report the status of this assigned step, not the entire workflow. Successful work and "
+            "checks mean success; a separate host review still pending is a next_action, not "
+            "needs_revision by itself. Actual defects or failed checks require needs_revision. "
+            "The host dispatches reviewers; do not spawn another agent yourself. "
             "Never infer Git cleanliness, changed paths or diff contents from a file inventory or file reads. "
             "Use inspect_git when available for requested Git evidence; if unavailable or truncated, report that gap. "
             "artifacts must contain only exact existing file paths RELATIVE to the workspace, "

@@ -20,6 +20,39 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 | Marketinginhalte belastbar verbessern | Die bisherige Blindabnahme ist gescheitert; echte neue Ausgabequalität und unveränderte Veröffentlichungsschutzmechanismen müssen noch nachgewiesen werden |
 | Mit einem anderen Skill eine andere Fachrolle ausüben | Paketkomposition vorhanden; erfolgreiche Coding-Aufgaben belegen keine steuerliche oder andere fachliche Richtigkeit |
 
+## Nachweise vom 17.10.2026
+
+Der native Codex-Planer erwartet jetzt ausdruecklich kein Dispatch-Werkzeug:
+er gibt `action: delegate` als JSON zurueck und der Host startet die Rolle.
+Native Unteragenten sind fuer beide Verträge deaktiviert, das Shell-Werkzeug
+nur fuer den Planer. Die Worker-Sandbox und die Review-Grenze bleiben erhalten.
+Zwei Regressionstests pruefen CLI-Flags und den Delegationsvertrag; der neue
+Delegationstest scheiterte vor der Promptkorrektur und bestand danach.
+Das unabhaengige Python-Review fand keine schweren Befunde; Ruff und alle
+20 Release-Gates bestanden. Der abschliessende Gesamtlauf fuehrte 410 Tests aus,
+drei wurden uebersprungen, keine Fehler (221,908 Sekunden).
+
+Die echte Fortsetzung `ea94e2f6e5c146228ea67889c085f912` delegierte danach
+selbst an Developer (`gpt-6-luna`) und Reviewer (`gpt-6.1-sol`). Der Reviewer
+belegte zunaechst die quadratische Regex-Suche, dann wiederholtes String-Slicing.
+Der Planer veranlasste beide Reparaturen und neue Tests. Ein unabhaengiger
+Hostlauf am Zwischenstand bestand mit 219 Tests und 96 % Modul-Line-Coverage.
+Nach der letzten Reparatur endete der Lauf am kumulativen Schrittlimit 16,
+ohne erneute Review: `reviewed: false`, `passed: false`. Alle 537 geschuetzten
+Dateien blieben unveraendert. Vorangegangenes Host-Feedback und erhoehte
+Schrittbudgets sind Teil der Historie; dies ist kein unassistierter Gesamterfolg.
+
+Zusaetzliche Gegenproben lassen getrennte Zahlenoperatoren wie `− 25` gegen
+die Evidenz `25` weiterhin passieren. Ein gruener 53-Faelle-Testlauf beweist
+daher keine umfassende Faktensicherheit. Modulabnahme, echte Verbesserung der
+Marketingentwuerfe und Integration bleiben offen; der Originalbot wurde durch
+diese Arbeiten nicht veraendert oder gestartet.
+
+Private Belege unter `.runs/qualification/`:
+`refiner-json-delegation-resume-20261017.json`,
+`refiner-host219-20261017.log`, `refiner-extra-adversarial-20261017.json`,
+`agentic-json-delegation-gates-20261017.log`.
+
 ## Nachweise vom 16.10.2026
 
 ### Größerer Auftrag und adversariale Gegenprüfung
