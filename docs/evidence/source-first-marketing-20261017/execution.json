@@ -1,0 +1,72 @@
+{
+  "run_id": "a66058b400bb4abeb6b4576bc84331c2",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 10,
+  "failures": 2,
+  "protected_unchanged": true,
+  "pack_unchanged": true,
+  "artifact_reported": true,
+  "target_exists": true,
+  "output_sha256": "6b424dbe847525dce41c29ff84460d04031c9527361c7fd33f10518e72784fa1",
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "repeated_revision",
+      "revisions": 2
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 2
+    }
+  ],
+  "operator_assisted": false,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "pending_independent_host_structure_and_blind_quality"
+}

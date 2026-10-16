@@ -33,13 +33,21 @@ MAX_ARTIFACT_BYTES = 2_000_000
 _CHUNK_BYTES = 262_144
 _COMMAND_TIMEOUT_MS = 15_000
 _RESPONSE_TIMEOUT_SECONDS = 20.0
-_METADATA_CODE = (
-    "import base64,hashlib,json,pathlib,sys;"
+_RUNTIME_ROOT = str(Path(__file__).resolve().parents[1])
+_SAFE_TARGET_CODE = (
+    "import pathlib,sys;"
+    "sys.dont_write_bytecode=True;"
+    "sys.path.insert(0,sys.argv[-1]);"
+    "from agentkit.approvals import safe_workspace_path;"
     "root=pathlib.Path(sys.argv[1]).resolve(strict=True);"
-    "target=(root/sys.argv[2]).resolve(strict=True);"
-    "limit=int(sys.argv[3]);"
-    "target==root or root in target.parents or sys.exit(41);"
+    "target=safe_workspace_path(root,sys.argv[2]);"
     "target.is_file() or sys.exit(42);"
+)
+_CHECK_CODE = _SAFE_TARGET_CODE
+_METADATA_CODE = (
+    _SAFE_TARGET_CODE
+    + "import base64,hashlib,json;"
+    "limit=int(sys.argv[3]);"
     "target.stat().st_size<=limit or sys.exit(43);"
     "data=target.read_bytes();"
     "len(data)<=limit or sys.exit(43);"
@@ -47,12 +55,9 @@ _METADATA_CODE = (
     "separators=(',',':')))"
 )
 _CHUNK_CODE = (
-    "import base64,pathlib,sys;"
-    "root=pathlib.Path(sys.argv[1]).resolve(strict=True);"
-    "target=(root/sys.argv[2]).resolve(strict=True);"
+    _SAFE_TARGET_CODE
+    + "import base64;"
     "offset=int(sys.argv[3]);length=int(sys.argv[4]);"
-    "target==root or root in target.parents or sys.exit(41);"
-    "target.is_file() or sys.exit(42);"
     "handle=target.open('rb');handle.seek(offset);data=handle.read(length);handle.close();"
     "sys.stdout.write(base64.b64encode(data).decode('ascii'))"
 )
@@ -176,7 +181,8 @@ class _AppServer:
         except (BrokenPipeError, OSError) as exc:
             raise ContractError("Codex artifact export could not start.") from exc
 
-    def request(self, request_id: int, method: str, params: dict[str, Any]) -> dict:
+    def request(self, request_id: int, method: str, params: dict[str, Any],
+                *, timeout: float = _RESPONSE_TIMEOUT_SECONDS) -> dict:
         self.send(
             {
                 "jsonrpc": "2.0",
@@ -185,7 +191,7 @@ class _AppServer:
                 "params": params,
             }
         )
-        deadline = time.monotonic() + _RESPONSE_TIMEOUT_SECONDS
+        deadline = time.monotonic() + min(timeout, _RESPONSE_TIMEOUT_SECONDS)
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -212,6 +218,37 @@ class _AppServer:
             except OSError:
                 pass
         _stop_process(self.process)
+
+
+def verify_codex_artifact(workspace: Path, relative: str, *, timeout: float = 20.0) -> None:
+    """Validate a reported file using the same canonical policy inside Codex."""
+    if (not isinstance(relative, str) or not relative or len(relative) > 500
+            or Path(relative).is_absolute() or any(ord(char) < 32 for char in relative)
+            or timeout <= 0):
+        raise ContractError("Invalid Codex artifact verification request.")
+    deadline = time.monotonic() + timeout
+
+    def remaining():
+        value = deadline - time.monotonic()
+        if value <= 0:
+            raise ContractError("Codex artifact verification deadline exhausted.")
+        return value
+
+    client = _AppServer(workspace.resolve())
+    try:
+        client.request(1, "initialize", {"clientInfo": {
+            "name": "agentkit-artifact-check", "version": "0.1"}}, timeout=remaining())
+        client.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+        result = client.request(2, "command/exec", {
+            "command": [sys.executable, "-I", "-c", _CHECK_CODE,
+                        str(workspace.resolve()), relative, _RUNTIME_ROOT],
+            "cwd": str(client.cwd), "timeoutMs": max(1, min(_COMMAND_TIMEOUT_MS, int(remaining() * 1000))),
+            "sandboxPolicy": {"type": "readOnly", "networkAccess": False},
+        }, timeout=remaining())
+        if result.get("exitCode") != 0:
+            raise ContractError("Reported artifact cannot be verified through the Codex sandbox.")
+    finally:
+        client.close()
 
 
 def read_codex_artifact(
@@ -257,6 +294,7 @@ def read_codex_artifact(
                     str(workspace),
                     relative,
                     str(max_bytes),
+                    _RUNTIME_ROOT,
                 ],
                 "cwd": str(client.cwd),
                 "timeoutMs": _COMMAND_TIMEOUT_MS,
@@ -299,6 +337,7 @@ def read_codex_artifact(
                         relative,
                         str(offset),
                         str(min(_CHUNK_BYTES, size - offset)),
+                        _RUNTIME_ROOT,
                     ],
                     "cwd": str(client.cwd),
                     "timeoutMs": _COMMAND_TIMEOUT_MS,

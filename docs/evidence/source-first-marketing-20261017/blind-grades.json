@@ -1,0 +1,27 @@
+{
+  "pairs": [
+    {"id":"pair-01","A":{"scores":[3,2,2,2,4],"hard_fail":true,"reason":"Behauptet unbelegt, die Haftung bleibe beim Hersteller."},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-02","A":{"scores":[3,2,3,2,4],"hard_fail":false,"reason":""},"B":{"scores":[4,3,3,4,1],"hard_fail":true,"reason":"219 Zeichen; außerdem unbelegte Kosten- und Eskalationsbehauptung."},"preference":"A"},
+    {"id":"pair-03","A":{"scores":[3,3,3,3,4],"hard_fail":true,"reason":"Behauptet unbelegt Offlinebetrieb und menschliche Haftung."},"B":{"scores":[4,4,4,3,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-04","A":{"scores":[3,3,3,3,1],"hard_fail":true,"reason":"319 Zeichen; zudem unbelegte Wirtschaftlichkeits- und Schwellenbehauptung."},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-05","A":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"B":{"scores":[3,3,3,3,4],"hard_fail":true,"reason":"Stellt unbelegt als Tatsache dar, die Rechnung bleibe sonst liegen."},"preference":"A"},
+    {"id":"pair-06","A":{"scores":[4,4,4,4,4],"hard_fail":false,"reason":""},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"A"},
+    {"id":"pair-07","A":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"283 Zeichen; über der Grenze."},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-08","A":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"249 Zeichen; über der Grenze."},"B":{"scores":[4,3,4,3,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-09","A":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"260 Zeichen; außerdem behauptet es entgegen der Vorlage eine Verschiebung der Freigabeverantwortung."},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-10","A":{"scores":[4,3,4,2,5],"hard_fail":false,"reason":""},"B":{"scores":[4,3,4,3,4],"hard_fail":false,"reason":""},"preference":"A"},
+    {"id":"pair-11","A":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"B":{"scores":[4,4,3,4,1],"hard_fail":true,"reason":"216 Zeichen; außerdem unbelegte Geschwindigkeitsbehauptung."},"preference":"A"},
+    {"id":"pair-12","A":{"scores":[3,3,4,3,5],"hard_fail":false,"reason":""},"B":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"198 Zeichen; über der Grenze."},"preference":"A"},
+    {"id":"pair-13","A":{"scores":[3,3,3,3,1],"hard_fail":true,"reason":"245 Zeichen; unbelegte Kostenbehauptung und angenommener manueller Eintrag."},"B":{"scores":[3,3,4,3,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-14","A":{"scores":[3,3,3,3,1],"hard_fail":true,"reason":"248 Zeichen; Compliance-Behauptung nicht belegt."},"B":{"scores":[4,3,4,3,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-15","A":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"280 Zeichen; über der Grenze."},"B":{"scores":[4,3,4,3,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-16","A":{"scores":[3,3,3,3,1],"hard_fail":true,"reason":"207 Zeichen; zudem unbelegte Kostenbehauptung."},"B":{"scores":[3,2,3,2,5],"hard_fail":false,"reason":""},"preference":"B"},
+    {"id":"pair-17","A":{"scores":[4,3,4,2,5],"hard_fail":false,"reason":""},"B":{"scores":[3,3,3,4,4],"hard_fail":true,"reason":"Unterstellt unbelegt, jemand habe die Kontrollfrage nie gestellt."},"preference":"A"},
+    {"id":"pair-18","A":{"scores":[4,3,4,3,5],"hard_fail":false,"reason":""},"B":{"scores":[4,4,4,4,1],"hard_fail":true,"reason":"306 Zeichen; über der Grenze."},"preference":"A"}
+  ],
+  "singles": [
+    {"id":"single-01","scores":[4,3,4,3,5],"hard_fail":false,"reason":""},
+    {"id":"single-02","scores":[4,3,4,3,5],"hard_fail":false,"reason":""},
+    {"id":"single-03","scores":[4,3,4,3,5],"hard_fail":false,"reason":""}
+  ]
+}

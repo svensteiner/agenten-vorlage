@@ -58,6 +58,19 @@ def _valid_completed_actions(value: object) -> bool:
 
 
 class Engine:
+    def _verify_artifact(self, artifact: str, timeout: float) -> None:
+        try:
+            if not safe_workspace_path(self.workspace, artifact).is_file():
+                raise ContractError(f"Reported artifact does not exist: {artifact}")
+        except (PermissionError, ContractError) as exc:
+            denied = isinstance(exc, PermissionError) or isinstance(exc.__cause__, PermissionError)
+            if self.backend.name != "codex" or not denied:
+                raise
+            # Canonical path/internal-state checks run unchanged in the read-only
+            # sandbox account. Never alter ACLs or repeat the worker's write.
+            from .codex_artifacts import verify_codex_artifact
+            verify_codex_artifact(self.workspace, artifact, timeout=timeout)
+
     def __init__(
         self,
         agent_dir: Path,
@@ -450,10 +463,7 @@ class Engine:
                 report = self.backend.execute(decision, ctx, timeout())
                 validate(report, "report")
                 for artifact in report["artifacts"]:
-                    if not safe_workspace_path(self.workspace, artifact).is_file():
-                        raise ContractError(
-                            f"Reported artifact does not exist: {artifact}"
-                        )
+                    self._verify_artifact(artifact, timeout())
                 record["report"] = report
                 state.pop("approval_resume", None)
                 state["in_flight"] = None

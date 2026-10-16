@@ -1,0 +1,77 @@
+{
+  "synthetic_evaluation": true,
+  "cases": [
+    {
+      "brief_id": "invoice-controls",
+      "trial_index": 1,
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "invoice-controls",
+      "trial_index": 2,
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "invoice-controls",
+      "trial_index": 3,
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "qwen-maintenance",
+      "trial_index": 1,
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "qwen-maintenance",
+      "trial_index": 2,
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "qwen-maintenance",
+      "trial_index": 3,
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "close-handoff",
+      "trial_index": 1,
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "close-handoff",
+      "trial_index": 2,
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "close-handoff",
+      "trial_index": 3,
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "cohort": "fixed"
+    },
+    {
+      "brief_id": "support-routing",
+      "trial_index": 1,
+      "evidence": "Ein interner Support-Pilot sortiert Anfragen nach Thema vor. Das Supportteam bestätigt die Zuordnung vor einer Antwort. Der Pilot sendet selbst keine Antworten. Vergleichswerte zu Bearbeitungszeit und Fehlzuordnungen fehlen.",
+      "cohort": "holdout"
+    },
+    {
+      "brief_id": "manual-versions",
+      "trial_index": 1,
+      "evidence": "Ein Suchtest umfasst 4 Versionen eines Maschinenhandbuchs. Jeder Treffer muss Versionskennung und Abschnitt nennen. Die Instandhaltung prüft vor einer Maßnahme, ob der Treffer zur vorhandenen Maschine gehört. Gemessene Trefferquoten liegen nicht vor.",
+      "cohort": "holdout"
+    },
+    {
+      "brief_id": "crm-drafts",
+      "trial_index": 1,
+      "evidence": "Ein Vertriebsassistent entwirft Antworten aus freigegebenen Produktinformationen. Preise und Liefertermine bestätigt der Vertrieb vor dem Versand. Der Assistent darf weder Konditionen zusagen noch Nachrichten senden. Es gibt keine gemessene Abschlussquote oder Zeitersparnis.",
+      "cohort": "holdout"
+    }
+  ]
+}

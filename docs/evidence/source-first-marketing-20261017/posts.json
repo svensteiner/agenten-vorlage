@@ -1,0 +1,109 @@
+[
+  {
+    "brief_id": "invoice-controls",
+    "trial_index": 1,
+    "text": "Vorschlag: 250 Lieferantenrechnungen im Monat auslesen und geänderte IBANs zur menschlichen Prüfung weiterleiten. Die Ausnahme bleibt sichtbar.",
+    "evidence_quotes": [
+      "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat.",
+      "Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter."
+    ]
+  },
+  {
+    "brief_id": "invoice-controls",
+    "trial_index": 2,
+    "text": "Bei Rechnungsautomation zählt, was sie nicht selbst entscheidet: Lieferantenidentität, IBAN-Änderungen und Betrag werden geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei.",
+    "evidence_quotes": [
+      "Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei."
+    ]
+  },
+  {
+    "brief_id": "invoice-controls",
+    "trial_index": 3,
+    "text": "Geänderte IBANs sollen zur menschlichen Prüfung gehen. Ohne Zeit- oder Einsparungsdaten lässt sich der Nutzen dieses Vorschlags noch nicht bewerten.",
+    "evidence_quotes": [
+      "Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter.",
+      "Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor."
+    ]
+  },
+  {
+    "brief_id": "qwen-maintenance",
+    "trial_index": 1,
+    "text": "Ein Wartungshandbuch ist erst dann eine brauchbare Antwortquelle, wenn der Fundort mitkommt: Jede Antwort muss die genaue Handbuchstelle belegen.",
+    "evidence_quotes": [
+      "Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen."
+    ]
+  },
+  {
+    "brief_id": "qwen-maintenance",
+    "trial_index": 2,
+    "text": "Lokale KI im Wartungshandbuch: Sie sucht, Techniker entscheiden über Maßnahmen. Antworten müssen die genaue Handbuchstelle belegen.",
+    "evidence_quotes": [
+      "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen.",
+      "Techniker entscheiden über Maßnahmen."
+    ]
+  },
+  {
+    "brief_id": "qwen-maintenance",
+    "trial_index": 3,
+    "text": "Ein Test mit Lieferantendiagrammen ist noch kein Leistungsnachweis: Retrieval-Benchmarks und Produktionsergebnisse liegen nicht vor. Erst messen, dann skalieren.",
+    "evidence_quotes": [
+      "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen.",
+      "Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor."
+    ]
+  },
+  {
+    "brief_id": "close-handoff",
+    "trial_index": 1,
+    "text": "Im Monatsabschluss entwirft der Workflow Abstimmungsausnahmen. Ein Controller muss sie freigeben; wer die Buchung ausführt, bleibt offen.",
+    "evidence_quotes": [
+      "entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller."
+    ]
+  },
+  {
+    "brief_id": "close-handoff",
+    "trial_index": 2,
+    "text": "Das finale Buchhaltungssystem hat keine unterstützte Schreib-API. Der Workflow sammelt Bankexporte, ordnet Konten zu und entwirft Ausnahmen; Controller geben frei.",
+    "evidence_quotes": [
+      "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller.",
+      "Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API."
+    ]
+  },
+  {
+    "brief_id": "close-handoff",
+    "trial_index": 3,
+    "text": "Automatisierter Monatsabschluss? Belegt ist ein Workflow bis zum Entwurf von Abstimmungsausnahmen. Ohne Fehlerquote oder Zeitmessung bleibt der Nutzen offen.",
+    "evidence_quotes": [
+      "entwirft Abstimmungsausnahmen",
+      "Eine Fehlerquote oder Zeitmessung liegt nicht vor."
+    ]
+  },
+  {
+    "brief_id": "support-routing",
+    "trial_index": 1,
+    "text": "Vorsortieren ist noch keine Antwortautomation: Im Support-Pilot bestätigt das Team erst die Zuordnung, bevor geantwortet wird. Vergleichswerte zu Bearbeitungszeit und Fehlzuordnungen fehlen.",
+    "evidence_quotes": [
+      "Ein interner Support-Pilot sortiert Anfragen nach Thema vor.",
+      "Das Supportteam bestätigt die Zuordnung vor einer Antwort.",
+      "Vergleichswerte zu Bearbeitungszeit und Fehlzuordnungen fehlen."
+    ]
+  },
+  {
+    "brief_id": "manual-versions",
+    "trial_index": 1,
+    "text": "Bei vier Handbuchversionen reicht ein Treffer nicht: Version und Abschnitt müssen mitkommen, danach prüft die Instandhaltung den Bezug zur Maschine.",
+    "evidence_quotes": [
+      "Ein Suchtest umfasst 4 Versionen eines Maschinenhandbuchs.",
+      "Jeder Treffer muss Versionskennung und Abschnitt nennen.",
+      "Die Instandhaltung prüft vor einer Maßnahme, ob der Treffer zur vorhandenen Maschine gehört."
+    ]
+  },
+  {
+    "brief_id": "crm-drafts",
+    "trial_index": 1,
+    "text": "Ein Vertriebsentwurf ist noch kein Versand: Preise und Liefertermine bestätigt der Vertrieb; der Assistent darf weder Konditionen zusagen noch Nachrichten senden.",
+    "evidence_quotes": [
+      "Preise und Liefertermine bestätigt der Vertrieb vor dem Versand.",
+      "Der Assistent darf weder Konditionen zusagen noch Nachrichten senden."
+    ]
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "comparisons": {
+    "baseline": {
+      "cases": 9,
+      "preferred": 8,
+      "hard_failures": 0,
+      "mean_advantage": 0.13333333333333325,
+      "grader_mechanical_inconsistencies": [],
+      "passed": false
+    },
+    "original": {
+      "cases": 9,
+      "preferred": 9,
+      "hard_failures": 0,
+      "mean_advantage": 0.2444444444444444,
+      "grader_mechanical_inconsistencies": [],
+      "passed": false
+    }
+  },
+  "holdout": {
+    "cases": 3,
+    "hard_failures": 0,
+    "mean_score": 3.8,
+    "passed": true
+  },
+  "execution_passed": true,
+  "structural_passed": true,
+  "output_sha256": "6b424dbe847525dce41c29ff84460d04031c9527361c7fd33f10518e72784fa1",
+  "packet_sha256": "57fb5c81a692baf69b43f309a0878e1d86302ff435f9a9130f20bfeed84ea10c",
+  "grades_sha256": "b66e89faf474a78e8489a8f852d91b5562e8e28a9a3c89185319ebfd83e67ead",
+  "passed": false,
+  "production_ready": false,
+  "scope": "Offline synthetic source-first drafting; no X outcome evidence"
+}

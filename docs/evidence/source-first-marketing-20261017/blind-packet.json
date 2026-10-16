@@ -1,0 +1,147 @@
+{
+  "scope": "All fixed cases and three new source briefs. No X reach evidence.",
+  "dimensions": [
+    "concrete_opening",
+    "supported_non_obvious_insight",
+    "useful_consequence",
+    "distinct_readable_voice",
+    "concise_standalone_post"
+  ],
+  "scoring": "Score each dimension 1–5 for both A and B; state preference A/B/tie for each pair; explain any hard fail with evidence from the supplied input. Count characters in each exact post as Unicode code points (equivalent to Python len on the decoded string), including spaces and punctuation.",
+  "hard_fail": [
+    "post exceeds the 190-character hard limit",
+    "unsupported factual, numeric, ROI, performance, or personal-result claim",
+    "contradiction of supplied evidence or unsafe process/control recommendation",
+    "fabricated case study, customer experience, or first-person result",
+    "fails requested single-post format or is not a standalone post",
+    "empty or missing post"
+  ],
+  "pairs": [
+    {
+      "id": "pair-01",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "B": "Lokale KI im Wartungshandbuch: Sie sucht, Techniker entscheiden über Maßnahmen. Antworten müssen die genaue Handbuchstelle belegen.",
+      "A": "Qwen on-prem für Handbücher braucht Audit-Leitfaden: Techniker müssen jede Quelle nachvollziehen können. Ohne Retrieval-Benchmarks ist Genauigkeit ungeprüft – Haftung bleibt beim Hersteller."
+    },
+    {
+      "id": "pair-02",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "A": "Bei Rechnungsautomation zählt, was sie nicht selbst entscheidet: Lieferantenidentität, IBAN-Änderungen und Betrag werden geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei.",
+      "B": "Wer die IBAN prüft, aber nicht die Freigabe definiert, automatisiert die falsche Stelle. Änderungen erkennen ist ein Sieb; entscheiden muss der Process Owner. Ohne klare Eskalationsregel bleibt die KI ein teurer Melder."
+    },
+    {
+      "id": "pair-03",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "B": "Ein Test mit Lieferantendiagrammen ist noch kein Leistungsnachweis: Retrieval-Benchmarks und Produktionsergebnisse liegen nicht vor. Erst messen, dann skalieren.",
+      "A": "Qwen lokal, Handbuch offline, Techniker prüft die Quelle selbst. Wer fragt den Bot, wer verifiziert die Antwort? Die Haftung bleibt beim Menschen — der Stack muss das abbilden."
+    },
+    {
+      "id": "pair-04",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "B": "Geänderte IBANs sollen zur menschlichen Prüfung gehen. Ohne Zeit- oder Einsparungsdaten lässt sich der Nutzen dieses Vorschlags noch nicht bewerten.",
+      "A": "Lieferantenrechnungen: KI-gestützte IBAN-Kontrolle ist nur dann wirtschaftlich, wenn die Menge der Ausnahmefälle gemessen wird. 250/Monat sind zu wenig für pauschale Automatisierung ohne Baseline. Entscheidungsregel: Freigabequote der Kreditorenbuchhaltung erst dokumentieren, dann Schwelle für manuelle Prüfung setzen."
+    },
+    {
+      "id": "pair-05",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "A": "Geänderte IBANs sollen zur menschlichen Prüfung gehen. Ohne Zeit- oder Einsparungsdaten lässt sich der Nutzen dieses Vorschlags noch nicht bewerten.",
+      "B": "IBAN-Änderung zur Prüfung freigeben, sonst bleibt die Rechnung liegen. Wer entscheidet über die Freigabe? Fehlt diese Zuständigkeit, automatisiert ihr nur die Blockade."
+    },
+    {
+      "id": "pair-06",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "B": "Vorschlag: 250 Lieferantenrechnungen im Monat auslesen und geänderte IBANs zur menschlichen Prüfung weiterleiten. Die Ausnahme bleibt sichtbar.",
+      "A": "Wer die IBAN-Änderung prüft, muss auch klären, wer die Rechnung freigeben darf. Fehlt diese Zuständigkeit, bleibt die automatisch gefilterte Ausnahme liegen."
+    },
+    {
+      "id": "pair-07",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "B": "Vorschlag: 250 Lieferantenrechnungen im Monat auslesen und geänderte IBANs zur menschlichen Prüfung weiterleiten. Die Ausnahme bleibt sichtbar.",
+      "A": "KI-Feld-Extraktion in der AP ersetzt keine Kontrolle – sie verlagert sie. IBAN-Änderungen zur menschlichen Freigabe zu leiten ist richtig, aber ohne Baseline-Messung (Fehlerquote, Prüfzeit, Ausnahmequote) bleibt unklar, ob das System überhaupt Friction reduziert oder nur umverteilt."
+    },
+    {
+      "id": "pair-08",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "B": "Ein Test mit Lieferantendiagrammen ist noch kein Leistungsnachweis: Retrieval-Benchmarks und Produktionsergebnisse liegen nicht vor. Erst messen, dann skalieren.",
+      "A": "Lokale Qwen-Instanzen in Wartungshandbüchern müssen Quellenangaben liefern – nicht Wahrscheinlichkeiten. Ohne Retrieval-Validierung bleibt unklar, ob das Modell die richtige Seite findet oder konfabuliert. Techniker brauchen Beweis, nicht Vermutung."
+    },
+    {
+      "id": "pair-09",
+      "evidence": "Ein DACH-Unternehmen verarbeitet 250 Lieferantenrechnungen pro Monat. Heute werden Lieferantenidentität, IBAN-Änderungen und Rechnungsbetrag geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei. Ein Vorschlag liest Felder aus und leitet geänderte IBANs zur menschlichen Prüfung weiter. Zeit-, Kosten-, Genauigkeits- oder Einsparungsmessungen liegen nicht vor.",
+      "B": "Bei Rechnungsautomation zählt, was sie nicht selbst entscheidet: Lieferantenidentität, IBAN-Änderungen und Betrag werden geprüft; Ausnahmen gibt die Kreditorenbuchhaltung frei.",
+      "A": "KI-gestützte IBAN-Kontrolle in der AP ersetzt nicht die Freigabeverantwortung der Kreditorenbuchhaltung – sie verschiebt sie. Ohne Baseline zu Fehlerrate, Freigabezeit und echten Ausnahmefällen bleibt unklar, ob Automatisierung Risiko senkt oder nur verlagert."
+    },
+    {
+      "id": "pair-10",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "A": "Das finale Buchhaltungssystem hat keine unterstützte Schreib-API. Der Workflow sammelt Bankexporte, ordnet Konten zu und entwirft Ausnahmen; Controller geben frei.",
+      "B": "KI-Agenten können Bankexporte ordnen und Abstimmungen vorbereiten – aber ohne Schreib-API bleibt die Freigabeverantwortung beim Controller. Automatisierung ersetzt keine Kontrollsignatur."
+    },
+    {
+      "id": "pair-11",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "A": "Lokale KI im Wartungshandbuch: Sie sucht, Techniker entscheiden über Maßnahmen. Antworten müssen die genaue Handbuchstelle belegen.",
+      "B": "Qwen läuft lokal, findet die Handbuchseite — aber wer prüft, ob die Stelle stimmt? Der Techniker muss ohnehin nachschlagen. Ohne Retrieval-Validierung bleibt die KI ein schnellerer Ratgeber, kein verlässlicher Zeuge."
+    },
+    {
+      "id": "pair-12",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "A": "Im Monatsabschluss entwirft der Workflow Abstimmungsausnahmen. Ein Controller muss sie freigeben; wer die Buchung ausführt, bleibt offen.",
+      "B": "Monatsabschluss ohne Schreib-API: KI ordnet Daten, Controller gibt frei. Automatisierung endet vor der Buchung – das ist keine Schwäche, sondern Kontrolle. Verantwortung lässt sich nicht delegieren."
+    },
+    {
+      "id": "pair-13",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "B": "Im Monatsabschluss entwirft der Workflow Abstimmungsausnahmen. Ein Controller muss sie freigeben; wer die Buchung ausführt, bleibt offen.",
+      "A": "KI-Agenten sammeln die Daten, aber ohne Schreib-API zum Buchhaltungssystem bleibt der Agent beim manuellen Eintrag stecken. Der Engpass ist nicht die Intelligenz, sondern die letzte Meile. Automation ohne Schnittstelle ist nur Datenaufbereitung."
+    },
+    {
+      "id": "pair-14",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "B": "Automatisierter Monatsabschluss? Belegt ist ein Workflow bis zum Entwurf von Abstimmungsausnahmen. Ohne Fehlerquote oder Zeitmessung bleibt der Nutzen offen.",
+      "A": "KI-Agenten können Bankexporte sortieren und Sachkonten zuordnen – aber ohne Schreib-API bleibt die Freigabeverantwortung beim Controller. Automatisierung von Vorarbeiten ändert nichts an der Prüfungspflicht. Das ist kein Mangel, sondern Compliance."
+    },
+    {
+      "id": "pair-15",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "B": "Ein Wartungshandbuch ist erst dann eine brauchbare Antwortquelle, wenn der Fundort mitkommt: Jede Antwort muss die genaue Handbuchstelle belegen.",
+      "A": "Wartungshandbuch-Suche mit lokalem Qwen: Der Techniker braucht nicht das beste Modell, sondern die genaue Seite. Ohne Retrieval-Benchmark bleibt unklar, ob Qwen die richtige Stelle findet oder nur plausibel klingt. Das ist der entscheidende Test, nicht die Antwortgeschwindigkeit."
+    },
+    {
+      "id": "pair-16",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "B": "Automatisierter Monatsabschluss? Belegt ist ein Workflow bis zum Entwurf von Abstimmungsausnahmen. Ohne Fehlerquote oder Zeitmessung bleibt der Nutzen offen.",
+      "A": "KI im Monatsabschluss scheitert nicht an der Intelligenz, sondern an der fehlenden Schreib-API zum Buchhaltungssystem. Ein Agent, der abstimmen kann, aber nicht buchen darf, ist ein teurer Hinweis-Generator."
+    },
+    {
+      "id": "pair-17",
+      "evidence": "Ein Monatsabschluss sammelt Bankexporte, ordnet Sachkonten zu, entwirft Abstimmungsausnahmen und verlangt die Freigabe durch einen Controller. Das finale Buchhaltungssystem hat laut Workflow-Verantwortlichem keine unterstützte Schreib-API. Eine Fehlerquote oder Zeitmessung liegt nicht vor.",
+      "A": "Das finale Buchhaltungssystem hat keine unterstützte Schreib-API. Der Workflow sammelt Bankexporte, ordnet Konten zu und entwirft Ausnahmen; Controller geben frei.",
+      "B": "Ein KI-Agent stoppt vor der fehlenden API. Wer das Problem als 'noch kein Use Case' rahmt, hat die Kontrollfrage nie gestellt: Wer prüft und gibt frei, wenn der Bot nicht schreiben darf?"
+    },
+    {
+      "id": "pair-18",
+      "evidence": "Ein Hersteller testet ein lokal betriebenes Qwen-Modell, um in Wartungshandbüchern mit Lieferantendiagrammen zu suchen. Antworten müssen die genaue Handbuchstelle belegen; Techniker entscheiden über Maßnahmen. Es liegen keine Retrieval-Benchmarks, Produktionsergebnisse, Sicherheitszertifizierungen oder Einsparungsdaten vor.",
+      "A": "Ein Wartungshandbuch ist erst dann eine brauchbare Antwortquelle, wenn der Fundort mitkommt: Jede Antwort muss die genaue Handbuchstelle belegen.",
+      "B": "Lokale Qwen-Modelle in Wartungshandbüchern brauchen eine Verifizierungskette: Antwort → Handbuchstelle → Techniker-Entscheidung. Ohne Retrieval-Benchmarks bleibt unklar, ob das Modell Lieferantendiagramme zuverlässig findet oder halluziniert. Pilotphase muss Belegquoten tracken, bevor Produktionsfreigabe."
+    }
+  ],
+  "limitations": "Synthetic source briefs and one frozen cohort; no evidence of X reach or production reliability.",
+  "singles": [
+    {
+      "id": "single-01",
+      "evidence": "Ein Vertriebsassistent entwirft Antworten aus freigegebenen Produktinformationen. Preise und Liefertermine bestätigt der Vertrieb vor dem Versand. Der Assistent darf weder Konditionen zusagen noch Nachrichten senden. Es gibt keine gemessene Abschlussquote oder Zeitersparnis.",
+      "text": "Ein Vertriebsentwurf ist noch kein Versand: Preise und Liefertermine bestätigt der Vertrieb; der Assistent darf weder Konditionen zusagen noch Nachrichten senden."
+    },
+    {
+      "id": "single-02",
+      "evidence": "Ein Suchtest umfasst 4 Versionen eines Maschinenhandbuchs. Jeder Treffer muss Versionskennung und Abschnitt nennen. Die Instandhaltung prüft vor einer Maßnahme, ob der Treffer zur vorhandenen Maschine gehört. Gemessene Trefferquoten liegen nicht vor.",
+      "text": "Bei vier Handbuchversionen reicht ein Treffer nicht: Version und Abschnitt müssen mitkommen, danach prüft die Instandhaltung den Bezug zur Maschine."
+    },
+    {
+      "id": "single-03",
+      "evidence": "Ein interner Support-Pilot sortiert Anfragen nach Thema vor. Das Supportteam bestätigt die Zuordnung vor einer Antwort. Der Pilot sendet selbst keine Antworten. Vergleichswerte zu Bearbeitungszeit und Fehlzuordnungen fehlen.",
+      "text": "Vorsortieren ist noch keine Antwortautomation: Im Support-Pilot bestätigt das Team erst die Zuordnung, bevor geantwortet wird. Vergleichswerte zu Bearbeitungszeit und Fehlzuordnungen fehlen."
+    }
+  ]
+}

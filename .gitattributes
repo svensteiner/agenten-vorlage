@@ -2,3 +2,6 @@
 # across Windows checkouts so UPSTREAM.json hashes remain reproducible.
 agentkit/library/skills/** text eol=lf
 agentkit/library/skills/**/UPSTREAM.json text eol=lf
+
+# Qualification links hash the exact artifact, packet and grading bytes.
+docs/evidence/source-first-marketing-20261017/*.json -text whitespace=cr-at-eol

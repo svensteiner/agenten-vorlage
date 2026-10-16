@@ -6,8 +6,6 @@ import json
 import re
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
-
 ROOT = Path(__file__).parent
 LIBRARY = ROOT / "library"
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -28,6 +26,10 @@ def schema(name: str) -> dict:
 
 
 def validate(value: object, name: str) -> None:
+    # Read-only path checks also import this module under isolated Python.
+    # Schema dependencies are needed only when validating a model/config value.
+    from jsonschema import Draft202012Validator
+
     errors = sorted(
         Draft202012Validator(schema(name)).iter_errors(value), key=lambda e: str(e.path)
     )

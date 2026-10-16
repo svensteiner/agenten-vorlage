@@ -943,13 +943,16 @@ class JobManager:
         if relative not in allowed:
             raise ContractError("Artifact was not reported by this task.")
         workspace = self._workspace_path(job.payload["workspace"])
-        path = safe_workspace_path(workspace, relative)
         try:
+            path = safe_workspace_path(workspace, relative)
             with path.open("rb") as handle:
                 data = handle.read(2_000_001)
         except FileNotFoundError as exc:
             raise ContractError("Artifact no longer exists.") from exc
-        except PermissionError as exc:
+        except (PermissionError, ContractError) as exc:
+            denied = isinstance(exc, PermissionError) or isinstance(exc.__cause__, PermissionError)
+            if not denied:
+                raise
             if job.payload.get("backend") != "codex":
                 raise ContractError("Artifact cannot be read.") from exc
             data = read_codex_artifact(workspace, relative)

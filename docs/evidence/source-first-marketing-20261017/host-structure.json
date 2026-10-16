@@ -1,0 +1,9 @@
+{
+  "execution_passed": true,
+  "structural_issues": [],
+  "structural_passed": true,
+  "cases_expected": 12,
+  "output_sha256": "6b424dbe847525dce41c29ff84460d04031c9527361c7fd33f10518e72784fa1",
+  "passed": false,
+  "qualification": "pending_blind_semantic_quality"
+}

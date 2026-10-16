@@ -317,7 +317,7 @@ interner Laufzeitpfad von dieser Prüfung ausgenommen. Der Lauf dauerte 31,515 S
 Er ersetzt den früheren Resume-Nachweis und qualifiziert Kindprozessbeendigung,
 Bestätigungspflicht, Checkpoint und sichere Fortsetzung gemeinsam.
 
-## Aktueller automatisierter Gesamtstand
+## Historischer automatisierter Stand der lokalen MVP-Abnahme
 
 `python -m unittest discover -v` führte 240 Tests in 98,121 Sekunden aus: Status
 `OK`, ein erwarteter Windows-Symlink-Test wegen fehlender Berechtigung übersprungen.
@@ -326,10 +326,13 @@ zehn Szenarien. `python scripts/verify_release.py --windows-ocr` bestand alle 19
 Checks mit `offline_only=true` und `model_tested=false`; die realen Luna-Nachweise
 sind deshalb getrennt in dieser Datei dokumentiert.
 
-## Aktuelle Freigabeentscheidung
+## Historische Freigabe des lokalen MVP
 
 Für den lokalen Single-Owner-MVP sind elf von elf verbindlichen Bereichen vollständig
 abgenommen: **11 / 11 = 100 % innerhalb des lokalen Single-Owner-Produktscopes**.
+Diese historische Quote belegt nicht den aktuellen Auftrag zur umfassenden
+Agentic-Abnahme von Coding- und Marketingagenten. Dessen offene Anforderungen
+und negative Qualitaetsnachweise stehen in `AGENTIC-ACCEPTANCE.md` und `STATUS.md`.
 Computeraufgaben sind optional und stehen außerhalb des Nenners. Codex-Freigaben
 verwenden read-only Vorschläge plus Allowlist-Host-Executor; native per-tool
 interception der Codex CLI wird nicht behauptet.
@@ -343,3 +346,24 @@ verworfen und müssen neu geplant werden.
 Authentifizierte/breite Schreibconnectoren, visuelle Bildanalyse, Scan-PDF-OCR,
 Mehrbenutzer-/Public-Deployment und eine hostile-web-gehärtete Computer-Sandbox
 bleiben Erweiterungen außerhalb dieser Freigabe.
+
+## Verschachtelte Windows-Artefakte am 17.10.2026
+
+Der isolierte Source-first-Marketinglauf `7e8c31a6315547d4a794589fcf88a8ce`
+stoppte nach seinem ersten Schreibschritt: Ein neu vom Codex-Sandboxkonto angelegter
+Unterordner verweigerte dem Host die kanonische Pfadpruefung. Der Checkpoint blieb
+mit ungeklaertem `in_flight` erhalten; der Worker wurde nicht erneut ausgefuehrt.
+
+Die Engine kann nun ausschliesslich bei echten Codex-Zugriffsfehlern die identische
+`safe_workspace_path`-Pruefung im offiziellen read-only, netzwerkfreien Sandboxkonto
+ausfuehren. Der Download behaelt die Liste gemeldeter Artefakte, kanonische
+Workspace-/Internal-Pfadpruefung, Groessenbegrenzung und SHA-256-Pruefung bei.
+Auch Metadaten und jeder Datenchunk wenden die gemeinsame Pfadpolicy an.
+Keine ACL-Aenderung, kein unbeschraenkter Hostprozess und keine Wiederholung
+eines unbekannten Schreibausgangs. Das ist keine neue Public-/Fremdcode-Freigabe.
+
+Die isolierte Python-Pruefung braucht nur Standardbibliothek; `jsonschema` wird
+erst bei einer tatsaechlichen Schema-Validierung importiert. Der echte Leseexport
+der bereits entstandenen ersten Batchdatei lieferte 1.958 gepruefte Bytes. Das
+belegt den Leseweg, keinen abgeschlossenen Marketingauftrag. Der erneute
+Source-first-Versuch erhaelt einen eigenen Workspace und einen eigenen Lauf.

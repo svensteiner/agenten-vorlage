@@ -17,6 +17,26 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Source-first-Agentenlauf `a66058b400bb4abeb6b4576bc84331c2` ist ohne Host-
+  Reparaturhilfe abgeschlossen: zehn Schritte, zwei abgelehnte Reviews, danach
+  automatische staerkere Reparatur und finales separates Review. Alle zwoelf
+  synthetischen Entwuerfe bestehen die Host-Strukturpruefung; Quellen und Paket
+  unveraendert. Neun feste Faelle plus drei neue Quellenbriefs. Aktionsfreigaben
+  nur im isolierten Experiment deaktiviert, Ausgabedatei vom Host vorab angelegt.
+  Die Blindbewertung bevorzugt die neuen Texte 8/9 gegen Baseline und 9/9 gegen
+  die bisherige Promptfassung, ohne harte neue Fehler. Mittlere Score-Abstaende
+  +0,1333 und +0,2444 bleiben aber unter +0,5: Textqualitaetsabnahme nicht bestanden.
+  Drei neue Faelle: 3,8/5, keine harten Fehler. Beide Kontrollen haben selbst 8/9
+  harte Fehler; kleine synthetische Kohorte, nur ein Grader, keine X-Wirkung.
+  Rohbelege und kritische Auswertung: docs/evidence/source-first-marketing-20261017/.
+- Der erste Source-first-Versuch blieb wegen eines Windows-Sandbox-Unterordners
+  mit `in_flight` blockiert und wurde nicht wiederholt. Engine und Download
+  pruefen Codex-Artefakte bei echten Zugriffsfehlern jetzt mit derselben kanonischen
+  Pfadpolicy im read-only, netzwerkfreien Sandboxkonto. Keine ACL-Aenderung und
+  keine automatische Aktionswiederholung. Der echte Export bestaetigte 1.958 Bytes.
+  Abschliessend 432 Tests in 216,364 Sekunden, drei erwartete Symlink-Skips,
+  keine Fehler; Ruff, 20 Offline-Gates und unabhaengige Python-/Security-Reviews
+  bestanden. Packeigene Content- und Review-Skills sind jetzt ebenfalls aktualisiert.
 - Weitere Marketing-Gegenprobe: Redaktion und reine Bestaetigungspruefung wurden
   im isolierten Modul getrennt. V4 lieferte 7/9 technisch akzeptierte Texte,
   bestand aber wegen unbelegter Empfehlungen und einer fragwuerdigen Lockerung

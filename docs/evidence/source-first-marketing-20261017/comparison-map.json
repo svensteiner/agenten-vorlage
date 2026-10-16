@@ -1,0 +1,191 @@
+{
+  "output_sha256": "6b424dbe847525dce41c29ff84460d04031c9527361c7fd33f10518e72784fa1",
+  "packet_sha256": "57fb5c81a692baf69b43f309a0878e1d86302ff435f9a9130f20bfeed84ea10c",
+  "pairs": [
+    {
+      "id": "pair-01",
+      "identity": [
+        "qwen-maintenance",
+        2
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-02",
+      "identity": [
+        "invoice-controls",
+        2
+      ],
+      "comparison": "baseline",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-03",
+      "identity": [
+        "qwen-maintenance",
+        3
+      ],
+      "comparison": "baseline",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-04",
+      "identity": [
+        "invoice-controls",
+        3
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-05",
+      "identity": [
+        "invoice-controls",
+        3
+      ],
+      "comparison": "baseline",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-06",
+      "identity": [
+        "invoice-controls",
+        1
+      ],
+      "comparison": "baseline",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-07",
+      "identity": [
+        "invoice-controls",
+        1
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-08",
+      "identity": [
+        "qwen-maintenance",
+        3
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-09",
+      "identity": [
+        "invoice-controls",
+        2
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-10",
+      "identity": [
+        "close-handoff",
+        2
+      ],
+      "comparison": "original",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-11",
+      "identity": [
+        "qwen-maintenance",
+        2
+      ],
+      "comparison": "baseline",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-12",
+      "identity": [
+        "close-handoff",
+        1
+      ],
+      "comparison": "original",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-13",
+      "identity": [
+        "close-handoff",
+        1
+      ],
+      "comparison": "baseline",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-14",
+      "identity": [
+        "close-handoff",
+        3
+      ],
+      "comparison": "original",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-15",
+      "identity": [
+        "qwen-maintenance",
+        1
+      ],
+      "comparison": "baseline",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-16",
+      "identity": [
+        "close-handoff",
+        3
+      ],
+      "comparison": "baseline",
+      "refined_side": "B"
+    },
+    {
+      "id": "pair-17",
+      "identity": [
+        "close-handoff",
+        2
+      ],
+      "comparison": "baseline",
+      "refined_side": "A"
+    },
+    {
+      "id": "pair-18",
+      "identity": [
+        "qwen-maintenance",
+        1
+      ],
+      "comparison": "original",
+      "refined_side": "A"
+    }
+  ],
+  "singles": [
+    {
+      "id": "single-01",
+      "identity": [
+        "crm-drafts",
+        1
+      ]
+    },
+    {
+      "id": "single-02",
+      "identity": [
+        "manual-versions",
+        1
+      ]
+    },
+    {
+      "id": "single-03",
+      "identity": [
+        "support-routing",
+        1
+      ]
+    }
+  ]
+}

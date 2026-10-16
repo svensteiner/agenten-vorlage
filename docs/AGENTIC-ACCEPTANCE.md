@@ -22,6 +22,46 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+### Source-first: echter autonomer Review-/Reparaturablauf, Qualitaetsgate noch offen
+
+Der erste native Versuch `7e8c31a6315547d4a794589fcf88a8ce` stoppte nach einem
+Schreibschritt an einer Windows-Pfadberechtigung. Sein unbekannter `in_flight`-
+Ausgang wurde nicht automatisch wiederholt. Die generische Artefaktpruefung und
+der Download verwenden bei echten Codex-Zugriffsfehlern jetzt dieselbe kanonische
+Pfadpolicy im offiziellen read-only, netzwerkfreien Sandboxkonto. Kein ACL-Bypass.
+Der echte Export der ersten Batchdatei lieferte 1.958 gepruefte Bytes.
+432 Tests, drei erwartete Skips, keine Fehler; 20 Offline-Gates, Ruff und
+unabhaengige Python-/Security-Reviews bestanden am abschliessenden Stand.
+
+Ein frischer zweiter Workspace mit leerer vorab angelegter Ausgabedatei pruefte
+das echte X-Agentenpaket: neun feste Faelle und drei neue synthetische Quellen.
+`a66058b400bb4abeb6b4576bc84331c2` erreichte ohne Host-Reparaturhilfe in zehn
+Schritten den Abschluss. Vier guenstige Entwurfsbatches, ablehnendes separates
+Review, guenstige Reparatur, erneute Ablehnung, automatische staerkere Reparatur
+nach zwei Revisionen und abschliessendes Review. Quellen und Agentenpaket blieben
+unveraendert; die Hostpruefung bestaetigte alle zwoelf Identitaeten, striktes JSON,
+maximal 190 Zeichen, unterschiedliche Texte und exakte Quellenzitate.
+Die Aktionsfreigaben waren nur in diesem isolierten Experiment deaktiviert.
+Das belegt den konkreten autonomen Ablauf, keine allgemeine Erfolgsquote.
+
+Ein unabhaengiger Grader sah ausschliesslich 18 zufaellig angeordnete A/B-Paare
+und drei Einzeltexte. Die Zuordnung blieb bis zur Auswertung getrennt.
+Ein zweiter Pruefer rechnete spaeter die Auswertung und SHA-Verknuepfungen nach:
+
+| Vergleich | Neue Texte bevorzugt | Harte neue Fehler | Mittlerer Score-Abstand |
+|---|---:|---:|---:|
+| Alter Stand | 8/9 | 0 | +0,1333 |
+| Bisherige Promptfassung | 9/9 | 0 | +0,2444 |
+
+Die drei neuen Quellenbriefs erhalten im Mittel 3,8/5 ohne harte Fehler.
+**Die gesamte Textqualitaetsabnahme bleibt negativ:** Beide festen Vergleiche
+verfehlen die vorbestehende +0,5-Grenze. Beide Kontrollarme haben selbst 8/9 harte
+Fehler; die Praeferenzen sind kein breiter Ueberlegenheitsnachweis. Ein Grader,
+kleine synthetische Stichprobe, keine X-Outcomes und keine normale Bot-Integration.
+Nach Offenlegung sind diese drei Quellen kein frischer Holdout mehr. Native
+Codex-Kosten wurden nicht ausgewiesen. Rohbelege und Nachpruefbarkeit:
+[Source-first-Nachweis](evidence/source-first-marketing-20261017/README.md).
+
 ### Redaktion und Bestaetigungspruefung getrennt: Abnahme weiterhin negativ
 
 V4 entfernte die kuenstliche Wortzahl und trennte Redaktionsauftrag von finaler
