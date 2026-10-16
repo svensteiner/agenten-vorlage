@@ -17,6 +17,24 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Weitere Agentic-Abnahme am 16.10.: Der Codex-Planer verwechselte im größeren
+  Marketingbot-Auftrag seine read-only Sitzung mit den Rechten aller Rollen und
+  blockierte vor der Delegation. Der gemeinsame Planer-Prompt trennt diese Rechte
+  jetzt ausdrücklich. Eine echte Planer-Gegenprobe delegierte an `developer`,
+  ohne Dateien zu ändern. 408 Tests ausgeführt, drei Skips, keine Fehler;
+  20 Offline-Gates und unabhängiges Python-Review bestanden. Das ist ein
+  Planer-Nachweis, kein erfolgreicher größerer Coding-Auftrag.
+- Die direkte Haiku-API schrieb in der isolierten Marketingbot-Kopie ein neues
+  Prüfmodul; 537 geschützte Dateien blieben unverändert. Der Lauf endete an der
+  lokalen konservativen Reservierungsgrenze vor Bericht und Review. 15 Requests,
+  gemeldete Kosten 0,379454 USD, keine Requests mit unbekannten Kosten. Die lokale
+  Schätzung ist keine vom Provider erzwungene Ausgabenobergrenze.
+  32 Hosttests bestanden bei 92 % Line-Coverage, aber zusätzliche Gegenproben
+  widerlegten die Sicherheit: Die erweiterte Fassung mit 41 Fällen hat gegen die
+  erhaltene erste Implementierung 11 Fehler und 30 Erfolge. Die Fehler betreffen
+  unter anderem Bestätigung geänderter Texte, doppelte JSON-Schlüssel,
+  Zahlenbedeutung und Informationslecks in Fehlergründen. Nacharbeit läuft;
+  keine Übernahme in den laufenden Bot und keine Aussage „100 % agentic“.
 - Agentic-Nacharbeit am 16.10.: Ein verfrühter Abschluss ohne Evidenz oder Review
   wird jetzt als dauerhafte Beobachtung an den Planer zurückgegeben. Er kann die
   fehlende Arbeit innerhalb bestehender Budgets selbst nachholen; Review-Pflicht,

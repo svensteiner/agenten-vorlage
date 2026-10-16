@@ -555,6 +555,10 @@ class CodexBackend:
     def decide(self, context: dict, timeout: float) -> dict:
         prompt = (
             "You coordinate a bounded dynamic workflow. Do not implement or spawn agents yourself. "
+            "This coordinator invocation is intentionally read-only; it does not determine the permissions "
+            "of the host-dispatched worker roles. Do not probe write access or declare the task blocked "
+            "because the coordinator cannot edit files. Delegate required edits to a registered "
+            "workspace-write role; the host executes that role in a separate invocation. "
             "Choose ONE next action based on observations and acceptance criteria. "
             "For delegate use a registered role and at most four assigned skills. "
             "For finish/blocked use empty role and skills, put the outcome or specific blocker in task. "

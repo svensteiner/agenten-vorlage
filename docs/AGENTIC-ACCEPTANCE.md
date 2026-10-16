@@ -22,6 +22,40 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 16.10.2026
 
+### Größerer Auftrag und adversariale Gegenprüfung
+
+Der erste größere Codex-Auftrag blockierte schon im Planer: Die read-only
+Koordinator-Sitzung wurde fälschlich als fehlendes Schreibrecht aller Rollen
+interpretiert. Der Planer-Prompt stellt jetzt klar, dass der Host schreibberechtigte
+Worker separat startet. Eine echte begrenzte Planer-Gegenprobe delegierte an die
+Entwicklerrolle und ließ ihre Dateien unverändert. Sie prüft ausschließlich
+Delegation, keinen abgeschlossenen Projektauftrag. Die dazugehörige Laufzeit
+bestand 408 Tests mit drei Skips, 20 Offline-Gates und unabhängiges Review.
+
+Danach schrieb der direkte API-Adapter mit `anthropic/claude-haiku-4.5` ein neues
+Fakten-/Längenprüfmodul in der isolierten Marketingbot-Kopie. Der Host erlaubte
+Schreibwerkzeuge ausschließlich für dieses Modul und das Testwerkzeug nur für
+die eingefrorene Testdatei. Alle 537 geschützten Dateien blieben unverändert.
+Der Lauf endete nach 15 Requests vor seinem Abschlussbericht an der lokalen
+Reservierungsschätzung. Die gemeldeten Gesamtkosten betragen 0,379454 USD; alle
+15 Requests haben Kostenmetadaten. Die Schätzung ist keine Provider-Ausgabensperre.
+
+**Kritischer Befund:** Die erste Implementierung bestand 32 unabhängige Hosttests
+mit 92 % Line-Coverage, akzeptierte aber unter anderem sofort genehmigte Neufassungen
+ohne zweite Bestätigung und doppelte JSON-Schlüssel. Vorzeichen und Zahlengruppen
+konnten ihre Bedeutung verlieren. Eine Exception-Klasse konnte Informationen im
+Fehlergrund offenlegen. Das unabhängige Sicherheitsreview bestätigte diese Befunde.
+Die erweiterten 41 Tests scheitern gegen die erhaltene erste Implementierung in
+11 Fällen und bestehen in 30 Fällen. Das ist ein negativer Nachweis und keine
+Freigabe des Moduls. Nacharbeit und anschließendes Host-Review bleiben erforderlich.
+
+Belege: `cloud-refiner-result-20261016.json`, `api-refiner-result-20261016.json`,
+`api-refiner-provider-20261016.json`, `api-refiner-host-v1-20261016.log`,
+`refiner-v2-preserved-baseline-20261016.log`,
+`planner-role-boundary-live-20261016.json` unter `.runs/qualification/`.
+
+### Vorausgegangene kleinere Abnahme
+
 - Die drei neuen Verhaltenstests scheiterten vor der Engine-Änderung und bestanden
   danach. Zusammen mit den bisherigen Engine-Tests bestanden 62 Tests.
 - Die gesamte Testsuite führte mit Coverage 408 Tests aus und maß für die Engine
