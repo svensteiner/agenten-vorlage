@@ -118,7 +118,9 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
     @staticmethod
     def codex_backend():
         # Only command discovery is a fixture; proposal/approval execution stays real.
-        with patch("agentkit.backends.codex_command", return_value=["codex"]):
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), patch(
+            "agentkit.backends._windows_sandbox_selection", return_value="unelevated"
+        ):
             return CodexBackend()
 
     def test_engine_exposes_only_json_safe_policy_summary_to_planner(self):
