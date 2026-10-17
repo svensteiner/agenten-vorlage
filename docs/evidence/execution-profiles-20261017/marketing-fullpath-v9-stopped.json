@@ -21,6 +21,17 @@
   "offline_evaluator_tests_passed": 18,
   "independent_code_review": true,
   "independent_terminal_accounting_review": true,
+  "followup_isolation_fix": {
+    "study": "source-fullpath-v10-20261017",
+    "helper_sha256": "006103128b1de287bb05d608309e3584ad5e392f6f7a0ed0995eeaf77f8bb919",
+    "evaluator_tests_sha256": "e7890f84e76c52bef58bbe2cd66f294b2e272b3bb90f3025fd6fb301ae7018d6",
+    "offline_tests_passed": 18,
+    "independent_code_review_clear": true,
+    "behavior": "Scrub TYPESAFE_API_KEY before candidate imports; restore on close and construction-error cleanup. Synthetic-key actual-path test completes the four intended OpenRouter purposes without a TypeSafe endpoint attempt.",
+    "live_model_tested": false,
+    "v9_replayed": false,
+    "production_qualified": false
+  },
   "source_files_unchanged": 195,
   "test_files_unchanged": 321,
   "hashes": {

@@ -55,3 +55,8 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 2. Zeichenlimit im isolierten echten Generierungspfad abgenommen: 4.645 Tests und separates Review; Uebernahme in aktuellen Upstream noch offen.
 3. Nutzbare, interessante und quellentreue Marketingausgaben unabhaengig nachweisen.
 4. Vollstaendige isolierte Marketingbot-Integration testen; erst danach begrenzt uebernehmen.
+
+Der TypeSafe-Isolationsfehler des v9-Teststarters ist in einer getrennten
+v10-Version korrigiert und unabhaengig geprueft: 18 Offline-Tests bestanden,
+einschliesslich echtem Komponentenablauf mit synthetischem Zusatzschluessel.
+Diese technische Korrektur hat noch keine neue Modellabnahme; v9 bleibt gescheitert.
