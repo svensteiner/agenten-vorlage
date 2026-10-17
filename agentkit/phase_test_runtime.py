@@ -115,16 +115,39 @@ class LocalPhaseRuntime:
             raise ContractError("Local phase outcome is unknown; further attempts are blocked.")
         return receipt
 
-    def authorize_mutation(self, tool: str, arguments: dict) -> None:
-        if tool not in {"write_file", "edit_file"} or type(arguments) is not dict:
+    def authorize_mutation(
+        self, tool: str, arguments: dict, candidate_sha256: str | None = None
+    ) -> None:
+        if tool not in {"write_file", "edit_file", "restore_production_baseline"} or type(arguments) is not dict:
             raise ContractError("Private phase execution permits only bounded host file mutations.")
+        if (self.state["in_flight"] is not None
+                or any(receipt["status"] == "unknown" for receipt in self.state["attempts"])):
+            raise ContractError("An unresolved local phase blocks file mutations.")
         relative = self.policy.authorize_write(arguments.get("path"))
-        if relative in dict(self.policy.production_hashes):
+        production = dict(self.policy.production_hashes)
+        if tool == "restore_production_baseline":
+            if relative not in production:
+                raise LocalPhaseProposalRejected(
+                    "Baseline restoration is limited to operator-pinned production files."
+                )
+            if candidate_sha256 != production[relative]:
+                raise ContractError("Host-retained baseline bytes do not match the operator pin.")
+            current = verify_phase_freshness(self.policy, self.workspace, "targeted")
+            if current["input_hashes"].get(relative) == production[relative]:
+                raise LocalPhaseProposalRejected("Production file already matches its pinned baseline.")
+        if relative in production and tool != "restore_production_baseline":
             current = verify_phase_freshness(self.policy, self.workspace, "targeted")
             if not self._red_is_current(current["input_hashes"]):
-                raise LocalPhaseProposalRejected(
-                    "Production changes require a reproduced RED with unchanged regression tests."
+                expected_sha256 = dict(self.policy.production_hashes)[relative]
+                valid_digest = (
+                    type(candidate_sha256) is str
+                    and len(candidate_sha256) == 64
+                    and all(char in "0123456789abcdef" for char in candidate_sha256)
                 )
+                if not valid_digest or candidate_sha256 != expected_sha256:
+                    raise LocalPhaseProposalRejected(
+                        "With stale RED, a production edit is allowed only when its host-computed final bytes restore the pinned baseline."
+                    )
 
     def require_completion(self) -> None:
         if self.state["in_flight"] is not None:

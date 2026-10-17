@@ -1,0 +1,103 @@
+{
+  "schema": "agentkit-retained-production-baseline-technical/v1",
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "full_task_autonomy_qualification": false,
+  "full_suite": {
+    "tests_run": 702,
+    "skipped": 9,
+    "failures": 0,
+    "exit_code": 0,
+    "duration_seconds": 359.43699999997625,
+    "changed_inputs": []
+  },
+  "coverage": {
+    "combined_percent": 80.47532855906194,
+    "statement_percent": 83.18076541303628,
+    "branch_percent": 73.73626373626374
+  },
+  "offline_release": {
+    "passed": 38,
+    "failed": 0
+  },
+  "static_checks": [
+    {
+      "name": "ruff",
+      "exit_code": 0,
+      "duration_seconds": 0.28200000000651926
+    },
+    {
+      "name": "bandit",
+      "exit_code": 0,
+      "duration_seconds": 2.937000000034459
+    },
+    {
+      "name": "workflow",
+      "exit_code": 0,
+      "duration_seconds": 0.0779999999795109
+    },
+    {
+      "name": "release",
+      "exit_code": 0,
+      "duration_seconds": 16.79700000002049
+    }
+  ],
+  "independent_review": {
+    "focused_tests_passed": 74,
+    "skipped": 2,
+    "receipt_sha256": "0111986f89bfd10a41e586496c02d57ea058971e9685832e587d0cece689155a"
+  },
+  "actual_windows_cache_probe": {
+    "schema": "agentkit-real-host-production-cache-probe/v1",
+    "capture_and_load_match": true,
+    "wrong_run_rejected": true,
+    "tampered_blob_rejected": true,
+    "production_files_unchanged": true,
+    "blob_path_characters": 239,
+    "manifest_sha256": "10c222e79196c988e6d2868c578e77dac3ae76f149cc20302f3aa6ecc2a05182",
+    "model_calls": 0,
+    "provider_calls": 0,
+    "source_code_qualification": false,
+    "production_qualification": false
+  },
+  "legacy_resume_fixture": {
+    "status": "passed",
+    "real_model_calls": 0,
+    "fake_backend_calls_before": 1,
+    "fake_backend_calls_after": 1,
+    "source_and_cache_unchanged": true,
+    "source_test_files_unchanged": true
+  },
+  "evidence_sha256": {
+    "full.log": "9f272732380de971e66e3c82dfea6fba2d32f4857d7cd5964ef2580c00abadb3",
+    "full-result.json": "5e5e3bf214afe05649351f2681fd4b2167efd5a0b432123666881ca29ef367c8",
+    "full-inputs.json": "2f114f14ad3d118716dd5cc3086e73be445b6b3ff985f0b4523f4317870edb03",
+    "coverage.json": "8bcecd0f130501e11a96190db1d9a49639fa3803a9d809eb73bf0eb8a79fa993",
+    "release.log": "bac7fd614db1ea2fc818a02547c353efa29d54d1d9511fff42ca5c06dadab338",
+    "static-release-checks.json": "5fe566bd697e7d641ea2d1bfd072d13bc9abf456358f7572e56ad751814d66cb",
+    "independent-code-review.json": "0111986f89bfd10a41e586496c02d57ea058971e9685832e587d0cece689155a",
+    "actual-windows-cache-probe.json": "a2dd149d74dd91f54123f140ae49109bd41b39e57a73f47a70d795841e4ce26c",
+    "legacy_cache_resume_probe.py": "88145b75c3f45cc2629d5b40186c9dd3ae4a1ea7d711e3097bea99820abfd0a7",
+    "result.json": "77524e87715dcea3ffb76ac809fe970bfb6e6d169503fcf096283fa17bff899a"
+  },
+  "source_sha256": {
+    "agentkit\\backends.py": "42dee34572da41402cf311d4d0748518b4ddfdde4178bda6b5b7a83286809751",
+    "agentkit\\engine.py": "58635af31747645bd10268aa1f55b6c6372a0e92c63d31799122bb45283f6f62",
+    "agentkit\\phase_test_runtime.py": "83ea6295d2d972739e49df35f1683b2617e4bb04db5b107cdd96216eab0f621b",
+    "agentkit\\production_baseline.py": "46f483cb0bfdb4c92d9a7cca5a40fbab846e1e0507d28f05834268b1c93ccebd",
+    "agentkit\\write_provenance.py": "0fcf77d183fee4b6cd51531b816079261ea2fe12f94cbebda409a05d8bc9eef0",
+    "agentkit\\schemas\\codex_local_action_step.json": "af17183a994c5620c0eb00f469a31c7a6dbf29fcf4c226f9fed33a3b2a08f67f",
+    "tests\\test_production_baseline.py": "b258700d8a951a3a963db1a48715caacd7df64d674958fec9e7c2e1e8a78b9d6",
+    "tests\\test_codex_local_phases.py": "ace4f141ec9d8b64e634281606b61abe11639059995d5bf21700bac166f5731f",
+    "tests\\test_engine_codex_local_phases.py": "ee6fd0321e5fd94aa6a045ecea6ab08bedbce9f85ca9fd1abe82f52ca9f0dee0",
+    "tests\\test_local_phase_runtime.py": "cdb23c0429920abf0950beb2e35673217fe339480839feed96642586c4f68592",
+    "tests\\test_write_provenance.py": "2867b172a003396ba456c421fe956902e2a40013f6aa3e62b80c5ad6e8be94ab"
+  },
+  "v8_preparation": {
+    "run_id": "e0d39e12bc874e75ade2009b175087cb",
+    "dispatched": false,
+    "preparation_sha256": "98ff85b865429498c0c2aaa22f6483a59d95a1720d78cd5970241a0f41f609cb",
+    "code_preparation_review_sha256": "01b81f616024dc756f4e170ce6ee8367b046c5d6d3d0ae8f5d58084ceb43959e"
+  },
+  "ci_status": "pending_current_source_commit"
+}

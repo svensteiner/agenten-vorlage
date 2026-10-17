@@ -125,7 +125,10 @@ def validate_receipts(value: object, policy: WritePolicy) -> list[dict]:
 
 
 def make_write_receipt(workspace: Path, policy: WritePolicy, action: dict) -> dict | None:
-    if (type(action) is not dict or action.get("tool") not in {"write_file", "edit_file"}
+    if (type(action) is not dict
+            or action.get("tool") not in {
+                "write_file", "edit_file", "restore_production_baseline"
+            }
             or not isinstance(action.get("arguments"), dict)):
         return None
     relative = action["arguments"].get("path")

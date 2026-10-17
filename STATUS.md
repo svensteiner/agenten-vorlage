@@ -13,6 +13,15 @@ pruefen und nacharbeiten. Die Mietplattform ist zurueckgestellt.
 Der laufende Original-Marketingbot bleibt unveraendert; Versuche verwenden
 isolierte Kopien. Technische Tests ersetzen keine Inhaltsqualifikation.
 
+## Recovery-Kandidat: lokal geprueft, CI noch offen
+
+Die [hostseitige Ausgangskopie](docs/evidence/execution-profiles-20261017/retained-baseline-recovery.json)
+und private pfadgebundene Ruecksetzung bestehen 702 Gesamttests mit neun Skips
+und ohne Fehler; alle erfassten Quell-/Schemaeingaben blieben unveraendert.
+38 Offline-Releasepruefungen, separates Review und Windows-Cache-/Legacy-
+Resume-Gegenproben bestehen. Die CI dieses Quellstands und der frische
+vollstaendige Coding-Auftrag V8 stehen noch aus. Keine Produktionsfreigabe.
+
 ## Letzter vollstaendig gepruefter Runtime-Stand
 
 Commit `f46a97b`: [private Reviewer-Schnittstelle](docs/evidence/execution-profiles-20261017/private-review-observations.json).
@@ -49,7 +58,8 @@ Der [erste Recovery-Kandidat](docs/evidence/execution-profiles-20261017/exact-ba
 ist ebenfalls nicht abgenommen: 677 Tests, sieben Skips und zwei Fehler in
 bestehenden Prompt-Wortlautpruefungen. Zudem fehlten exakte Ausgangsbytes in
 spaeteren Worker-Aufrufen. Eine hostseitige, hashgepruefte Ausgangskopie und
-eine private Ruecksetzungsaktion werden deshalb ergaenzt.
+eine private Ruecksetzungsaktion sind deshalb implementiert und lokal geprueft;
+der frische Modellnachweis steht noch aus.
 
 ## Offene Abnahme des Gesamtziels
 

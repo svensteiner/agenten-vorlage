@@ -16,6 +16,11 @@ from .write_policy import WritePolicy
 from .test_execution import TestExecutionPolicy, validate_test_receipt
 from .phase_test_execution import LocalPhaseTestPolicy
 from .phase_test_runtime import LocalPhaseRuntime
+from .production_baseline import (
+    capture_production_baseline,
+    load_production_baseline,
+    validate_run_cache_parent,
+)
 from .write_provenance import (
     capture_baseline as capture_write_baseline,
     make_write_receipt,
@@ -172,7 +177,10 @@ class Engine:
         if run_dir is not None and not (run_dir / "state.json").is_file():
             raise ContractError("Resume checkpoint does not exist; no new run was started.")
         directory = run_dir or self.catalog.root / ".runs" / (new_run_id or uuid.uuid4().hex)
-        directory = directory.resolve()
+        directory = (
+            validate_run_cache_parent(directory, self.catalog.root)
+            if self.local_phase_policy is not None else directory.resolve()
+        )
         if directory.parent != (self.catalog.root / ".runs").resolve():
             raise ContractError("Run checkpoints must remain inside this agent's .runs directory.")
         reservation = None
@@ -220,6 +228,7 @@ class Engine:
     ) -> dict:
         path = directory / "state.json"
         config = self.catalog.config
+        production_baselines: dict[str, bytes] | None = None
         failure_baseline = 0
         if path.exists():
             state = read_json(path)
@@ -243,6 +252,13 @@ class Engine:
             expected_local_policy = self.local_phase_policy.sha256 if self.local_phase_policy else ""
             if state.get("local_phase_policy_sha256", "") != expected_local_policy:
                 raise ContractError("Cannot resume with a changed or missing private local phase policy.")
+            if self.local_phase_policy is not None:
+                production_baselines = load_production_baseline(
+                    self.local_phase_policy, self.workspace, state["run_id"], directory,
+                    state.get("local_phase_baseline_cache_sha256"),
+                )
+            elif "local_phase_baseline_cache_sha256" in state:
+                raise ContractError("Checkpoint has a private production baseline without its phase policy.")
             if self.write_policy is not None:
                 baseline = state.get("write_provenance_baseline")
                 if baseline is None:
@@ -398,6 +414,11 @@ class Engine:
                     self.workspace, self.write_policy
                 )
                 state["write_provenance_receipts"] = []
+            if self.local_phase_policy is not None:
+                production_baselines, cache_sha256 = capture_production_baseline(
+                    self.local_phase_policy, self.workspace, state["run_id"], directory
+                )
+                state["local_phase_baseline_cache_sha256"] = cache_sha256
         if path.exists() and state.get("require_approvals"):
             # A persisted approval policy is sticky across process restarts;
             # callers cannot resume a gated run with approvals disabled.
@@ -616,6 +637,7 @@ class Engine:
                     ctx["local_phase_policy"] = self.local_phase_policy
                     ctx["run_local_phase"] = local_phases.execute
                     ctx["authorize_local_mutation"] = local_phases.authorize_mutation
+                    ctx["_production_baselines"] = production_baselines
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
                     self._authorize_action(tool, arguments)
                     approval = {
@@ -657,7 +679,9 @@ class Engine:
                                 )
                             except ValueError as exc:
                                 raise ContractError("Run-write provenance receipt history is invalid.") from exc
-                    if entry.get("tool") in {"write_file", "edit_file"}:
+                    if entry.get("tool") in {
+                        "write_file", "edit_file", "restore_production_baseline"
+                    }:
                         state["latest_test_execution_receipt"] = None
                     if self.write_policy is not None:
                         updated_provenance = summarize_run_writes(

@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agentkit.backends import CodexBackend
+from agentkit.contracts import ContractError
 from agentkit.engine import Engine
 from agentkit.phase_test_execution import LocalPhaseTestPolicy, authorize_phase, verify_phase_freshness
 from agentkit.scaffold import create
@@ -262,7 +263,7 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
         action_prompts = [prompt for prompt, contract in prompts if contract == "codex_action_step"]
         self.assertGreaterEqual(len(action_prompts), 2)
         self.assertIn("rejected_proposal", action_prompts[1])
-        self.assertIn("Production changes require a reproduced RED", action_prompts[1])
+        self.assertIn("With stale RED", action_prompts[1])
         run_phase.assert_not_called()
 
     def test_real_engine_phase_write_review_finish_flow_uses_private_callbacks(self):
@@ -287,6 +288,123 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
         rejected = [entry for entry in state["history"] if entry.get("completion_rejected")]
         self.assertTrue(rejected)
         self.assertIn("full", rejected[-1]["completion_rejected"])
+
+    def test_stale_red_recovers_only_via_exact_baseline_edit_then_fresh_red(self):
+        baseline_source = self.source.read_bytes()
+        prompts = []
+        decisions = iter([
+            self.decision(), self.decision(role="reviewer"), self.decision("finish", ""),
+        ])
+
+        def action(tool, *, path="", content="", old_text="", new_text="", phase=None):
+            return {
+                "kind": "proposal", "tool": tool,
+                "arguments": {
+                    "path": path, "content": content, "old_text": old_text,
+                    "new_text": new_text, "start_line": None, "max_lines": None,
+                    "phase": phase,
+                },
+                "rationale": "Use one host-authorized action.",
+                "report": {"status": "blocked", "summary": "Action requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            }
+
+        worker_actions = iter([
+            action("run_local_tests", phase="red"),
+            action("edit_file", path="agentkit/worker.py", old_text="return 1", new_text="return 3"),
+            action("write_file", path="tests/test_worker.py", content="def test_worker(): assert False\n"),
+            action("edit_file", path="agentkit/worker.py", old_text="return 3", new_text="return 99"),
+            action("restore_production_baseline", path="agentkit/worker.py"),
+            action("run_local_tests", phase="red"),
+            action("edit_file", path="agentkit/worker.py", old_text="return 1", new_text="return 2"),
+            action("run_local_tests", phase="targeted"),
+            action("run_local_tests", phase="full"),
+            {
+                "kind": "final", "tool": "none",
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None, "phase": None},
+                "rationale": "All required phases and review are complete.",
+                "report": self.report(),
+            },
+        ])
+        reviewer_actions = iter([
+            {
+                "kind": "proposal", "tool": "read_file",
+                "arguments": {"path": "agentkit/worker.py", "content": "", "old_text": "",
+                              "new_text": "", "start_line": 1, "max_lines": 20},
+                "rationale": "Inspect the final source.",
+                "report": {"status": "blocked", "summary": "Observation requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            },
+            {
+                "kind": "final", "tool": "none",
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Review complete.", "report": self.report(),
+            },
+        ])
+
+        def call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            if contract == "decision":
+                return next(decisions)
+            if contract == "codex_action_step":
+                return next(worker_actions)
+            if contract == "codex_private_review_action_step":
+                return next(reviewer_actions)
+            raise AssertionError(f"Unexpected Codex contract: {contract}")
+
+        phase_calls = []
+
+        def fake_phase(policy, workspace, phase, *, run_id, timeout, runner=None, results_dir):
+            phase_calls.append(phase)
+            if phase == "red" and phase_calls.count("red") == 2:
+                self.assertEqual(baseline_source, self.source.read_bytes())
+            return self.phase_receipt(phase, run_id)
+
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch.object(CodexBackend, "_call", side_effect=call), \
+                patch("agentkit.phase_test_runtime.run_phase", side_effect=fake_phase):
+            state = Engine(
+                self.agent, self.workspace, self.codex_backend_fixture(),
+                write_policy=self.write_policy, local_phase_policy=self.phase_policy,
+            ).run("Recover from stale RED safely and verify the correction")
+
+        self.assertEqual("completed", state["status"], state.get("summary"))
+        self.assertEqual(baseline_source.replace(b"return 1", b"return 2"),
+                         self.source.read_bytes())
+        self.assertEqual("def test_worker(): assert False\n",
+                         self.test_file.read_text(encoding="utf-8"))
+        self.assertEqual(["red", "red", "targeted", "full"], phase_calls)
+        self.assertIn("rejected_proposal", prompts[5][0])
+        self.assertNotIn("def work(): return 1", prompts[4][0])
+        restore_entry = next(
+            item for item in state["completed_actions"]
+            if item["tool"] == "restore_production_baseline"
+        )
+        self.assertEqual({"path": "agentkit/worker.py"}, restore_entry["arguments"])
+        self.assertIn(hashlib.sha256(baseline_source).hexdigest(), restore_entry["result"])
+        restore_receipts = [
+            item for item in state["write_provenance_receipts"]
+            if item["action_sha256"] == restore_entry["action_sha256"]
+        ]
+        self.assertEqual(1, len(restore_receipts))
+        self.assertEqual("present", restore_receipts[0]["state"])
+        self.assertEqual(hashlib.sha256(baseline_source).hexdigest(), restore_receipts[0]["sha256"])
+        self.assertTrue(state["reviewed"])
+
+        run_dir = self.agent / ".runs" / state["run_id"]
+        cache_dir = run_dir / "private-production-baseline"
+        cache_manifest = json.loads((cache_dir / "manifest.json").read_text(encoding="utf-8"))
+        (cache_dir / cache_manifest["files"][0]["blob"]).write_bytes(b"tampered baseline")
+        with self.assertRaises(ContractError):
+            Engine(
+                self.agent, self.workspace, self.codex_backend_fixture(),
+                write_policy=self.write_policy, local_phase_policy=self.phase_policy,
+            ).run(
+                "", run_dir=run_dir, feedback="Resume after cache validation.",
+                acknowledge_interruption=True,
+            )
 
 
 if __name__ == "__main__":

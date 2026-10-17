@@ -30,6 +30,23 @@ bekannter Versuch derselben Phase und desselben Quellstands wird vor einer neuen
 Reservierung abgelehnt. Gespeicherte Nachweise muessen auch bei Wiederaufnahme
 die Reihenfolge und die Quellbindungen erfuellen.
 
+## Gepinnte Ausgangskopie fuer Ruecksetzungen
+
+Vor dem ersten Modellschritt speichert der Host die verifizierten
+Produktions-Ausgangsbytes ausserhalb des veraenderbaren Workspace. Die Kopie
+bindet Lauf, Policy, Workspace, erlaubten Pfad, Groesse und SHA-256. Bei einer
+Wiederaufnahme wird dieselbe Kopie geprueft; fehlende, veraenderte, verlinkte
+oder nicht gebundene Daten werden nicht aus dem aktuellen Workspace ersetzt.
+Die Dateiinhalte erscheinen nicht im Modellkontext oder Checkpoint-Verlauf.
+
+Ein privater schreibender Worker kann `restore_production_baseline` mit dem
+erlaubten Produktionspfad vorschlagen. Die Aktion nimmt weder Inhalt noch
+Kommando entgegen. Der Host prueft Ausgangskopie und Schreibrechte, verwendet
+den normalen atomaren Schreibweg und kontrolliert die Ergebnisbytes. Die
+Ruecksetzung erhaelt eine eigene Aktions- und Schreibquittung. Unbekannte
+Phasenausgaenge bleiben gesperrt; Reviewer und oeffentliches Profil erhalten
+diese Aktion nicht.
+
 ## Unabhaengiger Reviewer
 
 Eine hostseitig als Reviewer gebundene Rolle mit `read-only`-Sandbox verwendet

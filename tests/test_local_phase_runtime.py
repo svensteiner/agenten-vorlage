@@ -92,6 +92,39 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
             "LocalPhaseProposalRejected", type(denied.exception).__name__
         )
 
+    def test_stale_red_allows_path_only_baseline_restore_but_blocks_unresolved_runs(self):
+        with patch("agentkit.phase_test_runtime.run_phase", side_effect=self.receipt):
+            self.runtime.execute("red", 10)
+        (self.fixture.workspace / "tests/test_worker.py").write_text(
+            "def test_worker(): assert False\n", encoding="utf-8"
+        )
+        self.fixture.source.write_bytes(b"def work(): return 3\n")
+        baseline_hash = dict(self.policy.production_hashes)["agentkit/worker.py"]
+        with self.assertRaises(LocalPhaseProposalRejected):
+            self.runtime.authorize_mutation(
+                "write_file", {"path": "agentkit/worker.py"}, "0" * 64
+            )
+
+        self.runtime.authorize_mutation(
+            "restore_production_baseline", {"path": "agentkit/worker.py"}, baseline_hash
+        )
+        with self.assertRaises(LocalPhaseProposalRejected):
+            self.runtime.authorize_mutation(
+                "restore_production_baseline", {"path": "tests/test_worker.py"}, baseline_hash
+            )
+
+        self.state["in_flight"] = {"phase": "targeted", "snapshot_sha256": "a" * 64}
+        with self.assertRaises(ContractError):
+            self.runtime.authorize_mutation(
+                "restore_production_baseline", {"path": "agentkit/worker.py"}, baseline_hash
+            )
+        self.state["in_flight"] = None
+        self.state["attempts"].append({"status": "unknown"})
+        with self.assertRaises(ContractError):
+            self.runtime.authorize_mutation(
+                "restore_production_baseline", {"path": "agentkit/worker.py"}, baseline_hash
+            )
+
     def test_modified_conftest_invalidates_red(self):
         helper = self.fixture.workspace / "tests/conftest.py"
         helper.write_text("# initial fixtures\n", encoding="utf-8")

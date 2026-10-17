@@ -84,6 +84,23 @@ class WriteProvenanceTests(unittest.TestCase):
         self.assertEqual([], current["changed_by_run"])
         self.assertEqual([], current["changed_without_matching_receipt"])
 
+    def test_exact_baseline_restore_is_a_recorded_write_without_net_change_claim(self):
+        original = self.target.read_bytes()
+        baseline = capture_baseline(self.workspace, self.policy)
+        self.target.write_bytes(b"temporary implementation change\n")
+        self.target.write_bytes(original)
+        receipt = make_write_receipt(
+            self.workspace, self.policy,
+            {"tool": "restore_production_baseline", "arguments": {"path": "src/app.py"},
+             "action_sha256": "c" * 64},
+        )
+
+        current = summarize_run_writes(self.workspace, self.policy, baseline, [receipt])
+
+        self.assertEqual(1, current["write_receipt_count"])
+        self.assertEqual([], current["changed_by_run"])
+        self.assertEqual([], current["changed_without_matching_receipt"])
+
     def test_legacy_resume_without_baseline_is_unknown_not_recaptured(self):
         baseline = unknown_baseline(self.policy)
         validate_baseline(baseline, self.policy)
