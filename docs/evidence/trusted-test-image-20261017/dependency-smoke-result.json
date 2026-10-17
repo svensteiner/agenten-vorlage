@@ -1,0 +1,40 @@
+{
+  "command": [
+    "wsl",
+    "-d",
+    "Ubuntu",
+    "--",
+    "docker",
+    "--config",
+    "/tmp/agentkit-public-pull-20261017",
+    "run",
+    "--rm",
+    "--pull=never",
+    "--network=none",
+    "--read-only",
+    "--user=65534:65534",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--memory=128m",
+    "--memory-swap=128m",
+    "--cpus=1",
+    "--pids-limit=32",
+    "--entrypoint=/usr/local/bin/python",
+    "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+    "-I",
+    "-B",
+    "-c",
+    "from importlib.metadata import version; import json; print(json.dumps({k:version(k) for k in [\"pytest\",\"PyYAML\",\"jsonschema\",\"pypdf\",\"defusedxml\"]}))"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"pytest\": \"9.0.3\", \"PyYAML\": \"6.0.3\", \"jsonschema\": \"4.26.0\", \"pypdf\": \"6.19.0\", \"defusedxml\": \"0.7.1\"}\n",
+  "stderr": "",
+  "scope": "trusted installed dependency smoke only; no agent/project workload",
+  "versions": {
+    "pytest": "9.0.3",
+    "PyYAML": "6.0.3",
+    "jsonschema": "4.26.0",
+    "pypdf": "6.19.0",
+    "defusedxml": "0.7.1"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "build-inventory.json": "8093b4d6d71dc45ca2bcee9b70c797e21bd0d444e0d6e1525b787fa420ee4ed1",
+  "build.log.txt": "2036fdbae0c7842752b5ac4dee04567ade6afd8152b24bc92f38006082ff6c7f",
+  "dependency-smoke-result.json": "ae56ee60d24e85b96d3c321ce686da6830294cf60fc13b82ba8138f80a1e2acb",
+  "Dockerfile.txt": "bf5d5bc945aa519da8efda30832ab37dc6313f60f01162537eb240c48ed3653a",
+  "image-result.json": "60758ab3febafb6f37aded18ea2f5f9f3997028ce986a44662902183244a5631",
+  "requirements.lock.txt": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f"
+}

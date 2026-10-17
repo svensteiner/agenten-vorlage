@@ -1,0 +1,62 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 496B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#2 DONE 1.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B 0.0s done
+#3 DONE 0.1s
+
+#4 [1/4] FROM docker.io/library/python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#4 resolve docker.io/library/python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 0.0s done
+#4 DONE 0.3s
+
+#5 [internal] load build context
+#5 transferring context: 3.67MB 0.2s done
+#5 DONE 0.3s
+
+#6 [2/4] COPY requirements.lock /opt/requirements.lock
+#6 DONE 0.2s
+
+#7 [3/4] COPY wheels /opt/wheels
+#7 DONE 0.2s
+
+#8 [4/4] RUN python -m pip install --no-index --no-cache-dir --require-hashes --find-links=/opt/wheels -r /opt/requirements.lock
+#8 1.980 Looking in links: /opt/wheels
+#8 1.988 Processing /opt/wheels/attrs-26.1.0-py3-none-any.whl (from -r /opt/requirements.lock (line 1))
+#8 1.993 Processing /opt/wheels/colorama-0.4.6-py2.py3-none-any.whl (from -r /opt/requirements.lock (line 2))
+#8 1.996 Processing /opt/wheels/defusedxml-0.7.1-py2.py3-none-any.whl (from -r /opt/requirements.lock (line 3))
+#8 2.000 Processing /opt/wheels/iniconfig-2.3.1-py3-none-any.whl (from -r /opt/requirements.lock (line 4))
+#8 2.002 Processing /opt/wheels/jsonschema-4.26.0-py3-none-any.whl (from -r /opt/requirements.lock (line 5))
+#8 2.007 Processing /opt/wheels/jsonschema_specifications-2025.9.1-py3-none-any.whl (from -r /opt/requirements.lock (line 6))
+#8 2.010 Processing /opt/wheels/packaging-26.3-py3-none-any.whl (from -r /opt/requirements.lock (line 7))
+#8 2.012 Processing /opt/wheels/pluggy-1.7.0-py3-none-any.whl (from -r /opt/requirements.lock (line 8))
+#8 2.015 Processing /opt/wheels/pygments-2.21.0-py3-none-any.whl (from -r /opt/requirements.lock (line 9))
+#8 2.023 Processing /opt/wheels/pypdf-6.19.0-py3-none-any.whl (from -r /opt/requirements.lock (line 10))
+#8 2.031 Processing /opt/wheels/pytest-9.0.3-py3-none-any.whl (from -r /opt/requirements.lock (line 11))
+#8 2.036 Processing /opt/wheels/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r /opt/requirements.lock (line 12))
+#8 2.041 Processing /opt/wheels/referencing-0.37.0-py3-none-any.whl (from -r /opt/requirements.lock (line 13))
+#8 2.043 Processing /opt/wheels/rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r /opt/requirements.lock (line 14))
+#8 2.046 Processing /opt/wheels/typing_extensions-4.16.0-py3-none-any.whl (from -r /opt/requirements.lock (line 15))
+#8 2.097 Installing collected packages: typing_extensions, rpds-py, PyYAML, pypdf, Pygments, pluggy, packaging, iniconfig, defusedxml, colorama, attrs, referencing, pytest, jsonschema-specifications, jsonschema
+#8 4.024 Successfully installed PyYAML-6.0.3 Pygments-2.21.0 attrs-26.1.0 colorama-0.4.6 defusedxml-0.7.1 iniconfig-2.3.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 packaging-26.3 pluggy-1.7.0 pypdf-6.19.0 pytest-9.0.3 referencing-0.37.0 rpds-py-2026.9.1 typing_extensions-4.16.0
+#8 4.024 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#8 DONE 4.3s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 1.6s done
+#9 exporting manifest sha256:ff195fff3cd1eb6d047541555f302905b53c623651b50fcf4eb304206686874d 0.0s done
+#9 exporting config sha256:e435791abd89b2b1cd01aa47d57f61d683a55143fee8f04914b5c7559e6af8a5 0.0s done
+#9 exporting attestation manifest sha256:cb887f01481ca5d8cf6a66573550ec33b7c5826335887d4fa4f2d86d61f9f87f
+#9 exporting attestation manifest sha256:cb887f01481ca5d8cf6a66573550ec33b7c5826335887d4fa4f2d86d61f9f87f 0.1s done
+#9 exporting manifest list sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab 0.0s done
+#9 naming to docker.io/library/agentkit-trusted-tests:20261017
+#9 naming to docker.io/library/agentkit-trusted-tests:20261017 done
+#9 unpacking to docker.io/library/agentkit-trusted-tests:20261017
+#9 unpacking to docker.io/library/agentkit-trusted-tests:20261017 1.0s done
+#9 DONE 2.9s

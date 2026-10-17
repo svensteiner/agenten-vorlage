@@ -1,0 +1,113 @@
+{
+  "base_image": "python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1",
+  "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+  "dockerfile_sha256": "bf5d5bc945aa519da8efda30832ab37dc6313f60f01162537eb240c48ed3653a",
+  "wheels": [
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "filename": "attrs-26.1.0-py3-none-any.whl",
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+      "pypi_metadata_url": "https://pypi.org/pypi/attrs/26.1.0/json"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "pypi_metadata_url": "https://pypi.org/pypi/colorama/0.4.6/json"
+    },
+    {
+      "name": "defusedxml",
+      "version": "0.7.1",
+      "filename": "defusedxml-0.7.1-py2.py3-none-any.whl",
+      "sha256": "a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61",
+      "pypi_metadata_url": "https://pypi.org/pypi/defusedxml/0.7.1/json"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "filename": "iniconfig-2.3.1-py3-none-any.whl",
+      "sha256": "9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7",
+      "pypi_metadata_url": "https://pypi.org/pypi/iniconfig/2.3.1/json"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "filename": "jsonschema-4.26.0-py3-none-any.whl",
+      "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce",
+      "pypi_metadata_url": "https://pypi.org/pypi/jsonschema/4.26.0/json"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "filename": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+      "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe",
+      "pypi_metadata_url": "https://pypi.org/pypi/jsonschema-specifications/2025.9.1/json"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "filename": "packaging-26.3-py3-none-any.whl",
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "pypi_metadata_url": "https://pypi.org/pypi/packaging/26.3/json"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0",
+      "filename": "pluggy-1.7.0-py3-none-any.whl",
+      "sha256": "7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec",
+      "pypi_metadata_url": "https://pypi.org/pypi/pluggy/1.7.0/json"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0",
+      "filename": "pygments-2.21.0-py3-none-any.whl",
+      "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+      "pypi_metadata_url": "https://pypi.org/pypi/Pygments/2.21.0/json"
+    },
+    {
+      "name": "pypdf",
+      "version": "6.19.0",
+      "filename": "pypdf-6.19.0-py3-none-any.whl",
+      "sha256": "7e5d6e730e7dae87d560a2cee218b852f6498c8be61966f3cd02ead971e48d14",
+      "pypi_metadata_url": "https://pypi.org/pypi/pypdf/6.19.0/json"
+    },
+    {
+      "name": "pytest",
+      "version": "9.0.3",
+      "filename": "pytest-9.0.3-py3-none-any.whl",
+      "sha256": "2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9",
+      "pypi_metadata_url": "https://pypi.org/pypi/pytest/9.0.3/json"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "filename": "pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc",
+      "pypi_metadata_url": "https://pypi.org/pypi/PyYAML/6.0.3/json"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "filename": "referencing-0.37.0-py3-none-any.whl",
+      "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231",
+      "pypi_metadata_url": "https://pypi.org/pypi/referencing/0.37.0/json"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1",
+      "filename": "rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "addeda51556dac7c1a2f14cda62db8b621cd12afba3091d03a96c72932387eab",
+      "pypi_metadata_url": "https://pypi.org/pypi/rpds-py/2026.9.1/json"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "pypi_metadata_url": "https://pypi.org/pypi/typing_extensions/4.16.0/json"
+    }
+  ],
+  "scope": "host-controlled trusted dependency image; no project code"
+}

@@ -1,0 +1,13 @@
+{
+  "image_ref": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+  "image_id": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+  "repo_digests": [
+    "agentkit-trusted-tests@sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab"
+  ],
+  "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+  "platform": "amd64",
+  "os": "linux",
+  "configured_user": "65534:65534",
+  "build_exit_code": 0,
+  "build_log_sha256": "2036fdbae0c7842752b5ac4dee04567ade6afd8152b24bc92f38006082ff6c7f"
+}
