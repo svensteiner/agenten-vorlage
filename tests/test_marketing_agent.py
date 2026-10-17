@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -54,7 +57,58 @@ class MarketingAgentPackTests(unittest.TestCase):
         script = (ROOT / "Start-Coding-Agent.ps1").read_text(encoding="utf-8-sig")
         self.assertIn('"programming-agent"', script)
         self.assertIn('"codex"', script)
-        self.assertIn("-OpenBrowser", script)
+        self.assertIn("OpenBrowser = $true", script)
+
+    def test_coding_launcher_forwards_optional_execution_profiles_to_mock_studio(self):
+        shell = shutil.which("pwsh") or shutil.which("powershell")
+        if shell is None:
+            self.skipTest("PowerShell is unavailable; static launcher contract is checked separately.")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            launcher = root / "Start-Coding-Agent.ps1"
+            launcher.write_bytes((ROOT / "Start-Coding-Agent.ps1").read_bytes())
+            (root / "Start-AI-Studio.ps1").write_text(
+                """param(
+                    [int]$Port,
+                    [string]$DefaultWorkspace,
+                    [string]$PreferredAgent,
+                    [string]$PreferredBackend,
+                    [string]$StarterTask,
+                    [string]$ExecutionProfiles,
+                    [switch]$OpenBrowser
+                )
+                [ordered]@{
+                    Port = $Port
+                    DefaultWorkspace = $DefaultWorkspace
+                    PreferredAgent = $PreferredAgent
+                    PreferredBackend = $PreferredBackend
+                    StarterTask = $StarterTask
+                    ExecutionProfiles = $ExecutionProfiles
+                    OpenBrowser = [bool]$OpenBrowser
+                } | ConvertTo-Json -Compress | Set-Content -LiteralPath $env:AGENTKIT_LAUNCH_CAPTURE -Encoding utf8
+                exit 7
+                """,
+                encoding="utf-8",
+            )
+            capture = root / "capture.json"
+            env = {**os.environ, "AGENTKIT_LAUNCH_CAPTURE": str(capture)}
+            workspace = root / "workspace with spaces"
+            profile = root / "host profiles.json"
+            for with_profile in (False, True):
+                args = [shell, "-NoProfile", "-File", str(launcher), "-Port", "8766",
+                        "-Workspace", str(workspace), "-Task", "bounded task"]
+                if with_profile:
+                    args.extend(["-ExecutionProfiles", str(profile)])
+                completed = subprocess.run(args, env=env, capture_output=True, text=True, timeout=15)
+                self.assertEqual(7, completed.returncode, completed.stderr)
+                received = json.loads(capture.read_text(encoding="utf-8-sig"))
+                self.assertEqual(8766, received["Port"])
+                self.assertEqual(str(workspace), received["DefaultWorkspace"])
+                self.assertEqual("programming-agent", received["PreferredAgent"])
+                self.assertEqual("codex", received["PreferredBackend"])
+                self.assertEqual("bounded task", received["StarterTask"])
+                self.assertEqual(str(profile) if with_profile else "", received["ExecutionProfiles"])
+                self.assertTrue(received["OpenBrowser"])
 
     def test_snapshot_copies_only_allowlisted_evidence_and_redacts_credentials(self):
         with tempfile.TemporaryDirectory() as directory:

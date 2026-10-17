@@ -28,6 +28,21 @@ both a current passing receipt and a successful independent review.
 This is defense in depth, not an operating-system sandbox guarantee. It assumes
 the Docker daemon/transport and host are trusted and does not protect against
 their compromise, a privileged concurrent workspace writer, or a malicious
-in-process Python backend. The CLI/Python integration is local; the cockpit and
-public hosting do not expose the host execution callback. Tests should be run
+in-process Python backend. The CLI/Python integration is local. The local Cockpit can bind the same host
+policies through an operator-owned execution-profile registry; public hosting
+rejects these profiles. Tests should be run
 only with a curated manifest and an audited immutable image.
+
+
+## Lokales Cockpit und Coding-Launcher
+
+`Start-Coding-Agent.ps1 -Workspace <isolierter Checkout> -ExecutionProfiles <Registry>`
+leitet die bereits eingerichtete Registry an `Start-AI-Studio.ps1` weiter. Sie wird
+beim Serverstart geladen; der Browser uebermittelt nur die Profil-ID, keine Rechte.
+Ein Profil bindet Agent, Workspace, Backend, genaue `write_paths` und einen
+externen `test_manifest`. `host_autonomous: true` verlangt sowohl eine nichtleere
+Schreibdateiliste als auch die gepinnte Testsuite. Der Server prueft die Bindung
+auch bei Fortsetzung und Wiederaufnahme. Weitere Schreibschritte entwerten den
+Test- und Reviewnachweis. Ohne Profil bleibt das bisherige Freigabeverhalten.
+Die Registry richtet weder ein Testimage noch einen projektspezifischen Manifest
+automatisch ein. Der Modellname bleibt eine eigene Auswahl im Cockpit.

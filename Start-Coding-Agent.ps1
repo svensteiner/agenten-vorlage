@@ -7,17 +7,23 @@ param(
     [string]$Backend = "codex",
     [ValidateNotNullOrEmpty()]
     [ValidateScript({ -not [string]::IsNullOrWhiteSpace($_) })]
-    [string]$Task = "Analysiere den Workspace und nenne zuerst Ziel, relevante Architektur, vorhandene Tests und Risiken. Implementiere danach nur die kleinste vollstaendige Aenderung, teste sie mit frischer Evidenz und lasse das Ergebnis durch eine separate read-only Rolle pruefen. Bewahre fremde Aenderungen und fuehre kein Deployment aus."
+    [string]$Task = "Analysiere den Workspace und nenne zuerst Ziel, relevante Architektur, vorhandene Tests und Risiken. Implementiere danach nur die kleinste vollstaendige Aenderung, teste sie mit frischer Evidenz und lasse das Ergebnis durch eine separate read-only Rolle pruefen. Bewahre fremde Aenderungen und fuehre kein Deployment aus.",
+    [string]$ExecutionProfiles = ""
 )
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-& (Join-Path $Root "Start-AI-Studio.ps1") `
-    -Port $Port `
-    -DefaultWorkspace $Workspace `
-    -PreferredAgent "programming-agent" `
-    -PreferredBackend $Backend `
-    -StarterTask $Task `
-    -OpenBrowser
+$studioParameters = @{
+    Port = $Port
+    DefaultWorkspace = $Workspace
+    PreferredAgent = "programming-agent"
+    PreferredBackend = $Backend
+    StarterTask = $Task
+    OpenBrowser = $true
+}
+if ($ExecutionProfiles) {
+    $studioParameters.ExecutionProfiles = $ExecutionProfiles
+}
+& (Join-Path $Root "Start-AI-Studio.ps1") @studioParameters
 exit $LASTEXITCODE

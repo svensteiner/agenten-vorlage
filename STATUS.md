@@ -208,3 +208,14 @@ unter dem Status transport_stopped; zehn Faelle wurden nicht ausgefuehrt.
 Es gab keinen unbekannten Netzwerkausgang. Kein Replay, keine Regel-Lockerung,
 keine semantische Abnahme oder Promotion in den laufenden Marketingbot.
 [Ergebnis und Aussagegrenzen](docs/evidence/host-observations-20261017/semantic-v7-partial.json).
+
+## Coding-Einstieg ueber feste Hostprofile
+
+Der Coding-Launcher uebernimmt jetzt optional `-ExecutionProfiles` und reicht die
+Registry an AI Studio weiter. Die Regression prueft Profil-/Workspace-Pfade mit
+Leerzeichen, den unveraenderten Standardstart und den Rueckgabecode anhand eines
+Mock-Startskripts; sie startet keinen Server oder Provider. Separate Code- und
+Dokumentationsreviews ohne Blocker. Der vollstaendige unittest-Lauf besteht
+541 Faelle (537 bestanden, vier Skips); alle 20 Offline-Releasepruefungen bestehen.
+Die Registry und ein projektspezifischer Testmanifest muessen weiterhin hostseitig
+vorliegen; der Launcher richtet sie nicht automatisch ein.

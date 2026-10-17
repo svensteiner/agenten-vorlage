@@ -27,6 +27,13 @@ isolierten Checkout oder Git-Worktree angeben:
 & .\Start-Coding-Agent.ps1 -Workspace "C:\Pfad\zum\projekt-worktree"
 ```
 
+Mit einer bereits hostseitig eingerichteten Registry kann derselbe Launcher
+`-ExecutionProfiles "C:\Hostkonfiguration\profiles.json"` uebernehmen. Im Cockpit
+das zum Workspace passende Profil waehlen. Ein autonomes Profil bindet die genaue
+Schreibdateiliste und die vollstaendige isolierte Testsuite; frischer Testnachweis
+und separates Review bleiben erforderlich. Ohne Profil bleiben Einzelfreigaben
+aktiv. [Hostgebundene Ausfuehrung](docs/ISOLATED-TEST-EXECUTION.md).
+
 Beide Launcher oeffnen AI Studio, waehlen den passenden Agenten und fuellen einen ersten
 Auftrag vor. Der Text bleibt vor dem Absenden editierbar. Codex- und DeepSeek-Laeufe zeigen
 schreibende Aktionen und Tests einzeln zur Freigabe; Codeaenderungen muessen danach ein
