@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Callable
 
 
-def _replace_checkpoint(temp: str, target: Path) -> None:
+def replace_checkpoint_atomically(temp: str, target: Path) -> None:
     """Retry short Windows sharing violations without changing ACLs.
 
     Windows scanners and a concurrently closing reader can briefly deny an
@@ -46,7 +46,7 @@ def save(
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
-        _replace_checkpoint(temp, path)
+        replace_checkpoint_atomically(temp, path)
     finally:
         if os.path.exists(temp):
             os.unlink(temp)

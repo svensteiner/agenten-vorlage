@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from agentkit.storage import lock
+from agentkit.storage import lock, replace_checkpoint_atomically
 from agentkit.contracts import ContractError
 from cockpit.conversations import Conversations
 from cockpit.public_security import (
@@ -510,7 +510,7 @@ class WorkspaceQuota:
                     os.fsync(handle.fileno())
                 if raw_target.is_symlink() or bool(getattr(raw_target, "is_junction", lambda: False)()):
                     raise ContractError("Storage mutation cannot replace a link or junction.")
-                os.replace(temporary, target)
+                replace_checkpoint_atomically(temporary, target)
             finally:
                 if os.path.exists(temporary):
                     os.unlink(temporary)

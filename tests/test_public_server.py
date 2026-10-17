@@ -117,6 +117,56 @@ class PublicAuditLogTests(unittest.TestCase):
 
 
 class WorkspaceQuotaTests(unittest.TestCase):
+    def test_write_user_retries_transient_windows_checkpoint_sharing_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            target = root / "state" / "state.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"old")
+            quota = WorkspaceQuota(root, allowed_root=root / "workspaces", max_bytes=100, max_files=10)
+            original_replace = os.replace
+            calls = {"count": 0}
+
+            def flaky_replace(source, destination):
+                calls["count"] += 1
+                if calls["count"] < 3:
+                    raise PermissionError("synthetic sharing violation")
+                return original_replace(source, destination)
+
+            with mock.patch("agentkit.storage.os.name", "nt"), mock.patch(
+                "agentkit.storage.os.replace", side_effect=flaky_replace
+            ):
+                quota.write_user(target, b"new")
+
+            self.assertEqual(b"new", target.read_bytes())
+            self.assertEqual(3, calls["count"])
+            self.assertEqual([], list(target.parent.glob(f".{target.name}.*.tmp")))
+            self.assertEqual((3, 1), quota.usage())
+
+    def test_write_user_persistent_permission_error_preserves_checkpoint_and_quota(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "user"
+            target = root / "state" / "state.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"old")
+            quota = WorkspaceQuota(root, allowed_root=root / "workspaces", max_bytes=100, max_files=10)
+            calls = {"count": 0}
+
+            def denied_replace(_source, _destination):
+                calls["count"] += 1
+                raise PermissionError("synthetic sharing violation")
+
+            with mock.patch("agentkit.storage.os.name", "nt"), mock.patch(
+                "agentkit.storage.os.replace", side_effect=denied_replace
+            ):
+                with self.assertRaises(PermissionError):
+                    quota.write_user(target, b"new")
+
+            self.assertEqual(b"old", target.read_bytes())
+            self.assertEqual(6, calls["count"])
+            self.assertEqual([], list(target.parent.glob(f".{target.name}.*.tmp")))
+            self.assertEqual((3, 1), quota.usage())
+
     def test_engine_rolls_back_coordination_files_when_checkpoint_fails(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "user"
