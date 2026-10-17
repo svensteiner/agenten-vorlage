@@ -1,0 +1,58 @@
+{
+  "schema": "agentkit-real-model-trial-terminal/v1",
+  "run_id": "fa796e2198f8432aaeac5388dcb2fccf",
+  "status": "not_qualified",
+  "engine_status": "blocked",
+  "engine_summary": "Der Host muss content/source_qualification_protocol.py für eine erneute RED-Phase auf den verifizierten Baselineinhalt zurücksetzen oder die RED-Sperre für genau diese Wiederherstellung ausnehmen. Danach RED mit den aktuellen Regressionstests erneut ausführen; erst bei gültiger Receipt targeted, full und ein separates Review veranlassen.",
+  "steps": 5,
+  "failures": 3,
+  "in_flight_preserved": false,
+  "changed_workspace_paths": [
+    "content/source_qualification_protocol.py",
+    "tests/unit/test_source_faithfulness_evidence_v2.py",
+    "tests/unit/test_source_qualification_transport.py"
+  ],
+  "changed_paths_outside_allowlist": [],
+  "runtime_files_changed": [],
+  "production_file_changed": true,
+  "operator_code_intervention_during_run": false,
+  "live_marketingbot_changed": false,
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "replay_permitted": false,
+  "phase_observations": [
+    {
+      "phase": "red",
+      "status": "passed",
+      "reason": "expected_red_reproduced",
+      "receipt_sha256": "537493e9f41fbcd7545208a287c90dc7a65208883e3a683a3df307ab2455d158",
+      "cleanup_confirmed": true,
+      "collection": {
+        "count": 4,
+        "nodeids_sha256": "f8f20537f1deac28c8cf57a626beae9022bc60b1724389f4412c8dd9c4b1e391"
+      }
+    },
+    {
+      "phase": "targeted",
+      "status": "failed",
+      "reason": "tests_failed",
+      "receipt_sha256": "a5aa4db3b3ae6f00bb5555f7209191d752ac3c50da7574318cc1219aa639adcd",
+      "cleanup_confirmed": true,
+      "collection": {}
+    }
+  ],
+  "findings": [
+    "A targeted test failure led to a test edit which invalidated RED; production restore was then rejected by the current RED gate.",
+    "Model-facing phase result omitted the bounded failure-output tail retained in the host receipt.",
+    "No full-suite or separate final review; exact final baseline collection preservation is unproven."
+  ],
+  "evidence_sha256": {
+    "preparation.json": "31120758078142e539f6a05a08a2d4f64f6adf69c6c7d1f3486ce294af192985",
+    "runtime-release.json": "0d0bd195c73f0576a5c7df0f202900427d4b6e9eb21cba30e82579c36fe4197a",
+    "independent-preflight.json": "3c21cd6146bb5434889523469587a58995c500c1275408d57af7579034f3c9e6",
+    "root-authorization.json": "7935622e6ea6fdd5904e1c4387ad11123056ac8cf5c3edfd591a6a63fb54e140",
+    "dispatch.json": "0911992ac6d29ce3e325ed87915fd73753ca472c60a34823ed44165dec7723d9",
+    "terminal-result.json": "feeaf8aea09a559d1b50e0602d2681145ad175ebb410b9b5e295c9eaa3eac1ba",
+    "post-engine-integrity.json": "6245fb41d917e3f6981063aa5ebebdbb68a86a7638ffceeb77644a2c9ffd6d10"
+  }
+}
