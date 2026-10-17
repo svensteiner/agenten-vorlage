@@ -1,0 +1,73 @@
+--- a/content/tension_generator.py
++++ b/content/tension_generator.py
+@@ -99,6 +99,21 @@
+         "Überschriften, Labels wie 'These' oder 'Grund', Analyse oder Erklärung über den Post."
+     )
+ 
++    # Source-bound news keeps each tone's voice without importing unrelated
++    # example claims or requiring controversy, jokes, questions or word quotas.
++    SOURCE_BOUND_STYLES = {
++        "DIRECT": "Beginne mit dem konkreten Punkt; formuliere klar und ohne dramatische Zuspitzung.",
++        "QUESTIONING": "Eine konkrete Frage ist optional und darf nur eine in der Quelle offene Entscheidung betreffen.",
++        "IRONIC": "Trockene Ironie ist nur bei einem belegten Widerspruch passend; sonst bleibe sachlich.",
++        "VULNERABLE": "Benenne eine belegte Grenze offen, ohne eine eigene Erfahrung oder ein Bekenntnis zu erfinden.",
++        "PROVOCATIVE": "Hinterfrage eine Schlussfolgerung nur soweit die Quellenfakten es tragen; unterstelle keine Motive.",
++        "MINIMAL": "Verdichte die Formulierung ohne Wortquote; wichtige Einschränkungen und Freigaben haben Vorrang.",
++        "AGGRESSIVE": "Formuliere entschieden, aber bewerte eine Praxis nur wenn die Quelle die Bewertung trägt.",
++        "FUNNY": "Leiser Humor ist optional; er darf keine Begebenheit, Gegenüberstellung oder Folge erfinden.",
++        "DATA_DRIVEN": "Nutze eine relevante Messung nur mit ihrer Richtung, Einheit, Bezugsgruppe und Unsicherheit.",
++        "STORY": "Erzähle nur eine belegte Abfolge; ohne Abfolge genügt eine konkrete Beobachtung.",
++    }
++
+     CONTENT_FORMATS = {
+         "forensic_observation": "Eine nüchterne Beobachtung mit einer präzisen fachlichen Einordnung.",
+         "thesis_reason": "Eine klare These und den wichtigsten Grund dafür.",
+@@ -152,6 +167,15 @@
+ 
+         selected_format = self._select_content_format(content_format)
+         tone, tone_instruction = select_tone_with_instruction()
++        if max_chars is not None:
++            style = self.SOURCE_BOUND_STYLES.get(tone.value, self.SOURCE_BOUND_STYLES["DIRECT"])
++            tone_instruction = (
++                f"Tone: {tone.value}. {style} "
++                "Quellenbindung hat Vorrang vor Stil. Nutze keine fremden Beispiel-Fakten. "
++                "Erhalte Faktenrichtung, Einheiten, Zuschreibung, Unsicherheit und erforderliche Freigaben. "
++                "Wähle einen nützlichen belegten Punkt statt einer vollständigen Zusammenfassung. "
++                "Wenn die Quelle keine Pointe trägt, genügt eine präzise Beobachtung."
++            )
+         format_instruction = self.CONTENT_FORMATS[selected_format]
+         persona_json = json.dumps({"label": self._persona}, ensure_ascii=False)
+         system_prompt = (self.SYSTEM_PROMPT_BASE + "\nPERSONA_JSON: " + persona_json +
+--- a/tests/unit/test_tension_generator.py
++++ b/tests/unit/test_tension_generator.py
+@@ -299,3 +299,30 @@
+         gen = TensionGenerator(llm_responder=llm)
+         result = gen.generate("Some observation.")
+         assert result is None
++
++
++@pytest.mark.parametrize("tone", list(TonePreset))
++def test_source_bounded_generation_uses_real_tone_without_legacy_demands(tone):
++    from content.tweet_archetypes import get_tone_instruction
++    llm = MagicMock()
++    llm.generate_freeform.return_value = "Die Ladung hat 12 Tonnen."
++    generator = TensionGenerator(llm_responder=llm)
++    observation = "Die Ladung hat 12 Tonnen. Kontrolle ausstehend; Freigabe durch Mara erforderlich."
++    # Select a real preset; do not replace its real instruction with a fixture.
++    with patch("content.tweet_archetypes.select_tone", return_value=tone):
++        assert generator.generate(observation, max_chars=190) == "Die Ladung hat 12 Tonnen."
++    call = llm.generate_freeform.call_args.kwargs
++    assert get_tone_instruction(tone) not in call["system_prompt"]
++    assert "Tone: " + tone.value in call["system_prompt"]
++    assert "12 Tonnen" in call["user_prompt"]
++    assert "Mara" in call["user_prompt"]
++
++
++@pytest.mark.parametrize("tone", list(TonePreset))
++def test_unbounded_generation_keeps_each_real_legacy_tone(tone):
++    from content.tweet_archetypes import get_tone_instruction
++    llm = MagicMock()
++    llm.generate_freeform.return_value = "Die Ladung hat 12 Tonnen."
++    with patch("content.tweet_archetypes.select_tone", return_value=tone):
++        assert TensionGenerator(llm_responder=llm).generate("Die Ladung hat 12 Tonnen.")
++    assert get_tone_instruction(tone) in llm.generate_freeform.call_args.kwargs["system_prompt"]

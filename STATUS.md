@@ -51,7 +51,11 @@ und der Test erwartet ihr Verbleiben sogar ausdruecklich. Finale Gesamtsuite:
 4.661 bestanden; 693 andere Baseline-Dateien und 84 Ausfuehrungspins unveraendert.
 Keine Uebernahme dieser Variante. Eine getrennte Korrektur ersetzt inzwischen
 die Tonvorgaben tatsaechlich und prueft alle zehn echten Presets; 197 gezielte
-Tests und unabhaengiges Review bestanden, Gesamttest noch offen.
+Tests und unabhaengiges Review bestanden. Ihr [Gesamttest](docs/evidence/execution-profiles-20261017/source-grounded-style-correction.json)
+ist jetzt gruen: 4.670 bestanden, elf Skips und fuenf erwartete Fehlschlaege.
+Der [reviewbare Patch](docs/evidence/execution-profiles-20261017/source-grounded-style.patch)
+ist auf die fruehere isolierte Kandidatenbasis bezogen; keine Produktionsuebernahme.
+Die nachgelagerte echte Inhaltsqualitaet bleibt ungeprueft.
 
 Die getrennte [v12-Diagnose](docs/evidence/execution-profiles-20261017/marketing-fullpath-v12-offline.json)
 besteht 21 Offline-Tests und ein unabhaengiges Review. Sie fixiert Ergebnisdateipfade

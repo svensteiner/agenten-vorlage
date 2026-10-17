@@ -1,0 +1,48 @@
+{
+  "schema": "source-grounded-style-correction/v1",
+  "status": "code_reviewed_full_tests_passed_model_quality_pending",
+  "implementation": "Root correction in a separate isolated snapshot; not the rejected native trial.",
+  "changes": [
+    "Replace legacy tone instruction in bounded news generation before prompt assembly.",
+    "Provide source-bound styles for all ten tone presets; retain every actual legacy tone for max_chars=None.",
+    "Preserve generation limits, original source/retry evidence and source/auditor/gatekeeper rules."
+  ],
+  "source_hashes": {
+    "content/tension_generator.py": "fd8dbe6753e9388b6c8a2f2a1714e7f15777574ede43bbbf1626eceb7f6f7f1a",
+    "tests/unit/test_tension_generator.py": "37a7e8208e09599dc8ef00ab5f39d43f3c51bfc710920973e3d6927d6d8ddc1b"
+  },
+  "test_results": {
+    "targeted_passed": 197,
+    "full_passed": 4670,
+    "full_skipped": 11,
+    "full_xfailed": 5,
+    "full_receipt_sha256": "182670bafc6d6c37c0cc1bda5d8712a198b05ccb8fa751a53d90e70e34c47967",
+    "full_log_sha256": "5c897261724df631be7bbe6cffef75c0796ec0fae614f091c4553974f1c6fda9"
+  },
+  "red_regression": {
+    "receipt_id": "44dbe0aa86e2425b908e98df38ec6ba7",
+    "failed": 10,
+    "passed": 187,
+    "source_hash": "784c4520b521288caec71fbb188e5d532fc5b3cce662c153b702c176f1f25cfa",
+    "scope": "Each actual tone still leaked its legacy instruction into bounded prompts before correction."
+  },
+  "independent_review": "refiner_test_review: no code/test blocker at recorded hashes.",
+  "integrity": {
+    "baseline_checked": 696,
+    "baseline_files_changed": [
+      "content/tension_generator.py",
+      "tests/unit/test_tension_generator.py"
+    ],
+    "product_sources_and_unit_tests_unchanged_during_full_run": true,
+    "additional_test_artifact": "auto-fix/exception_spike/config/defaults.py"
+  },
+  "patch_sha256": "bb4027a229ed51bec6c0db4af9312b94bf205879e9995e78cb0c63436192ae79",
+  "production_qualified": false,
+  "promoted": false,
+  "limits": [
+    "Patch is relative to the earlier isolated candidate, not a standalone upstream installation.",
+    "Synthetic config/bundled browser test adapter; no installed Chrome qualification.",
+    "Unit prompt tests and green full suite do not establish model faithfulness, interest or X reach.",
+    "No native coding autonomy qualification; original bot not modified."
+  ]
+}
