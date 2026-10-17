@@ -1,0 +1,41 @@
+{
+  "schema": "marketing-rss-v16-prospective/v1",
+  "status": "corpus independently reviewed; no model dispatch",
+  "study": "source-fullpath-v16-20261017",
+  "case_count": 4,
+  "observation_characters": {
+    "rss-01": 158,
+    "rss-02": 77,
+    "rss-03": 82,
+    "rss-04": 79
+  },
+  "files": {
+    "cases.json": "674833c95d486141887ca31fd2c45e71b68d56b3835759cb97b303c4323607fa",
+    "expected.json": "0e99f983db7cf6aadda3583a5c84320cbd4d53d51d7133c35fe7cc5961c9132e",
+    "protocol.json": "0f91cc6f6dd58135b9c5a1425de2e3ad14871ac598e0ac58b0619601e2dd0d86",
+    "extraction-provenance.json": "1f65deb1df2cc02d4168f7881d8d23a631ba86d26da985f9f5b597d164440910",
+    "source-research.json": "509927a9fdc628a21bd29b82591df0ba5c88a528ba2f57f830e1d95ee5e60314",
+    "corpus-manifest.json": "58598b984c0da67b899ea9d3b4535fbf055abc5c3f7da9d86c150ae4e82cbc25",
+    "gold-visible-input-independent-audit-v3.json": "046673e39429aad973a509c15dec5366dbf28cd586e78ee6508f98a89932c2c3"
+  },
+  "source_sha256": "e24b2f9bae628e2428b39b787162361a0cb107c382cc9cfff6f1e9f528a10bb0",
+  "replay": "Exact saved XML bytes through designated fetch/parse/extract path; all observations matched; zero replacement characters.",
+  "budget_plan": {
+    "physical_calls_per_case": 16,
+    "physical_calls_total": 64,
+    "local_reserve_usd": 3,
+    "quality_revisions_per_case": 1
+  },
+  "failures_retained": [
+    "Initial corpus used wrong decoder baseline.",
+    "Initial mock made one failed read-only Heise request; no body returned.",
+    "Two independent STOP audits identified inconsistent active provenance.",
+    "Future manifest timestamp corrected to original research capture time; prior value retained."
+  ],
+  "limitations": [
+    "Prospective inputs only; no final posts or usefulness result.",
+    "Four purposive RSS items; no general reliability or reach estimate.",
+    "Empty control lists do not test human-control preservation.",
+    "No production promotion or paid dispatch authorized by this artifact."
+  ]
+}
