@@ -25,6 +25,12 @@ Offline-Gates bestanden; separate Codepruefung ohne Blocker. Keine neue echte
 Modellabnahme der CLI, Cockpit-Anbindung noch offen.
 [Testbelege und Grenzen](docs/evidence/cli-write-policy-20261017/README.md).
 
+GitHub CI deckte danach zwei testinterne Abhaengigkeiten von einer installierten
+Codex-CLI auf Linux auf. Beide Fehler sind lokal mit deaktivierter CLI-Suche
+reproduziert. Nur die Command-Discovery-Fixtures wurden korrigiert, die echten
+Policy-Pruefungen bleiben aktiv. Beide Faelle bestehen ohne CLI; frische volle
+GitHub-Abnahme der Fixturekorrektur steht noch aus.
+
 ## Aktuelle Verifikation der Schreibgrenze
 
 Die separat reviewte strikte WritePolicy ist im Hauptprojekt uebernommen.

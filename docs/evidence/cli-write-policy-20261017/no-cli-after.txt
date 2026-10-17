@@ -1,0 +1,7 @@
+test_codex_policy_mode_uses_read_only_proposal_and_host_execution (tests.test_write_policy.WritePolicyTests.test_codex_policy_mode_uses_read_only_proposal_and_host_execution) ... ok
+test_codex_policy_never_approves_forbidden_proposal (tests.test_write_policy.WritePolicyTests.test_codex_policy_never_approves_forbidden_proposal) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.528s
+
+OK

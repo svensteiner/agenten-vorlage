@@ -266,7 +266,8 @@ class WritePolicyTests(unittest.TestCase):
         (codex_home / "config.toml").write_text(
             '[windows]\nsandbox = "unelevated"\n', encoding="utf-8"
         )
-        with patch.dict(os.environ, {"CODEX_HOME": str(codex_home)}, clear=False):
+        with patch.dict(os.environ, {"CODEX_HOME": str(codex_home)}, clear=False), \
+             patch("agentkit.backends.codex_command", return_value=["codex-fixture"]):
             backend = CodexBackend()
         policy = WritePolicy(["allowed.txt"])
         decision = {
@@ -308,7 +309,8 @@ class WritePolicyTests(unittest.TestCase):
         (codex_home / "config.toml").write_text(
             '[windows]\nsandbox = "unelevated"\n', encoding="utf-8"
         )
-        with patch.dict(os.environ, {"CODEX_HOME": str(codex_home)}, clear=False):
+        with patch.dict(os.environ, {"CODEX_HOME": str(codex_home)}, clear=False), \
+             patch("agentkit.backends.codex_command", return_value=["codex-fixture"]):
             backend = CodexBackend()
         decision = {
             "action": "delegate", "role": "developer", "skills": [],
