@@ -1,0 +1,46 @@
+{
+  "schema": "marketing-source-input-scope/v1",
+  "date": "2026-10-17",
+  "status": "production_qualification_incomplete",
+  "workspace": "C:/agq/marketing-quality-loop-20261017",
+  "sources": {
+    "news_agent.py": {
+      "sha256": "ba5c7836d1f08f38b4644ae95f8be9fd598462737ab210c59969b7b9207dd418",
+      "feed_fetch_lines": [
+        158,
+        170
+      ],
+      "observation_extraction_lines": [
+        204,
+        238
+      ],
+      "feed_parse_lines": [
+        242,
+        270
+      ],
+      "observation_max_chars": 280,
+      "linked_article_fetch": false,
+      "input": "RSS title and optional first description sentence; Atom summary/content equivalent"
+    },
+    "content/linkedin_tweet_generator.py": {
+      "sha256": "22ceb4445c1d985e5237688c0a7d086257ffc87c8c415a3e09accea83b0c49ae",
+      "local_article_read_lines": [
+        182,
+        249
+      ],
+      "observation_extraction_lines": [
+        262,
+        358
+      ],
+      "local_article_read_max_chars": 4000,
+      "emitted_observation_max_chars": 200
+    }
+  },
+  "measurement_constraints": [
+    "The frozen v13 observations of 719-928 characters are laboratory inputs, not representative of either current ingestion path.",
+    "A successful rich-input run would not qualify current production RSS operation.",
+    "Require a fresh independently reviewed cohort using actual RSS extraction before claiming end-to-end production utility.",
+    "No original live bot changes, restarts or X publications were performed for this audit."
+  ],
+  "scope": "Read-only source audit; not network reachability, content quality, security or operational availability proof."
+}

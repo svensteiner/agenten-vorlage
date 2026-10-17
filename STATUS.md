@@ -71,6 +71,14 @@ vor temporaeren Verzeichniswechseln und zeichnet ausschliesslich feste Kategorie
 der tatsaechlichen Auditor-/Gatekeeper-Rueckgaben auf. Kein Modelllauf und kein
 Nachweis besserer Inhalte. Rohantworten werden dafuer nicht gespeichert.
 
+Die [Quellenumfang-Pruefung](docs/evidence/execution-profiles-20261017/marketing-source-input-scope.json)
+zeigt eine weitere Abnahmegrenze: RSS liefert hoechstens 280 Zeichen aus Titel
+und Zusammenfassung und ruft keinen verlinkten Artikel ab. Der lokale
+Artikel-Extraktor erzeugt Beobachtungen von hoechstens 200 Zeichen. Die
+vorbereiteten v13-Laborfaelle mit 719 bis 928 Zeichen sind daher kein
+repraesentativer Nachweis fuer den produktiven RSS-Pfad. Dessen Nutzen muss
+mit frischen, tatsaechlich extrahierten Kurzquellen separat nachgewiesen werden.
+
 ## Verwendung
 
 Nach technischer Freigabe startet `Start-Coding-Agent.ps1 -Workspace <isolierter Checkout>`
