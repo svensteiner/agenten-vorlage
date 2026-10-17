@@ -40,9 +40,26 @@ Der groessere strukturierte API-Kandidat bleibt isoliert. Sicherheitsreview
 fand und korrigierte Fehlerbody-Logging sowie ungueltige Unicode-Surrogate.
 Die ebenfalls nachgewiesene OpenRouter-only-Erreichbarkeitsluecke ohne
 OpenAI-Schluessel ist im isolierten Kandidaten korrigiert; explizite Mock-/
-Local-Konfigurationen bleiben ohne Remotezugriff. 85 gezielte Tests bestehen,
-die finale Review und neue Vollpruefung stehen noch aus. Keine Promotion
-dieses Kandidaten.
+Local-Konfigurationen bleiben ohne Remotezugriff. Die tatsaechlich erfolgreiche
+Providerroute wird erfasst; OpenRouter-Fehlerlogs enthalten keine Antwort-/
+Exception-Texte. 91 gezielte Tests bestanden. Der folgende Vollauf besteht
+4.640 Tests und scheitert an einer alten Testannahme: Ein gemockter Generator
+belegt keine OpenAI-Transportherkunft. Nur diese Assertion wurde auf unknown
+korrigiert; separate Review ohne Blocker und 80 relevante Tests bestanden.
+Der neue Vollauf laeuft noch. Gewoehnliche erfolgreiche Antworttexte werden
+weiterhin teilweise geloggt; keine allgemeine Datenschutzfreigabe. Keine
+Promotion dieses Kandidaten.
+
+## Isolierte Selbsttests: Hostvorpruefung bestanden
+
+Ein echter Docker-Test unter WSL besteht zehn Container- und zwoelf Hostchecks:
+kein Netzwerk, nichtprivilegierter Benutzer, schreibgeschuetzte Root-/Testdatei,
+keine Capabilities, kein Docker-Socket, feste Ressourcen und ein per Digest
+gebundenes Python-Image. Die geschuetzte Hostdatei bleibt unveraendert;
+Containerbereinigung bestaetigt. Separate Sicherheitspruefung ohne Blocker.
+Noch kein AgentKit-Testwerkzeug, keine Projektabhaengigkeiten und kein echter
+Coding-Abschluss darin. run_pytest bleibt unter WritePolicy gesperrt.
+[Belege und verbleibender Integrationsvertrag](docs/evidence/docker-isolation-probe-20261017/README.md).
 
 ## CLI-Dateifreigabe
 

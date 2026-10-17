@@ -1,0 +1,104 @@
+{
+  "image": "python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1",
+  "command": [
+    "wsl",
+    "-d",
+    "Ubuntu",
+    "--",
+    "docker",
+    "--config",
+    "/tmp/agentkit-public-pull-20261017",
+    "run",
+    "--name",
+    "agentkit-probe-ce7cedcee2c546a2bc6569618d109f14",
+    "--pull=never",
+    "--network=none",
+    "--read-only",
+    "--user=65534:65534",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--memory=128m",
+    "--memory-swap=128m",
+    "--cpus=1",
+    "--pids-limit=32",
+    "--ulimit=nofile=64:64",
+    "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777",
+    "--mount",
+    "type=bind,source=/mnt/c/Users/botrunner/Documents/ChatGPT/AGenten vorlage/.runs/qualification/container-probe-293205a58aec4d9e99ef767de478c33f,target=/workspace,readonly",
+    "--workdir=/workspace",
+    "--entrypoint=/usr/local/bin/python",
+    "-i",
+    "python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1",
+    "-I",
+    "-B",
+    "-"
+  ],
+  "scope": "synthetic isolation probe only; no repository code, credentials or agent tool connected",
+  "host_canary_before": "631377fb4fef4157f8d6d878dc9fe8a1b78626af765601e91e0c30b74d52fe23",
+  "exit_code": 0,
+  "stdout": "{\"capabilities_empty\": true, \"external_network_denied\": true, \"no_api_credentials\": true, \"no_docker_socket\": true, \"no_host_mount\": true, \"no_new_privileges\": true, \"nonroot\": true, \"root_readonly\": true, \"scratch_works\": true, \"workspace_readonly\": true}\n",
+  "stderr": "",
+  "inspect_exit_code": 0,
+  "observed_host_config": {
+    "NetworkMode": "none",
+    "ReadonlyRootfs": true,
+    "CapDrop": [
+      "ALL"
+    ],
+    "SecurityOpt": [
+      "no-new-privileges"
+    ],
+    "Memory": 134217728,
+    "MemorySwap": 134217728,
+    "NanoCpus": 1000000000,
+    "PidsLimit": 32,
+    "Binds": null,
+    "Mounts": [
+      {
+        "Type": "bind",
+        "Source": "/mnt/c/Users/botrunner/Documents/ChatGPT/AGenten vorlage/.runs/qualification/container-probe-293205a58aec4d9e99ef767de478c33f",
+        "Target": "/workspace",
+        "ReadOnly": true
+      }
+    ],
+    "Tmpfs": {
+      "/tmp": "rw,noexec,nosuid,nodev,size=16m,mode=1777"
+    },
+    "Ulimits": [
+      {
+        "Name": "nofile",
+        "Hard": 64,
+        "Soft": 64
+      }
+    ]
+  },
+  "observed_user": "65534:65534",
+  "observed_mounts": [
+    {
+      "Type": "bind",
+      "Source": "/mnt/c/Users/botrunner/Documents/ChatGPT/AGenten vorlage/.runs/qualification/container-probe-293205a58aec4d9e99ef767de478c33f",
+      "Destination": "/workspace",
+      "Mode": "",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "verification": {
+    "container_exit_zero": true,
+    "all_probe_checks": true,
+    "network_none": true,
+    "read_only_root": true,
+    "nonroot_user": true,
+    "caps_dropped": true,
+    "no_new_privileges": true,
+    "resource_limits": true,
+    "only_fixture_mount": true,
+    "bounded_tmpfs": true,
+    "bounded_file_descriptors": true,
+    "expected_image": true
+  },
+  "cleanup_exit_code": 0,
+  "host_canary_after": "631377fb4fef4157f8d6d878dc9fe8a1b78626af765601e91e0c30b74d52fe23",
+  "host_canary_unchanged": true,
+  "verified_pass": true
+}

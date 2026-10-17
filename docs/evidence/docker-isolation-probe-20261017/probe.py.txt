@@ -1,0 +1,74 @@
+import hashlib,json,subprocess,sys,uuid
+from pathlib import Path
+q=Path(__file__).resolve().parent
+fixture=q/('container-probe-'+uuid.uuid4().hex)
+fixture.mkdir()
+canary=fixture/'canary.txt';canary.write_text('protected synthetic fixture\n',encoding='utf-8')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+before=sha(canary)
+image='python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1'
+name='agentkit-probe-'+uuid.uuid4().hex
+prefix=['wsl','-d','Ubuntu','--','docker','--config','/tmp/agentkit-public-pull-20261017']
+mount='/mnt/'+fixture.drive[0].lower()+fixture.as_posix()[2:]
+probe="""import errno,json,os,socket
+from pathlib import Path
+checks={'nonroot':os.getuid()==65534,'no_docker_socket':not Path('/var/run/docker.sock').exists(),'no_host_mount':not Path('/mnt/c').exists(),'no_api_credentials':not any(k.endswith('_API_KEY') for k in os.environ)}
+for label,path in [('workspace_readonly','/workspace/canary.txt'),('root_readonly','/etc/agentkit-probe')]:
+    try: Path(path).write_text('forbidden')
+    except OSError as exc: checks[label]=exc.errno in (errno.EROFS,errno.EACCES)
+    else: checks[label]=False
+s=socket.socket();s.settimeout(1)
+try:s.connect(('1.1.1.1',443))
+except OSError as exc:checks['external_network_denied']=exc.errno in (errno.ENETUNREACH,errno.EHOSTUNREACH,errno.EACCES)
+else:checks['external_network_denied']=False
+finally:s.close()
+Path('/tmp/scratch').write_text('ephemeral')
+checks['scratch_works']=True
+status=Path('/proc/self/status').read_text()
+checks['capabilities_empty']='CapEff:\t0000000000000000' in status
+checks['no_new_privileges']='NoNewPrivs:\t1' in status
+print(json.dumps(checks,sort_keys=True))
+raise SystemExit(0 if all(checks.values()) else 1)
+"""
+args=prefix+['run','--name',name,'--pull=never','--network=none','--read-only','--user=65534:65534','--cap-drop=ALL','--security-opt=no-new-privileges','--memory=128m','--memory-swap=128m','--cpus=1','--pids-limit=32','--ulimit=nofile=64:64','--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777','--mount',f'type=bind,source={mount},target=/workspace,readonly','--workdir=/workspace','--entrypoint=/usr/local/bin/python','-i',image,'-I','-B','-']
+result={'image':image,'command':args,'scope':'synthetic isolation probe only; no repository code, credentials or agent tool connected','host_canary_before':before}
+try:
+    run=subprocess.run(args,input=probe,text=True,capture_output=True,timeout=45)
+    result.update(exit_code=run.returncode,stdout=run.stdout,stderr=run.stderr)
+    inspected=subprocess.run(prefix+['inspect',name],capture_output=True,text=True,timeout=15)
+    result['inspect_exit_code']=inspected.returncode
+    if inspected.returncode==0:
+        observed=json.loads(inspected.stdout)[0]
+        config=observed['HostConfig']
+        result['observed_host_config']={k:config[k] for k in ['NetworkMode','ReadonlyRootfs','CapDrop','SecurityOpt','Memory','MemorySwap','NanoCpus','PidsLimit','Binds','Mounts','Tmpfs','Ulimits'] if k in config}
+        result['observed_user']=observed['Config']['User']
+        result['observed_mounts']=observed['Mounts']
+        checks=json.loads(run.stdout)
+        expected={'nonroot','no_docker_socket','no_host_mount','no_api_credentials','workspace_readonly','root_readonly','external_network_denied','scratch_works','capabilities_empty','no_new_privileges'}
+        mount_info=observed['Mounts']
+        result['verification']={
+            'container_exit_zero':run.returncode==0,
+            'all_probe_checks':set(checks)==expected and all(v is True for v in checks.values()),
+            'network_none':config['NetworkMode']=='none',
+            'read_only_root':config['ReadonlyRootfs'] is True,
+            'nonroot_user':observed['Config']['User']=='65534:65534',
+            'caps_dropped':config['CapDrop']==['ALL'],
+            'no_new_privileges':config['SecurityOpt']==['no-new-privileges'],
+            'resource_limits':config['Memory']==134217728 and config['MemorySwap']==134217728 and config['NanoCpus']==1000000000 and config['PidsLimit']==32,
+            'only_fixture_mount':len(mount_info)==1 and mount_info[0]['Type']=='bind' and mount_info[0]['Source']==mount and mount_info[0]['Destination']=='/workspace' and mount_info[0]['RW'] is False,
+            'bounded_tmpfs':config['Tmpfs']=={'/tmp':'rw,noexec,nosuid,nodev,size=16m,mode=1777'},
+            'bounded_file_descriptors':config['Ulimits']==[{'Name':'nofile','Hard':64,'Soft':64}],
+            'expected_image':observed['Config']['Image']==image,
+        }
+except subprocess.TimeoutExpired:
+    result['timeout']=True
+finally:
+    cleanup=subprocess.run(prefix+['rm','--force',name],capture_output=True,text=True,timeout=20)
+    result['cleanup_exit_code']=cleanup.returncode
+    result['host_canary_after']=sha(canary)
+    result['host_canary_unchanged']=before==sha(canary)
+    result['verified_pass']=bool(result.get('verification')) and all(result['verification'].values()) and result['host_canary_unchanged'] and cleanup.returncode==0
+    (q/'docker-isolation-probe-result-20261017.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+print(json.dumps(result,indent=2))
+
+sys.exit(0 if result.get('verified_pass') else 1)
