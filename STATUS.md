@@ -53,4 +53,3 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 2. Zeichenlimit im echten Generierungspfad angleichen und neue Regressionen pruefen.
 3. Nutzbare, interessante und quellentreue Marketingausgaben unabhaengig nachweisen.
 4. Vollstaendige isolierte Marketingbot-Integration testen; erst danach begrenzt uebernehmen.
-
