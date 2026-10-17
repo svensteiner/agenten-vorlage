@@ -70,3 +70,6 @@ docs/evidence/source-central-live-20261017/*.txt -text
 
 docs/evidence/isolated-test-execution-20261017/*.json -text -whitespace
 docs/evidence/isolated-test-execution-20261017/*.txt -text -whitespace
+
+# Preserve the reviewed quality-revision patch bytes and its receipt hash.
+docs/evidence/execution-profiles-20261017/marketing-quality-revision.patch -text
