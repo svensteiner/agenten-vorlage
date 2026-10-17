@@ -1,0 +1,37 @@
+{
+  "schema": "evaluation-adapter-correction/v1",
+  "status": "offline_verified_independently_reviewed",
+  "production_ready": false,
+  "historical_measurement": {
+    "study": "v10",
+    "accepted": 0,
+    "cases": 4,
+    "physical_requests": 20,
+    "known_cost_usd": "0.032612",
+    "interpretation": "Confounded: clearing routing markers also injected tweet-only instructions into auditor and gatekeeper prompts. Not a valid standalone measure of product quality."
+  },
+  "correction": "Preserve markers during message construction; clear only inside sequential provider dispatch and restore in finally. Actual candidate components and transport accounting retained.",
+  "validation": {
+    "command": "py -3.12 -B -m pytest .runs/qualification/source-fullpath-v11-20261017/test_source_fullpath_v11_eval.py -q",
+    "passed": 18,
+    "seconds": 4.13,
+    "real_api_calls": 0,
+    "candidate_root": "C:/agq/marketing-retry-20261017",
+    "exception_path_restoration_verified": true
+  },
+  "files": {
+    "source_fullpath_v11_eval.py": "5c92976ca270e8ae0be7ec01be7dcffb6f49a9a4dce4c71a66191aa1ae7481be",
+    "test_source_fullpath_v11_eval.py": "75e21b3de3dcf66536f6a74872342ee20ba162131c2d4bbd561d5f5db2b3529b"
+  },
+  "limits": [
+    "Synthetic HTTP responses do not prove model output quality.",
+    "Same fixed model for generation and review is an evaluation-specific routing policy.",
+    "Sequential wrapper is not a concurrent production routing implementation.",
+    "Fresh corpus audit and a new measured model run remain required."
+  ],
+  "independent_review": {
+    "reviewer": "refiner_test_review",
+    "result": "no_blocker",
+    "scope": "sequential evaluator routing, actual audit/gate HTTP prompts, budget/provenance retention, marker restoration on successful and exceptional dispatch"
+  }
+}

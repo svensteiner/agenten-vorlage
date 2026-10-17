@@ -60,4 +60,15 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 Der TypeSafe-Isolationsfehler des v9-Teststarters ist in einer getrennten
 v10-Version korrigiert und unabhaengig geprueft: 18 Offline-Tests bestanden,
 einschliesslich echtem Komponentenablauf mit synthetischem Zusatzschluessel.
-Diese technische Korrektur hat noch keine neue Modellabnahme; v9 bleibt gescheitert.
+Der anschliessende v10-Modellversuch akzeptierte null von vier Faellen bei
+20 abgeschlossenen Anfragen (0,032612 USD). Die Messung ist jedoch verfälscht:
+Der Testadapter entfernte Routing-Marker, die zugleich widerspruechliche
+Tweet-Anweisungen in Inhaltspruefungen verhindern. Deshalb ist v10 kein
+belastbarer alleiniger Nachweis der Produktqualitaet.
+
+Eine getrennte [v11-Korrektur](docs/evidence/execution-profiles-20261017/marketing-fullpath-v11-adapter-correction.json)
+erhaelt diese Marker beim Promptbau und aendert nur den nachfolgenden
+Anbieterdispatch. 18 Offline-Tests bestanden, einschliesslich echter
+Komponenten mit synthetischem HTTP und Pruefung der Audit-/Gate-Nachrichten.
+Unabhaengiges Review ohne Blocker abgeschlossen, inklusive Ausnahmefall bei Dispatch.
+Frische Modellabnahme steht aus. Keine Produktionsfreigabe.
