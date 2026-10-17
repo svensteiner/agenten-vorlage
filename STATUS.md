@@ -106,6 +106,16 @@ enthaelt keine Ersatzzeichen mehr. Der [Patch](docs/evidence/execution-profiles-
 ist eine operatorseitige Korrektur in separater Kopie, keine autonome
 Coding-Abnahme und keine produktive Umstellung.
 
+Die neue [v15-Laborabnahme](docs/evidence/execution-profiles-20261017/marketing-rich-v15-terminal.json)
+endet ebenfalls mit null von vier Endtexten: 13 abgeschlossene Anfragen,
+0,024316 USD und keine unbekannten Ausgaenge/Kosten. Der unabhaengig gepruefte
+Diagnoseadapter besteht 54 Offline-Tests und erfasst einen konkreten
+`quote_mismatch`: Das Modellzitat kommt nicht exakt in der Beobachtung vor.
+Zwei Faelle stoppen mit `repair_failed`, einer erschoepft die Generierung;
+kein Fall erreicht Auditor/Gatekeeper. Die vier erstmalig getesteten reichen
+Quellen sind Laborfaelle ausserhalb des RSS-Zeichenlimits. Auch dieser
+Fehlschlag bleibt erhalten; keine Verbesserung oder Produktionsreife belegt.
+
 ## Verwendung
 
 Nach technischer Freigabe startet `Start-Coding-Agent.ps1 -Workspace <isolierter Checkout>`

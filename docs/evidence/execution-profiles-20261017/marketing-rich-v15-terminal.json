@@ -1,0 +1,104 @@
+{
+  "schema": "marketing-rich-source-terminal/v1",
+  "cohort_id": "fresh-rich-primary-source-v15-20261017",
+  "status": "completed_failed_acceptance",
+  "evaluator_version": "v15",
+  "offline_tests_passed": 54,
+  "case_count": 4,
+  "accepted": 0,
+  "physical_requests": 13,
+  "known_provider_cost_usd": "0.024316",
+  "unknown_cost_requests": 0,
+  "unknown_outcome_requests": 0,
+  "case_status_counts": {
+    "source_rejected_or_unavailable": 3,
+    "regeneration_exhausted": 1
+  },
+  "purpose_counts": {
+    "content_auditor": 0,
+    "content_gatekeeper": 0,
+    "news_generation": 8,
+    "source_repair": 2,
+    "source_review": 3
+  },
+  "qualification_results": [
+    [
+      {
+        "reason_codes": [
+          "repair_failed"
+        ],
+        "repair_calls": 1,
+        "review_calls": 1,
+        "status": "rejected",
+        "task_id": "115a1f5cb17b4061a8abd68db4c412c7",
+        "verification": "unverified"
+      }
+    ],
+    [],
+    [
+      {
+        "reason_codes": [
+          "invalid_response"
+        ],
+        "repair_calls": 0,
+        "review_calls": 1,
+        "status": "error",
+        "task_id": "115a1f5cb17b4061a8abd68db4c412c7",
+        "verification": "unverified"
+      }
+    ],
+    [
+      {
+        "reason_codes": [
+          "repair_failed"
+        ],
+        "repair_calls": 1,
+        "review_calls": 1,
+        "status": "rejected",
+        "task_id": "115a1f5cb17b4061a8abd68db4c412c7",
+        "verification": "unverified"
+      }
+    ]
+  ],
+  "review_parse_failure_diagnostics": [
+    {
+      "case_ordinal": 3,
+      "category": "quote_mismatch",
+      "request_index": 3
+    }
+  ],
+  "result_sha256": "ccbd6dd04b766ec8564818a0da91e738a0261466b9775186cab04aeadc859666",
+  "pins_sha256": "81551cfc9ae28183a05997800f654bf22224c13db2ce481e6613fa7c1b02c285",
+  "prepared_sha256": "3727e9e46bec143d5d63604a5bcd930f85f4ab033d7b5d2702dea5843a53e7c6",
+  "helper_sha256": "6961cf5f88aa6e133e5f29a9017828dc417d15ee066651fa7ff92bcd3187ec34",
+  "tests_sha256": "2cfe54d6a54b2a5cb2aba4d801af8f4c78d8bb26ee3078b95276423bc26dc0e8",
+  "offline_receipt_sha256": "fd50b46c76e836d9ecca4fd173726a3d02abb0b694499b3fc6db6765c1a45224",
+  "cases_sha256": "ce1a8eab635207aed568633dd13676faad8e43b62545a4299ceeaf877258d418",
+  "gold_sha256": "0842fee8b90f7c1f21f62007667888af79c4525988e6011cdd449549fdc21aff",
+  "visible_input_audit_sha256": "a0555f571b206753905550fcf4038da43495bc20f18cecd2bb24685a1a31ebb8",
+  "protocol_sha256": "27ead78b133e96c4540d1a3ff23650d4edbfa41229ed72008b9280719c246eee",
+  "source_and_unit_files_stable_after_run": true,
+  "source_files": 195,
+  "unit_files": 321,
+  "local_reservation_usd": "3.00",
+  "provider_billing_cap_guaranteed": false,
+  "production_qualified": false,
+  "promoted": false,
+  "grading": {
+    "final_outputs": 0,
+    "quality_scores": null,
+    "all_missing_cases_remain_in_denominator": true
+  },
+  "interpretation": [
+    "One invalid source review had a nonempty source_quote not found exactly in the observation; only its fixed category and physical request index were retained.",
+    "Two cases stop with repair_failed; this measurement does not identify their exact repair failure mechanism.",
+    "One case exhausts generation. No case reached ContentAuditor or ContentGatekeeper, so paid evidence for quality revision is still missing."
+  ],
+  "limitations": [
+    "These four719-928character primary-source laboratory observations exceed the current RSS280character ingestion limit.",
+    "No previous model dispatch existed for this frozen corpus; this is a new corpus relative to RSS-v14, not a before/after comparison.",
+    "Fixed Haiku all-purpose routing is evaluator-only, not production routing proof.",
+    "No raw review response/error was retained by the new diagnostics or forwarded to generation.",
+    "No rerun, best-of selection, deployment, original bot restart or X publication."
+  ]
+}
