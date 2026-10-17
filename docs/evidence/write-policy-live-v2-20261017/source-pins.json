@@ -1,0 +1,12 @@
+{
+  "captured": "during ongoing model run; not a pre-run manifest",
+  "head": "1d98f8bea97d3a1690702e4496c1b468f6ed7231",
+  "files": {
+    "agentkit/approvals.py": "da97cacf991d5543dbac3c911208f7ea49474e5200bdb2dd04e1ab7c182e2073",
+    "agentkit/backends.py": "c4eba9f3d04e313b685854c66f6f0f9287efc385df37fbadb6909daa7bd548d0",
+    "agentkit/engine.py": "0c9882d50ce9033367d8809fd697d11c86e29d26438a82c531ea122adc89dfd9",
+    "agentkit/routing.py": "ccd6dc84c73eab4e20b0cd69581fbb30910ccaae16b06cc7ff0e47e7f6a1b8eb",
+    "agentkit/write_policy.py": "65bc013216dcbf6a16d0014dc7e74330a2bbe566de99a11fb9f524a895d9c9ad",
+    ".runs/qualification/write_policy_real_model_v2_job.py": "a6b8f197cc9129f60f3057f1e266415a0923c6f16c4709138f9057e35ead173f"
+  }
+}

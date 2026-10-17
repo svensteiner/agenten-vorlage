@@ -33,10 +33,19 @@ beide streng verworfen, keine verwertbaren Endtexte. Kein Qualitaetsnachweis und
 keine Promotion in den laufenden Bot. Der naechste Ansatz muss die API-Ausgabeform
 verbindlich steuern; die fehlgeschlagenen Abnahmen bleiben bestehen.
 
+Der folgende Test mit eigener Git-Baseline und festen LF-Bytes scheitert im
+normalen Engine-Workflow am Worker-Zeitlimit (75 Sekunden): erlaubte Aenderung
+korrekt, aber keine finale Review. Im getrennten direkten Backend-Negativtest
+werden zwei echte protected.txt-Schreibvorschlaege durch die Hostpolicy
+abgelehnt; die Dateien bleiben gegenueber dem Zustand nach dem Engine-Lauf
+unveraendert. Nur dieser Grenztest ist bestanden, keine allgemeine
+Coding-Abnahme. [Rohbelege und kritische Bewertung](docs/evidence/write-policy-live-v2-20261017/README.md).
+
 ## Bestaetigt
 
-- AgentKit: letzter voller Lauf 432 Tests, drei erwartete Skips, keine Fehler;
-  Ruff, 20 Offline-Gates und Python-/Security-Reviews bestanden. Danach nur Docs.
+- AgentKit: letzter voller kanonischer Lauf 459 Tests inklusive vier Skips,
+  keine Fehler; Ruff und 20 Offline-Gates bestanden. Die strikte Schreibpolicy
+  wurde separat reviewt. Danach nur Dokumentation und isolierte Diagnostik.
 - Marketingbot/master `db358c51`: Quellenbindung und reproduzierter OS-Sperrenfix.
   4.461 Unit-Tests bestanden, elf Skips, fuenf erwartete Fehler, 277,69 Sekunden;
   separate Reviews ohne Blocker. Quellenmetadaten bleiben unverifiziert.
