@@ -1,0 +1,30 @@
+{
+  "schema": "marketing-v16-evidence-v2-tooling/v1",
+  "status": "offline_tooling_review_clear; candidate qualification pending",
+  "offline_tests_passed": 70,
+  "independent_review_sha256": "58556730f8085456a7a90434d895973424ddc1d4a4f91cc4efc30fba1284c5fd",
+  "audited_files": {
+    "source_fullpath_v16_evidence_v2_eval.py": "7d4e4708215e3de050c79a8642473ab1bd6dab788cd20a96d763618bcfbc8882",
+    "test_source_fullpath_v16_evidence_v2_eval.py": "60482de60fb14ca41baea235e88f3705a521b5a543ff0a7045a2620a3dd9438c"
+  },
+  "checks": {
+    "v2_schema_forwarded_exactly_without_maxItems_removal": true,
+    "classifier_requires_exact_protocol_schema_with_nonce_and_canonical_source_fragments": true,
+    "transport_adapter_changes_only_provider_no_fallback_policy": true,
+    "short_source_actual_fullpath_two_draft_cycles_use_fake_http_actual_gates": true,
+    "first_cycle_review_repair_review_nonce_shared_second_cycle_nonce_fresh": true,
+    "all_28_prior_test_functions_retained": true,
+    "no_candidate_or_source_corpus_files_changed": true,
+    "original_v16_tooling_hashes_match_prior_independent_review": true,
+    "active_corpus_gold_and_protocol_match_frozen_manifest": true,
+    "frozen_rejected_v1_bytes_match_rejection_receipt": true
+  },
+  "limitations": [
+    "The successful path is synthetic and offline; it does not qualify candidate quality or production behavior.",
+    "The long-source test confirms the current frozen candidate fails closed on noncanonical IDs before review; it is not a passing long-source qualification.",
+    "The accepted short-source path uses synthetic reviewer, repair, auditor, and gate responses; real model output and quality are untested.",
+    "A prior V1 byte snapshot remains preserved and is the source of truth for the initial rejection."
+  ],
+  "initial_rejected_tooling_audit_sha256": "67d98daf4051b35a00b18db2285b04cdfedbebb48dcb1329a0d10ed1b5ad03a4",
+  "actual_model_calls": 0
+}

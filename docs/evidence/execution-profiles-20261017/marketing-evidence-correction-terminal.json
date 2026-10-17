@@ -1,0 +1,32 @@
+{
+  "schema": "marketing-evidence-correction-terminal/v1",
+  "run_id": "7cb04ba4e8934ec48fd5df0122345c61",
+  "status": "blocked",
+  "session_exit_code": 1,
+  "summary": "ContractError: Path targets internal coordination/cache state.",
+  "production_changes": [],
+  "changed_baseline_test_files": [
+    "tests/unit/test_source_qualification_transport.py",
+    "tests/unit/test_source_faithfulness_evidence_v2.py"
+  ],
+  "runtime_launcher_changes": [],
+  "red": {
+    "receipt_id": "73eb0e8f46de4958952ed1bb97603ca5",
+    "failed": 4,
+    "outcome": "unexpected_red",
+    "red_reproduced": false,
+    "cleanup": "not_required",
+    "reason": "Three ValueError failures and one assertion; task required all four named assertion failures."
+  },
+  "limitations": [
+    "Worker returned a report rejected by host artifact validation; offending path/report was not preserved. In-flight checkpoint remains; no replay or resumption.",
+    "Full inventory audit initially flags .agentkit.lock and state/control_events.jsonl; separate Root baseline audit confirms only two source test files changed.",
+    "No implementation, targeted/full success, final review or content-quality evaluation.",
+    "Original Marketingbot unchanged."
+  ],
+  "artifacts_sha256": {
+    "terminal-result.json": "33d675a9c32667636027382709ab2af6b496ced6c66193cdf2309a3f0bc76311",
+    "post-engine-integrity.json": "68b83cc50bc512fce910fd3dec2ea1a70a641f0bc22976a3288f1635b328d90a",
+    "root-terminal-audit.json": "74cd51810205c2427ded633c5ac4047042c152c0fb02f83c8c43588ab6f2c81c"
+  }
+}

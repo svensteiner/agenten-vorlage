@@ -39,18 +39,26 @@ qualifiziert weder den gestoppten Worker nachtraeglich noch echte Modelllaeufe.
 Numerische Beleg-IDs ersetzen kopierte Zitate, beweisen aber keine semantisch
 richtige Belegwahl. Keine Implementierungs-, Inhalts- oder Produktionsfreigabe.
 
-Der [frische Korrekturauftrag](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-running.json)
-ist nach unabhaengiger Startpruefung und 23 Guard-Tests gestartet. Er verwendet
-einen eigenen 698-Dateien-Snapshot und die gepruefte Runtime `ab73926`.
-Angefordert sind Luna fuer Umsetzung und Sol fuer Review/Nacharbeit. Die beiden
-Quellenbeleg-Fehler sowie Gesamttests und finales Review sind noch offen.
-Der vorherige unbekannte Worker wird nicht wiederholt.
+Der [frische Korrekturauftrag](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-terminal.json)
+stoppte nach dem ersten Entwickleraufruf an der Artefaktpruefung des Berichts.
+Nur zwei Testdateien wurden geaendert, kein Produktionscode. Vier neue Tests
+schlugen fehl; drei ValueError-Ausgaenge erfuellten den geforderten Assertion-
+RED-Nachweis nicht. Runtime, Launcher und Paket blieben unveraendert. Der
+Bericht wurde vor seiner Speicherung abgelehnt; der Checkpoint bleibt
+unbekannt und wird nicht wiederholt. Die Engine muss solche zurueckgegebenen,
+aber ungueltigen Berichte von unterbrochenen Aufrufen unterscheiden koennen,
+ohne Artefaktschutz oder Wiederholungssperren aufzuweichen.
 
 Die [frische RSS-Abnahme](docs/evidence/execution-profiles-20261017/marketing-rss-v16-prospective.json)
 ist unabhaengig auf Quellen und sichtbare Goldlabels geprueft, aber noch ohne
 Modelllauf. Die [Reparaturdiagnose](docs/evidence/execution-profiles-20261017/marketing-v16-diagnostic-tooling.json)
 besteht 67 Offline-Tests; ihre Integration mit dem neuen v2-Kandidaten ist
-noch offen. Die Diagnose veraendert keine Modellantwort oder Freigabe.
+noch offen. Die [separate v2-Diagnose](docs/evidence/execution-profiles-20261017/marketing-v16-evidence-v2-tooling.json)
+besteht 70 Offline-Tests und ein unabhaengiges Review. Sie reicht das tatsaechliche
+Anfrageschema unveraendert weiter. Kurze Quellen durchlaufen den simulierten
+zweistufigen HTTP-Pfad; lange Quellen zeigen noch den bekannten Kandidatenfehler.
+Der korrigierte Kandidat und echte Modellqualitaet sind damit nicht abgenommen.
+Die Diagnose veraendert keine Modellantwort oder Freigabe.
 
 ## Belegt und offen
 
