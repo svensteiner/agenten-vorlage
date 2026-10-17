@@ -71,4 +71,9 @@ erhaelt diese Marker beim Promptbau und aendert nur den nachfolgenden
 Anbieterdispatch. 18 Offline-Tests bestanden, einschliesslich echter
 Komponenten mit synthetischem HTTP und Pruefung der Audit-/Gate-Nachrichten.
 Unabhaengiges Review ohne Blocker abgeschlossen, inklusive Ausnahmefall bei Dispatch.
-Frische Modellabnahme steht aus. Keine Produktionsfreigabe.
+Der frische [v11-Modelllauf](docs/evidence/execution-profiles-20261017/marketing-fullpath-v11-terminal.json)
+ist beendet: null von vier vollstaendigen Ergebnissen, 23 abgeschlossene Anfragen,
+0,037289 USD, keine unbekannten Kosten oder Anfrageausgaenge. Drei Faelle
+bestehen die Quellenqualifikation, scheitern aber am weiteren Qualitaetsablauf;
+ein Fall endet mit Quellenprotokollfehler. Keine Endtexte zur Blindbewertung.
+Produktverbesserung und erneute frische Abnahme bleiben erforderlich. Keine Produktionsfreigabe.

@@ -1,0 +1,28 @@
+{
+  "schema": "marketing-fullpath-terminal/v1",
+  "study": "source-fullpath-v11-20261017",
+  "status": "completed",
+  "accepted_cases": 0,
+  "case_count": 4,
+  "physical_requests": 23,
+  "known_provider_cost_usd": "0.037289",
+  "unknown_cost_requests": 0,
+  "unknown_outcome_requests": 0,
+  "case_status_counts": {
+    "quality_gate_rejected_or_incomplete": 2,
+    "gate_dropped": 1,
+    "source_rejected_or_unavailable": 1
+  },
+  "source_qualification_accepted": 3,
+  "production_qualified": false,
+  "promoted": false,
+  "terminal_result_sha256": "04926b93d89a3f8c9694bb5eddfb12d7cdb4e03c74391b4c7532dea4876b1dee",
+  "pins_sha256": "4e96cc6ff000138ebca59c82af01a2f1a3ea6376aaaaf9f8b91a9058fabd6728",
+  "artifact_path_note": "Relative dispatch paths produced a starting checkpoint at the study root and the terminal result/blind packet beneath the isolated runtime directory. Terminal result identified by status completed; no replay.",
+  "limits": [
+    "Four synthetic cases do not prove general reliability or X reach.",
+    "Auditor/gatekeeper use the fixed diagnostic Haiku routing, not independent production OpenAI review.",
+    "No final outputs; do not assign quality scores to missing outputs.",
+    "Rejection reasons need further diagnosis; do not infer them from status alone."
+  ]
+}
