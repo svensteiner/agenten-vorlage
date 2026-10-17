@@ -1,0 +1,56 @@
+{
+  "audit_type": "arithmetic_and_linkage_addendum",
+  "scope": "Six-case reused synthetic source screen only; no promotion or generalization claim.",
+  "inputs": {
+    "packet": ".runs/qualification/draft-screen-anonymous-packet-v2-20261017.json",
+    "first_grades": ".runs/qualification/draft-screen-blind-grades-20261017.json",
+    "result": ".runs/qualification/source-draft-repair-screen-result-20261017.json",
+    "blind_key": ".runs/qualification/source-draft-repair-screen-blind-key-20261017.json",
+    "summary": ".runs/qualification/source-draft-repair-screen-summary-20261017.json",
+    "first_audit_preserved": ".runs/qualification/draft-screen-first-grade-audit-20261017.json"
+  },
+  "linkage_check": {
+    "prepared_hash_matches_result": true,
+    "result_packet_key_first_grade_and_audit_hashes_match_summary": true,
+    "all_six_blind_ids_map_to_result_case_ids": true,
+    "all_six_packet_drafts_exactly_match_result_outputs": true,
+    "recorded_character_counts_match_recomputed_lengths": true,
+    "case_mapping": {
+      "D01": "seat-cap-boundary",
+      "D02": "quote-scope-variance",
+      "D03": "dock-scan-gap",
+      "D04": "queue-target-boundary",
+      "D05": "sensor-threshold-boundary",
+      "D06": "test-flake-denominator"
+    }
+  },
+  "recomputed_counts": {
+    "assigned": 6,
+    "returned": 6,
+    "within_190_characters": 4,
+    "over_190_characters": 2,
+    "completed_requests": 6,
+    "sum_reported_request_cost_usd": 0.00743,
+    "result_reported_spent_usd": 0.00743,
+    "unknown_cost_requests": 0,
+    "first_grade_mean": 0.75,
+    "audited_mean_after_D01_override": 0.4166666667,
+    "first_grade_source_faithful_count": 1,
+    "audited_source_faithful_count": 0,
+    "hard_failure_records_in_first_grades": 5,
+    "hard_failure_cases": ["D02", "D03", "D04", "D05", "D06"]
+  },
+  "corrections_to_first_audit": [
+    "The expected result and blind-key filenames were wrong in the first audit. They exist at the exact paths listed above, and the linkage and cost/count arithmetic has now been checked.",
+    "The first audit narrative said four other records contained hard-failure arrays. The preserved grade file shows five: D02 through D06.",
+    "The first audit remains unchanged. Its limitations paragraph about absent result/key inputs is superseded by this addendum."
+  ],
+  "status": "failed_developmental_repeated_source_screen",
+  "acceptance": false,
+  "production_ready": false,
+  "promoted": false,
+  "limitations": [
+    "This is a reused six-case synthetic cohort, not a fresh generalization set or real-world performance evidence.",
+    "The score correction is a separate semantic audit judgment; original blind grades remain preserved."
+  ]
+}

@@ -28,10 +28,30 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 aber sieben spaetere Host-Gegenproben widerlegten die technische Abnahme.
 Ein getrennter Folgeauftrag nutzte diese Gegenbeispiele; nach eigener Unicode-
 Nachbesserung und frischer Review bestaetigte der Host 99 gezielte Tests.
-Der ganze Kandidat ist noch nicht vollstaendig regressions- oder qualitaetsgeprueft
-und nicht in den Marketingbot uebernommen. Keine Host-Codehilfe innerhalb der
+Die volle Regression bestand im echten Git-Worktree mit 4.485 Tests. Die folgende
+echte Modellabnahme scheiterte: beide Varianten 0/6 nutzbare Posts, 36 Antworten
+am Markdown-Bold-Filter verworfen; Kosten 0,044962 USD. Keine Uebernahme.
+[Kompletter gescheiterter Vergleich](evidence/source-draft-quality-20261017/README.md). Keine Host-Codehilfe innerhalb der
 Laeufe; der Folgeauftrag ist wegen seiner Host-Gegenbeispiele assistiert markiert.
 [Rohbelege und eingefrorene Quell-/Testsnapshots](evidence/source-draft-coding-20261017/README.md).
+
+### Formatkorrektur: nativer Reparaturlauf, weitere Review-Luecken offen
+
+Der native Lauf `c9a5a44b102c454a8c0917d8135cee3d` bestand nach eigener
+Testnachweis-Nacharbeit und frischer unabhaengiger Review. Der Host bestaetigt
+105 gezielte Tests mit 96,23% Generatorabdeckung; 790 geschuetzte Eingaben
+unveraendert, keine Host-Codehilfe innerhalb des Laufs. Weitere Review findet
+unpassendes generisches Feedback bei semantischen Ablehnungen und fehlende
+Fehlerzaehlung bei verworfenen Formatantworten. Der getrennte Folgeauftrag endete wegen nicht ausreichend sichtbarer Pruefbelege
+ohne finale Review. Hostpruefungen bestaetigen 110 Tests und geschuetzte Eingaben;
+eine anschliessende, explizite Hostkorrektur der Sprachregel besteht 109 Tests.
+Die unterschiedlichen Testumfaenge sind [getrennt dokumentiert](evidence/source-draft-feedback-20261017/README.md).
+Keine Promotion. Der abschliessende echte Git-Worktree besteht 4.495 Tests;
+der folgende Modelltest liefert sechs technisch akzeptierte Entwuerfe, scheitert
+aber an Laenge und unbelegten fachlichen Aussagen. Die getrennte Nachpruefung senkt den
+Notenmittelwert von0,75 auf0,4167/5; fuenf harte Fehlerbefunde bleiben.
+[Erstnoten, Pruefung und Korrekturen](evidence/source-draft-repair-screen-20261017/README.md). Keine Qualitaetsfreigabe.
+[Unveraenderte Lauf-/Quell-/Testbelege](evidence/source-draft-format-20261017/README.md).
 
 ### Reale Quellenbindung: integriert, autonomer Coding-Auftrag nicht bestanden
 

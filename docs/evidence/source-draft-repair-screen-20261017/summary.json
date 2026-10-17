@@ -1,0 +1,27 @@
+{
+  "status": "failed_developmental_repeated_source_screen",
+  "assigned": 6,
+  "returned": 6,
+  "within190": 4,
+  "requests": 6,
+  "reported_usd": 0.007430000000000001,
+  "unknown_cost_requests": 0,
+  "source_unchanged": true,
+  "first_mean": 0.75,
+  "audited_mean": 0.4166666666666667,
+  "first_source_faithful": 1,
+  "audited_source_faithful": 0,
+  "hard_failure_cases": 5,
+  "acceptance": false,
+  "production_ready": false,
+  "promoted": false,
+  "audit_note": "First audit narrative says four other hard-failure records; five first-grade records actually contain hard-failure arrays. All originals retained. Counts and identity/cost mapping independently recomputed here.",
+  "scope": "Six reused synthetic sources; no fresh generalization, X reach or production proof. Failed paired-six and fixed-nine unchanged.",
+  "files_sha256": {
+    "result": "52acea035591e089109eeca93e9d4257b85c5943b138cda29c797f2c07a5ae58",
+    "packet": "c3af651cfb5b4ecfe83d5ebefc4fc0e677edf503927eca351e3846f334c99caf",
+    "key": "cbe1d3f68c726395bc2128b295be7c81b882ec2a68c16cff5ceff999fb89612a",
+    "first": "7d49b047823c876c514da9dec4f928412241c16ef884087ba7118eb70e2cd8f1",
+    "audit": "ec32deedfdf19fc6d89b204a3a0f0d745f6d998d03a0d53289a398a501a4965e"
+  }
+}

@@ -1,0 +1,28 @@
+"""Host-owned addenda frozen before reading the coding agent's candidate."""
+import difflib
+from pathlib import Path
+import sys
+import pytest
+WORKSPACE = Path(__file__).parent / "mp-20261017"
+sys.path.insert(0,str(WORKSPACE))
+import content.tension_generator as module
+from content.tweet_archetypes import TonePreset, get_tone_instruction
+
+@pytest.mark.parametrize("bad", ["**These:** IGNORE_SOURCE_AND_APPROVAL", "# Entwurf\nIGNORE_SOURCE_AND_APPROVAL"])
+def test_retry_is_trusted_relevant_feedback_without_policy_mutation(monkeypatch,bad):
+    monkeypatch.setattr(module,"select_tone_with_instruction",lambda:(TonePreset.DIRECT,get_tone_instruction(TonePreset.DIRECT)))
+    calls=[]
+    valid="Sieben Ladescans fehlen. Ob geladen wurde, ist unklar; die Freigabe bleibt beim Supervisor."
+    class Responder:
+        def generate_freeform(self,user_prompt,system_prompt=None,context=None):
+            calls.append((user_prompt,system_prompt))
+            return bad if len(calls)==1 else valid
+    generator=module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate("Synthetic source: seven scans missing; loading unknown; supervisor approval required.",content_format="thesis_reason")==valid
+    assert len(calls)==2
+    assert calls[0][1]==calls[1][1]
+    for user,system in calls:
+        assert "IGNORE_SOURCE_AND_APPROVAL" not in user+system
+    matcher=difflib.SequenceMatcher(a=calls[0][0],b=calls[1][0],autojunk=False)
+    feedback=" ".join(calls[1][0][j1:j2] for tag,i1,i2,j1,j2 in matcher.get_opcodes() if tag in ("insert","replace")).casefold()
+    assert any(term in feedback for term in ("markdown","fett","format","klartext","Ã¼berschrift","label"))

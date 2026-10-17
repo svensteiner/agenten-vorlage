@@ -1,0 +1,29 @@
+{
+  "native_run": "c9a5a44b102c454a8c0917d8135cee3d",
+  "native_completed": true,
+  "reviewed": true,
+  "steps": 5,
+  "failures": 1,
+  "protected_source_files": 790,
+  "protected_inputs_unchanged": true,
+  "host_code_edits_within_run": false,
+  "host_counterexample_assisted": true,
+  "host_passed": 105,
+  "host_seconds": 21.53,
+  "generator_coverage_percent": 96.23,
+  "full_candidate_regression": "not_run: medium review findings require next native followup",
+  "actual_model_quality": "not_run_for_this_repair",
+  "production_ready": false,
+  "promoted": false,
+  "remaining_review_findings": [
+    "Semantic gate failures receive generic formatting feedback.",
+    "Cleanup-rejected responses are not counted in rejected telemetry."
+  ],
+  "files_sha256": {
+    "execution.json": "d5975cee57658c9468a5209982ed786cf20f93b56cb9e1c72df206ab89c84d19",
+    "candidate.py.txt": "beba9f30243f32a6373badc3ef602a3292485c11874b9b0c1aeb176fa9522f78",
+    "frozen-retry-tests.py.txt": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658",
+    "frozen-host-addenda.py.txt": "5366ef57c9abd62837f3d4a9cc0c760f25f4a580582edfe684f3c3a9a75bc988",
+    "host-tests.txt": "3d75dbb4b771c5395e4e40d9d401802ef503b352cfd97605dd7d35bde6f3840e"
+  }
+}

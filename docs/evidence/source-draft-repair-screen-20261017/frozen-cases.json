@@ -1,0 +1,239 @@
+{
+  "study_id": "source-draft-repair-screen-20261017",
+  "classification": "developmental_repeated_source_screen_not_final_acceptance",
+  "synthetic_only": true,
+  "claims_about_real_world": false,
+  "cases": [
+    {
+      "case_id": "dock-scan-gap",
+      "title": "Dock handover scan gap",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_operations_log",
+        "source_id": "dock-brief-01",
+        "verification": "unverified",
+        "observation": "In a synthetic two-shift depot log, 38 parcels were marked packed by 14:00. Seven had no loading scan at handover. The log does not say whether they were loaded under another batch. A shift supervisor must approve the closeout."
+      },
+      "facts": [
+        "38 parcels were marked packed by 14:00.",
+        "Seven had no loading scan at handover.",
+        "The log does not establish whether another batch contains the loading scans."
+      ],
+      "explicit_uncertainties": [
+        "Missing scan is not proof that the parcels were not loaded.",
+        "No cause, loss, delay, or customer impact is recorded."
+      ],
+      "human_controls": [
+        "A shift supervisor must approve closeout."
+      ],
+      "supported_implications": [
+        "The handover record leaves seven parcel statuses unresolved.",
+        "Closeout depends on the supervisor's review."
+      ],
+      "forbidden_inferences": [
+        "Do not claim seven parcels were lost, delayed, or left behind.",
+        "Do not infer a process failure, staff error, or customer harm.",
+        "Do not suggest removing or bypassing supervisor approval."
+      ],
+      "internal_reader_question": "What does the handover record establish, and what remains unknown?"
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "title": "Training seat cap at the boundary",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_access_register",
+        "source_id": "seat-brief-02",
+        "verification": "unverified",
+        "observation": "In a synthetic training workspace, the seat cap is 12 accounts and the register lists 12 active accounts at 09:00. One access request is pending. The register does not show whether any account is dormant. An administrator must approve account changes."
+      },
+      "facts": [
+        "The configured seat cap is 12 accounts.",
+        "The register lists 12 active accounts at 09:00.",
+        "One access request is pending."
+      ],
+      "explicit_uncertainties": [
+        "The register does not identify dormant accounts.",
+        "The pending request is not evidence that an extra account was created."
+      ],
+      "human_controls": [
+        "An administrator must approve account changes."
+      ],
+      "supported_implications": [
+        "The displayed active-account count is exactly at the configured cap.",
+        "The pending request's status cannot be inferred from the active count."
+      ],
+      "forbidden_inferences": [
+        "Do not claim the cap was exceeded.",
+        "Do not claim there is spare capacity or recommend deleting accounts.",
+        "Do not imply the pending request was approved or provisioned."
+      ],
+      "internal_reader_question": "What can be said when the observed count equals the cap exactly?"
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "title": "Sensor reading exactly at a review threshold",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_maintenance_note",
+        "source_id": "sensor-brief-03",
+        "verification": "unverified",
+        "observation": "A synthetic maintenance note sets a review threshold at 3.0 kW. The latest displayed reading is 3.0 kW at 16:10. The previous displayed reading was 2.8 kW at 15:40. A technician must assess the equipment before any service decision."
+      },
+      "facts": [
+        "The configured review threshold is 3.0 kW.",
+        "The latest displayed reading is 3.0 kW at 16:10.",
+        "The previous displayed reading is 2.8 kW at 15:40."
+      ],
+      "explicit_uncertainties": [
+        "The note does not establish a fault, trend, or cause.",
+        "No reading after 16:10 is provided."
+      ],
+      "human_controls": [
+        "A technician must assess the equipment before a service decision."
+      ],
+      "supported_implications": [
+        "The latest displayed reading is equal to the review threshold.",
+        "The two listed readings differ by 0.2 kW."
+      ],
+      "forbidden_inferences": [
+        "Do not say the threshold was exceeded.",
+        "Do not diagnose a fault or prescribe maintenance.",
+        "Do not treat the two readings as proof of a continuing upward trend."
+      ],
+      "internal_reader_question": "How should equality with a threshold be described without turning it into an exceedance?"
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "title": "Three synthetic service quotes with exclusions",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_procurement_sheet",
+        "source_id": "quotes-brief-04",
+        "verification": "unverified",
+        "observation": "A synthetic procurement sheet lists three service quotes: 11,800 EUR, 12,000 EUR, and 12,400 EUR. Each quote excludes travel expenses. The sheet contains no delivery dates or scope comparison. A budget owner must approve any award."
+      },
+      "facts": [
+        "The listed quote amounts are 11,800 EUR, 12,000 EUR, and 12,400 EUR.",
+        "All three quotes exclude travel expenses.",
+        "The sheet provides no delivery dates or scope comparison."
+      ],
+      "explicit_uncertainties": [
+        "Total costs cannot be compared because travel expenses are excluded and unspecified.",
+        "Comparable scope and delivery timing are unknown."
+      ],
+      "human_controls": [
+        "A budget owner must approve any award."
+      ],
+      "supported_implications": [
+        "The lowest listed amount is not a confirmed total cost.",
+        "The sheet alone does not establish which quote is most suitable."
+      ],
+      "forbidden_inferences": [
+        "Do not call 11,800 EUR the cheapest complete offer.",
+        "Do not infer savings, value, vendor quality, or urgency.",
+        "Do not state or imply an award has been made."
+      ],
+      "internal_reader_question": "What limitation matters when a listed quote excludes an unpriced cost?"
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "title": "Support queue response target at the boundary",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_support_snapshot",
+        "source_id": "queue-brief-05",
+        "verification": "unverified",
+        "observation": "A synthetic support snapshot records 24 tickets opened during one shift. Five remained unassigned at shift end. The oldest unassigned ticket was opened 60 minutes earlier; the internal response target is 60 minutes. The on-duty lead reviews priority assignments."
+      },
+      "facts": [
+        "24 tickets were opened during one shift.",
+        "Five were unassigned at shift end.",
+        "The oldest unassigned ticket was 60 minutes old and the internal response target is 60 minutes."
+      ],
+      "explicit_uncertainties": [
+        "No response-time outcome or customer impact is provided.",
+        "The snapshot does not say whether the target applies to assignment or first response."
+      ],
+      "human_controls": [
+        "The on-duty lead reviews priority assignments."
+      ],
+      "supported_implications": [
+        "The oldest unassigned ticket is exactly at the stated 60-minute target by age.",
+        "The snapshot does not establish whether a response target was missed."
+      ],
+      "forbidden_inferences": [
+        "Do not claim a breach or that every ticket was late.",
+        "Do not infer customer dissatisfaction or service failure.",
+        "Do not replace the lead's priority review with an automated decision."
+      ],
+      "internal_reader_question": "Does the source define what event the response target measures?"
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "title": "Intermittent test in a finite run",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_release_test_log",
+        "source_id": "test-brief-06",
+        "verification": "unverified",
+        "observation": "A synthetic release test log records 49 passes and one intermittent failure across 50 runs. The failure occurred once on a retry and was not reproduced in the next two runs. The log does not identify a cause. A release owner must approve deployment."
+      },
+      "facts": [
+        "The log records 49 passes and one intermittent failure across 50 runs.",
+        "The failure was not reproduced in the next two runs.",
+        "The cause is not identified in the log."
+      ],
+      "explicit_uncertainties": [
+        "Two non-reproductions do not establish that the failure is resolved.",
+        "The log does not identify affected users, severity, or root cause."
+      ],
+      "human_controls": [
+        "A release owner must approve deployment."
+      ],
+      "supported_implications": [
+        "The observed run set contains one failure and 49 passes.",
+        "The evidence is insufficient to identify the failure's cause or resolution."
+      ],
+      "forbidden_inferences": [
+        "Do not summarize the run set as 100% passing.",
+        "Do not claim the failure is harmless, fixed, or caused by a specific component.",
+        "Do not imply deployment approval or remove the release owner's decision."
+      ],
+      "internal_reader_question": "How can the observed pass/fail count be stated without overstating what two retries prove?"
+    }
+  ],
+  "frozen_protocol": {
+    "status": "frozen_before_repaired_candidate_outputs",
+    "scope": "Single repaired drafting component, six previously failed synthetic sources. Sources are reused: not fresh generalization or production/reach proof. Does not replace original failed paired-six or fixed-nine acceptance.",
+    "fixed_controls": {
+      "tone": "DIRECT",
+      "format": "thesis_reason",
+      "character_limit": 190,
+      "reach_context": "Write one concise, concrete implication for an operations reader. Keep facts distinct from inference and conditional proposal. Preserve any stated human approval. No forced question; do not add facts or imply outcomes absent from the source.",
+      "reach_context_identical_across_arms": true,
+      "one_post_per_case_per_arm": true
+    },
+    "generation_invocation": "Invoke each arm once per case with its existing up-to-three internal retries. Record every transport/returned attempt. Use only the final result of that invocation; a missing/rejected final result stays failed. No outer retries, replacement runs or best-of selection.",
+    "failure_accounting": "Exactly six assigned cases. Missing, rejected, malformed, or >190-character final outputs stay failures with rating0. No outer retry, replacement or best-of.",
+    "hard_failures": [
+      "Any invented or changed fact, numeric value, unit, count, threshold relation, or causal claim.",
+      "Any missing/altered uncertainty that changes the strength of the source claim.",
+      "Any suggestion that bypasses, removes, or makes optional a stated human approval.",
+      "Any output over 190 characters, missing, rejected, or malformed.",
+      "Omission or weakening of any stated human approval requirement."
+    ],
+    "grader_checklist": [
+      "Does each factual clause trace to one of the listed source facts?",
+      "Are equality, boundary, denominator, unit, and count represented exactly?",
+      "Are unknowns left unknown rather than converted into a diagnosis, cause, breach, failure, outcome, or recommendation?",
+      "Are any implications logically supported and any proposals explicitly conditional with rationale grounded in the source?",
+      "Are required human checks and approvals preserved?",
+      "Is the post a concise standalone idea rather than a summary of every source fact?",
+      "Is it within the actual 190-character limit?"
+    ],
+    "scoring": "Blind single-output usefulness/clarity0..5 per case, with source-faithfulness and hard-failure flags assessed separately. Missing/rejected outputs rating0.",
+    "acceptance": "Developmental screen only: all6 final outputs usable, no hard failures, mean usefulness/clarity at least4.0/5. Even passing does not authorize promotion or erase either previous failed comparison.",
+    "quality_claim_limit": "Supports only regression recovery on these six known sources. Fresh held-out quality, fixed-nine comparison and actual installation operation remain separate."
+  }
+}

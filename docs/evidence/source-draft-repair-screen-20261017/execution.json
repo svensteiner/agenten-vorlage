@@ -1,0 +1,170 @@
+{
+  "status": "outputs_complete",
+  "prepared_sha256": "7b450dfc8579bd766e7a35e7113a3dd2e8c768fa92182d2db8ec94a67f368317",
+  "requests": [
+    {
+      "number": 1,
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "9eb68718523c11a32e1a75c70eb3cdd2350feed0973ce9434acc322a73608b9d",
+      "reported_cost_usd": 0.001294,
+      "response_id": "gen-1792199123-MyiqbObj7r6JnWzrPbP5",
+      "raw_text": "Sieben von 38 Paketen fehlt die Ladescans-Dokumentation – das Depot-Log zeigt keine Rückverfolgbarkeit, weil die Freigabe-Genehmigung des Schichtleiters nicht an eine Vollständigkeitsprüfung gekoppelt ist.",
+      "input_tokens": 894,
+      "output_tokens": 80
+    },
+    {
+      "number": 2,
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "334a779859ab99802eb0f596ccac37c90e03f5690d216e1a6acc274e6650ad70",
+      "reported_cost_usd": 0.001209,
+      "response_id": "gen-1792199126-ms3qtnKPE0ZWTCD5SI3F",
+      "raw_text": "Workspace sitzt am Limit: 12 von 12 Plätzen besetzt, eine Anfrage wartet. Ohne Dormanz-Sicht im Register kann der Admin nicht unterscheiden, ob er freigeben oder erst aufräumen muss.",
+      "input_tokens": 894,
+      "output_tokens": 63
+    },
+    {
+      "number": 3,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "46bb7cd094eb5c6cdb7bd7ea49f4cb64791d45c3390dec46a3a38c3bed0579f6",
+      "reported_cost_usd": 0.00127,
+      "response_id": "gen-1792199128-5fvLhLXEwU63P0IXeXMh",
+      "raw_text": "Schwellenwert erreicht, aber nicht überschritten – die 3,0-kW-Marke ist ein Beobachtungspunkt, kein Alarm. Erst die Technikereinschätzung trennt Routinekontrolle von notwendiger Wartung.",
+      "input_tokens": 905,
+      "output_tokens": 73
+    },
+    {
+      "number": 4,
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "f4ae49afcc62092b779887ef7c4e2e73b04e2ca58ff87046e6c6f081a08e9b19",
+      "reported_cost_usd": 0.001261,
+      "response_id": "gen-1792199129-vI4Jvkqul65PHPqycL6Z",
+      "raw_text": "Vergleichbare Preise ohne Leistungsmerkmale sind wertlos. Ohne Lieferdaten und Leistungsumfang kann der Budget-Owner hier nicht rechtsicher zuschlagen – der niedrigste Preis täuscht über fehlende Transparenz hinweg.",
+      "input_tokens": 896,
+      "output_tokens": 73
+    },
+    {
+      "number": 5,
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "11ed279a843cbebb0d311ee08596c77d62dbbc508a20c2de46fe9d3d99d6c4d8",
+      "reported_cost_usd": 0.001231,
+      "response_id": "gen-1792199131-Nu000BwpXrOAsy5WpWEt",
+      "raw_text": "Fünf Tickets verfehlen das 60-Minuten-Ziel, weil die Schicht-Kapazität zur Prioritätsverteilung nicht ausreicht. Der Lead muss entweder Staffing oder SLA neu kalibrieren.",
+      "input_tokens": 896,
+      "output_tokens": 67
+    },
+    {
+      "number": 6,
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "e7b07535f80ac24d44be5c2f9b421db1a1790711af0fe379b5977f448439946e",
+      "reported_cost_usd": 0.001165,
+      "response_id": "gen-1792199133-6H3yyFiOgynZdayYnepL",
+      "raw_text": "Intermittierende Fehler sind Freigabe-Risiken, die Logs nicht erklären. Der Release Owner braucht vor Approval eine Rootcause-Analyse oder einen Rollback-Plan.",
+      "input_tokens": 895,
+      "output_tokens": 54
+    }
+  ],
+  "reserved_usd": 0.18,
+  "spent_usd": 0.007430000000000001,
+  "unknown_cost_requests": 0,
+  "records": [
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "returned",
+      "text": "Sieben von 38 Paketen fehlt die Ladescans-Dokumentation – das Depot-Log zeigt keine Rückverfolgbarkeit, weil die Freigabe-Genehmigung des Schichtleiters nicht an eine Vollständigkeitsprüfung gekoppelt ist.",
+      "character_count": 205,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "returned",
+      "text": "Workspace sitzt am Limit: 12 von 12 Plätzen besetzt, eine Anfrage wartet. Ohne Dormanz-Sicht im Register kann der Admin nicht unterscheiden, ob er freigeben oder erst aufräumen muss.",
+      "character_count": 182,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "returned",
+      "text": "Schwellenwert erreicht, aber nicht überschritten – die 3,0-kW-Marke ist ein Beobachtungspunkt, kein Alarm. Erst die Technikereinschätzung trennt Routinekontrolle von notwendiger Wartung.",
+      "character_count": 186,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "returned",
+      "text": "Vergleichbare Preise ohne Leistungsmerkmale sind wertlos. Ohne Lieferdaten und Leistungsumfang kann der Budget-Owner hier nicht rechtsicher zuschlagen – der niedrigste Preis täuscht über fehlende Transparenz hinweg.",
+      "character_count": 215,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "returned",
+      "text": "Fünf Tickets verfehlen das 60-Minuten-Ziel, weil die Schicht-Kapazität zur Prioritätsverteilung nicht ausreicht. Der Lead muss entweder Staffing oder SLA neu kalibrieren.",
+      "character_count": 170,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "returned",
+      "text": "Intermittierende Fehler sind Freigabe-Risiken, die Logs nicht erklären. Der Release Owner braucht vor Approval eine Rootcause-Analyse oder einen Rollback-Plan.",
+      "character_count": 159,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      }
+    }
+  ],
+  "passed": false,
+  "quality": "pending_independent_blind_grading",
+  "source_unchanged": true
+}

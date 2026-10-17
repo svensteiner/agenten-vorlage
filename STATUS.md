@@ -52,6 +52,24 @@ rueckwirkend bestanden. Beide Kandidaten bleiben isoliert und unpromoviert.
 [Nachpruefbare Rohbelege](docs/evidence/source-draft-coding-20261017/README.md).
 Live-Handles: privater `.runs/qualification/agentic-qualification-checkpoint-20261017.json`.
 
+## Neueste Nachbesserung
+
+Native Formatkorrektur mit separater Review, danach 105 Hosttests. Der getrennte
+Grund-/Feedback-Folgeauftrag blieb ohne finale Review; der Host bestaetigt
+unveraenderte geschuetzte Eingaben und 110 Tests. Eine anschliessende explizite
+Hostkorrektur beschraenkt die Sprachregel auf Deutsch: 109 gezielte Tests,
+96,36% Generatorabdeckung; voller echter Git-Worktree 4.495 bestanden, elf Skips,
+fuenf erwartete Fehler, 276,61 Sekunden. Der blockierte native Lauf bleibt blockiert.
+[Getrennte Belege](docs/evidence/source-draft-feedback-20261017/README.md).
+
+Der erneute, vor Ausgaben eingefrorene Entwicklungs-Screen liefert sechs
+technisch akzeptierte Entwuerfe in sechs Anfragen fuer 0,00743 USD. Trotzdem
+keine Abnahme: zwei Entwuerfe ueber190 Zeichen und mehrere erfundene fachliche
+Folgerungen. Erstnoten bleiben erhalten; die Quellenpruefung senkt den Mittelwert von0,75
+auf0,4167/5. Keine Ausgabe behaelt das Urteil quellentreu; fuenf haben harte
+Fehlerbefunde. [Getrennte Erstnoten und Audits](docs/evidence/source-draft-repair-screen-20261017/README.md).
+Die bekannten sechs Quellen ersetzen weder neue Faelle noch das feste Neuner-Gate.
+
 ## Offene Abnahme
 
 1. Technische Reparatur und volle Regression bestanden; Uebernahme bleibt von

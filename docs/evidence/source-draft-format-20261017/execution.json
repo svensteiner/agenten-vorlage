@@ -1,0 +1,57 @@
+{
+  "run_id": "c9a5a44b102c454a8c0917d8135cee3d",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 5,
+  "failures": 1,
+  "protected_source_unchanged": true,
+  "pack_unchanged": true,
+  "protected_source_files": 790,
+  "frozen": {
+    "tests/unit/test_source_draft_retry_feedback.py": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658",
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d"
+  },
+  "allowed_initial": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "36037c099fb78c82311a9990df54e670194b6ba6bc79b6b31e6ee21799748b79"
+  },
+  "allowed_final": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "beba9f30243f32a6373badc3ef602a3292485c11874b9b0c1aeb176fa9522f78"
+  },
+  "allowed_changes": [
+    "content/source_draft_contract.py",
+    "content/tension_generator.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

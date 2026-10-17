@@ -1,0 +1,47 @@
+{
+  "case_sha256": "9ee75406332ba702eee88132367e0c07c4971147d57b7c94ae1c43dece251c48",
+  "sources": {
+    "harness": "947f6e7aa7bfbfbdebddf8ad3d199ae4b325d39a99a8099f737a8712e2d36bcd",
+    "old": "eed43549877b8852cdb75e2ed1ccc49bf4b3c8e19910d09f86d3bccd9a87eacd",
+    "new": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c"
+  },
+  "order": [
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "new"
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "new"
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "new"
+    }
+  ],
+  "model": "anthropic/claude-haiku-4.5",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "temperature": 0.85,
+  "max_tokens": 150,
+  "max_requests": 18,
+  "max_reported_or_reserved_usd": 0.75,
+  "reservation_per_request_usd": 0.03,
+  "transport_retries": 0,
+  "reach_context": "Write one concise, concrete implication for an operations reader. Keep facts distinct from inference and conditional proposal. Preserve any stated human approval. No forced question; do not add facts or imply outcomes absent from the source.\nMaximal 190 Zeichen inklusive Leerzeichen. Ein deutscher Einzelpost."
+}

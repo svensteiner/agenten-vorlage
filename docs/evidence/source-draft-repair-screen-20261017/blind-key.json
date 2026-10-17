@@ -1,0 +1,8 @@
+{
+  "D01": "seat-cap-boundary",
+  "D02": "quote-scope-variance",
+  "D03": "dock-scan-gap",
+  "D04": "queue-target-boundary",
+  "D05": "sensor-threshold-boundary",
+  "D06": "test-flake-denominator"
+}

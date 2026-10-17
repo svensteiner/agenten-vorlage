@@ -1,0 +1,42 @@
+{
+  "files": {
+    "execution.json": {
+      "original_name": "source-draft-repair-screen-result-20261017.json",
+      "sha256": "52acea035591e089109eeca93e9d4257b85c5943b138cda29c797f2c07a5ae58"
+    },
+    "prepared.json": {
+      "original_name": "source-draft-repair-screen-prepared-20261017.json",
+      "sha256": "7b450dfc8579bd766e7a35e7113a3dd2e8c768fa92182d2db8ec94a67f368317"
+    },
+    "frozen-cases.json": {
+      "original_name": "source-draft-repair-screen-cases-20261017.json",
+      "sha256": "9ee75406332ba702eee88132367e0c07c4971147d57b7c94ae1c43dece251c48"
+    },
+    "anonymous-packet.json": {
+      "original_name": "draft-screen-anonymous-packet-v2-20261017.json",
+      "sha256": "c3af651cfb5b4ecfe83d5ebefc4fc0e677edf503927eca351e3846f334c99caf"
+    },
+    "blind-key.json": {
+      "original_name": "source-draft-repair-screen-blind-key-20261017.json",
+      "sha256": "cbe1d3f68c726395bc2128b295be7c81b882ec2a68c16cff5ceff999fb89612a"
+    },
+    "first-grades.json": {
+      "original_name": "draft-screen-blind-grades-20261017.json",
+      "sha256": "7d49b047823c876c514da9dec4f928412241c16ef884087ba7118eb70e2cd8f1"
+    },
+    "first-grade-audit.json": {
+      "original_name": "draft-screen-first-grade-audit-20261017.json",
+      "sha256": "ec32deedfdf19fc6d89b204a3a0f0d745f6d998d03a0d53289a398a501a4965e"
+    },
+    "audit-addendum.json": {
+      "original_name": "source-draft-repair-screen-audit-addendum-20261017.json",
+      "sha256": "f12567df239136fe31ac4f47d7fa4e72a1afde0866df061e211910a3be6b3a96"
+    },
+    "summary.json": {
+      "original_name": "source-draft-repair-screen-summary-20261017.json",
+      "sha256": "16e28f74f14369aa9e0fe67abc2016bdeadae9cf4286b5b2a1eaba0864024fc6"
+    }
+  },
+  "acceptance": false,
+  "production_ready": false
+}

@@ -1,0 +1,17 @@
+"""The language repair must not permit English for a German-only draft."""
+import content.tension_generator as module
+from content.tweet_archetypes import TonePreset,get_tone_instruction
+
+def test_nonpersona_retry_preserves_german_output_contract(monkeypatch):
+    monkeypatch.setattr(module,"select_tone_with_instruction",lambda:(TonePreset.DIRECT,get_tone_instruction(TonePreset.DIRECT)))
+    calls=[]
+    valid="Sieben Scans fehlen; der Ladestatus bleibt unklar."
+    class Responder:
+        def generate_freeform(self,user_prompt,system_prompt=None,**kwargs):
+            calls.append(user_prompt)
+            return "这是一个测试消息" if len(calls)==1 else valid
+    generator=module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate("Synthetic source: seven scans absent; loading unknown.",content_format="thesis_reason")==valid
+    assert len(calls)==2
+    assert "englisch" not in calls[1].casefold()
+    assert "deutsch" in calls[1].casefold()

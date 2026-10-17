@@ -1,0 +1,12 @@
+{
+  "native_run_id": "f837a0c6b5a34b5eaa64f0d7d952fd4f",
+  "native_status": "blocked",
+  "native_reviewed": false,
+  "host_tests_before_correction": 110,
+  "host_coverage_before_correction": 96.36,
+  "native_sha256": "0538d2dccdfad3b2a0eb87ec750a97b6d861bbc58cec9c239e30fbe6f9d82986",
+  "postreview_candidate_sha256": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+  "host_postrun_change": "One static language correction changed from German-or-English to German-only after independent medium finding and red regression. No source edits occurred inside native run.",
+  "production_ready": false,
+  "promoted": false
+}

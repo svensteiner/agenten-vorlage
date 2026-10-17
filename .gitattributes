@@ -12,3 +12,14 @@ docs/evidence/source-draft-coding-20261017/*.txt -text
 
 # Preserve exact frozen paid-study captures.
 docs/evidence/source-draft-quality-20261017/*.json -text
+
+# Keep native repair evidence byte-exact.
+docs/evidence/source-draft-format-20261017/*.json -text
+docs/evidence/source-draft-format-20261017/*.txt -text
+
+# Preserve blocked-run and post-review evidence separately.
+docs/evidence/source-draft-feedback-20261017/*.json -text
+docs/evidence/source-draft-feedback-20261017/*.txt -text
+
+# Preserve first grades, subsequent audits, and failed screen capture.
+docs/evidence/source-draft-repair-screen-20261017/*.json -text

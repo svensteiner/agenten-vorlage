@@ -1,0 +1,46 @@
+"""Frozen host counterexamples: rejected formatting must change the next request."""
+import json
+import pytest
+import content.tension_generator as module
+from content.tweet_archetypes import TonePreset, get_tone_instruction
+
+SOURCE = "  Synthetic log: seven loading scans are absent. Loading status is unknown. Supervisor approval remains required.\u2028  "
+VALID = "Sieben Ladescans fehlen. Ob geladen wurde, ist unklar; die Freigabe bleibt beim Supervisor."
+BAD = ["**These:** Sieben Scans fehlen.", "# Entwurf\nSieben Scans fehlen.", "**Grund:** Die Freigabe fehlt."]
+
+@pytest.fixture(autouse=True)
+def fixed_tone(monkeypatch):
+    monkeypatch.setattr(module, "select_tone_with_instruction", lambda: (TonePreset.DIRECT, get_tone_instruction(TonePreset.DIRECT)))
+
+@pytest.mark.parametrize("bad", BAD)
+def test_format_rejection_changes_retry_without_rewriting_source(bad):
+    calls = []
+    class Responder:
+        def generate_freeform(self, user_prompt, system_prompt=None, context=None):
+            calls.append((user_prompt, system_prompt, context))
+            if len(calls) == 1 or user_prompt == calls[0][0]:
+                return bad
+            return VALID
+    generator = module.TensionGenerator(llm_responder=Responder())
+    result = generator.generate(SOURCE, content_format="thesis_reason")
+    assert result == VALID
+    assert len(calls) == 2
+    assert calls[0][0] != calls[1][0]
+    assert bad not in calls[1][0]
+    for user, system, context in calls:
+        lines = [line for line in user.splitlines() if line.startswith("SOURCE_JSON: ")]
+        assert len(lines) == 1
+        assert json.loads(lines[0].removeprefix("SOURCE_JSON: ")) == {"observation": SOURCE, "verification": "unverified"}
+        assert context == {"temperature": 0.85, "max_tokens": 150}
+
+
+def test_persistent_bad_format_still_fails_closed_with_three_calls():
+    calls = []
+    class Responder:
+        def generate_freeform(self, user_prompt, **kwargs):
+            calls.append(user_prompt)
+            return BAD[0]
+    generator = module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate(SOURCE, content_format="thesis_reason") is None
+    assert len(calls) == 3
+    assert module.kill_gate(BAD[0], tone="DIRECT")[0] is False

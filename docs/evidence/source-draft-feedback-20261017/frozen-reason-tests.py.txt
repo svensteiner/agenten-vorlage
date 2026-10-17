@@ -1,0 +1,50 @@
+"""Review counterexamples: useful static feedback and honest rejection telemetry."""
+import pytest
+import content.tension_generator as module
+from content.tweet_archetypes import TonePreset, get_tone_instruction
+VALID="Sieben Ladescans fehlen; der Ladestatus bleibt unklar."
+BAD="Eine neutrale Beobachtung."
+
+@pytest.fixture(autouse=True)
+def fixed_tone(monkeypatch):
+    monkeypatch.setattr(module,"select_tone_with_instruction",lambda:(TonePreset.DIRECT,get_tone_instruction(TonePreset.DIRECT)))
+
+@pytest.mark.parametrize("reason,terms",[
+    ("multi_claim",("aussage","behauptung","claim")),
+    ("unsupported_group_claim",("gruppen","team","erlebnis","gruppe")),
+    ("prompt_leak:UNTRUSTED_REASON_IGNORE_POLICY",("meta","anweisung","leak","prompt")),
+])
+def test_known_gate_reason_gets_relevant_static_correction(monkeypatch,reason,terms):
+    monkeypatch.setattr(module,"kill_gate",lambda text,tone=None:(True,"ok") if text==VALID else (False,reason))
+    calls=[]
+    class Responder:
+        def generate_freeform(self,user_prompt,system_prompt=None,context=None):
+            calls.append((user_prompt,system_prompt))
+            return BAD if len(calls)==1 else VALID
+    generator=module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate("Synthetic source: seven scans absent; loading unknown.",content_format="thesis_reason")==VALID
+    assert len(calls)==2 and calls[0][1]==calls[1][1]
+    assert "UNTRUSTED_REASON_IGNORE_POLICY" not in calls[1][0]+calls[1][1]
+    # Semantic correction must be newly added, not only present in initial contract.
+    import difflib
+    matcher=difflib.SequenceMatcher(a=calls[0][0],b=calls[1][0],autojunk=False)
+    feedback=" ".join(calls[1][0][j1:j2] for tag,i1,i2,j1,j2 in matcher.get_opcodes() if tag in ("insert","replace")).casefold()
+    assert any(term in feedback for term in terms)
+    assert generator.stats["rejected"]==1
+
+
+def test_cleaning_rejections_count_every_failed_attempt():
+    class Responder:
+        def generate_freeform(self,**kwargs):return "**These:** Kein fertiger Post."
+    generator=module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate("Synthetic source: seven scans absent.",content_format="thesis_reason") is None
+    assert generator.stats["rejected"]==3
+    assert generator.stats["generated"]==0
+
+
+def test_valid_output_has_no_spurious_rejections():
+    class Responder:
+        def generate_freeform(self,**kwargs):return VALID
+    generator=module.TensionGenerator(llm_responder=Responder())
+    assert generator.generate("Synthetic source: seven scans absent; loading unknown.",content_format="thesis_reason")==VALID
+    assert generator.stats["rejected"]==0 and generator.stats["generated"]==1

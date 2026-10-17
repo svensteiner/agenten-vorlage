@@ -1,0 +1,64 @@
+{
+  "run_id": "f837a0c6b5a34b5eaa64f0d7d952fd4f",
+  "status": "blocked",
+  "reviewed": false,
+  "steps": 5,
+  "failures": 4,
+  "protected_source_unchanged": true,
+  "pack_unchanged": true,
+  "protected_source_files": 791,
+  "frozen": {
+    "tests/unit/test_source_draft_reason_feedback.py": "4f249e0d985d7d407279d4ee75da40fefc77e605c66dee111b0751b1a326e6fc",
+    "tests/unit/test_source_draft_retry_feedback.py": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d",
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4"
+  },
+  "allowed_initial": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "beba9f30243f32a6373badc3ef602a3292485c11874b9b0c1aeb176fa9522f78"
+  },
+  "allowed_final": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "0538d2dccdfad3b2a0eb87ec750a97b6d861bbc58cec9c239e30fbe6f9d82986"
+  },
+  "allowed_changes": [
+    "content/source_draft_contract.py",
+    "content/tension_generator.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

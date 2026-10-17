@@ -1,0 +1,34 @@
+{
+  "audit_type": "separate_post_grading_review",
+  "study": "draft-screen-anonymous-packet-v2-20261017.json",
+  "preserved_first_grades": "draft-screen-blind-grades-20261017.json",
+  "scope": "All six assigned drafts reviewed against their supplied synthetic source, frozen checklist, hard-failure rules, and 190-character limit. No outputs or first grades were changed.",
+  "records": [
+    {
+      "id": "D01",
+      "first_grade": {
+        "rating": 4.5,
+        "source_faithful": true,
+        "hard_failures": []
+      },
+      "audit": {
+        "rating": 2.5,
+        "source_faithful": false,
+        "hard_failures": [],
+        "finding": "The count, cap, pending request, and lack of dormancy visibility are represented accurately. The final clause goes beyond the source by framing approval versus prior cleanup as an operational necessity. The source does not establish that cleanup is required or that an account should be deleted. This is an unsupported implication that warrants a material rating reduction, but it does not explicitly bypass or remove the administrator approval requirement, so I do not classify it as one of the frozen hard failures."
+      }
+    }
+  ],
+  "arithmetic": {
+    "denominator": 6,
+    "first_grade_mean": 0.75,
+    "audited_mean_if_substituting_only_D01": 0.4166666667,
+    "returned_outputs": 6,
+    "reported_over_190_characters": 2,
+    "screen_outcome": "failed regardless of D01 adjustment: five other drafts were rated 0 and four other records contain hard failures; the first grader's stated no-hard-failure criterion is not met."
+  },
+  "limitations": [
+    "The result and blind-key files were not present at the expected qualification paths, so provider-call count, per-call cost, and identity arithmetic were not independently checked.",
+    "The audit is not a claim of semantic truth or overall quality acceptance."
+  ]
+}

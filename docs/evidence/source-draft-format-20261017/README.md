@@ -1,0 +1,9 @@
+# Native format repair: technically tested, follow-up required
+
+The bounded coding runtime completed run `c9a5a44b102c454a8c0917d8135cee3d` in five steps. Its independent reviewer first refused release for insufficiently auditable test evidence; the agent obtained a fresh test result and a new independent review. Implementation/test steps used Luna; reviews used a separate stronger model. No host source repair occurred inside the run. The task was assisted by host counterexamples and is not first-attempt autonomous qualification.
+
+Frozen regressions before implementation: three failed and one passing fail-closed control. The host subsequently verified 105 targeted tests, including two stronger addenda frozen before candidate inspection, with 96.23% generator coverage. All 790 protected source inputs, the package, and three frozen in-workspace test files remained unchanged. The raw execution retains passed=false pending broader acceptance.
+
+The candidate adds explicit unlabelled plaintext instructions and trusted corrective feedback. Code review found no high-severity security issue, but identified generic formatting feedback for semantic gate failures and missing rejection telemetry for cleanup failures. The separate bounded native follow-up ended blocked without final review, despite later passing host tests; its original evidence remains failed. A subsequent host correction addressed a language-policy conflict. See [follow-up evidence](../source-draft-feedback-20261017/README.md). This candidate is not promoted; no full regression or paid output-quality acceptance is claimed for this repair. The earlier paid comparison remains failed.
+
+The prematurely started full regression was canceled after a pre-copy encoding check failed; it did not test this repair and is not counted as evidence. The live original Marketingbot remains untouched.

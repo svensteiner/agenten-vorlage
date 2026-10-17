@@ -1,0 +1,37 @@
+{
+  "native_status": "blocked",
+  "native_reviewed": false,
+  "native_steps": 5,
+  "native_failures": 4,
+  "protected_source_files": 791,
+  "protected_source_unchanged": true,
+  "pack_unchanged": true,
+  "host_code_edits_within_run": false,
+  "host_counterexample_assisted": true,
+  "native_candidate_host_tests_passed": 110,
+  "postreview_candidate_tests_passed": 109,
+  "postreview_generator_coverage_percent": 96.36,
+  "full_postreview_regression": {
+    "exit_code": 0,
+    "passed": 4495,
+    "skipped": 11,
+    "xfailed": 5,
+    "seconds": 276.61,
+    "log_sha256": "5d6f6e3dca5569061b72272a000c319a2091202420455b701849cd3994e83b9d",
+    "candidate_sha256": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "context": "real detached Marketingbot Git worktree; native blocked result not relabelled; separate host language correction; no live bot changed"
+  },
+  "paid_postreview_quality": "failed developmental known-six source screen;6returned,4within190,5hard-failure records; auditedmean0.4167/5; see ../source-draft-repair-screen-20261017",
+  "production_ready": false,
+  "promoted": false,
+  "files_sha256": {
+    "execution.json": "cac8439a81261883593212655fffec942a8539c32ef5c952bf8040c5de04db62",
+    "native-candidate.py.txt": "0538d2dccdfad3b2a0eb87ec750a97b6d861bbc58cec9c239e30fbe6f9d82986",
+    "postreview-candidate.py.txt": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "frozen-reason-tests.py.txt": "4f249e0d985d7d407279d4ee75da40fefc77e605c66dee111b0751b1a326e6fc",
+    "host-language-test.py.txt": "634e95fad9eed705d2ad7be0b0227862adcd35bbe9dce2bc2df08c0d4b029120",
+    "native-candidate-host-tests.txt": "6650de9b81d9e8a7fe42c769e6776044afc56f74f094ccf71033021fb08b9a37",
+    "postreview-host-tests.txt": "e30a69e712c9860d6961de99f5c1a503ece0f9a3323b4ff1d477112190a32f98",
+    "postreview-correction.json": "49740a669a3ffe9b24455a5f4d1ff27073fe534d4817cae377bb44b8c70fa455"
+  }
+}

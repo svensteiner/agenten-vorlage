@@ -1,0 +1,63 @@
+{
+  "records": [
+    {
+      "id": "D01",
+      "rating": 4.5,
+      "source_faithful": true,
+      "hard_failures": [],
+      "rationale": "Knapper, eigenständiger Grenzfall: exakt 12 von 12; offene Dormanz und ausstehende Anfrage werden nicht als Überschreitung oder Provisionierung dargestellt."
+    },
+    {
+      "id": "D02",
+      "rating": 0,
+      "source_faithful": false,
+      "hard_failures": [
+        "215 Zeichen, über dem Limit von 190.",
+        "Behauptet, der Budget-Owner könne nicht rechtssicher vergeben; die Quelle nennt weder ein Rechtsproblem noch eine Vergabesperre.",
+        "Stellt den niedrigsten Preis als täuschend dar; die Quelle sagt nur, dass Reisekosten ausgeschlossen und Liefertermine sowie Leistungsumfang nicht angegeben sind."
+      ],
+      "rationale": "Die Unsicherheit bei Gesamtpreis und Vergleichbarkeit wird überzeichnet und mit einer unbelegten Rechtsbehauptung verbunden."
+    },
+    {
+      "id": "D03",
+      "rating": 0,
+      "source_faithful": false,
+      "hard_failures": [
+        "205 Zeichen, über dem Limit von 190.",
+        "Behauptet fehlende Rückverfolgbarkeit und eine Ursache in der nicht gekoppelten Freigabe; die Quelle sagt nur, dass sieben Pakete keinen Ladescan bei Übergabe haben und klärt andere Batches nicht."
+      ],
+      "rationale": "Aus fehlenden Scans wird unbelegt ein Prozessversagen samt Ursache abgeleitet."
+    },
+    {
+      "id": "D04",
+      "rating": 0,
+      "source_faithful": false,
+      "hard_failures": [
+        "Behauptet, fünf Tickets verfehlten das Ziel; die Quelle sagt, fünf seien unzugewiesen und das älteste sei genau 60 Minuten alt, während die Zielmessung (Zuweisung oder erste Antwort) offen ist.",
+        "Erfindet unzureichende Schichtkapazität als Ursache.",
+        "Leitet unbelegt eine notwendige Änderung von Personal oder SLA ab."
+      ],
+      "rationale": "Der Entwurf macht aus einem Grenzstand einen SLA-Verstoß und ergänzt eine nicht belegte Ursache."
+    },
+    {
+      "id": "D05",
+      "rating": 0,
+      "source_faithful": false,
+      "hard_failures": [
+        "Behauptet, der Schwellenwert sei kein Alarm; die Quelle definiert ihn als Prüfschwelle, sagt aber nicht, ob er zugleich einen Alarm darstellt.",
+        "Erfindet die Folgerung, die Technikereinschätzung trenne Routinekontrolle von notwendiger Wartung; belegt ist nur, dass ein Techniker vor einer Serviceentscheidung beurteilen muss."
+      ],
+      "rationale": "Der Grenzwert wird korrekt als erreicht, nicht überschritten, beschrieben; die Einordnung als Nicht-Alarm und die Wartungsentscheidung sind jedoch nicht belegt."
+    },
+    {
+      "id": "D06",
+      "rating": 0,
+      "source_faithful": false,
+      "hard_failures": [
+        "Erfindet eine Root-Cause-Analyse oder einen Rollback-Plan als notwendige Vorbedingung für die Freigabe; die Quelle sagt nur, dass ein Release Owner den Deployment-Einsatz freigeben muss.",
+        "Leitet aus einem einzelnen intermittierenden Fehler ein Freigaberisiko ab, ohne die unbekannte Ursache, Schwere oder Auswirkung zu kennen."
+      ],
+      "rationale": "Der Fehler wird nicht als behoben ausgegeben, aber der Entwurf fügt unbelegte Voraussetzungen und Risikoeinstufung hinzu."
+    }
+  ]
+}
