@@ -1,0 +1,14 @@
+{
+  "files_sha256": {
+    "findings.json": "7f6a6178a75e148a8ea82bf759069190f0d64f7c80e461ec7ed272593466a822",
+    "harness.py.txt": "26587539d667c407c8f36455daedd8683bd21baad16544da2d53dd6cb0c317de",
+    "offline-tests.py.txt": "aaef039db0e3b23032b989d579235ea0d0a3bd3d56736e589c2a2531b0689b55",
+    "prepared.json": "4f029eda72d48c1711d39440897942f9ff2bfe728a712c12760acc136e9e1dcd",
+    "result.json": "53ca0d14b2daebd64138e08c8be2132758cc0fa549ecb6ea30ef00fc998d01c8"
+  },
+  "offline_tests_passed": 3,
+  "actual_requests": 2,
+  "both_qualification_results": "error/invalid_response",
+  "quality_qualified": false,
+  "source_parser_changed": false
+}

@@ -1,0 +1,49 @@
+{
+  "study_id": "source-faithfulness-heldout-cases-20261017",
+  "corpus_sha256": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+  "source_sha256": {
+    "harness": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+    "cases": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+    "source_faithfulness": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252"
+  },
+  "full_suite_gate_required": "source-faithfulness-paired-screen-validation-20261017.json",
+  "case_order": [
+    "timeout-unknown-outcome",
+    "approval-and-publication",
+    "reserved-not-spent",
+    "invoice-match-not-payment",
+    "targeted-tests-not-release",
+    "impressions-and-visits"
+  ],
+  "model": "anthropic/claude-haiku-4.5",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "generation": {
+    "temperature": 0.85,
+    "max_tokens": 150,
+    "tone": "DIRECT",
+    "format": "thesis_reason",
+    "language": "German"
+  },
+  "qualification": {
+    "review_temperature": 0.0,
+    "review_max_tokens": 1200,
+    "repair_temperature": 0.85,
+    "repair_max_tokens": 150,
+    "max_repairs": 1,
+    "required_rereview": true
+  },
+  "reach_context": "Eine prägnante, durch die Quelle gestützte Implikation. Erfinde keine Ursachen, Ergebnisse, rechtlichen Anforderungen oder Freigabestände. Erhalte genannte menschliche Kontrollen. Keine erzwungene Frage. Maximal 190 Zeichen inklusive Leerzeichen. Ein deutscher Einzelpost.",
+  "max_calls": 36,
+  "max_reserved_usd": "1.50",
+  "reservation_per_call_usd": "0.04166666",
+  "transport_retries": 0,
+  "outer_generation_retry": false,
+  "prepared_protocol_sha256": "225530e8557c36727f69f414608ca0527763e22bcdb35a1529c05918503f4a39",
+  "quality_claim_limit": "A pass supports only this small synthetic paired study. LLM review and grading do not establish source truth or semantic correctness in general, production readiness, legal/accounting correctness, audience response, or X reach. Prior failed evaluations remain failed."
+}

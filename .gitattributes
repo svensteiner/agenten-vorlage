@@ -30,3 +30,9 @@ docs/evidence/source-faithfulness-module-20261017/*.txt -text
 
 docs/evidence/source-faithfulness-integration-20261017/*.json -text
 docs/evidence/source-faithfulness-integration-20261017/*.txt -text
+
+docs/evidence/source-faithfulness-paired-screen-20261017/*.json -text
+docs/evidence/source-faithfulness-paired-screen-20261017/*.txt -text
+
+docs/evidence/source-faithfulness-protocol-trace-20261017/*.json -text
+docs/evidence/source-faithfulness-protocol-trace-20261017/*.txt -text

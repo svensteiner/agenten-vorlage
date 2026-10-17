@@ -1,0 +1,23 @@
+{
+  "files_sha256": {
+    "anonymous-packet.json": "a63fb6a5c47de779dccd9182b5bdf3e3888fbec672b4a3488a912277f0d8a5d1",
+    "blind-key.json": "123b25a244ceb1333e211ea52bc7e5ff5b4fcbbdb55ee35232931f983933ac1f",
+    "cases.json": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+    "first-grades.json": "b9dfba8c2479adb59197866358dac1c8b15a6694fe597a054e86fa8e195af30b",
+    "full-unit-gate.json": "7e3afb025b048fb991c94ba9f7d39e4a46425eb2557addc48138f697d87bbe23",
+    "grade-audit.json": "33abf3fd425974ba7d0c4c81118c34f0a70215586b2f0c6940b597c76052ade3",
+    "grading-contract.json": "74cd3dc501b058c4e95439fa192ea0c1b450c566a9503998d0b2839e131321b0",
+    "harness.py.txt": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+    "offline-tests.py.txt": "e7e0bf82f4759ffa4a076cee9f07fb4922aa6b6b4280b1182d9691e27fe0a86a",
+    "prepared.json": "a505ba3c38156883cf06a84a0cfe86cb3b1bfccf04f7221084b1392e41eca5d7",
+    "result.json": "c453374eb6681aaafd5f5efc612b51ba876dd4c53f5fdc8cecef15ef2f13955d",
+    "summary.json": "1388104453c65775708ad21bd215a0c631817106850ab25544038e0f2517a939"
+  },
+  "passed": false,
+  "denominator": 6,
+  "new_usable": 0,
+  "full_unit_gate_passed": 4597,
+  "offline_harness_tests": 5,
+  "production_qualified": false,
+  "full_unit_gate_scope": "separatehostadoption in realGitworktree;native194testscopequalificationremainsfailed"
+}

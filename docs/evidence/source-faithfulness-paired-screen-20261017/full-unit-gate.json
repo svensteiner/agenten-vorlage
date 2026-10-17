@@ -1,0 +1,29 @@
+{
+  "exit_code": 0,
+  "passed": 4597,
+  "suite_scope": "complete tests/unit regression in real detached Git worktree",
+  "full_suite": true,
+  "source_files_unchanged": true,
+  "tested_source_sha256": {
+    "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "content/source_faithfulness.py": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118"
+  },
+  "log_sha256": "79160e20796b158dc2b17ad8fd23289139a649c24d6b4c4d0aa8813b72e4fa16",
+  "promoted": false,
+  "native_scope_qualification": false,
+  "prior_failed_run_preserved": "source-faithfulness-news-git-full-20261017.log",
+  "source_sha256": {
+    "cases": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+    "source_faithfulness": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252"
+  },
+  "scope_note": "Complete tests/unit regression; componentstudy only, not Botstartup/production"
+}

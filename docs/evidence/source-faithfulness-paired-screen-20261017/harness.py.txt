@@ -1,0 +1,680 @@
+"""Frozen, bounded paired screen for the held-out source-faithfulness cases.
+
+This qualification harness is deliberately isolated from Bot startup and all
+publishing paths.  ``prepare`` is offline.  ``run`` is a one-shot paid action
+and requires a separately recorded full-suite validation manifest.
+"""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import re
+import secrets
+import sys
+import threading
+import types
+from decimal import Decimal
+
+import requests
+
+BASE = Path(__file__).resolve().parent
+CASES = BASE / "source-faithfulness-heldout-cases-20261017.json"
+PREPARED = BASE / "source-faithfulness-paired-screen-prepared-20261017.json"
+RESULT = BASE / "source-faithfulness-paired-screen-result-20261017.json"
+ANON_PACKET = BASE / "source-faithfulness-paired-screen-anonymous-20261017.json"
+BLIND_KEY = BASE / "source-faithfulness-paired-screen-blind-key-20261017.json"
+LOCK = BASE / "source-faithfulness-paired-screen-attempt-20261017.lock"
+VALIDATION = BASE / "source-faithfulness-paired-screen-validation-20261017.json"
+VALIDATION_LOG = BASE / "source-faithfulness-paired-screen-validation-20261017.log"
+
+WORKSPACE = BASE / "marketing-source-handoff-20261017"
+FAITHFULNESS_WORKSPACE = BASE / "sp-20261017"
+MODEL = "anthropic/claude-haiku-4.5"
+URL = "https://openrouter.ai/api/v1/chat/completions"
+MAX_CALLS = 36
+MAX_USD = Decimal("1.50")
+RESERVE_PER_CALL = Decimal("0.04166666")  # 36 worst-case reservations < $1.50.
+TOTAL_TIMEOUT = 30
+MAX_RESPONSE_BYTES = 1_000_000
+MAX_RETURN_TEXT = 4_000
+CASE_SHA256 = "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1"
+
+SOURCES = {
+    "harness": Path(__file__).resolve(),
+    "cases": CASES,
+    "source_faithfulness": FAITHFULNESS_WORKSPACE / "content/source_faithfulness.py",
+    "tension_generator": WORKSPACE / "content/tension_generator.py",
+    "post_output_guard": WORKSPACE / "content/post_output_guard.py",
+    "kill_gate": WORKSPACE / "content/kill_gate.py",
+    "tweet_archetypes": WORKSPACE / "content/tweet_archetypes.py",
+    "llm_task_budget": FAITHFULNESS_WORKSPACE / "core/llm_task_budget.py",
+    "credential_loader": BASE / "marketing_primary_compare_v3.py",
+}
+EXPECTED_SOURCE_SHA256 = {
+    "cases": CASE_SHA256,
+    "source_faithfulness": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252",
+}
+SECRET = re.compile(r"(?:sk-[A-Za-z0-9_-]{16,}|Bearer\s+[A-Za-z0-9_.-]{16,})", re.I)
+REACH_CONTEXT = (
+    "Eine prägnante, durch die Quelle gestützte Implikation. Erfinde keine Ursachen, "
+    "Ergebnisse, rechtlichen Anforderungen oder Freigabestände. Erhalte genannte "
+    "menschliche Kontrollen. Keine erzwungene Frage. Maximal 190 Zeichen inklusive "
+    "Leerzeichen. Ein deutscher Einzelpost."
+)
+
+
+def require(condition: bool, message: str = "Study precondition failed") -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def unique_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def read_json(path: Path):
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_pairs)
+
+
+def write_json(path: Path, value) -> None:
+    """Create once; never replace an existing study artifact."""
+    encoded = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def save_state(path: Path, value) -> None:
+    """Durably replace only the active result file during its single run."""
+    encoded = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    temporary = path.with_name(path.name + ".tmp")
+    fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError("Pinned module could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def source_hashes() -> dict[str, str]:
+    return {name: digest(path) for name, path in SOURCES.items()}
+
+
+def validate_pins(expected: dict[str, str] | None = None) -> dict[str, str]:
+    actual = source_hashes()
+    literal = {name: actual[name] for name in EXPECTED_SOURCE_SHA256}
+    require(literal == EXPECTED_SOURCE_SHA256, "Pinned component/corpus hashes changed")
+    if expected is not None:
+        require(actual == expected, "Prepared executable-closure hashes changed")
+    return actual
+
+
+def validate_full_suite_gate() -> dict:
+    """Require host evidence covering the exact pinned executable closure."""
+    require(VALIDATION.is_file() and VALIDATION_LOG.is_file(),
+            "Full-suite validation manifest/log must be supplied before qualification")
+    manifest = read_json(VALIDATION)
+    require(manifest.get("exit_code") == 0 and manifest.get("full_suite") is True,
+            "Full-suite validation did not pass")
+    require(manifest.get("log_sha256") == digest(VALIDATION_LOG),
+            "Full-suite log hash mismatch")
+    require(manifest.get("source_sha256") == EXPECTED_SOURCE_SHA256,
+            "Full-suite source pins do not match this job")
+    passed = manifest.get("passed")
+    require(type(passed) is int and passed > 0, "Full-suite pass count missing")
+    return {"exit_code": 0, "passed": passed, "log_sha256": digest(VALIDATION_LOG),
+            "manifest_sha256": digest(VALIDATION)}
+
+
+def prepare() -> None:
+    """Freeze exact held-out input and literal component pins; no credentials."""
+    if any(path.exists() for path in (PREPARED, RESULT, ANON_PACKET, BLIND_KEY, LOCK)):
+        raise RuntimeError("Refusing to overwrite or replay this study")
+    pins = validate_pins()
+    cases_doc = read_json(CASES)
+    require(cases_doc.get("study_id") == "source-faithfulness-heldout-cases-20261017")
+    require(cases_doc.get("synthetic_only") is True and cases_doc.get("real_world_claims") is False)
+    cases = cases_doc.get("cases")
+    require(isinstance(cases, list) and len(cases) == 6)
+    require(len({c.get("case_id") for c in cases}) == 6)
+    require(all(c.get("synthetic") is True and
+                isinstance(c.get("source_record", {}).get("observation"), str) and
+                0 < len(c["source_record"]["observation"]) <= 700 for c in cases))
+    protocol = cases_doc["frozen_protocol"]
+    require(protocol["shared_generation_controls"]["temperature"] == 0.85)
+    require(protocol["shared_generation_controls"]["max_tokens"] == 150)
+    require(protocol["shared_generation_controls"]["tone"] == "DIRECT")
+    require(protocol["shared_generation_controls"]["format"] == "thesis_reason")
+    require(protocol["shared_generation_controls"]["character_limit"] == 190)
+    require(protocol["qualification_controls"]["review_max_tokens"] == 1200)
+    require(protocol["qualification_controls"]["review_calls"] ==
+            "One initial review plus at most one re-review after repair.")
+    order = [case["case_id"] for case in cases]
+    secrets.SystemRandom().shuffle(order)
+    value = {
+        "study_id": cases_doc["study_id"],
+        "corpus_sha256": digest(CASES),
+        "source_sha256": pins,
+        "full_suite_gate_required": str(VALIDATION.name),
+        "case_order": order,
+        "model": MODEL,
+        "endpoint": URL,
+        "generation": {"temperature": 0.85, "max_tokens": 150, "tone": "DIRECT",
+                       "format": "thesis_reason", "language": "German"},
+        "qualification": {"review_temperature": 0.0, "review_max_tokens": 1200,
+                           "repair_temperature": 0.85, "repair_max_tokens": 150,
+                           "max_repairs": 1, "required_rereview": True},
+        "reach_context": REACH_CONTEXT,
+        "max_calls": MAX_CALLS,
+        "max_reserved_usd": str(MAX_USD),
+        "reservation_per_call_usd": str(RESERVE_PER_CALL),
+        "transport_retries": 0,
+        "outer_generation_retry": False,
+        "prepared_protocol_sha256": hashlib.sha256(
+            json.dumps(protocol, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        ).hexdigest(),
+        "quality_claim_limit": protocol["quality_claim_limit"],
+    }
+    write_json(PREPARED, value)
+    print("Prepared six held-out cases offline; no credentials loaded and no requests sent.")
+
+
+def _purge_modules(prefixes: tuple[str, ...]) -> None:
+    for name in list(sys.modules):
+        if any(name == prefix or name.startswith(prefix + ".") for prefix in prefixes):
+            del sys.modules[name]
+
+
+def _load_key_only() -> str:
+    """Call the approved loader, then purge its project imports/path changes."""
+    original_path = list(sys.path)
+    before = set(sys.modules)
+    try:
+        loader = load_module("quality_credential_loader", SOURCES["credential_loader"])
+        key = loader._load_openrouter_key()
+    finally:
+        sys.path[:] = original_path
+        # The loader imports Marketingbot's normal CLI/dotenv chain.  Remove
+        # modules introduced by that chain before installing pinned inert namespaces.
+        for name in list(sys.modules):
+            if name not in before and name != "quality_credential_loader":
+                del sys.modules[name]
+    # Real OpenRouter credentials commonly begin with ``sk-or-v1-``; never
+    # apply the output/log secret detector to the credential itself.
+    if not isinstance(key, str) or not key:
+        raise RuntimeError("Credential loader returned no usable key")
+    return key
+
+
+def load_components():
+    """Load only reviewed files with inert package namespaces; no package init."""
+    _purge_modules(("content", "core", "quality_source_faithfulness"))
+    core = types.ModuleType("core")
+    core.__path__ = [str(FAITHFULNESS_WORKSPACE / "core")]
+    sys.modules["core"] = core
+    control_events = types.ModuleType("core.control_events")
+    control_events.append_control_event = lambda *args, **kwargs: None
+    sys.modules["core.control_events"] = control_events  # Explicitly suppress persistence in this eval.
+    budget_module = load_module("core.llm_task_budget", SOURCES["llm_task_budget"])
+    core.llm_task_budget = budget_module
+    core.control_events = control_events
+
+    content = types.ModuleType("content")
+    content.__path__ = [str(WORKSPACE / "content")]
+    sys.modules["content"] = content
+    for short_name in ("post_output_guard", "kill_gate", "tweet_archetypes"):
+        module = load_module("content." + short_name, SOURCES[short_name])
+        setattr(content, short_name, module)
+    tension_module = load_module("content.tension_generator", SOURCES["tension_generator"])
+    faithfulness_module = load_module("quality_source_faithfulness", SOURCES["source_faithfulness"])
+    # TensionGenerator imports this selector directly; make fixed DIRECT explicit.
+    archetypes = sys.modules["content.tweet_archetypes"]
+    tension_module.select_tone_with_instruction = lambda: (
+        archetypes.TonePreset.DIRECT, archetypes.get_tone_instruction(archetypes.TonePreset.DIRECT))
+    return tension_module.TensionGenerator, faithfulness_module, budget_module
+
+
+def _token_usage(usage) -> dict | None:
+    if not isinstance(usage, dict):
+        return None
+    safe = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = usage.get(key)
+        if type(value) is int and value >= 0:
+            safe[key] = value
+    return safe or None
+
+
+def _provider_cost(usage) -> Decimal | None:
+    value = usage.get("cost") if isinstance(usage, dict) else None
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        return None
+    return Decimal(str(value))
+
+
+def _complete_token_usage(usage: dict | None) -> bool:
+    return bool(usage) and ("total_tokens" in usage or
+                            {"prompt_tokens", "completion_tokens"}.issubset(usage))
+
+
+class Transport:
+    """Single-attempt HTTP adapter that accounts through the active TaskBudget."""
+
+    def __init__(self, key: str, state: dict, persist, budget_module, budget):
+        self.__key = key
+        self.state = state
+        self.persist = persist
+        self.budget_module = budget_module
+        self.budget = budget
+        self.session = requests.Session()
+        self.session.trust_env = False
+        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=0))
+        self.halted = False
+        self.active_case: str | None = None
+        self.phase: str | None = None
+
+    def generate_freeform(self, user_prompt, system_prompt=None, context=None):
+        if self.halted:
+            raise RuntimeError("Qualification transport halted; no retry")
+        if not isinstance(context, dict):
+            raise ValueError("Unexpected call context")
+        task_type = context.get("task_type")
+        if task_type is None:
+            purpose = "generation"
+            require(self.phase == "generation" and
+                    context == {"temperature": 0.85, "max_tokens": 150}, "Unexpected generation call")
+        elif task_type == "source_faithfulness_review":
+            purpose = "review"
+            require(self.phase == "qualification" and
+                    context == {"temperature": 0, "max_tokens": 1200,
+                                "task_type": "source_faithfulness_review"}, "Unexpected review call")
+        elif task_type == "source_faithfulness_repair":
+            purpose = "repair"
+            require(self.phase == "qualification" and
+                    context == {"temperature": 0.85, "max_tokens": 150,
+                                "task_type": "source_faithfulness_repair"}, "Unexpected repair call")
+        else:
+            raise ValueError("Unexpected qualification role")
+        if not isinstance(user_prompt, str) or not isinstance(system_prompt, str):
+            raise ValueError("Malformed prompt input")
+        if len(self.state["requests"]) >= MAX_CALLS:
+            self.halted = True
+            raise RuntimeError("Study call budget exhausted")
+        if Decimal(self.state["reserved_usd"]) + RESERVE_PER_CALL > MAX_USD:
+            self.halted = True
+            raise RuntimeError("Study reservation budget exhausted")
+
+        # Reserve in the same real TaskBudget used by the components, then
+        # persist before starting transport.  A failed/unknown request is never replayed.
+        try:
+            attempt_id = self.budget.reserve("openrouter", MODEL)
+        except self.budget_module.BudgetExceeded:
+            self.halted = True
+            raise
+        item = {"number": len(self.state["requests"]) + 1, "case_id": self.active_case,
+                "purpose": purpose, "task_attempt_id": attempt_id,
+                "status": "started", "reserved_usd": str(RESERVE_PER_CALL),
+                "request_sha256": hashlib.sha256(json.dumps(
+                    {"system": system_prompt, "user": user_prompt}, ensure_ascii=False,
+                    sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()}
+        self.state["requests"].append(item)
+        self.state["reserved_usd"] = str(Decimal(self.state["reserved_usd"]) + RESERVE_PER_CALL)
+        self.state["purpose_costs"][purpose]["reserved_usd"] = str(
+            Decimal(self.state["purpose_costs"][purpose]["reserved_usd"]) + RESERVE_PER_CALL)
+        try:
+            self.persist()
+        except Exception:
+            self.halted = True
+            item["status"] = "checkpoint_failed_before_request"
+            try:
+                self.budget.record(attempt_id, usage=None, status="not_sent")
+            except Exception:
+                pass
+            # Do not retry the checkpoint or start transport.  The one-shot
+            # lock remains in place even if the filesystem cannot persist state.
+            raise RuntimeError("Study checkpoint failed before request; halted") from None
+
+        payload = {"model": MODEL, "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}],
+            "temperature": context["temperature"], "max_tokens": context["max_tokens"],
+            "provider": {"allow_fallbacks": False}}
+        usage = None
+        cost = None
+        recorded = False
+        response_received = False
+        telemetry_rejected = False
+        unknown_cost_counted = False
+        try:
+            replies = queue.Queue(maxsize=1)
+
+            def fetch():
+                try:
+                    with self.session.post(URL, json=payload,
+                            headers={"Authorization": "Bearer " + self.__key},
+                            timeout=(5, 10), allow_redirects=False, stream=True) as response:
+                        if response.status_code != 200:
+                            raise ValueError("Provider status")
+                        body = bytearray()
+                        for chunk in response.iter_content(1024):
+                            if len(body) + len(chunk) > MAX_RESPONSE_BYTES:
+                                raise ValueError("Response limit")
+                            body.extend(chunk)
+                    replies.put((True, bytes(body)))
+                except Exception:
+                    replies.put((False, None))
+
+            threading.Thread(target=fetch, daemon=True).start()
+            try:
+                ok, raw = replies.get(timeout=TOTAL_TIMEOUT)
+            except queue.Empty:
+                raise TimeoutError("Provider deadline") from None
+            if not ok:
+                raise ValueError("Provider request failed")
+            response_received = True
+            envelope = json.loads(raw, object_pairs_hook=unique_pairs)
+            reported = envelope.get("usage") if isinstance(envelope, dict) else None
+            usage = _token_usage(reported)
+            cost = _provider_cost(reported)
+            if cost is not None:
+                item["reported_cost_usd"] = str(cost)
+                self.state["known_provider_cost_usd"] = str(
+                    Decimal(self.state["known_provider_cost_usd"]) + cost)
+                self.state["purpose_costs"][purpose]["known_provider_cost_usd"] = str(
+                    Decimal(self.state["purpose_costs"][purpose]["known_provider_cost_usd"]) + cost)
+            else:
+                item["reported_cost_usd"] = None
+                self.state["purpose_costs"][purpose]["unknown_cost_calls"] += 1
+                unknown_cost_counted = True
+            item["token_usage"] = usage
+            usage_complete = _complete_token_usage(usage)
+            if not usage_complete:
+                self.state["purpose_costs"][purpose]["unknown_token_calls"] += 1
+            if cost is None or not usage_complete:
+                # Incomplete telemetry makes this output ineligible, and no
+                # later paid call may proceed with an unknown study cost.
+                self.budget.record(attempt_id, usage=usage, status="failed_unknown_telemetry")
+                recorded = True
+                telemetry_rejected = True
+                item["status"] = "response_rejected_unknown_telemetry"
+                self.halted = True
+                self.persist()
+                raise RuntimeError("Provider usage/cost telemetry incomplete; halted")
+            expected_identity = (isinstance(envelope, dict) and envelope.get("model") == MODEL
+                                 and isinstance(envelope.get("id"), str)
+                                 and 0 < len(envelope["id"]) <= 256
+                                 and envelope["id"].isprintable() and not SECRET.search(envelope["id"])
+                                 and self.__key not in envelope["id"])
+            choices = envelope.get("choices") if isinstance(envelope, dict) else None
+            choice = choices[0] if isinstance(choices, list) and choices else None
+            message = choice.get("message") if isinstance(choice, dict) else None
+            text = message.get("content") if isinstance(message, dict) else None
+            if (not expected_identity or not isinstance(choice, dict) or choice.get("finish_reason") != "stop"
+                    or not isinstance(text, str) or not text.strip() or len(text) > MAX_RETURN_TEXT
+                    or SECRET.search(text) or self.__key in text):
+                raise ValueError("Provider response validation")
+            self.budget.record(attempt_id, usage=usage, status="ok")
+            recorded = True
+            item["status"] = "completed"
+            item["response_id"] = envelope["id"]
+            self.persist()
+            if Decimal(self.state["known_provider_cost_usd"]) > MAX_USD:
+                self.state["cost_cap_violated"] = True
+                self.halted = True
+                self.persist()
+                raise RuntimeError("Provider-reported cost exceeded study cap")
+            return text
+        except Exception:
+            if not recorded:
+                try:
+                    self.budget.record(attempt_id, usage=usage, status="failed")
+                    recorded = True
+                except Exception:
+                    pass
+            if not telemetry_rejected:
+                item["status"] = ("response_rejected" if response_received else "failed_no_retry")
+                if "reported_cost_usd" not in item:
+                    item["reported_cost_usd"] = None
+                    if not unknown_cost_counted:
+                        self.state["purpose_costs"][purpose]["unknown_cost_calls"] += 1
+                        unknown_cost_counted = True
+                if "token_usage" not in item:
+                    item["token_usage"] = usage
+                    if not _complete_token_usage(usage):
+                        self.state["purpose_costs"][purpose]["unknown_token_calls"] += 1
+                        if not unknown_cost_counted:
+                            self.state["purpose_costs"][purpose]["unknown_cost_calls"] += 1
+                            unknown_cost_counted = True
+            if not response_received:
+                self.state["unknown_outcome_requests"] += 1
+            self.halted = True
+            self.persist()
+            raise RuntimeError("Study request stopped; no transport retry") from None
+
+
+def _install_budget(budget_module):
+    # task_budget() defaults inference to 16; this finite study has a frozen
+    # 36-call ceiling.  Use its same TaskBudget/contextvar with an explicit cap.
+    budget = budget_module.TaskBudget(MAX_CALLS, label="source_faithfulness_paired_screen",
+                                      max_inference_calls=MAX_CALLS)
+    token = budget_module._CURRENT_BUDGET.set(budget)
+    return budget, token
+
+
+def _anonymous_artifacts(state: dict, cases_doc: dict) -> None:
+    """Create shuffled masked grading packet and separate key after outputs exist."""
+    cases = {case["case_id"]: case for case in cases_doc["cases"]}
+    records = {record["case_id"]: record for record in state["records"]}
+    pair_order = list(cases)
+    rng = secrets.SystemRandom()
+    rng.shuffle(pair_order)
+    packet_pairs = []
+    key_rows = []
+    for index, case_id in enumerate(pair_order, 1):
+        case = cases[case_id]
+        record = records[case_id]
+        arms = [("old", record.get("old_text")), ("new", record.get("new_text"))]
+        rng.shuffle(arms)
+        pair_id = f"pair-{index:02d}"
+        masked = {}
+        key_map = {}
+        for label, (arm_name, text) in zip(("A", "B"), arms):
+            masked[label] = {"text": text, "missing_or_rejected": text is None}
+            key_map[label] = arm_name
+        packet_pairs.append({"pair_id": pair_id,
+            "source": {"observation": case["source_record"]["observation"],
+                       "verification": "unverified"},
+            "facts": case["facts"], "explicit_uncertainties": case["explicit_uncertainties"],
+            "human_controls": case["human_controls"],
+            "forbidden_inferences": case["forbidden_inferences"],
+            "option_a": masked["A"], "option_b": masked["B"]})
+        key_rows.append({"pair_id": pair_id, "case_id": case_id, "labels": key_map})
+    packet = {"study_id": state["study_id"], "blind": True,
+              "grading_scope": "Use only the supplied synthetic source and checklist; missing outputs remain failures and are not omitted.",
+              "pairs": packet_pairs}
+    key = {"study_id": state["study_id"], "created_after_outputs": True,
+           "mapping": key_rows}
+    write_json(ANON_PACKET, packet)
+    write_json(BLIND_KEY, key)
+
+
+def run() -> None:
+    """One-shot paired run; never reruns/replaces missing or rejected outputs."""
+    if RESULT.exists() or LOCK.exists() or ANON_PACKET.exists() or BLIND_KEY.exists():
+        raise RuntimeError("Existing attempt must be inspected, never replayed")
+    prepared = read_json(PREPARED)
+    require(prepared.get("study_id") == "source-faithfulness-heldout-cases-20261017")
+    require(prepared.get("corpus_sha256") == CASE_SHA256 and digest(CASES) == CASE_SHA256)
+    prepared_pins = prepared.get("source_sha256")
+    require(isinstance(prepared_pins, dict) and
+            {name: prepared_pins.get(name) for name in EXPECTED_SOURCE_SHA256} == EXPECTED_SOURCE_SHA256)
+    require(prepared.get("model") == MODEL and prepared.get("endpoint") == URL)
+    require(prepared.get("generation") == {"temperature": 0.85, "max_tokens": 150,
+            "tone": "DIRECT", "format": "thesis_reason", "language": "German"})
+    require(prepared.get("qualification") == {"review_temperature": 0.0,
+            "review_max_tokens": 1200, "repair_temperature": 0.85,
+            "repair_max_tokens": 150, "max_repairs": 1, "required_rereview": True})
+    require(prepared.get("max_calls") == MAX_CALLS and
+            prepared.get("max_reserved_usd") == str(MAX_USD) and
+            prepared.get("reservation_per_call_usd") == str(RESERVE_PER_CALL))
+    require(prepared.get("reach_context") == REACH_CONTEXT and
+            prepared.get("outer_generation_retry") is False and
+            prepared.get("transport_retries") == 0)
+    frozen_protocol = read_json(CASES)["frozen_protocol"]
+    protocol_hash = hashlib.sha256(json.dumps(frozen_protocol, sort_keys=True,
+        ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+    require(prepared.get("prepared_protocol_sha256") == protocol_hash)
+    current = validate_pins(prepared_pins)
+    validation = validate_full_suite_gate()
+    cases_doc = read_json(CASES)
+    case_map = {case["case_id"]: case for case in cases_doc["cases"]}
+    order = prepared.get("case_order")
+    require(isinstance(order, list) and len(order) == 6 and set(order) == set(case_map))
+
+    fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="ascii") as handle:
+        handle.write(str(os.getpid()))
+        handle.flush()
+        os.fsync(handle.fileno())
+    state = {
+        "study_id": prepared["study_id"], "status": "starting",
+        "prepared_sha256": digest(PREPARED), "corpus_sha256": CASE_SHA256,
+        "source_sha256": current, "full_suite_validation": validation,
+        "model": MODEL, "max_calls": MAX_CALLS, "max_reserved_usd": str(MAX_USD),
+        "reserved_usd": "0", "known_provider_cost_usd": "0",
+        "unknown_outcome_requests": 0, "cost_cap_violated": False,
+        "purpose_costs": {purpose: {"reserved_usd": "0", "known_provider_cost_usd": "0",
+                                     "unknown_cost_calls": 0, "unknown_token_calls": 0}
+                          for purpose in ("generation", "review", "repair")},
+        "requests": [],
+        "records": [{"case_id": case_id, "status": "pending", "old_text": None,
+                     "new_text": None, "generation_status": "pending",
+                     "qualification_status": "not_started"} for case_id in order],
+        "passed": False, "quality": "pending_independent_blind_grading",
+    }
+    persist = lambda: save_state(RESULT, state)
+    persist()
+    transport = None
+    budget_module = None
+    budget = None
+    budget_token = None
+    try:
+        key = _load_key_only()
+        TensionGenerator, faithfulness, budget_module = load_components()
+        budget, budget_token = _install_budget(budget_module)
+        transport = Transport(key, state, persist, budget_module, budget)
+        del key
+        state["status"] = "running"
+        persist()
+        for record in state["records"]:
+            case = case_map[record["case_id"]]
+            transport.active_case = record["case_id"]
+            transport.phase = "generation"
+            if transport.halted:
+                record.update(status="not_generated_after_transport_stop",
+                              generation_status="not_generated_after_transport_stop",
+                              qualification_status="not_run")
+                persist()
+                continue
+            try:
+                generator = TensionGenerator(llm_responder=transport, logger=lambda *args: None)
+                draft = generator.generate(case["source_record"]["observation"],
+                                           reach_context=REACH_CONTEXT,
+                                           content_format="thesis_reason")
+                if isinstance(draft, str) and draft.strip():
+                    record["old_text"] = draft
+                    record["generation_status"] = "returned"
+                    record["old_character_count"] = len(draft)
+                    record["generator_stats"] = generator.stats
+                else:
+                    record["generation_status"] = "missing_or_rejected"
+                record["status"] = "generated"
+            except Exception:
+                record.update(status="generation_failed", generation_status="missing_or_rejected")
+            if transport.halted:
+                record["qualification_status"] = "not_run_after_transport_stop"
+                persist()
+                continue
+            draft = record.get("old_text")
+            if not draft:
+                record["qualification_status"] = "not_run_missing_initial_draft"
+                persist()
+                continue
+            transport.phase = "qualification"
+            try:
+                qualification = faithfulness.qualify_source_draft(
+                    case["source_record"]["observation"], draft,
+                    reviewer=transport, repairer=transport, max_chars=190)
+                record["qualification"] = {k: qualification.get(k) for k in
+                    ("verification", "review_calls", "repair_calls", "task_id", "status", "reason_codes")}
+                if qualification.get("status") == "accepted" and isinstance(qualification.get("text"), str):
+                    record["new_text"] = qualification["text"]
+                    record["qualification_status"] = "accepted"
+                    record["new_character_count"] = len(qualification["text"])
+                else:
+                    record["qualification_status"] = qualification.get("status", "rejected_or_missing")
+            except Exception:
+                record["qualification_status"] = "error_fail_closed"
+            record["status"] = "complete"
+            persist()
+        state["status"] = "transport_stopped" if transport.halted else "outputs_complete"
+    except Exception as error:
+        state.update(status="stopped", error_type=type(error).__name__)
+    finally:
+        if transport is not None:
+            transport.session.close()
+        if budget is not None:
+            state["task_budget"] = budget.summary()
+        if budget_module is not None and budget_token is not None:
+            budget_module._CURRENT_BUDGET.reset(budget_token)
+        state.pop("active", None)
+        persist()
+    # Create the blind packet only after all six case records are settled,
+    # preserving missing/rejected outputs as null denominator entries.
+    if state["status"] in {"outputs_complete", "transport_stopped", "stopped"}:
+        _anonymous_artifacts(state, cases_doc)
+    report = {"status": state["status"], "case_count": len(state["records"]),
+              "request_count": len(state["requests"]),
+              "known_provider_cost_usd": state["known_provider_cost_usd"],
+              "reserved_usd": state["reserved_usd"],
+              "unknown_outcome_requests": state["unknown_outcome_requests"],
+              "anonymous_packet": str(ANON_PACKET.name)}
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or sys.argv[1] not in {"prepare", "run"}:
+        raise SystemExit("Usage: python source_faithfulness_paired_screen_job.py prepare|run")
+    {"prepare": prepare, "run": run}[sys.argv[1]]()

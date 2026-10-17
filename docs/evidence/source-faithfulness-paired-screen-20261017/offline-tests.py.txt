@@ -1,0 +1,158 @@
+"""Offline regressions for the paired-screen harness; never reads credentials."""
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import types
+import unittest
+from unittest.mock import patch
+
+
+HARNESS = Path(__file__).with_name("source_faithfulness_paired_screen_job.py")
+SPEC = importlib.util.spec_from_file_location("paired_screen_test_target", HARNESS)
+TARGET = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = TARGET
+SPEC.loader.exec_module(TARGET)
+
+
+class FakeBudget:
+    def __init__(self):
+        self.reservations = 0
+        self.records = []
+
+    def reserve(self, provider, model):
+        self.reservations += 1
+        return f"attempt-{self.reservations}"
+
+    def record(self, attempt_id, *, usage=None, status="ok"):
+        self.records.append((attempt_id, usage, status))
+
+
+class FakeResponse:
+    def __init__(self, payload, status_code=200):
+        self.status_code = status_code
+        self.body = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def iter_content(self, chunk_size):
+        yield self.body
+
+
+class FakeSession:
+    def __init__(self, payload=None, status_code=200):
+        self.payload = payload
+        self.status_code = status_code
+        self.calls = 0
+        self.trust_env = True
+
+    def post(self, *args, **kwargs):
+        self.calls += 1
+        return FakeResponse(self.payload, self.status_code)
+
+
+def make_state():
+    return {
+        "requests": [], "reserved_usd": "0", "known_provider_cost_usd": "0",
+        "unknown_outcome_requests": 0,
+        "purpose_costs": {name: {"reserved_usd": "0", "known_provider_cost_usd": "0",
+                                  "unknown_cost_calls": 0, "unknown_token_calls": 0}
+                          for name in ("generation", "review", "repair")},
+    }
+
+
+def make_transport(*, persist=lambda: None, payload=None, status_code=200):
+    budget = FakeBudget()
+    budget_module = types.SimpleNamespace(BudgetExceeded=RuntimeError)
+    transport = TARGET.Transport("sk-or-v1-" + "f" * 32, make_state(), persist,
+                                 budget_module, budget)
+    session = FakeSession(payload, status_code)
+    transport.session = session
+    transport.active_case = "synthetic-test"
+    transport.phase = "generation"
+    return transport, session, budget
+
+
+def success_payload(usage):
+    return {"id": "resp-test", "model": TARGET.MODEL, "usage": usage,
+            "choices": [{"finish_reason": "stop", "message": {"content": "Ein kurzer Testentwurf."}}]}
+
+
+class PairedScreenOfflineTests(unittest.TestCase):
+    def call(self, transport):
+        return transport.generate_freeform("test user", "test system",
+                                            {"temperature": 0.85, "max_tokens": 150})
+
+    def test_key_loader_accepts_normal_openrouter_prefix_without_real_loader(self):
+        fake_loader = types.SimpleNamespace(_load_openrouter_key=lambda: "sk-or-v1-" + "a" * 40)
+        with patch.object(TARGET, "load_module", return_value=fake_loader):
+            value = TARGET._load_key_only()
+        self.assertEqual(value, "sk-or-v1-" + "a" * 40)
+
+    def test_checkpoint_failure_halts_before_http_and_blocks_retries(self):
+        def broken_checkpoint():
+            raise OSError("simulated durable write failure")
+
+        transport, session, budget = make_transport(persist=broken_checkpoint)
+        with self.assertRaisesRegex(RuntimeError, "checkpoint failed"):
+            self.call(transport)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            self.call(transport)
+        self.assertTrue(transport.halted)
+        self.assertEqual(session.calls, 0)
+        self.assertEqual(budget.reservations, 1)
+        self.assertEqual(budget.records[0][2], "not_sent")
+
+    def test_missing_cost_fails_closed_and_does_not_start_another_request(self):
+        transport, session, budget = make_transport(payload=success_payload(
+            {"prompt_tokens": 10, "completion_tokens": 4}))
+        with self.assertRaisesRegex(RuntimeError, "no transport retry"):
+            self.call(transport)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            self.call(transport)
+        self.assertEqual(session.calls, 1)
+        costs = transport.state["purpose_costs"]["generation"]
+        self.assertEqual(costs["unknown_cost_calls"], 1)
+        self.assertEqual(costs["known_provider_cost_usd"], "0")
+        self.assertTrue((costs["known_provider_cost_usd"] != "0") ^ bool(costs["unknown_cost_calls"]))
+        self.assertEqual(budget.records[0][2], "failed_unknown_telemetry")
+
+    def test_incomplete_token_usage_fails_closed_even_when_cost_is_reported(self):
+        transport, session, budget = make_transport(payload=success_payload(
+            {"cost": 0.001, "prompt_tokens": 10}))
+        with self.assertRaisesRegex(RuntimeError, "no transport retry"):
+            self.call(transport)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            self.call(transport)
+        costs = transport.state["purpose_costs"]["generation"]
+        self.assertEqual(session.calls, 1)
+        self.assertEqual(costs["known_provider_cost_usd"], "0.001")
+        self.assertEqual(costs["unknown_cost_calls"], 0)
+        self.assertEqual(costs["unknown_token_calls"], 1)
+        self.assertTrue((costs["known_provider_cost_usd"] != "0") ^ bool(costs["unknown_cost_calls"]))
+        self.assertEqual(budget.records[0][2], "failed_unknown_telemetry")
+
+    def test_non_200_counts_unknown_cost_once_and_blocks_followup(self):
+        transport, session, budget = make_transport(status_code=503)
+        with self.assertRaisesRegex(RuntimeError, "no transport retry"):
+            self.call(transport)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            self.call(transport)
+        costs = transport.state["purpose_costs"]["generation"]
+        self.assertEqual(session.calls, 1)
+        self.assertEqual(costs["unknown_cost_calls"], 1)
+        self.assertEqual(costs["unknown_token_calls"], 1)
+        self.assertEqual(costs["known_provider_cost_usd"], "0")
+        self.assertTrue(bool(costs["unknown_cost_calls"]))
+        self.assertEqual(transport.state["unknown_outcome_requests"], 1)
+        self.assertEqual(budget.records[0][2], "failed")
+
+
+if __name__ == "__main__":
+    unittest.main()

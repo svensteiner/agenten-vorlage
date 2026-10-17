@@ -25,7 +25,9 @@
     "host-event-red.txt": "d16b63bea7701fd208f14fecc8fc5b8eb5083520fdf91571596dfb6b3313cd17",
     "host-event-counterexamples.py.txt": "4b5f50cacda373baac0385d3eeab639e05ce9ff69f98da7abbdbc85e2a84f6e4",
     "host-fixture-tests.txt": "d0b7b52c1136d04cf7aeffd7e5e4eeb2a81379fea7dc9015db77879fc02d1daf",
-    "host-fixture-adaptation.py.txt": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118"
+    "host-fixture-adaptation.py.txt": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+    "host-full-second.txt": "79160e20796b158dc2b17ad8fd23289139a649c24d6b4c4d0aa8813b72e4fa16",
+    "host-full-second-validation.json": "112593759c54230920afb3ba9fc5ccdcac20385284b404e1f0a0c13c4f354c42"
   },
   "separate_host_adoption": {
     "native_candidate_unchanged": true,
@@ -42,13 +44,23 @@
       "seconds": 277.32,
       "failure_scope": "test_news_perspective.py fixtures missing mandatory qualification stub"
     },
-    "full_regression_passed": false,
+    "full_regression_passed": true,
     "fixture_adaptation": {
       "tests_passed": 36,
       "seconds": 3.24,
       "file_sha256": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
-      "full_unit_rerun": "pending",
+      "full_unit_rerun": "4597pass exit0",
       "qualification": "hostfixtureadaptation;notnativeunassisted"
+    },
+    "full_unit_second": {
+      "exit_code": 0,
+      "passed": 4597,
+      "skipped": 11,
+      "xfailed": 5,
+      "warnings": 42,
+      "seconds": 291.04,
+      "source_files_unchanged": true
     }
-  }
+  },
+  "top_level_scope": "Native candidate and209targetedhostchecks; subsequenthost-adoptionfullruns are separate_host_adoption only."
 }

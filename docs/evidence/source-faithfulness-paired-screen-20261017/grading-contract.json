@@ -1,0 +1,35 @@
+{
+  "frozen_before_any_study_outputs": true,
+  "study_scope": "six synthetic shared-initial-draft pairs; does not replace earlier failed gates",
+  "source_of_truth": "Only supplied observation; host facts/forbidden lists are aids, not additional evidence",
+  "blindness": "Read anonymous packet only, no blind key or raw request/result/harness files",
+  "per_arm_fields": [
+    "rating_0_to_5",
+    "source_faithful",
+    "human_controls_preserved",
+    "uncertainty_preserved",
+    "hard_failures",
+    "rationale"
+  ],
+  "rating_anchors": {
+    "0": "Missing/rejected/over190/unusable or unsupported/changed factual claim, cause, necessary condition, state, numerical relation, outcome or weakened uncertainty/control",
+    "1": "Faithful but generic or hard to understand",
+    "2": "Faithful clear facts, little distinctive reader value",
+    "3": "Concrete clear useful source-supported takeaway",
+    "4": "Distinct concise precise useful insight without added factual assumptions",
+    "5": "Exceptionally clear and useful, all claims and limits supported"
+  },
+  "rating_step": 0.5,
+  "paired_preference": "A or B only for strictly higher useful/clear rating; equal ratings tie. Hardfailure arm rates0. Bothmissing/unsafe tie. Never drop case or replace output.",
+  "source_checks": [
+    "Check every separately testable clause, including apparently explanatory conclusions",
+    "Absence of data is not proof of absence or a known cause",
+    "Preserve numbers/units/states and pending-vs-settled distinctions",
+    "Preserve stated human control and unknown outcomes; no fabricated permission",
+    "Translation/paraphrase may be valid; word containment alone is not semantic support"
+  ],
+  "denominator": 6,
+  "acceptance": "Frozen corpus acceptance remains authoritative: all6 new usable<=190,zerohardfailure/source/controlerror,newwins>=5/6,meanratingdelta>=0.5; all required",
+  "critical_audit": "A separate grader audits initial judgments against observation without producing new modeloutputs; preserve firstgrades and explicit corrections",
+  "claim_limit": "No proof of real-world truth, production readiness, Xreach or general modelreliability"
+}

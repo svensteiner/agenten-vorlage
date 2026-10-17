@@ -1,0 +1,28 @@
+{
+  "scope": "Two fresh fixedsyntheticdiagnosticdrafts, not held-outqualityevaluation; unchangedcomponent0a6038...",
+  "calls": 2,
+  "known_provider_cost_usd": "0.004088",
+  "overall_status_is_not_success_proof": "diagnostics_complete",
+  "per_record_statuses": [
+    "error",
+    "error"
+  ],
+  "both_raw_reviews_fenced": true,
+  "second_has_trailing_explanation": true,
+  "first_review_uncovered_nonspace_characters_after_fence_removal_for_analysis_only": [
+    {
+      "index": 33,
+      "character": ";"
+    },
+    {
+      "index": 56,
+      "character": "."
+    },
+    {
+      "index": 91,
+      "character": "."
+    }
+  ],
+  "production_parser_unchanged": true,
+  "diagnostic_note": "Fence removal above is analysis only; no parser relaxation, no rerun or relabel of earlierpairedstudy. These traces prove these new diagnosticresponses only, not causes of earlierresponses whosebodieswerenotretained."
+}

@@ -1,0 +1,524 @@
+{
+  "study_id": "source-faithfulness-heldout-cases-20261017",
+  "status": "transport_stopped",
+  "prepared_sha256": "a505ba3c38156883cf06a84a0cfe86cb3b1bfccf04f7221084b1392e41eca5d7",
+  "corpus_sha256": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+  "source_sha256": {
+    "harness": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+    "cases": "cae701627a2cec64456cf217ecb3c2d088d4713dd153ef9ee2ccf840b439a7d1",
+    "source_faithfulness": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252"
+  },
+  "full_suite_validation": {
+    "exit_code": 0,
+    "passed": 4597,
+    "log_sha256": "79160e20796b158dc2b17ad8fd23289139a649c24d6b4c4d0aa8813b72e4fa16",
+    "manifest_sha256": "7e3afb025b048fb991c94ba9f7d39e4a46425eb2557addc48138f697d87bbe23"
+  },
+  "model": "anthropic/claude-haiku-4.5",
+  "max_calls": 36,
+  "max_reserved_usd": "1.50",
+  "reserved_usd": "0.45833326",
+  "known_provider_cost_usd": "0.015246",
+  "unknown_outcome_requests": 0,
+  "cost_cap_violated": false,
+  "purpose_costs": {
+    "generation": {
+      "reserved_usd": "0.24999996",
+      "known_provider_cost_usd": "0.007768",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "review": {
+      "reserved_usd": "0.08333332",
+      "known_provider_cost_usd": "0.004633",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "repair": {
+      "reserved_usd": "0.12499998",
+      "known_provider_cost_usd": "0.002845",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    }
+  },
+  "requests": [
+    {
+      "number": 1,
+      "case_id": "timeout-unknown-outcome",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:1",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "79c9b45713ff468c77760b6e87b54cf13730fb09b1a257672ee46e76ef41f282",
+      "reported_cost_usd": "0.001456",
+      "token_usage": {
+        "prompt_tokens": 921,
+        "completion_tokens": 107,
+        "total_tokens": 1028
+      },
+      "response_id": "gen-1792202260-mFOumhc3yL9NI4S48DA3"
+    },
+    {
+      "number": 2,
+      "case_id": "timeout-unknown-outcome",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:2",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "37b45cdfacba93d80f5d6a1aee8a3d14e5290e75b902faccc5835fb8fb55562e",
+      "reported_cost_usd": "0.001331",
+      "token_usage": {
+        "prompt_tokens": 1026,
+        "completion_tokens": 61,
+        "total_tokens": 1087
+      },
+      "response_id": "gen-1792202262-ZnxHusR6YDr3Knmaoeyw"
+    },
+    {
+      "number": 3,
+      "case_id": "timeout-unknown-outcome",
+      "purpose": "review",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:3",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "e8ae4b633c3fc38cbc106336231e8d54ea28b82cc0441335a789736ae08188f7",
+      "reported_cost_usd": "0.002496",
+      "token_usage": {
+        "prompt_tokens": 1126,
+        "completion_tokens": 274,
+        "total_tokens": 1400
+      },
+      "response_id": "gen-1792202263-DafsVsr20eOqeoqcvowI"
+    },
+    {
+      "number": 4,
+      "case_id": "approval-and-publication",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:4",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "da270e7c463f529fe878a69461beb141b95902cfc6629c0b27d76f6dbb31b173",
+      "reported_cost_usd": "0.00115",
+      "token_usage": {
+        "prompt_tokens": 910,
+        "completion_tokens": 48,
+        "total_tokens": 958
+      },
+      "response_id": "gen-1792202265-MxXQVIwHyibSZaL0Ym1t"
+    },
+    {
+      "number": 5,
+      "case_id": "approval-and-publication",
+      "purpose": "review",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:5",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "b1bbb6a52c104c2ff7276bf727eaae79e120b6b57269bca519ed0e54ab194077",
+      "reported_cost_usd": "0.002137",
+      "token_usage": {
+        "prompt_tokens": 1102,
+        "completion_tokens": 207,
+        "total_tokens": 1309
+      },
+      "response_id": "gen-1792202267-sXt6xi4M6CZ6VGEkbGf0"
+    },
+    {
+      "number": 6,
+      "case_id": "reserved-not-spent",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:6",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "ae470c86b318a914c14f03b0b1030ebb127729663a27963d2e925d64f86afcfd",
+      "reported_cost_usd": "0.00127",
+      "token_usage": {
+        "prompt_tokens": 925,
+        "completion_tokens": 69,
+        "total_tokens": 994
+      },
+      "response_id": "gen-1792202270-EWeddCj9EKVmcKKAWDvL"
+    },
+    {
+      "number": 7,
+      "case_id": "reserved-not-spent",
+      "purpose": "repair",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:7",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "0926f1ad1b42adfcb7377404be65aed786b9eb2237ece78ca1f792dfa4a8323e",
+      "reported_cost_usd": "0.000948",
+      "token_usage": {
+        "prompt_tokens": 433,
+        "completion_tokens": 103,
+        "total_tokens": 536
+      },
+      "response_id": "gen-1792202272-2mgnjLoH9ChsAEDty7Wz"
+    },
+    {
+      "number": 8,
+      "case_id": "invoice-match-not-payment",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:8",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "04be26531a344f43f9e4cb9fde7f969d009b145e6e8cc78d106e3f76f04106ae",
+      "reported_cost_usd": "0.001285",
+      "token_usage": {
+        "prompt_tokens": 930,
+        "completion_tokens": 71,
+        "total_tokens": 1001
+      },
+      "response_id": "gen-1792202274-LzsKWGVA3g6tpMlA7hmg"
+    },
+    {
+      "number": 9,
+      "case_id": "invoice-match-not-payment",
+      "purpose": "repair",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:9",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "97df9b19a19a641db3f316b8ef89076b4059af16fabe2e7bd94f2aa6791c115a",
+      "reported_cost_usd": "0.000756",
+      "token_usage": {
+        "prompt_tokens": 421,
+        "completion_tokens": 67,
+        "total_tokens": 488
+      },
+      "response_id": "gen-1792202276-8qHVzfEMKCTD9OfDqeom"
+    },
+    {
+      "number": 10,
+      "case_id": "targeted-tests-not-release",
+      "purpose": "generation",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:10",
+      "status": "completed",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "1c2175b1484667898c959d81d2779d352b36a2403a85dcfc52611ead5234084f",
+      "reported_cost_usd": "0.001276",
+      "token_usage": {
+        "prompt_tokens": 906,
+        "completion_tokens": 74,
+        "total_tokens": 980
+      },
+      "response_id": "gen-1792202277-eMgGTQNGryPR0xggIf7k"
+    },
+    {
+      "number": 11,
+      "case_id": "targeted-tests-not-release",
+      "purpose": "repair",
+      "task_attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:11",
+      "status": "response_rejected",
+      "reserved_usd": "0.04166666",
+      "request_sha256": "16af3784ba1f2c293c926fbaadfd3260de9a2b828ce7906b6e58a9e736cf10ff",
+      "reported_cost_usd": "0.001141",
+      "token_usage": {
+        "prompt_tokens": 391,
+        "completion_tokens": 150,
+        "total_tokens": 541
+      }
+    }
+  ],
+  "records": [
+    {
+      "case_id": "timeout-unknown-outcome",
+      "status": "complete",
+      "old_text": "Timeout ohne Retry-Log bedeutet: Operator muss req-73 manuell reconcilen, bevor er retry freigeben darf. Das Runbook zwingt einen Kontrollpunkt ein, den die Automation übersprungen hat.",
+      "new_text": null,
+      "generation_status": "returned",
+      "qualification_status": "error",
+      "old_character_count": 185,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 1,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      },
+      "qualification": {
+        "verification": "unverified",
+        "review_calls": 1,
+        "repair_calls": 0,
+        "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+        "status": "error",
+        "reason_codes": [
+          "invalid_response"
+        ]
+      }
+    },
+    {
+      "case_id": "approval-and-publication",
+      "status": "complete",
+      "old_text": "Genehmigung ist nicht Publikation. Der benannte Publisher muss die vier Drafts manuell freigeben – ein Engpass, den Workflows eigentlich eliminieren sollten.",
+      "new_text": null,
+      "generation_status": "returned",
+      "qualification_status": "error",
+      "old_character_count": 157,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      },
+      "qualification": {
+        "verification": "unverified",
+        "review_calls": 1,
+        "repair_calls": 0,
+        "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+        "status": "error",
+        "reason_codes": [
+          "invalid_response"
+        ]
+      }
+    },
+    {
+      "case_id": "reserved-not-spent",
+      "status": "complete",
+      "old_text": "Das Pending von 330 EUR könnte Deine Rückstellung aufblähen oder sie unterschätzen – je nachdem, ob die Autorisierung verfällt oder bucht. Ohne explizite Verfallsfrist kann der Controller nicht sauber abschließen.",
+      "new_text": null,
+      "generation_status": "returned",
+      "qualification_status": "rejected",
+      "old_character_count": 213,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      },
+      "qualification": {
+        "verification": "unverified",
+        "review_calls": 0,
+        "repair_calls": 1,
+        "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+        "status": "rejected",
+        "reason_codes": [
+          "repair_failed"
+        ]
+      }
+    },
+    {
+      "case_id": "invoice-match-not-payment",
+      "status": "complete",
+      "old_text": "Matching-Dokumente ohne Banknachweis sind kein Freigabesignal – AP-Reviewer muss Settlement blockieren, bis Zahlung bestätigt ist. Drei identische Felder täuschen Sicherheit vor, wo die kritische Kontrolle fehlt.",
+      "new_text": null,
+      "generation_status": "returned",
+      "qualification_status": "rejected",
+      "old_character_count": 212,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      },
+      "qualification": {
+        "verification": "unverified",
+        "review_calls": 0,
+        "repair_calls": 1,
+        "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+        "status": "rejected",
+        "reason_codes": [
+          "repair_failed"
+        ]
+      }
+    },
+    {
+      "case_id": "targeted-tests-not-release",
+      "status": "complete",
+      "old_text": "18 bestandene Checks ohne volle Regressionstests sind kein Freigabesignal. Der Release Manager muss das Risiko der nicht gelaufenen Tests selbst tragen—auf dem Papier steht nur, dass geprüft wurde, nicht dass es sicher ist.",
+      "new_text": null,
+      "generation_status": "returned",
+      "qualification_status": "error",
+      "old_character_count": 223,
+      "generator_stats": {
+        "generated": 1,
+        "rejected": 0,
+        "tone_distribution": {
+          "DIRECT": 1
+        }
+      },
+      "qualification": {
+        "verification": "unverified",
+        "review_calls": 0,
+        "repair_calls": 1,
+        "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+        "status": "error",
+        "reason_codes": [
+          "repair_failed"
+        ]
+      }
+    },
+    {
+      "case_id": "impressions-and-visits",
+      "status": "not_generated_after_transport_stop",
+      "old_text": null,
+      "new_text": null,
+      "generation_status": "not_generated_after_transport_stop",
+      "qualification_status": "not_run"
+    }
+  ],
+  "passed": false,
+  "quality": "pending_independent_blind_grading",
+  "task_budget": {
+    "task_id": "bc2554fb64bf4b12b6bf6735b2b0f93e",
+    "label": "source_faithfulness_paired_screen",
+    "max_calls": 36,
+    "max_inference_calls": 36,
+    "inference_count": 11,
+    "exhausted": false,
+    "attempts": [
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:1",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 921,
+          "completion_tokens": 107,
+          "total_tokens": 1028
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:2",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1026,
+          "completion_tokens": 61,
+          "total_tokens": 1087
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:3",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1126,
+          "completion_tokens": 274,
+          "total_tokens": 1400
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:4",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 910,
+          "completion_tokens": 48,
+          "total_tokens": 958
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:5",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1102,
+          "completion_tokens": 207,
+          "total_tokens": 1309
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:6",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 925,
+          "completion_tokens": 69,
+          "total_tokens": 994
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:7",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 433,
+          "completion_tokens": 103,
+          "total_tokens": 536
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:8",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 930,
+          "completion_tokens": 71,
+          "total_tokens": 1001
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:9",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 421,
+          "completion_tokens": 67,
+          "total_tokens": 488
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:10",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 906,
+          "completion_tokens": 74,
+          "total_tokens": 980
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "bc2554fb64bf4b12b6bf6735b2b0f93e:11",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "failed",
+        "usage": {
+          "prompt_tokens": 391,
+          "completion_tokens": 150,
+          "total_tokens": 541
+        },
+        "inference": true
+      }
+    ],
+    "attempt_count": 11,
+    "tokens_known": {
+      "input_tokens": 9091,
+      "output_tokens": 1231,
+      "total_tokens": 10322
+    },
+    "tokens": {
+      "input_tokens": 9091,
+      "output_tokens": 1231,
+      "total_tokens": 10322
+    },
+    "unknown_usage_count": 0,
+    "unknown_count": 0
+  }
+}

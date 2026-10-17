@@ -1,0 +1,196 @@
+{
+  "study_id": "source-faithfulness-protocol-trace-synthetic-20261017",
+  "scope": "Two synthetic diagnostic drafts; not a benchmark or quality grade.",
+  "status": "diagnostics_complete",
+  "prepared_sha256": "4f029eda72d48c1711d39440897942f9ff2bfe728a712c12760acc136e9e1dcd",
+  "parent_helper_sha256": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+  "component_sha256": {
+    "source_faithfulness": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252"
+  },
+  "full_suite_gate": {
+    "manifest_sha256": "112593759c54230920afb3ba9fc5ccdcac20385284b404e1f0a0c13c4f354c42",
+    "log_sha256": "79160e20796b158dc2b17ad8fd23289139a649c24d6b4c4d0aa8813b72e4fa16",
+    "passed": 4597,
+    "exit_code": 0
+  },
+  "physical_call_limit": 4,
+  "local_reservation_limit_usd": "0.20",
+  "records": [
+    {
+      "case_id": "synthetic-valid",
+      "draft": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Freigabe nur durch den Controller.",
+      "status": "error",
+      "verification": "unverified",
+      "review_calls": 1,
+      "repair_calls": 0,
+      "reason_codes": [
+        "invalid_response"
+      ],
+      "qualified_text": null
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "draft": "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben.",
+      "status": "error",
+      "verification": "unverified",
+      "review_calls": 1,
+      "repair_calls": 0,
+      "reason_codes": [
+        "invalid_response"
+      ],
+      "qualified_text": null
+    }
+  ],
+  "callback_trace": [
+    {
+      "case_id": "synthetic-valid",
+      "context_type": "source_faithfulness_review",
+      "context": {
+        "temperature": 0,
+        "max_tokens": 1200,
+        "task_type": "source_faithfulness_review"
+      },
+      "system_chars": 2192,
+      "user_chars": 1336,
+      "system_prompt_sha256": "2c03c2fcb7a8c1b91c3b6fa32d25df09f173789e6e97527b86f9f75e685b0b9b",
+      "user_prompt_sha256": "0468ab60ab3b8cf47f18dfd5140069d790901096edf71ab8bec951eb60a37b32",
+      "status": "returned",
+      "raw_text": "```json\n{\n  \"verdict\": \"accept\",\n  \"issues\": [],\n  \"claims\": [\n    {\n      \"draft_span\": \"Sieben Rechnungen sind zugeordnet\",\n      \"source_quote\": \"The sample ledger lists seven matched invoices.\",\n      \"kind\": \"fact\"\n    },\n    {\n      \"draft_span\": \"Zahlungsstatus unklar\",\n      \"source_quote\": \"Payment status is unknown.\",\n      \"kind\": \"fact\"\n    },\n    {\n      \"draft_span\": \"Freigabe nur durch den Controller\",\n      \"source_quote\": \"A controller must approve release.\",\n      \"kind\": \"fact\"\n    }\n  ],\n  \"human_controls_preserved\": true,\n  \"uncertainty_preserved\": true\n}\n```",
+      "returned_chars": 586,
+      "returned_sha256": "cae0cf7d4a90ce76fff9412ddfbd1fdb254169bdb593a6b9909f86b8cc6f774c",
+      "request_number": 1,
+      "transport_status": "completed"
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "context_type": "source_faithfulness_review",
+      "context": {
+        "temperature": 0,
+        "max_tokens": 1200,
+        "task_type": "source_faithfulness_review"
+      },
+      "system_chars": 2192,
+      "user_chars": 1308,
+      "system_prompt_sha256": "2c03c2fcb7a8c1b91c3b6fa32d25df09f173789e6e97527b86f9f75e685b0b9b",
+      "user_prompt_sha256": "ee3c57ca4defc4e82e11d61b16eae117e0273e4175581ece44feab2667aae6a2",
+      "status": "returned",
+      "raw_text": "```json\n{\n  \"verdict\": \"reject\",\n  \"issues\": [\n    \"unsupported_fact\",\n    \"human_control_omitted\",\n    \"uncertainty_strengthened\"\n  ],\n  \"claims\": [],\n  \"human_controls_preserved\": false,\n  \"uncertainty_preserved\": false\n}\n```\n\n**Begruendung:** Der Entwurf behauptet zwei Fakten, die von der Quelle nicht gestuetzt werden: (1) \"bezahlt\" – die Quelle erklaert Payment status als \"unknown\"; (2) \"automatisch freigegeben\" – die Quelle fordert explizit \"A controller must approve release\". Der Entwurf verstaerkt Unsicherheit zu falscher Gewissheit und entfernt erforderliche menschliche Kontrolle.",
+      "returned_chars": 595,
+      "returned_sha256": "4a72ae0bd9509cf80c355ad8be2ff754399943146aa5d018a04fe98f8f62a0e5",
+      "request_number": 2,
+      "transport_status": "completed"
+    }
+  ],
+  "requests": [
+    {
+      "number": 1,
+      "case_id": "synthetic-valid",
+      "purpose": "review",
+      "task_attempt_id": "b44398f32ed04658967617633849dd6c:1",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "c1b03efe1efee6a793ab9d8d507d5defa4c3c5ad33e02c7eb2422f0264c7998f",
+      "reported_cost_usd": "0.00204",
+      "token_usage": {
+        "prompt_tokens": 1060,
+        "completion_tokens": 196,
+        "total_tokens": 1256
+      },
+      "response_id": "gen-1792202618-bqRPznQJl3Fxbs2kPtGu"
+    },
+    {
+      "number": 2,
+      "case_id": "synthetic-invalid",
+      "purpose": "review",
+      "task_attempt_id": "b44398f32ed04658967617633849dd6c:2",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "d02ad7fe2e20eec3231f48d0b8590cd319f4a9c2e5806af6a517e833145d99e4",
+      "reported_cost_usd": "0.002048",
+      "token_usage": {
+        "prompt_tokens": 1048,
+        "completion_tokens": 200,
+        "total_tokens": 1248
+      },
+      "response_id": "gen-1792202620-bufqxecPAl2ZZ4Dtoq3C"
+    }
+  ],
+  "reserved_usd": "0.10",
+  "known_provider_cost_usd": "0.004088",
+  "unknown_outcome_requests": 0,
+  "cost_cap_violated": false,
+  "purpose_costs": {
+    "generation": {
+      "reserved_usd": "0",
+      "known_provider_cost_usd": "0",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "review": {
+      "reserved_usd": "0.10",
+      "known_provider_cost_usd": "0.004088",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "repair": {
+      "reserved_usd": "0",
+      "known_provider_cost_usd": "0",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    }
+  },
+  "quality_result": "synthetic_protocol_diagnostic_not_quality_grade",
+  "task_budget": {
+    "task_id": "b44398f32ed04658967617633849dd6c",
+    "label": "source_faithfulness_paired_screen",
+    "max_calls": 4,
+    "max_inference_calls": 4,
+    "inference_count": 2,
+    "exhausted": false,
+    "attempts": [
+      {
+        "attempt_id": "b44398f32ed04658967617633849dd6c:1",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1060,
+          "completion_tokens": 196,
+          "total_tokens": 1256
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "b44398f32ed04658967617633849dd6c:2",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1048,
+          "completion_tokens": 200,
+          "total_tokens": 1248
+        },
+        "inference": true
+      }
+    ],
+    "attempt_count": 2,
+    "tokens_known": {
+      "input_tokens": 2108,
+      "output_tokens": 396,
+      "total_tokens": 2504
+    },
+    "tokens": {
+      "input_tokens": 2108,
+      "output_tokens": 396,
+      "total_tokens": 2504
+    },
+    "unknown_usage_count": 0,
+    "unknown_count": 0
+  }
+}

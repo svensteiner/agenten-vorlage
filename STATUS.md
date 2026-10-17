@@ -92,11 +92,25 @@ weist den Verstoß nach. Keine Promotion. Strikte unveraenderliche Host-Schreibp
 wird in isolierter Kopie entwickelt; workspace-write allein begrenzt keine Dateien.
 [Originalauftrag, Entscheidungen, Review und Gegenbelege](docs/evidence/source-faithfulness-integration-20261017/README.md).
 
+## Echte Quellenpruefung: neue Sechser-Abnahme gescheitert
+
+Nach4.597 bestandenen Unit-Tests liefert der eingefrorene echte Modellvergleich
+0/6 akzeptierte neue Posts,11 Anfragen,0,015246USD gemeldete Kosten und keine
+unbekannten Kosten/Ausgaenge. Beide verblindeten Pruefungen: alle12Arme0Punkte,
+sechs Gleichstaende,Delta0. Fehlende Ausgaben bleiben im Nenner. Keine Promotion.
+Rohantworten des Reviewers fehlen im Beleg; die genaue Protokollfehlerursache ist
+noch unbewiesen. Ein getrennter Diagnosetrace mit zwei neuen synthetischen Entwuerfen bestaetigt
+Markdown-Zaun/Erklaerung und fehlende Satzzeichenabdeckung in diesen Antworten:
+zwei Requests,0,004088USD,beide invalid_response. Promptkorrektur in Arbeit;
+Parser bleibt streng. Kein Wiederholen der Abnahme.
+[Neue Diagnose mit Rohantworten](docs/evidence/source-faithfulness-protocol-trace-20261017/README.md). [Rohbelege, Blindnoten und Grenzen](docs/evidence/source-faithfulness-paired-screen-20261017/README.md).
+
 ## Offene Abnahme
 
 1. Fruehere Generatorreparatur: volle Unit-Regression4.495 bestanden. Neue
    Quellenintegration: erster voller Unit-Lauf4.591 bestanden/sechs alte
-   Experiment-Fixturefehler; Bereichsabnahme gescheitert. Uebernahme bleibt von Umfangsschutz, Textqualitaet und Betrieb abhaengig.
+   Experiment-Fixturefehler; nach expliziter Host-Fixtureanpassung zweiter Lauf
+   4.597 bestanden,elf Skips,fuenf xfailed,291,04s. Native Bereichsabnahme bleibt gescheitert. Uebernahme bleibt von Umfangsschutz, Textqualitaet und Betrieb abhaengig.
 2. Echte Marketingausgaben verblindet bewerten. Bisherige feste Neuner-Abnahme
    verfehlt die vorbestehende +0,5-Grenze; interne Scores sind keine Reichweite.
    Auch die sechs frischen synthetischen Quellen sind gescheitert (0/6 je Variante).

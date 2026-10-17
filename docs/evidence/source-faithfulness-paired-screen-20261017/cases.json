@@ -1,0 +1,253 @@
+{
+  "study_id": "source-faithfulness-heldout-cases-20261017",
+  "classification": "held_out_synthetic_paired_quality_gate",
+  "synthetic_only": true,
+  "real_world_claims": false,
+  "cases": [
+    {
+      "case_id": "impressions-and-visits",
+      "title": "Impressions do not establish unique visitors or causation",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_campaign_dashboard",
+        "source_id": "heldout-campaign-01",
+        "verification": "unverified",
+        "observation": "A synthetic campaign dashboard shows 2,400 impressions and 36 link clicks for one post. The dashboard does not report unique visitors or sign-ups. No comparison period or attribution data is attached. A communications lead must approve any public performance summary."
+      },
+      "facts": [
+        "The dashboard shows 2,400 impressions for one post.",
+        "The dashboard shows 36 link clicks.",
+        "Unique visitors, sign-ups, comparison period, and attribution data are absent."
+      ],
+      "explicit_uncertainties": [
+        "Clicks do not establish unique visitors.",
+        "The dashboard does not show whether the post caused any later action."
+      ],
+      "human_controls": [
+        "A communications lead must approve any public performance summary."
+      ],
+      "supported_implications": [
+        "The dashboard records impressions and clicks, but not unique visitors or conversions.",
+        "The listed metrics alone cannot establish campaign impact or causation."
+      ],
+      "forbidden_inferences": [
+        "Do not call impressions people, visitors, or customers.",
+        "Do not calculate a conversion rate or claim the post caused sign-ups.",
+        "Do not publish a performance claim without the stated communications approval."
+      ],
+      "internal_reader_question": "Which audience and outcome measures are actually present in this dashboard?"
+    },
+    {
+      "case_id": "approval-and-publication",
+      "title": "Draft approval is not publication",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_editorial_queue",
+        "source_id": "heldout-editorial-02",
+        "verification": "unverified",
+        "observation": "A synthetic editorial queue lists four drafts. One draft was marked approved at 10:20. Its publication field is still pending, and the queue has no delivery receipt. A named human publisher must perform the final publish action."
+      },
+      "facts": [
+        "The queue lists four drafts.",
+        "One draft was marked approved at 10:20.",
+        "Its publication field is pending and no delivery receipt is recorded."
+      ],
+      "explicit_uncertainties": [
+        "The queue does not establish whether the approved draft was published outside this system.",
+        "Approval status does not establish delivery."
+      ],
+      "human_controls": [
+        "A named human publisher must perform the final publish action."
+      ],
+      "supported_implications": [
+        "The system records approval but not completed publication or delivery.",
+        "The final publication step remains a human action under this workflow."
+      ],
+      "forbidden_inferences": [
+        "Do not say the draft was published, delivered, or seen.",
+        "Do not treat approval as authorization for an automated publish action.",
+        "Do not suggest removing the named human publisher."
+      ],
+      "internal_reader_question": "What state transition is still unconfirmed after approval?"
+    },
+    {
+      "case_id": "timeout-unknown-outcome",
+      "title": "API timeout leaves the operation outcome unknown",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_api_operation_log",
+        "source_id": "heldout-api-03",
+        "verification": "unverified",
+        "observation": "A synthetic API operation log records a timeout at 14:05 after request ID req-73 was submitted. No response body or completion receipt was captured. A retry is not recorded. The runbook requires an operator to reconcile the request ID before authorizing any retry."
+      },
+      "facts": [
+        "The request with ID req-73 was submitted.",
+        "The client recorded a timeout at 14:05.",
+        "No response body, completion receipt, or retry is recorded."
+      ],
+      "explicit_uncertainties": [
+        "A timeout does not establish whether the server completed the operation.",
+        "The log provides no downstream state or duplicate-operation check."
+      ],
+      "human_controls": [
+        "An operator must reconcile the request ID before authorizing a retry."
+      ],
+      "supported_implications": [
+        "The recorded outcome is unknown from this log.",
+        "The stated workflow requires operator reconciliation before retry."
+      ],
+      "forbidden_inferences": [
+        "Do not say the operation failed, succeeded, or partially completed.",
+        "Do not recommend an immediate retry or claim it is safe/idempotent.",
+        "Do not remove the operator authorization step."
+      ],
+      "internal_reader_question": "What does the timeout prove, and what must be reconciled before retry?"
+    },
+    {
+      "case_id": "invoice-match-not-payment",
+      "title": "Matching invoice fields do not prove payment or fraud status",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_invoice_review_log",
+        "source_id": "heldout-invoice-04",
+        "verification": "unverified",
+        "observation": "A synthetic invoice review log shows an invoice amount of 4,280 EUR matching a purchase-order amount of 4,280 EUR. Vendor name and invoice date also match the purchase order. The payment-status field is blank and no bank record is attached. An accounts-payable reviewer must approve settlement."
+      },
+      "facts": [
+        "Invoice and purchase-order amounts both read 4,280 EUR.",
+        "Vendor name and invoice date match the purchase order.",
+        "Payment status is blank and no bank record is attached."
+      ],
+      "explicit_uncertainties": [
+        "The record does not establish whether payment occurred.",
+        "Matching fields do not establish that the invoice is legitimate or fraudulent."
+      ],
+      "human_controls": [
+        "An accounts-payable reviewer must approve settlement."
+      ],
+      "supported_implications": [
+        "The listed invoice fields match the purchase order on amount, vendor, and date.",
+        "Settlement status cannot be determined from the supplied record."
+      ],
+      "forbidden_inferences": [
+        "Do not claim the invoice was paid, cleared, or settled.",
+        "Do not call the invoice legitimate or fraudulent based only on matching fields.",
+        "Do not imply automatic settlement or bypass reviewer approval."
+      ],
+      "internal_reader_question": "Which fields match, and which financial state is still unknown?"
+    },
+    {
+      "case_id": "targeted-tests-not-release",
+      "title": "Targeted tests are not a complete release result",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_release_dashboard",
+        "source_id": "heldout-release-05",
+        "verification": "unverified",
+        "observation": "A synthetic release dashboard lists 18 targeted checks as passed. The full regression suite is marked not run. The dashboard has no deployment status or user-impact report. A release manager must authorize production deployment."
+      },
+      "facts": [
+        "The dashboard lists 18 targeted checks as passed.",
+        "The full regression suite is marked not run.",
+        "Deployment status and user-impact report are absent."
+      ],
+      "explicit_uncertainties": [
+        "Targeted checks do not establish the result of the unrun regression suite.",
+        "No production behavior or user impact is recorded."
+      ],
+      "human_controls": [
+        "A release manager must authorize production deployment."
+      ],
+      "supported_implications": [
+        "The listed targeted checks passed, while broader regression evidence is unavailable.",
+        "The dashboard does not establish deployment readiness or actual production outcome."
+      ],
+      "forbidden_inferences": [
+        "Do not say all tests passed or the release is safe/ready.",
+        "Do not infer user impact, absence of defects, or deployment completion.",
+        "Do not suggest bypassing release-manager authorization."
+      ],
+      "internal_reader_question": "What does the targeted test result leave unmeasured?"
+    },
+    {
+      "case_id": "reserved-not-spent",
+      "title": "Reserved budget is not the same as settled spend",
+      "synthetic": true,
+      "source_record": {
+        "source": "synthetic_budget_ledger",
+        "source_id": "heldout-budget-06",
+        "verification": "unverified",
+        "observation": "A synthetic project ledger lists 1,200 EUR as reserved and 870 EUR as posted expenditure. One authorization for 330 EUR is pending settlement. The ledger does not show whether the pending authorization will settle or expire. A finance controller must approve the month-end close."
+      },
+      "facts": [
+        "The ledger lists 1,200 EUR reserved.",
+        "The ledger lists 870 EUR as posted expenditure.",
+        "A 330 EUR authorization is pending settlement."
+      ],
+      "explicit_uncertainties": [
+        "The pending authorization may settle or expire; the ledger does not say which.",
+        "The record does not define whether the reservation includes the pending authorization."
+      ],
+      "human_controls": [
+        "A finance controller must approve the month-end close."
+      ],
+      "supported_implications": [
+        "Reserved amount and posted expenditure are distinct ledger states.",
+        "The final settled amount cannot be inferred while the authorization is pending."
+      ],
+      "forbidden_inferences": [
+        "Do not call 1,200 EUR actual or settled spend.",
+        "Do not claim 330 EUR will settle, expire, or remain available.",
+        "Do not calculate remaining budget or imply month-end close approval."
+      ],
+      "internal_reader_question": "Which amount is posted, which is reserved, and what remains pending?"
+    }
+  ],
+  "frozen_protocol": {
+    "status": "freeze_before_any_candidate_or_qualification_outputs",
+    "scope": "Fresh held-out synthetic quality evaluation only. It does not replace the failed prior six-case evaluation or failed fixed-nine evaluation, and supports no real-world truth, production, X-reach, or general-model claim.",
+    "paired_arms": {
+      "old": "The exact shared initial draft, unmodified except the existing nonsemantic character-count measurement.",
+      "new": "Qualify that same exact initial draft with the source-check reviewer; at most one repair and one re-review."
+    },
+    "shared_generation_controls": {
+      "generator": "Current TensionGenerator snapshot frozen by hash before run.",
+      "model": "Same Haiku model and model configuration for all six initial drafts.",
+      "temperature": 0.85,
+      "max_tokens": 150,
+      "tone": "DIRECT",
+      "format": "thesis_reason",
+      "language": "German",
+      "character_limit": 190,
+      "reach_context": "One concise, source-supported implication. Do not invent causes, outcomes, legal requirements, or approval status. Preserve stated human controls. No forced question.",
+      "reach_context_identical_for_all_cases_and_arms": true,
+      "initial_draft_shared_exactly_between_arms": true,
+      "outer_generation_retry": false
+    },
+    "qualification_controls": {
+      "reviewer": "Injected source-check API/model, frozen by identifier and configuration before run; review prompt and schema hashes recorded.",
+      "review_calls": "One initial review plus at most one re-review after repair.",
+      "review_temperature": 0.0,
+      "review_max_tokens": 1200,
+      "repair_calls": "At most one repair, only after a repairable rejection.",
+      "repair_temperature": 0.85,
+      "repair_max_tokens": 150,
+      "re_review_required": true,
+      "unreviewed_repair_is_failure": true,
+      "existing_llm_task_budget": "All generator, reviewer, repair, and existing release-gate calls share the central task budget. No nested budget reset or transport bypass.",
+      "no_outer_retry_or_best_of": true
+    },
+    "cost_accounting": "Record actual provider transport attempts and known token usage by purpose: generation, review, repair, re-review, and existing release gate. Unknown usage stays unknown, never zero. Report qualification calls and costs separately; do not claim equal-cost comparison.",
+    "failure_accounting": "Exactly six paired cases. Missing, rejected, malformed, over-190-character, or budget-exhausted outputs remain failures in their assigned arm and in the denominator. No replacement, outer retry, or best-of selection.",
+    "blind_grading": "Randomly mask old/new labels and shuffle each pair. Independent graders rate usefulness/clarity from 0 to 5 and separately assess source-faithfulness and control preservation against only the supplied source. Ties do not count as new wins.",
+    "acceptance": "All six new-arm outputs are usable and <=190 characters; zero new-arm hard failures, source-faithfulness failures, or approval/control errors; new is preferred in at least 5 of 6 pairs; mean (new minus old) usefulness/clarity rating is >=0.5. All conditions must hold.",
+    "hard_failures": [
+      "Any invented or changed fact, number, unit, count, state, causal relationship, legal/necessary condition, or outcome.",
+      "Any omitted or strengthened uncertainty that changes the source claim.",
+      "Any removal, bypass, or weakening of a stated human approval or control.",
+      "Any missing, rejected, malformed, or over-190-character new-arm output."
+    ],
+    "leakage_protection": "These six cases and protocol are held outside coding workspaces and must not be supplied to implementation workers or used to tune prompts/rules before the first blinded result. Record any exposure before unmasking; exposure invalidates held-out status.",
+    "quality_claim_limit": "A pass supports only this small synthetic paired study. LLM review and grading do not establish source truth or semantic correctness in general, production readiness, legal/accounting correctness, audience response, or X reach. Prior failed evaluations remain failed."
+  }
+}

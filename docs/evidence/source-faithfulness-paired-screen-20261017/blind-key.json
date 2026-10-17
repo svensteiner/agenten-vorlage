@@ -1,0 +1,54 @@
+{
+  "study_id": "source-faithfulness-heldout-cases-20261017",
+  "created_after_outputs": true,
+  "mapping": [
+    {
+      "pair_id": "pair-01",
+      "case_id": "invoice-match-not-payment",
+      "labels": {
+        "A": "new",
+        "B": "old"
+      }
+    },
+    {
+      "pair_id": "pair-02",
+      "case_id": "impressions-and-visits",
+      "labels": {
+        "A": "new",
+        "B": "old"
+      }
+    },
+    {
+      "pair_id": "pair-03",
+      "case_id": "approval-and-publication",
+      "labels": {
+        "A": "old",
+        "B": "new"
+      }
+    },
+    {
+      "pair_id": "pair-04",
+      "case_id": "targeted-tests-not-release",
+      "labels": {
+        "A": "new",
+        "B": "old"
+      }
+    },
+    {
+      "pair_id": "pair-05",
+      "case_id": "timeout-unknown-outcome",
+      "labels": {
+        "A": "old",
+        "B": "new"
+      }
+    },
+    {
+      "pair_id": "pair-06",
+      "case_id": "reserved-not-spent",
+      "labels": {
+        "A": "old",
+        "B": "new"
+      }
+    }
+  ]
+}
