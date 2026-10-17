@@ -808,8 +808,59 @@ class CodexBackend:
                 if entry.get("kind") == "completed_action"
                 and entry.get("post_workspace_fingerprint") == current_fingerprint
             ]
+            local_protocol_preamble = ""
+            local_observation_example = None
+            if local_phase_enabled:
+                available_host_actions = {
+                    "contract": "codex_local_action_step",
+                    "available_host_actions": [
+                        {"tool": "read_file", "description": "Read bounded text from a workspace file.",
+                         "parameters": {"path": "relative workspace path", "start_line": "optional integer >= 1", "max_lines": "optional integer 1..200"}},
+                        {"tool": "list_files", "description": "List files under one workspace directory.",
+                         "parameters": {"path": "relative directory path; empty string means workspace root"}},
+                        {"tool": "inspect_git", "description": "Inspect the workspace Git status and bounded diffs.",
+                         "parameters": {}},
+                        {"tool": "write_file", "description": "Propose a file creation or replacement for host policy checks.",
+                         "parameters": {"path": "relative workspace path", "content": "complete file text"}},
+                        {"tool": "edit_file", "description": "Propose one exact old-text replacement for host policy checks.",
+                         "parameters": {"path": "relative workspace path", "old_text": "unique existing text", "new_text": "replacement text"}},
+                        {"tool": "run_local_tests", "description": "Request one operator-pinned Docker test phase; paths and commands are not model inputs.",
+                         "parameters": {"phase": ["red", "targeted", "full"]}},
+                    ],
+                    "schema_compatibility_only_not_enabled_here": ["run_pytest", "run_isolated_tests"],
+                }
+                local_observation_example = {
+                    "kind": "proposal", "tool": "read_file",
+                    "arguments": {"path": "src/app.py", "content": "", "old_text": "", "new_text": "",
+                                  "start_line": 1, "max_lines": 120, "phase": None},
+                    "rationale": "Inspect the implementation before editing.",
+                    "report": {"status": "blocked", "summary": "Host observation requested.",
+                               "artifacts": [], "evidence": [], "next_actions": []},
+                }
+                local_phase_example = {
+                    "kind": "proposal", "tool": "run_local_tests",
+                    "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                                  "start_line": None, "max_lines": None, "phase": "targeted"},
+                    "rationale": "Run the host-pinned targeted test phase.",
+                    "report": {"status": "blocked", "summary": "Host test phase requested.",
+                               "artifacts": [], "evidence": [], "next_actions": []},
+                }
+                local_protocol_preamble = (
+                    "\nPRIVATE LOCAL HOST-ACTION PROTOCOL: the following host actions are available only in this bound private context. "
+                    "They are JSON response proposals, not native Codex CLI, MCP or shell tools. Do not search for or discover native tools; "
+                    "select one listed action or return a genuine final report. For a proposal, match the response schema exactly and set unused fields to empty strings or null. "
+                    "write_file/edit_file remain subject to the strict host allowlist and phase authorization. Do not use run_pytest or run_isolated_tests in this context.\n"
+                    "AVAILABLE_HOST_ACTIONS_JSON="
+                    + json.dumps(available_host_actions, ensure_ascii=False, separators=(",", ":"))
+                    + "\nLOCAL_ACTION_EXAMPLE_JSON="
+                    + json.dumps(local_observation_example, ensure_ascii=False, separators=(",", ":"))
+                    + "\nLOCAL_PHASE_EXAMPLE_JSON="
+                    + json.dumps(local_phase_example, ensure_ascii=False, separators=(",", ":"))
+                    + "\n"
+                )
             prompt = (
                 "Work as the selected bounded worker with host-owned read-only observations. Return exactly one JSON action step. "
+                + local_protocol_preamble
                 + _EXECUTION_BUDGET_GUIDANCE
                 + _RUN_WRITE_PROVENANCE_GUIDANCE
                 + "Explicit assignment file restrictions take precedence over general handoff instructions: "
@@ -819,10 +870,12 @@ class CodexBackend:
                     if strict_observation_mode else
                     "Host observation actions read_file, list_files and inspect_git are available for source and Git evidence. "
                 )
-                + "These are AgentKit host-action proposals, not native Codex CLI tools; they are intentionally absent from native tool registration. "
-                "Do not look for them in a native tool list or substitute shell for a host observation. Request one by returning a normal action step, for example: "
-                '{"kind":"proposal","tool":"read_file","arguments":{"path":"src/app.py","content":"","old_text":"","new_text":"","start_line":null,"max_lines":null},"rationale":"Inspect source","report":{"status":"blocked","summary":"Host observation requested.","artifacts":[],"evidence":[],"next_actions":[]}}. '
-                "The host performs the read-only observation and supplies its result in the next action-step prompt. "
+                + ("Private-context host actions are the JSON response proposals listed above; they are not native Codex CLI tools. Request one with the exact schema-valid envelope shown above. "
+                   if local_phase_enabled else
+                   "These are AgentKit host-action proposals, not native Codex CLI tools; they are intentionally absent from native tool registration. "
+                   "Do not look for them in a native tool list or substitute shell for a host observation. Request one by returning a normal action step, for example: "
+                   '{"kind":"proposal","tool":"read_file","arguments":{"path":"src/app.py","content":"","old_text":"","new_text":"","start_line":null,"max_lines":null},"rationale":"Inspect source","report":{"status":"blocked","summary":"Host observation requested.","artifacts":[],"evidence":[],"next_actions":[]}}. ')
+                + "The host performs the read-only observation and supplies its result in the next action-step prompt. "
                 + (
                     "A private host-local run_local_tests action is available for the fixed phases red, targeted, or full; "
                     "it accepts only one phase name and never accepts test paths or commands. "

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from agentkit.approvals import ApprovalRequired, action_digest, replay_action_digest
 from agentkit.backends import CodexBackend
-from agentkit.contracts import ContractError
+from agentkit.contracts import ContractError, schema, validate
 from agentkit.phase_test_execution import LocalPhaseTestPolicy
 from agentkit.phase_test_runtime import LocalPhaseProposalRejected
 from agentkit.write_policy import WritePolicy
@@ -472,6 +472,76 @@ class CodexLocalPhaseTests(unittest.TestCase):
         self.assertEqual("run_isolated_tests", __import__("agentkit.contracts", fromlist=["schema"]).schema(
             "codex_action_step"
         )["properties"]["tool"]["enum"][-1])
+
+    def test_private_prompt_manifest_and_examples_match_local_action_schema(self):
+        prompts = []
+
+        def call(prompt, contract, context, timeout):
+            prompts.append(prompt)
+            return self.final
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            CodexBackend()._execute_approval_gated(
+                {"role": "worker", "task": "implement and verify"},
+                self.context(unittest.mock.Mock(return_value=self.receipt())), 10,
+            )
+
+        prompt = prompts[0]
+        local_schema = schema("codex_local_action_step")
+        schema_tools = set(local_schema["properties"]["tool"]["enum"]) - {"none"}
+        manifest_line = next(line for line in prompt.splitlines() if line.startswith("AVAILABLE_HOST_ACTIONS_JSON="))
+        example_line = next(line for line in prompt.splitlines() if line.startswith("LOCAL_ACTION_EXAMPLE_JSON="))
+        phase_example_line = next(line for line in prompt.splitlines() if line.startswith("LOCAL_PHASE_EXAMPLE_JSON="))
+        manifest = json.loads(manifest_line.split("=", 1)[1])
+        example = json.loads(example_line.split("=", 1)[1])
+        phase_example = json.loads(phase_example_line.split("=", 1)[1])
+        listed_tools = {item["tool"] for item in manifest["available_host_actions"]}
+
+        self.assertEqual(
+            {"read_file", "list_files", "inspect_git", "write_file", "edit_file", "run_local_tests"},
+            listed_tools,
+        )
+        self.assertTrue(listed_tools.issubset(schema_tools))
+        self.assertEqual(
+            set(manifest["schema_compatibility_only_not_enabled_here"]),
+            schema_tools - listed_tools,
+        )
+        self.assertIn("PRIVATE LOCAL HOST-ACTION PROTOCOL", prompt)
+        self.assertEqual(set(local_schema["properties"]["arguments"]["required"]), set(example["arguments"]))
+        self.assertIsNone(example["arguments"]["phase"])
+        validate(example, "codex_local_action_step")
+        validate(phase_example, "codex_local_action_step")
+        self.assertEqual("run_local_tests", phase_example["tool"])
+        self.assertEqual(
+            {"phase": ["red", "targeted", "full"]},
+            manifest["available_host_actions"][-1]["parameters"],
+        )
+
+    def test_public_prompt_does_not_receive_private_phase_protocol(self):
+        prompts = []
+        context = self.context(unittest.mock.Mock(return_value=self.receipt()))
+        context.pop("local_phase_policy")
+        context.pop("run_local_phase")
+        public_final = {
+            **self.final,
+            "arguments": {key: value for key, value in self.final["arguments"].items() if key != "phase"},
+        }
+
+        def call(prompt, contract, context, timeout):
+            prompts.append(prompt)
+            return public_final
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            CodexBackend()._execute_approval_gated(
+                {"role": "worker", "task": "implement and verify"}, context, 10
+            )
+
+        self.assertEqual(1, len(prompts))
+        self.assertNotIn("PRIVATE LOCAL HOST-ACTION PROTOCOL", prompts[0])
+        self.assertNotIn("AVAILABLE_HOST_ACTIONS_JSON=", prompts[0])
+        self.assertNotIn("LOCAL_PHASE_EXAMPLE_JSON=", prompts[0])
 
 
 if __name__ == "__main__":
