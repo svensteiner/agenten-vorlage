@@ -1,0 +1,70 @@
+{
+  "run_id": "4571e5c13b224305a8969cc2dc854f4c",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 7,
+  "failures": 2,
+  "protected_source_unchanged": true,
+  "pack_unchanged": true,
+  "protected_source_files": 794,
+  "frozen": {
+    "tests/unit/test_source_faithfulness_contract.py": "3139f167311861c2c09e906019fb1e1399ee41dee3923761c1ce163bb89611e4",
+    ".qualification/protected-inputs.json": "4cdafac718bef555b18bc0c440a6a9727b16638cd33ba0914d93b083a9c54cdf",
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    "tests/unit/test_source_draft_retry_language.py": "634e95fad9eed705d2ad7be0b0227862adcd35bbe9dce2bc2df08c0d4b029120",
+    "tests/unit/test_source_draft_reason_feedback.py": "4f249e0d985d7d407279d4ee75da40fefc77e605c66dee111b0751b1a326e6fc",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d",
+    "tests/unit/test_source_draft_retry_feedback.py": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658"
+  },
+  "allowed_initial": {
+    "content/source_faithfulness.py": null
+  },
+  "allowed_final": {
+    "content/source_faithfulness.py": "413a95fc6792e4418fd837222c7c036640beb0be4cf3f4edcfb66145416ff497"
+  },
+  "allowed_changes": [
+    "content/source_faithfulness.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "repeated_revision",
+      "revisions": 2
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 2
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

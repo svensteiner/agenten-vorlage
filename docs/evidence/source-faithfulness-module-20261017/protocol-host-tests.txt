@@ -1,0 +1,31 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.8, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\sp-20261017\tests
+configfile: pytest.ini
+plugins: anyio-4.12.1, Faker-40.15.0, hypothesis-6.152.4, asyncio-1.3.0, cov-7.1.0, mock-3.15.1, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 183 items
+
+tests\unit\test_source_faithfulness_protocol.py ..........               [  5%]
+tests\unit\test_source_faithfulness_contract.py ........................ [ 18%]
+........................................                                 [ 40%]
+tests\unit\test_source_draft_retry_language.py .                         [ 40%]
+tests\unit\test_source_draft_reason_feedback.py .....                    [ 43%]
+tests\unit\test_source_draft_retry_feedback.py ....                      [ 45%]
+tests\unit\test_source_draft_security.py ....................            [ 56%]
+tests\unit\test_source_draft_contract.py ....                            [ 59%]
+tests\unit\test_tension_generator.py ........................            [ 72%]
+tests\unit\test_news_source_context.py ..............                    [ 79%]
+tests\unit\test_news_experiment_pipeline.py ........................     [ 92%]
+tests\unit\test_news_experiment.py .............                         [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.12.8-final-0 _______________
+
+Name                             Stmts   Miss  Cover   Missing
+--------------------------------------------------------------
+content\source_faithfulness.py     146     14    90%   50, 59, 65, 85, 169, 176, 186, 190, 200, 207, 212-215
+--------------------------------------------------------------
+TOTAL                              146     14    90%
+Required test coverage of 80% reached. Total coverage: 90.41%
+============================ 183 passed in 25.89s =============================

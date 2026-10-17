@@ -1,0 +1,15 @@
+# Source-aware qualification component: technical run completed, protocol repair pending
+
+Native run `4571e5c13b224305a8969cc2dc854f4c` completed in seven steps after two rejected independent reviews and its own repairs. Luna handled initial implementation/first repair; the configured stronger route handled the repeated revision; reviews were separate. Review caught malformed-verdict/type/recursion and accepted-status consistency defects. No host source edits occurred within the run.
+
+The host independently verified 173 targeted tests in21.86seconds with91.37% coverage of the new component. All794 protected source inputs, seven frozen files (six tests plus the host-owned baseline manifest), and the package stayed unchanged. The new64 tests originally failed because the component did not yet exist; they are structural/API/budget tests, not evidence of actual model factuality. The host-owned pre-run manifest made protected-file and exact-test proof available to the native reviewer, unlike the previous blocked run.
+
+The component uses explicitly injected reviewers/repairers, at most two reviews and one repair, current task-budget reuse or a standalone three-attempt scope, strict JSON shapes, quote/span containment and coverage, and unverified source status. These are structural controls; a quote occurring in a source does not prove it supports the associated claim. Semantic acceptance still depends on fallible model judgment.
+
+Independent pre-integration review found further model-protocol gaps: the prompt lacks the complete response schema/issue vocabulary and actual repair character limit; claim-by-claim entailment needs explicit instructions; contradictory accept-with-issues is treated as repairable; whitespace-only support is accepted. Ten frozen counterexamples produce nine failures and one passing control. The separate native follow-up is now terminal; see the qualification below. Eleven independently reviewed/frozen integration cases also fail against the old news method, confirming that this component is not yet integrated.
+
+No new-module full regression, actual-model semantic acceptance, deployment or production promotion is claimed. The earlier4495-test full run covered the previous generator, not this new component. No X publication or original live-bot restart occurred. Raw execution retains passed=false pending host/model/integration acceptance. Frozen evidence captures are inert text/JSON, not runtime plugins.
+
+## Protocol follow-up: host tests pass, native scope fails
+
+Run `14f58bf688f84eae872c6f5c26fe1322` completed in four steps with one revision and separate review. Independent host tests: 183 passed in25.89seconds,90.41% module coverage. The scope audit found one unauthorized added file, `source-faithfulness-protocol-tests.log`, at the workspace root instead of `logs/`. No protected file changed or disappeared. This is still a failed native scope qualification; the code test result does not override it. Raw run, scope audit, candidate and host log are preserved separately. Integration and actual-model semantic acceptance remain pending.

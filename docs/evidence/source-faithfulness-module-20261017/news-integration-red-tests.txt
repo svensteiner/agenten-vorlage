@@ -1,0 +1,200 @@
+FFFFFFFFFFF                                                              [100%]
+================================== FAILURES ===================================
+__________ test_actual_news_path_qualifies_source_before_final_gate ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392542072320'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+
+    def test_actual_news_path_qualifies_source_before_final_gate(setup):
+        subject,module,events=setup
+        payload=Bot._generate_news_commentary_tweet(subject)
+>       assert [e[0] for e in events]==["qualify","gate"]
+E       AssertionError: assert ['gate'] == ['qualify', 'gate']
+E         
+E         At index 0 diff: 'gate' != 'qualify'
+E         Right contains one more item: 'gate'
+E         Use -v to get more diff
+
+..\source_faithfulness_news_contract_20261017.py:45: AssertionError
+____________ test_no_unqualified_source_payload_or_gate_call[None] ____________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392542977952'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = None
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA928E0>, _apply_unified_quality_gate=<MagicMock id='2392542977952'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+__________ test_no_unqualified_source_payload_or_gate_call[result1] ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392543121184'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = {'status': 'rejected', 'text': None}
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA92A20>, _apply_unified_quality_gate=<MagicMock id='2392543121184'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+__________ test_no_unqualified_source_payload_or_gate_call[result2] ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392543182144'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = {'status': 'rejected', 'text': 'Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe.'}
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA92FC0>, _apply_unified_quality_gate=<MagicMock id='2392543182144'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+__________ test_no_unqualified_source_payload_or_gate_call[result3] ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392542986992'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = {'repair_calls': 0, 'review_calls': 1, 'status': 'accepted', 'text': 'Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe.', ...}
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA93380>, _apply_unified_quality_gate=<MagicMock id='2392542986992'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+__________ test_no_unqualified_source_payload_or_gate_call[result4] ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392542595456'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = {'repair_calls': 0, 'review_calls': 0, 'status': 'accepted', 'text': 'Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe.', ...}
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA92700>, _apply_unified_quality_gate=<MagicMock id='2392542595456'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+__________ test_no_unqualified_source_payload_or_gate_call[result5] ___________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392543450448'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+result = {'text': 'Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe.'}
+
+    @pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+        {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+        {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+        {"text":POST}])
+    def test_no_unqualified_source_payload_or_gate_call(setup,result):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA93420>, _apply_unified_quality_gate=<MagicMock id='2392543450448'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:62: AssertionError
+________ test_qualifier_exception_is_fail_closed_without_sensitive_log ________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392543577296'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+
+    def test_qualifier_exception_is_fail_closed_without_sensitive_log(setup):
+        subject,module,events=setup;module.qualify_source_draft.side_effect=RuntimeError("SENSITIVE_PROVIDER_BODY")
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA93EC0>, _apply_unified_quality_gate=<MagicMock id='2392543577296'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:68: AssertionError
+__________________ test_final_gate_rejection_stays_rejected ___________________
+
+self = <MagicMock id='2392543691552'>
+
+    def assert_called_once(self):
+        """assert that the mock was called only once.
+        """
+        if not self.call_count == 1:
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to have been called once. Called 0 times.
+
+C:\Program Files\Python312\Lib\unittest\mock.py:928: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...022D0EB4C360>, _apply_unified_quality_gate=<MagicMock id='2392543671024'>), <module 'content.source_faithfulness'>, [])
+
+    def test_final_gate_rejection_stays_rejected(setup):
+        subject,module,events=setup;subject._apply_unified_quality_gate.side_effect=lambda *a,**k:None
+        assert Bot._generate_news_commentary_tweet(subject) is None
+>       module.qualify_source_draft.assert_called_once()
+E       AssertionError: Expected 'mock' to have been called once. Called 0 times.
+
+..\source_faithfulness_news_contract_20261017.py:76: AssertionError
+____________ test_final_gate_cannot_change_source_qualified_claims ____________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...022D0EA93420>, _apply_unified_quality_gate=<MagicMock id='2392543613088'>), <module 'content.source_faithfulness'>, [])
+
+    def test_final_gate_cannot_change_source_qualified_claims(setup):
+        subject,module,events=setup;subject._apply_unified_quality_gate.side_effect=lambda *a,**k:POST+" Alles ist automatisch freigegeben."
+>       assert Bot._generate_news_commentary_tweet(subject) is None
+E       AssertionError: assert {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} is None
+E        +  where {'editorial_experiment': {'arm': 'control', 'id': 'news-perspective-v1', 'observation_hash': '3632ecedc65a7be1c8cadb74...urce_id': 'fixture-17', 'source_sha256': '4ca43365745c0f83e5d9d8cb216c298022015907019c531e3a06398c0506858f', ...}, ...} = <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80>(namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Doc...s=<function setup.<locals>.<lambda> at 0x0000022D0EA93420>, _apply_unified_quality_gate=<MagicMock id='2392543613088'>))
+E        +    where <function ReplyButtonOptimiertBotEnhanced._generate_news_commentary_tweet at 0x0000022D0E941A80> = Bot._generate_news_commentary_tweet
+
+..\source_faithfulness_news_contract_20261017.py:81: AssertionError
+_____________ test_actual_news_path_reuses_outer_budget_identity ______________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...<MagicMock id='2392543423344'>), <module 'content.source_faithfulness'>, [('gate', 'Entwurf vor der Quellenprüfung.')])
+
+    def test_actual_news_path_reuses_outer_budget_identity(setup):
+        subject,module,events=setup
+        with budgets.task_budget(max_calls=8,label="outer-news") as budget:
+            payload=Bot._generate_news_commentary_tweet(subject)
+            assert payload is not None
+>           assert events[0]==("qualify",budget.task_id)
+E           AssertionError: assert ('gate', 'Ent...llenprüfung.') == ('qualify', '...cdfbc41de907')
+E             
+E             At index 0 diff: 'gate' != 'qualify'
+E             Use -v to get more diff
+
+..\source_faithfulness_news_contract_20261017.py:90: AssertionError
+=========================== short test summary info ===========================
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_actual_news_path_qualifies_source_before_final_gate
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[None]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[result1]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[result2]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[result3]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[result4]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_no_unqualified_source_payload_or_gate_call[result5]
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_qualifier_exception_is_fail_closed_without_sensitive_log
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_final_gate_rejection_stays_rejected
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_final_gate_cannot_change_source_qualified_claims
+FAILED ..\source_faithfulness_news_contract_20261017.py::test_actual_news_path_reuses_outer_budget_identity
+11 failed in 3.15s

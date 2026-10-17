@@ -1,0 +1,53 @@
+{
+  "run_id": "14f58bf688f84eae872c6f5c26fe1322",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 4,
+  "failures": 1,
+  "protected_source_unchanged": false,
+  "pack_unchanged": true,
+  "protected_source_files": 796,
+  "frozen": {
+    "tests/unit/test_source_draft_retry_feedback.py": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d",
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    "tests/unit/test_source_draft_retry_language.py": "634e95fad9eed705d2ad7be0b0227862adcd35bbe9dce2bc2df08c0d4b029120",
+    "tests/unit/test_source_draft_reason_feedback.py": "4f249e0d985d7d407279d4ee75da40fefc77e605c66dee111b0751b1a326e6fc",
+    ".qualification/protected-inputs.json": "b96cb7f82b4565d77c8931b14b6906d0d1c9ae4d74de60584e3f8a479499a29f",
+    "tests/unit/test_source_faithfulness_contract.py": "3139f167311861c2c09e906019fb1e1399ee41dee3923761c1ce163bb89611e4",
+    "tests/unit/test_source_faithfulness_protocol.py": "740d18ce45f9816ea818542be92ed967359430d8c1dd2648f4535fe7e4573f6e"
+  },
+  "allowed_initial": {
+    "content/source_faithfulness.py": "413a95fc6792e4418fd837222c7c036640beb0be4cf3f4edcfb66145416ff497"
+  },
+  "allowed_final": {
+    "content/source_faithfulness.py": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c"
+  },
+  "allowed_changes": [
+    "content/source_faithfulness.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 1
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

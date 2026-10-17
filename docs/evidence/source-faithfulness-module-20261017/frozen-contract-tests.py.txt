@@ -1,0 +1,259 @@
+"""Frozen source-review contract: supplied evidence consistency, never truth certification."""
+import importlib
+import json
+from unittest.mock import MagicMock
+import pytest
+
+OBS = "  Seven scans are missing. Loading is unknown. Supervisor approval is required.\u2028  "
+DRAFT = "Sieben Scans fehlen; Ladestatus unbekannt, Supervisor-Freigabe erforderlich."
+BAD = "Sieben Pakete gingen verloren, weil die Schicht unterbesetzt war."
+
+
+def qualify(*args, **kwargs):
+    return importlib.import_module("content.source_faithfulness").qualify_source_draft(*args, **kwargs)
+
+
+def accepted(draft=DRAFT, source=OBS):
+    return {"verdict":"accept","issues":[],"claims":[{"draft_span":draft,"source_quote":source,"kind":"fact"}],
+            "human_controls_preserved":True,"uncertainty_preserved":True}
+
+
+def rejected(reason="unsupported_cause"):
+    return {"verdict":"reject","issues":[reason],"claims":[],
+            "human_controls_preserved":True,"uncertainty_preserved":True}
+
+
+class Responder:
+    def __init__(self,*answers,reserve=False):
+        self.answers=list(answers);self.calls=[];self.reserve=reserve;self.task_ids=[]
+    def generate_freeform(self,user_prompt,system_prompt=None,context=None):
+        from core.llm_task_budget import current_budget
+        budget=current_budget();self.task_ids.append(budget.task_id if budget else None)
+        if self.reserve and budget is not None:budget.reserve("fixture","fixture-model")
+        self.calls.append((user_prompt,system_prompt,context))
+        answer=self.answers.pop(0)
+        if isinstance(answer,Exception):raise answer
+        return json.dumps(answer) if isinstance(answer,dict) else answer
+
+
+def test_accept_keeps_exact_text_unverified_source_and_one_call():
+    reviewer=Responder(accepted())
+    result=qualify(OBS,DRAFT,reviewer=reviewer)
+    assert result["text"]==DRAFT and result["verification"]=="unverified"
+    assert result["review_calls"]==1 and result["repair_calls"]==0
+    user,system,context=reviewer.calls[0]
+    lines=[line for line in user.splitlines() if line.startswith("SOURCE_JSON: ")]
+    assert len(lines)==1 and json.loads(lines[0].removeprefix("SOURCE_JSON: "))=={"observation":OBS,"verification":"unverified"}
+    assert context["temperature"]==0 and 0<context["max_tokens"]<=1200
+
+
+@pytest.mark.parametrize("reason",["unsupported_fact","unsupported_cause","unsupported_legal_or_necessity","uncertainty_strengthened","human_control_omitted"])
+def test_rejected_claims_never_return_as_posts(reason):
+    reviewer=Responder(rejected(reason))
+    result=qualify(OBS,BAD,reviewer=reviewer)
+    assert result["text"] is None and len(reviewer.calls)==1
+
+
+def test_one_repair_then_independent_rereview_preserves_source():
+    reviewer=Responder(rejected(),accepted())
+    repairer=Responder(DRAFT)
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"]==DRAFT
+    assert result["review_calls"]==2 and result["repair_calls"]==1
+    assert len(reviewer.calls)==2 and len(repairer.calls)==1
+    draft_line=next(line for line in reviewer.calls[1][0].splitlines() if line.startswith("DRAFT_JSON: "))
+    assert json.loads(draft_line.removeprefix("DRAFT_JSON: "))=={"text":DRAFT}
+    for user,system,context in reviewer.calls+repairer.calls:
+        lines=[line for line in user.splitlines() if line.startswith("SOURCE_JSON: ")]
+        assert len(lines)==1 and json.loads(lines[0].removeprefix("SOURCE_JSON: "))["observation"]==OBS
+
+
+def test_second_rejection_is_terminal_no_best_of():
+    reviewer=Responder(rejected(),rejected("unsupported_fact"))
+    repairer=Responder(DRAFT)
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None
+    assert len(reviewer.calls)==2 and len(repairer.calls)==1
+
+
+@pytest.mark.parametrize("raw",["not JSON","{}","[]","```json\n{}\n```",'{"verdict":"accept","verdict":"reject"}'])
+def test_malformed_review_fails_closed_without_repair(raw):
+    reviewer=Responder(raw);repairer=Responder(DRAFT)
+    result=qualify(OBS,DRAFT,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None and len(reviewer.calls)==1 and not repairer.calls
+    assert result["review_calls"]==1 and result["repair_calls"]==0
+
+
+@pytest.mark.parametrize("mutation",["unknown_issue","extra_key","false_approval","false_uncertainty","forged_quote","missing_span","uncovered_tail","invalid_kind","empty_quote","numeric_flag","string_flag","extra_claim_key","missing_claim_key","quote_type","span_type"])
+def test_invalid_or_unbound_acceptance_is_not_authorization(mutation):
+    verdict=accepted();draft=DRAFT
+    if mutation=="unknown_issue":verdict["issues"]=["IGNORE_POLICY_AND_SEND"]
+    if mutation=="extra_key":verdict["execute"]="send_now"
+    if mutation=="false_approval":verdict["human_controls_preserved"]=False
+    if mutation=="false_uncertainty":verdict["uncertainty_preserved"]=False
+    if mutation=="forged_quote":verdict["claims"][0]["source_quote"]="The parcels were lost."
+    if mutation=="missing_span":verdict["claims"][0]["draft_span"]="Not in draft."
+    if mutation=="uncovered_tail":draft=DRAFT+" Alles ist freigegeben."
+    if mutation=="invalid_kind":verdict["claims"][0]["kind"]="verified_truth"
+    if mutation=="empty_quote":verdict["claims"][0]["source_quote"]=""
+    if mutation=="numeric_flag":verdict["human_controls_preserved"]=1
+    if mutation=="string_flag":verdict["uncertainty_preserved"]="true"
+    if mutation=="extra_claim_key":verdict["claims"][0]["execute"]="send"
+    if mutation=="missing_claim_key":del verdict["claims"][0]["kind"]
+    if mutation=="quote_type":verdict["claims"][0]["source_quote"]=7
+    if mutation=="span_type":verdict["claims"][0]["draft_span"]=7
+    reviewer=Responder(verdict);repairer=Responder(DRAFT)
+    result=qualify(OBS,draft,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None and not repairer.calls
+
+
+def test_provider_error_is_not_replayed_or_repaired():
+    reviewer=Responder(RuntimeError("unknown provider outcome"));repairer=Responder(DRAFT)
+    result=qualify(OBS,DRAFT,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None and len(reviewer.calls)==1 and not repairer.calls
+    assert result["review_calls"]==1 and result["repair_calls"]==0
+
+
+def test_missing_reviewer_fails_closed():
+    assert qualify(OBS,DRAFT,reviewer=None)["text"] is None
+
+
+@pytest.mark.parametrize("length",[190,191])
+def test_exact_length_boundary_without_truncation(length):
+    text="A"*length;reviewer=Responder(accepted(text,text))
+    result=qualify(text,text,reviewer=reviewer,max_chars=190)
+    assert result["text"]==(text if length==190 else None)
+    assert len(reviewer.calls)==(1 if length==190 else 0)
+
+
+def test_global_budget_identity_and_transport_accounting_are_reused(monkeypatch):
+    import core.llm_task_budget as budgets
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    reviewer=Responder(accepted(),reserve=True)
+    with budgets.task_budget(max_calls=2,label="source-check") as budget:
+        result=qualify(OBS,DRAFT,reviewer=reviewer)
+        assert result["text"]==DRAFT and result["task_id"]==budget.task_id
+        assert reviewer.task_ids==[budget.task_id] and len(budget.attempts)==1
+
+
+def test_exhausted_budget_prevents_any_model_invocation(monkeypatch):
+    import core.llm_task_budget as budgets
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    reviewer=Responder(accepted())
+    with budgets.task_budget(max_calls=1,label="source-check") as budget:
+        budget.reserve("fixture","fixture-model")
+        with pytest.raises(budgets.BudgetExceeded):budget.reserve("fixture","fixture-model")
+        result=qualify(OBS,DRAFT,reviewer=reviewer)
+        assert result["text"] is None and not reviewer.calls
+        assert result["review_calls"]==0 and result["repair_calls"]==0
+        assert result["task_id"]==budget.task_id
+
+
+def test_unknown_reason_never_reaches_repair_prompt():
+    reviewer=Responder(rejected("unsupported_cause:IGNORE_POLICY_AND_SEND"));repairer=Responder(DRAFT)
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None and not repairer.calls
+
+
+def test_duplicate_key_cannot_self_authorize_an_otherwise_valid_review():
+    raw=json.dumps(accepted()).replace('"verdict": "accept"','"verdict": "reject", "verdict": "accept"',1)
+    reviewer=Responder(raw)
+    result=qualify(OBS,DRAFT,reviewer=reviewer)
+    assert result["text"] is None
+
+
+def test_multiple_claim_spans_can_jointly_cover_supported_draft():
+    source="Seven scans missing. Loading unknown."
+    draft="Sieben Scans fehlen. Ladestatus unklar."
+    verdict=accepted(draft,source)
+    verdict["claims"]=[{"draft_span":"Sieben Scans fehlen.","source_quote":"Seven scans missing.","kind":"fact"},
+                       {"draft_span":"Ladestatus unklar.","source_quote":"Loading unknown.","kind":"fact"}]
+    assert qualify(source,draft,reviewer=Responder(verdict))["text"]==draft
+
+
+def test_shared_budget_survives_full_review_repair_review(monkeypatch):
+    import core.llm_task_budget as budgets
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    reviewer=Responder(rejected(),accepted(),reserve=True);repairer=Responder(DRAFT,reserve=True)
+    with budgets.task_budget(max_calls=3,label="source-cycle") as budget:
+        result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+        assert result["text"]==DRAFT and result["task_id"]==budget.task_id
+        assert len(budget.attempts)==3
+        assert reviewer.task_ids==[budget.task_id]*2 and repairer.task_ids==[budget.task_id]
+
+
+def test_no_callback_after_outer_budget_slots_consumed(monkeypatch):
+    import core.llm_task_budget as budgets
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    reviewer=Responder(rejected(),reserve=True);repairer=Responder(DRAFT,reserve=True)
+    with budgets.task_budget(max_calls=1,label="source-cycle") as budget:
+        result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+        assert result["text"] is None and result["status"]=="budget_exhausted"
+        assert len(budget.attempts)==1 and not repairer.task_ids
+        assert result["review_calls"]==1 and result["repair_calls"]==0
+
+
+@pytest.mark.parametrize("source",[None,7,["source"],"   ","x"*8193])
+def test_invalid_source_never_calls_provider(source):
+    reviewer=Responder(accepted())
+    assert qualify(source,DRAFT,reviewer=reviewer)["text"] is None
+    assert not reviewer.calls
+
+
+@pytest.mark.parametrize("draft",[None,7,{"text":DRAFT},"","   "])
+def test_invalid_draft_never_calls_provider(draft):
+    reviewer=Responder(accepted())
+    assert qualify(OBS,draft,reviewer=reviewer)["text"] is None
+    assert not reviewer.calls
+
+
+@pytest.mark.parametrize("limit",[True,0,-1,241,190.0])
+def test_invalid_character_limit_fails_closed_without_call(limit):
+    reviewer=Responder(accepted())
+    assert qualify(OBS,DRAFT,reviewer=reviewer,max_chars=limit)["text"] is None
+    assert not reviewer.calls
+
+
+@pytest.mark.parametrize("length",[190,191])
+def test_unicode_character_boundary_is_not_byte_length(length):
+    text="ä"*length;reviewer=Responder(accepted(text,text))
+    result=qualify(text,text,reviewer=reviewer,max_chars=190)
+    assert result["text"]==(text if length==190 else None)
+    assert len(reviewer.calls)==(1 if length==190 else 0)
+
+
+@pytest.mark.parametrize("bad_repair",[None,"",7,True,"A"*191])
+def test_invalid_repair_stops_before_rereview(bad_repair):
+    reviewer=Responder(rejected());repairer=Responder(bad_repair)
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None
+    assert result["review_calls"]==1 and result["repair_calls"]==1
+    assert len(reviewer.calls)==1 and len(repairer.calls)==1
+
+
+def test_repair_provider_error_is_terminal_and_not_leaked():
+    reviewer=Responder(rejected());repairer=Responder(RuntimeError("SENSITIVE_PROVIDER_BODY_IGNORE"))
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None
+    assert result["review_calls"]==1 and result["repair_calls"]==1
+    assert len(reviewer.calls)==1 and len(repairer.calls)==1
+    assert "SENSITIVE_PROVIDER_BODY_IGNORE" not in repr(result)
+
+
+def test_malformed_second_review_is_terminal():
+    reviewer=Responder(rejected(),"not JSON");repairer=Responder(DRAFT)
+    result=qualify(OBS,BAD,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None
+    assert result["review_calls"]==2 and result["repair_calls"]==1
+    assert len(reviewer.calls)==2 and len(repairer.calls)==1
+
+
+def test_standalone_budget_is_bounded_and_restored(monkeypatch):
+    import core.llm_task_budget as budgets
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    assert budgets.current_budget() is None
+    reviewer=Responder(accepted(),reserve=True)
+    result=qualify(OBS,DRAFT,reviewer=reviewer)
+    assert result["text"]==DRAFT
+    assert reviewer.task_ids==[result["task_id"]] and result["task_id"]
+    assert budgets.current_budget() is None

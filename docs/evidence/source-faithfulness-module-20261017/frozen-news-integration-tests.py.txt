@@ -1,0 +1,91 @@
+"""Host-frozen integration expectations; no live provider/browser/publication."""
+import hashlib
+import sys
+from types import ModuleType,SimpleNamespace
+from unittest.mock import MagicMock
+import pytest
+
+# Run from the integration workspace with PYTHONPATH=. so the actual Bot is used.
+from bot import ReplyButtonOptimiertBotEnhanced as Bot
+from content.observation_bank import ObservationBank
+import core.llm_task_budget as budgets
+
+FACT="Seven scans are missing. Loading status is unknown. A supervisor must approve closeout."
+DRAFT="Entwurf vor der Quellenprüfung."
+POST="Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe."
+
+@pytest.fixture
+def setup(tmp_path,monkeypatch):
+    import content
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    bank=ObservationBank(str(tmp_path/"bank.jsonl"));bank.add(FACT,source="rss",source_id="fixture-17")
+    events=[];llm=SimpleNamespace(generate_freeform=MagicMock())
+    subject=SimpleNamespace(config={"news_commentary":{"enabled":True,"news_experiment_policy_state_file":str(tmp_path/"policy.json")}},
+        _observation_bank=bank,llm_responder=llm,safe_log=MagicMock(),
+        _get_session_prompt_controls=lambda:{"content_format":"thesis_reason"})
+    def gate(text,**kwargs):events.append(("gate",text));return POST
+    subject._apply_unified_quality_gate=MagicMock(side_effect=gate)
+    def qualification(observation,draft,*,reviewer,repairer=None,max_chars=190):
+        assert observation==FACT and draft==DRAFT and reviewer is llm
+        assert repairer is llm and max_chars==190
+        events.append(("qualify",budgets.current_budget().task_id))
+        return {"text":POST,"status":"accepted","verification":"unverified","review_calls":1,"repair_calls":0,"task_id":budgets.current_budget().task_id,"reason_codes":[]}
+    fake=ModuleType("content.source_faithfulness");fake.qualify_source_draft=MagicMock(side_effect=qualification)
+    monkeypatch.setitem(sys.modules,"content.source_faithfulness",fake)
+    monkeypatch.setattr(content,"source_faithfulness",fake,raising=False)
+    generator=MagicMock();generator.return_value.generate.return_value=DRAFT
+    monkeypatch.setattr("content.tension_generator.TensionGenerator",generator)
+    monkeypatch.setattr("bot.append_control_event",MagicMock())
+    return subject,fake,events
+
+
+def test_actual_news_path_qualifies_source_before_final_gate(setup):
+    subject,module,events=setup
+    payload=Bot._generate_news_commentary_tweet(subject)
+    assert [e[0] for e in events]==["qualify","gate"]
+    assert events[1][1]==POST
+    assert payload["text"]==POST and payload["source_context"]["observation"]==FACT
+    assert payload["source_context"]["text_sha256"]==hashlib.sha256(POST.encode()).hexdigest()
+    module.qualify_source_draft.assert_called_once()
+    subject._apply_unified_quality_gate.assert_called_once()
+    assert payload["source_context"]["source"]=="rss"
+    assert payload["source_context"]["source_id"]=="fixture-17"
+    assert payload["source_context"]["verification"]=="unverified"
+
+
+@pytest.mark.parametrize("result",[None,{"text":None,"status":"rejected"},{"text":POST,"status":"rejected"},
+    {"text":POST,"status":"accepted","verification":"verified","review_calls":1,"repair_calls":0},
+    {"text":POST,"status":"accepted","verification":"unverified","review_calls":0,"repair_calls":0},
+    {"text":POST}])
+def test_no_unqualified_source_payload_or_gate_call(setup,result):
+    subject,module,events=setup;module.qualify_source_draft.side_effect=None;module.qualify_source_draft.return_value=result
+    assert Bot._generate_news_commentary_tweet(subject) is None
+    subject._apply_unified_quality_gate.assert_not_called()
+
+
+def test_qualifier_exception_is_fail_closed_without_sensitive_log(setup):
+    subject,module,events=setup;module.qualify_source_draft.side_effect=RuntimeError("SENSITIVE_PROVIDER_BODY")
+    assert Bot._generate_news_commentary_tweet(subject) is None
+    subject._apply_unified_quality_gate.assert_not_called()
+    assert "SENSITIVE_PROVIDER_BODY" not in repr(subject.safe_log.call_args_list)
+
+
+def test_final_gate_rejection_stays_rejected(setup):
+    subject,module,events=setup;subject._apply_unified_quality_gate.side_effect=lambda *a,**k:None
+    assert Bot._generate_news_commentary_tweet(subject) is None
+    module.qualify_source_draft.assert_called_once()
+
+
+def test_final_gate_cannot_change_source_qualified_claims(setup):
+    subject,module,events=setup;subject._apply_unified_quality_gate.side_effect=lambda *a,**k:POST+" Alles ist automatisch freigegeben."
+    assert Bot._generate_news_commentary_tweet(subject) is None
+    module.qualify_source_draft.assert_called_once()
+
+
+def test_actual_news_path_reuses_outer_budget_identity(setup):
+    subject,module,events=setup
+    with budgets.task_budget(max_calls=8,label="outer-news") as budget:
+        payload=Bot._generate_news_commentary_tweet(subject)
+        assert payload is not None
+        assert events[0]==("qualify",budget.task_id)
+        assert budgets.current_budget() is budget

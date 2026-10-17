@@ -1,0 +1,82 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.8, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\sp-20261017\tests
+configfile: pytest.ini
+plugins: anyio-4.12.1, Faker-40.15.0, hypothesis-6.152.4, asyncio-1.3.0, cov-7.1.0, mock-3.15.1, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 10 items
+
+tests\unit\test_source_faithfulness_protocol.py FFFFFFFFF.               [100%]
+
+================================== FAILURES ===================================
+__________ test_model_has_exact_response_schema_and_issue_vocabulary __________
+tests\unit\test_source_faithfulness_protocol.py:27: in test_model_has_exact_response_schema_and_issue_vocabulary
+    schema=policy(reviewer.calls[0][1],"REVIEW_SCHEMA_JSON")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+___________ test_reviewer_receives_configured_character_limit[120] ____________
+tests\unit\test_source_faithfulness_protocol.py:43: in test_reviewer_receives_configured_character_limit
+    assert policy(reviewer.calls[0][1],"OUTPUT_LIMIT_JSON")["max_chars"]==limit
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+___________ test_reviewer_receives_configured_character_limit[190] ____________
+tests\unit\test_source_faithfulness_protocol.py:43: in test_reviewer_receives_configured_character_limit
+    assert policy(reviewer.calls[0][1],"OUTPUT_LIMIT_JSON")["max_chars"]==limit
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+____ test_repairer_receives_same_actual_limit_and_preserves_language[120] _____
+tests\unit\test_source_faithfulness_protocol.py:51: in test_repairer_receives_same_actual_limit_and_preserves_language
+    output=policy(repairer.calls[0][1],"OUTPUT_LIMIT_JSON")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+____ test_repairer_receives_same_actual_limit_and_preserves_language[190] _____
+tests\unit\test_source_faithfulness_protocol.py:51: in test_repairer_receives_same_actual_limit_and_preserves_language
+    output=policy(repairer.calls[0][1],"OUTPUT_LIMIT_JSON")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+______ test_contradictory_accept_is_invalid_not_repair_authority[False] _______
+tests\unit\test_source_faithfulness_protocol.py:62: in test_contradictory_accept_is_invalid_not_repair_authority
+    assert result["text"] is None and result["status"]=="error"
+E   AssertionError: assert ('Sieben Scans fehlen; Ladestatus unbekannt, Supervisor-Freigabe erforderlich.' is None)
+_______ test_contradictory_accept_is_invalid_not_repair_authority[True] _______
+tests\unit\test_source_faithfulness_protocol.py:62: in test_contradictory_accept_is_invalid_not_repair_authority
+    assert result["text"] is None and result["status"]=="error"
+E   AssertionError: assert ('Sieben Scans fehlen; Ladestatus unbekannt, Supervisor-Freigabe erforderlich.' is None)
+________ test_semantic_policy_does_not_equate_containment_with_support ________
+tests\unit\test_source_faithfulness_protocol.py:69: in test_semantic_policy_does_not_equate_containment_with_support
+    rules=policy(reviewer.calls[0][1],"SOURCE_SUPPORT_POLICY_JSON")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_source_faithfulness_protocol.py:21: in policy
+    assert len(lines)==1
+E   assert 0 == 1
+E    +  where 0 = len([])
+__ test_whitespace_only_claim_fields_do_not_count_as_evidence[source_quote] ___
+tests\unit\test_source_faithfulness_protocol.py:77: in test_whitespace_only_claim_fields_do_not_count_as_evidence
+    assert qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer)["text"] is None
+E   AssertionError: assert 'Sieben Scans fehlen; Ladestatus unbekannt, Supervisor-Freigabe erforderlich.' is None
+=========================== short test summary info ===========================
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_model_has_exact_response_schema_and_issue_vocabulary
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_reviewer_receives_configured_character_limit[120]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_reviewer_receives_configured_character_limit[190]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_repairer_receives_same_actual_limit_and_preserves_language[120]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_repairer_receives_same_actual_limit_and_preserves_language[190]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_contradictory_accept_is_invalid_not_repair_authority[False]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_contradictory_accept_is_invalid_not_repair_authority[True]
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_semantic_policy_does_not_equate_containment_with_support
+FAILED tests\unit\test_source_faithfulness_protocol.py::test_whitespace_only_claim_fields_do_not_count_as_evidence[source_quote]
+========================= 9 failed, 1 passed in 1.98s =========================

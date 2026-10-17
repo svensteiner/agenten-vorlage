@@ -70,6 +70,19 @@ auf0,4167/5. Keine Ausgabe behaelt das Urteil quellentreu; fuenf haben harte
 Fehlerbefunde. [Getrennte Erstnoten und Audits](docs/evidence/source-draft-repair-screen-20261017/README.md).
 Die bekannten sechs Quellen ersetzen weder neue Faelle noch das feste Neuner-Gate.
 
+## Quellenpruefung in Arbeit
+
+Neues Modul: nativer Lauf sieben Schritte, zwei eigene Nachbesserungen und
+frische separate Review; Host173Tests,91,37% Modulabdeckung.794 geschuetzte
+Quelldateien und sieben eingefrorene Dateien unveraendert, keine Host-Codehilfe
+innerhalb des Laufs. Noch nicht im Nachrichtenablauf eingebaut und keine echte
+Modellabnahme. Weitere Protokollgegenproben: neun Fehler/eine Kontrolle; elf
+Integrationsfaelle scheitern erwartungsgemaess am noch alten Ablauf.
+[Getrennte Quell-/Test-/Gegenbelege](docs/evidence/source-faithfulness-module-20261017/README.md).
+Protokoll-Folgeauftrag beendet:183 Hosttests,90,41% Modulabdeckung. Native
+Bereichspruefung gescheitert: eine Testlogdatei im Workspace-Wurzelordner statt
+logs/ hinzugefuegt; keine geschuetzte Datei geaendert/entfernt. Keine Promotion.
+
 ## Offene Abnahme
 
 1. Technische Reparatur und volle Regression bestanden; Uebernahme bleibt von

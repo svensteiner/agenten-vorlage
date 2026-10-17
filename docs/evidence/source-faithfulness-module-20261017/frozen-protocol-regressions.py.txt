@@ -1,0 +1,77 @@
+"""Frozen model-facing protocol regressions, not proof of semantic truth."""
+import json
+import pytest
+from content.source_faithfulness import qualify_source_draft
+
+SOURCE="  Seven scans missing. Loading unknown. Supervisor approval required.  "
+DRAFT="Sieben Scans fehlen; Ladestatus unbekannt, Supervisor-Freigabe erforderlich."
+ISSUES={"unsupported_fact","unsupported_cause","unsupported_legal_or_necessity","uncertainty_strengthened","human_control_omitted","overlength","format"}
+
+def accepted():return {"verdict":"accept","issues":[],"claims":[{"draft_span":DRAFT,"source_quote":SOURCE,"kind":"fact"}],"human_controls_preserved":True,"uncertainty_preserved":True}
+def rejected():return {"verdict":"reject","issues":["unsupported_cause"],"claims":[],"human_controls_preserved":True,"uncertainty_preserved":True}
+
+class Responder:
+    def __init__(self,*answers):self.answers=list(answers);self.calls=[]
+    def generate_freeform(self,user_prompt,system_prompt=None,context=None):
+        self.calls.append((user_prompt,system_prompt,context));answer=self.answers.pop(0)
+        return json.dumps(answer) if isinstance(answer,dict) else answer
+
+def policy(system,label):
+    lines=[line for line in system.splitlines() if line.startswith(label+": ")]
+    assert len(lines)==1
+    return json.loads(lines[0].removeprefix(label+": "))
+
+
+def test_model_has_exact_response_schema_and_issue_vocabulary():
+    reviewer=Responder(accepted());assert qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer)["text"]==DRAFT
+    schema=policy(reviewer.calls[0][1],"REVIEW_SCHEMA_JSON")
+    assert schema["type"]=="object" and schema["additionalProperties"] is False
+    assert set(schema["required"])==set(accepted())
+    props=schema["properties"]
+    assert set(props["verdict"]["enum"])=={"accept","reject"}
+    assert props["issues"]["type"]=="array" and set(props["issues"]["items"]["enum"])==ISSUES
+    assert props["human_controls_preserved"]["type"]=="boolean" and props["uncertainty_preserved"]["type"]=="boolean"
+    claims=props["claims"];assert claims["type"]=="array"
+    item=claims["items"];assert item["type"]=="object" and item["additionalProperties"] is False
+    assert set(item["required"])=={"draft_span","source_quote","kind"}
+    assert set(item["properties"]["kind"]["enum"])=={"fact","inference","conditional_proposal"}
+
+
+@pytest.mark.parametrize("limit",[120,190])
+def test_reviewer_receives_configured_character_limit(limit):
+    reviewer=Responder(accepted());qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer,max_chars=limit)
+    assert policy(reviewer.calls[0][1],"OUTPUT_LIMIT_JSON")["max_chars"]==limit
+
+
+@pytest.mark.parametrize("limit",[120,190])
+def test_repairer_receives_same_actual_limit_and_preserves_language(limit):
+    reviewer=Responder(rejected(),accepted());repairer=Responder(DRAFT)
+    result=qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer,repairer=repairer,max_chars=limit)
+    assert result["text"]==DRAFT
+    output=policy(repairer.calls[0][1],"OUTPUT_LIMIT_JSON")
+    assert output["max_chars"]==limit
+    assert output["preserve_draft_language"] is True and output["plain_text"] is True
+
+
+@pytest.mark.parametrize("false_control",[False,True])
+def test_contradictory_accept_is_invalid_not_repair_authority(false_control):
+    verdict=accepted();verdict["issues"]=["unsupported_cause"]
+    if false_control:verdict["human_controls_preserved"]=False
+    reviewer=Responder(verdict,accepted());repairer=Responder(DRAFT)
+    result=qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer,repairer=repairer)
+    assert result["text"] is None and result["status"]=="error"
+    assert result["reason_codes"]==["invalid_response"]
+    assert result["review_calls"]==1 and result["repair_calls"]==0 and not repairer.calls
+
+
+def test_semantic_policy_does_not_equate_containment_with_support():
+    reviewer=Responder(accepted());qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer)
+    rules=policy(reviewer.calls[0][1],"SOURCE_SUPPORT_POLICY_JSON")
+    assert all(rules.get(name) is True for name in ("atomic_claims","semantic_entailment_required","containment_only_is_insufficient","reject_unrelated_quotes"))
+
+
+@pytest.mark.parametrize("field",["source_quote","draft_span"])
+def test_whitespace_only_claim_fields_do_not_count_as_evidence(field):
+    verdict=accepted();verdict["claims"][0][field]=" "
+    reviewer=Responder(verdict)
+    assert qualify_source_draft(SOURCE,DRAFT,reviewer=reviewer)["text"] is None

@@ -1,0 +1,60 @@
+{
+  "native_status": "completed",
+  "native_reviewed": true,
+  "native_steps": 7,
+  "native_failures": 2,
+  "protected_source_files": 794,
+  "protected_and_pack_unchanged_after_host_tests": true,
+  "host_code_edits_within_run": false,
+  "host_counterexample_assisted": true,
+  "host_targeted_passed": 173,
+  "host_seconds": 21.86,
+  "module_coverage_percent": 91.37,
+  "full_regression_of_new_module": "not_run",
+  "actual_model_semantics": "not_evaluated",
+  "production_ready": false,
+  "integrated_into_actual_news_path": false,
+  "promoted": false,
+  "remaining_preintegration_findings": [
+    "Exact response schema and allowed issue vocabulary absent from model prompt.",
+    "Configured repair character limit absent from model prompt.",
+    "Need explicit atomic claim/evidence entailment policy; quote containment is structural only.",
+    "Contradictory accept with known issues is incorrectly repairable.",
+    "Whitespace-only quote can be accepted as structural support."
+  ],
+  "protocol_regressions_before_followup": {
+    "failed": 9,
+    "passed": 1
+  },
+  "news_integration_before_change": {
+    "failed": 11,
+    "exact_final_frozen_test_rerun": true
+  },
+  "files_sha256": {
+    "execution.json": "7fe27aa1f44e1e30f3535c74b04f2bef5ecb0fdd9a9ccd44e9d5452bce64c931",
+    "candidate.py.txt": "413a95fc6792e4418fd837222c7c036640beb0be4cf3f4edcfb66145416ff497",
+    "frozen-contract-tests.py.txt": "3139f167311861c2c09e906019fb1e1399ee41dee3923761c1ce163bb89611e4",
+    "protected-inputs.json": "4cdafac718bef555b18bc0c440a6a9727b16638cd33ba0914d93b083a9c54cdf",
+    "host-tests.txt": "3a5d98bb6e6c4ad11a3e1d12d7225129caabaf01254926ee54273e3e583c813c",
+    "frozen-protocol-regressions.py.txt": "740d18ce45f9816ea818542be92ed967359430d8c1dd2648f4535fe7e4573f6e",
+    "protocol-red-tests.txt": "452f604a8e1dccc365f81348a2c1690ec083b7a95434ae8889b28b55384cc1f6",
+    "frozen-news-integration-tests.py.txt": "46fbbfa752c56d3740c167f2984c16c5135fe108f2d196611be43dbb58cd1ea1",
+    "news-integration-red-tests.txt": "b5773987ff9fd411b648d78792829be4c58a58e3bd49eeb04b81b16e6d719795",
+    "protocol-execution.json": "a7ca42b4952b3c6ee0c98270a24fbd8399bf4381fc81cc61a827aec0b9b6d3a3",
+    "protocol-scope-audit.json": "8f2b09ad64d0b9514479c465222d840a080c061ab2074a1030db7b6e506a9d98",
+    "protocol-candidate.py.txt": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "protocol-host-tests.txt": "9c6d5ebb82dce7f9682ebbbee568f7cab66d6e15073d3abfb52441327f971c15"
+  },
+  "protocol_followup": {
+    "run_id": "14f58bf688f84eae872c6f5c26fe1322",
+    "native_status": "completed",
+    "reviewed": true,
+    "qualified": false,
+    "scope_passed": false,
+    "scope_violation": "Added source-faithfulness-protocol-tests.log at workspace root instead of permitted logs/ directory; no protected file changed or removed.",
+    "host_targeted_passed": 183,
+    "coverage_percent": 90.41,
+    "full_regression": false,
+    "integrated": false
+  }
+}
