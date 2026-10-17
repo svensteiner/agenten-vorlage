@@ -38,6 +38,21 @@ den verlinkten Nachweisen und dem
 [vorherigen ausfuehrlichen Status](https://github.com/svensteiner/agenten-vorlage/blob/0f4f244/STATUS.md)
 erhalten. Keine Promotion der gescheiterten Inhaltsvarianten in den laufenden Bot.
 
+## Laufende Verbesserung der News-Generierung
+
+Der isolierte Stilauftrag verwendet Luna fuer Umsetzung und Sol fuer Review/Nacharbeit.
+Der erste Aenderungsstand bestand 4.661 Tests (elf Skips, fuenf erwartete
+Fehlschlaege), ist aber nicht abgenommen: Ein unabhaengiges Review beanstandet,
+dass die widerspruechlichen Original-Tonbefehle weiterhin im Prompt stehen und
+die neuen Tests nicht die echten zehn Tonvorgaben pruefen. Der native Auftrag
+arbeitet noch nach; die erste gruene Suite deckt spaetere Aenderungen nicht ab.
+
+Die getrennte [v12-Diagnose](docs/evidence/execution-profiles-20261017/marketing-fullpath-v12-offline.json)
+besteht 21 Offline-Tests und ein unabhaengiges Review. Sie fixiert Ergebnisdateipfade
+vor temporaeren Verzeichniswechseln und zeichnet ausschliesslich feste Kategorien
+der tatsaechlichen Auditor-/Gatekeeper-Rueckgaben auf. Kein Modelllauf und kein
+Nachweis besserer Inhalte. Rohantworten werden dafuer nicht gespeichert.
+
 ## Verwendung
 
 Nach technischer Freigabe startet `Start-Coding-Agent.ps1 -Workspace <isolierter Checkout>`

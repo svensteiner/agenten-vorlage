@@ -1,0 +1,33 @@
+{
+  "schema": "marketing-evaluator-observability/v1",
+  "status": "offline_verified_independently_reviewed",
+  "study": "source-fullpath-v12-20261017",
+  "changes": [
+    "Normalize caller artifact paths before temporary working-directory changes.",
+    "Record only allowlisted auditor verdict/failure category and gatekeeper outcome from actual component return values.",
+    "Preserve original gate return values, provider routing, budgets and no-replay checks."
+  ],
+  "validation": {
+    "command": "py -3.12 -B -m pytest .runs/qualification/source-fullpath-v12-20261017/test_source_fullpath_v12_eval.py -q --basetemp .runs/qualification/source-fullpath-v12-20261017/.t-root-review-1",
+    "passed": 21,
+    "seconds": 4.0,
+    "http": "synthetic only",
+    "credentials_loaded": false,
+    "model_calls": 0,
+    "candidate_root": "C:/agq/marketing-retry-20261017"
+  },
+  "independent_review": {
+    "reviewer": "refiner_test_review",
+    "result": "no_blocker"
+  },
+  "files": {
+    "source_fullpath_v12_eval.py": "f52a7116d355bca34c909f259abb836b27cea47c9737e7cc0348a0f77d4c0405",
+    "test_source_fullpath_v12_eval.py": "cbc506dbdd0b4127858ea29dfe9ef45322ef1039157b5ed66f519132bb059479"
+  },
+  "production_qualified": false,
+  "limits": [
+    "No new model study yet.",
+    "Categorical telemetry does not expose raw parse failures or prove output quality.",
+    "Sequential diagnostic wrappers are not production concurrency support."
+  ]
+}
