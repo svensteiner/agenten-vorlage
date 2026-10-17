@@ -1,0 +1,43 @@
+{
+  "schema": "native-coding-qualification/v1",
+  "run_id": "a74f478bb8bb4782bbcee066cc57ebcd",
+  "requested_model": "gpt-6-luna",
+  "served_model": null,
+  "provider_cost_usd": null,
+  "engine_status": "completed",
+  "steps": 3,
+  "failures": 1,
+  "engine_reviewed": true,
+  "operator_intervention_during_run": false,
+  "targeted_passed": 176,
+  "full_passed": 4649,
+  "full_skipped": 11,
+  "full_xfailed": 5,
+  "other_baseline_files_unchanged": 693,
+  "baseline_source_scope_integrity": true,
+  "whole_workspace_scope_integrity": false,
+  "qualification_pass": false,
+  "independent_findings": [
+    "Actual default generate probe: nested outer quote pairs change because normalization runs twice.",
+    "Integration test calls the real qualifier and unified gate entrypoint but mocks ContentAuditor and ContentGatekeeper; full-stage acceptance remains unproved.",
+    "Untracked/ignored logs, locks, bytecode and test-generated Python fixture exist beyond the three changed source files."
+  ],
+  "changed_files_sha256": {
+    "content/tension_generator.py": "c05e3bd9bd2d3fd36637e0c78d6872fd9f0096cd2c814d8bee0c8c15bb962f60",
+    "tests/unit/test_source_faithfulness_news.py": "201a02555424b6d711f72271c3c8560342a546cf7500d042f380275678fc19cf",
+    "tests/unit/test_tension_generator.py": "145c34887c04044db36abea4bad40cc0f782cb62c69e60a0bd72c691034fc30a"
+  },
+  "hashes": {
+    "independent_audit": "6b22c14c8330809c08ae14c5cf050d6806f588f6fc0949505b8013968315fefc",
+    "native_state": "7e0077c86ef21f7c450ac3a2a3f5dd19f3689ca24be97d45b145e2203aacef97",
+    "full_receipt": "37303ebe452687456ac7d6818db0b364f27c34eb673201a81b482d16ef8efe05",
+    "full_log": "888c3175d75960ef4326eb1c2571b247670f9cd92cd3c8cefb012c4dcf5ad458"
+  },
+  "limits": [
+    "Engine completion and green tests did not establish task acceptance.",
+    "Model configuration is not served-model or cost attestation.",
+    "No real-model marketing quality or production qualification is established."
+  ],
+  "production_qualified": false,
+  "promoted": false
+}

@@ -22,6 +22,16 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+Ein weiterer nativer Lauf mit angefordertem `gpt-6-luna` implementiert konstruktive
+Laengen-Retrys, besteht 176 gezielte und 4.649 vollstaendige Tests und endet nach
+separatem Review als `completed`. Die unabhaengige Nachpruefung widerlegt dennoch
+die Abnahme: doppelte Normalisierung veraendert Standardausgaben; der neue
+Integrationstest ersetzt Auditor und Gatekeeper. Ausserdem bleibt die gesamte
+Workspace-Integritaet wegen neuer Test-/Laufzeitartefakte falsch, waehrend die
+693 anderen Baseline-Dateien unveraendert sind. Der Lauf bleibt verworfen;
+ein gesonderter Korrekturauftrag darf ihn nicht nachtraeglich zum Erfolg machen.
+[Hashes, Testergebnisse und Grenzen](evidence/execution-profiles-20261017/native-retry-luna-rejected.json).
+
 Ein frischer, operatorseitig vorbereiteter Coding-Lauf mit Budgetkontext schloss
 einen begrenzten Bausteinauftrag ohne Zwischenhilfe ab: vier Schritte, keine
 Fehler, drei Schreibbelege, 79 frische Tests und separates Review. Geschuetzte
