@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -18,6 +18,89 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentKitCliTests(unittest.TestCase):
+    def test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = self.init_agent(Path(temp_name), "strict-agent")
+            result, completed = self.run_cli(
+                "run", "--agent", agent, "--backend", "demo", "--task", "bounded demo",
+                "--allow-write", "demo-result.md", "--autonomous-writes",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue(completed["reviewed"])
+            self.assertFalse(completed["require_approvals"])
+            self.assertTrue(completed["write_policy_sha256"])
+            run_dir = agent / ".runs" / completed["run_id"]
+            artifact = agent / "workspace" / "demo-result.md"
+            before = artifact.read_bytes()
+            result, resumed = self.run_cli(
+                "resume", "--agent", agent, "--backend", "demo", "--run-dir", run_dir,
+                "--allow-write", "demo-result.md", "--autonomous-writes",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(completed["write_policy_sha256"], resumed["write_policy_sha256"])
+            for policy_args in ([], ["--allow-write", "other.md"]):
+                rejected = subprocess.run(
+                    [sys.executable, "-m", "agentkit", "resume", "--agent", str(agent),
+                     "--backend", "demo", "--run-dir", str(run_dir), *policy_args],
+                    cwd=ROOT, capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(1, rejected.returncode)
+                self.assertIn("write policy", json.loads(rejected.stderr)["summary"])
+            self.assertEqual(before, artifact.read_bytes())
+
+    def test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = create(Path(temp_name) / "agent", "developer", "agent", "company")
+            for extra in (
+                ["--autonomous-writes"],
+                ["--allow-write", "allowed.py", "--autonomous-writes", "--require-approvals"],
+                ["--allow-write", "../outside.py"],
+            ):
+                with self.subTest(extra=extra), patch.object(cli, "CodexBackend") as backend, \
+                     redirect_stdout(StringIO()), redirect_stderr(StringIO()) as error:
+                    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+                                     "--task", "bounded", *extra])
+                    self.assertEqual(1, code)
+                    self.assertEqual("error", json.loads(error.getvalue())["status"])
+                    backend.assert_not_called()
+
+    def test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = create(Path(temp_name) / "agent", "developer", "agent", "company")
+            for autonomous in (False, True):
+                with self.subTest(autonomous=autonomous), patch.object(cli, "CodexBackend"), \
+                     patch.object(cli, "Engine") as engine, redirect_stdout(StringIO()):
+                    engine.return_value.run.return_value = {"status": "blocked"}
+                    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+                                     "--task", "bounded", "--allow-write", "src/a.py",
+                                     "--allow-write", "src/b.py",
+                                     *(["--autonomous-writes"] if autonomous else [])])
+                    self.assertEqual(2, code)
+                    self.assertEqual(not autonomous, engine.call_args.kwargs["require_approvals"])
+                    self.assertEqual(("src/a.py", "src/b.py"),
+                                     engine.call_args.kwargs["write_policy"].paths)
+
+    def test_cli_autonomous_resume_cannot_remove_existing_approval_requirement(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            agent = self.init_agent(Path(temp_name), "sticky-agent")
+            result, paused = self.run_cli(
+                "run", "--agent", agent, "--backend", "demo", "--task", "bounded demo",
+                "--allow-write", "demo-result.md", "--require-approvals",
+            )
+            self.assertEqual(2, result.returncode, result.stderr)
+            run_dir = agent / ".runs" / paused["run_id"]
+            result, resumed = self.run_cli(
+                "resume", "--agent", agent, "--backend", "demo", "--run-dir", run_dir,
+                "--allow-write", "demo-result.md", "--autonomous-writes",
+                "--approval-id", paused["pending_approval"]["id"],
+                "--approval-decision", "approve",
+            )
+            self.assertEqual(2, result.returncode, result.stderr)
+            self.assertEqual("awaiting_approval", resumed["status"])
+            self.assertTrue(resumed["require_approvals"])
+            self.assertNotEqual(paused["pending_approval"]["id"], resumed["pending_approval"]["id"])
+            self.assertNotIn("ACCEPTED", (agent / "workspace" / "demo-result.md").read_text(encoding="utf-8"))
+
     def test_explicit_model_routing_is_wired_without_disabling_approvals(self):
         with tempfile.TemporaryDirectory() as temp_name:
             agent = create(Path(temp_name) / "agent", "developer", "agent", "company")

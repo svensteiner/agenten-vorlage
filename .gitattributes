@@ -46,3 +46,6 @@ docs/evidence/write-policy-live-20261017/*.txt -text
 docs/evidence/write-policy-live-v2-20261017/*.json -text
 docs/evidence/write-policy-live-v2-20261017/*.jsonl -text
 docs/evidence/write-policy-live-v2-20261017/*.txt -text
+
+docs/evidence/cli-write-policy-20261017/*.json -text
+docs/evidence/cli-write-policy-20261017/*.txt -text

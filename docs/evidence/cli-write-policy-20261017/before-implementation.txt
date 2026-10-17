@@ -1,0 +1,140 @@
+test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) ... 
+  test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--autonomous-writes']) ... ERROR
+  test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--allow-write', 'allowed.py', '--autonomous-writes', '--require-approvals']) ... ERROR
+  test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--allow-write', '../outside.py']) ... ERROR
+test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit (tests.test_cli.AgentKitCliTests.test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit) ... usage: agentkit [-h]
+                {profiles,doctor,init,inspect,validate,add-skill,native-prompt,run,resume}
+                ...
+agentkit: error: unrecognized arguments: --allow-write src/a.py --allow-write src/b.py
+
+  test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit (tests.test_cli.AgentKitCliTests.test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit) (autonomous=False) ... ERROR
+usage: agentkit [-h]
+                {profiles,doctor,init,inspect,validate,add-skill,native-prompt,run,resume}
+                ...
+agentkit: error: unrecognized arguments: --allow-write src/a.py --allow-write src/b.py --autonomous-writes
+  test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit (tests.test_cli.AgentKitCliTests.test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit) (autonomous=True) ... ERROR
+test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list (tests.test_cli.AgentKitCliTests.test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list) ... FAIL
+
+======================================================================
+ERROR: test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--autonomous-writes'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 61, in test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend
+    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\agentkit\cli.py", line 89, in main
+    args = parser().parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\argparse.py", line 1908, in parse_args
+    self.error(msg)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2650, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+======================================================================
+ERROR: test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--allow-write', 'allowed.py', '--autonomous-writes', '--require-approvals'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 61, in test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend
+    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\agentkit\cli.py", line 89, in main
+    args = parser().parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\argparse.py", line 1908, in parse_args
+    self.error(msg)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2650, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+======================================================================
+ERROR: test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend (tests.test_cli.AgentKitCliTests.test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend) (extra=['--allow-write', '../outside.py'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 61, in test_cli_rejects_unbounded_autonomy_and_conflicting_modes_before_backend
+    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\agentkit\cli.py", line 89, in main
+    args = parser().parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\argparse.py", line 1908, in parse_args
+    self.error(msg)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2650, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+======================================================================
+ERROR: test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit (tests.test_cli.AgentKitCliTests.test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit) (autonomous=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 74, in test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit
+    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\agentkit\cli.py", line 89, in main
+    args = parser().parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\argparse.py", line 1908, in parse_args
+    self.error(msg)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2650, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+======================================================================
+ERROR: test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit (tests.test_cli.AgentKitCliTests.test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit) (autonomous=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 74, in test_cli_exact_allowlist_does_not_disable_approvals_unless_explicit
+    code = cli.main(["run", "--agent", str(agent), "--backend", "codex",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\agentkit\cli.py", line 89, in main
+    args = parser().parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\argparse.py", line 1908, in parse_args
+    self.error(msg)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2650, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "C:\Program Files\Python312\Lib\argparse.py", line 2637, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+======================================================================
+FAIL: test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list (tests.test_cli.AgentKitCliTests.test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 114, in run_cli
+    value = json.loads(result.stdout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\decoder.py", line 356, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 24, in test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list
+    result, completed = self.run_cli(
+                        ^^^^^^^^^^^^^
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\tests\test_cli.py", line 116, in run_cli
+    self.fail(f"CLI did not emit JSON: rc={result.returncode}, stdout={result.stdout!r}, stderr={result.stderr!r}")
+AssertionError: CLI did not emit JSON: rc=2, stdout='', stderr='usage: agentkit [-h]\n                {profiles,doctor,init,inspect,validate,add-skill,native-prompt,run,resume}\n                ...\nagentkit: error: unrecognized arguments: --allow-write demo-result.md --autonomous-writes\n'
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.176s
+
+FAILED (failures=1, errors=5)
+
+EXIT_CODE=1

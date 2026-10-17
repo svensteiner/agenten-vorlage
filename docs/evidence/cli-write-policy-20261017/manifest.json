@@ -1,0 +1,8 @@
+{
+  "before-implementation.txt": "8046b7353d7de9ce5864dc6ba6ed6508c71e52fcc8536964f9a3d1f91c2eed46",
+  "full-unittest.json": "48ce9564986930d444946c7a8169c38515d008a5bf54afd38647c983dc07b6d5",
+  "full-unittest.txt": "10a4372bdda26aecbfa4553c48a420ac7e95ed2f81b9a5958cf5831cd65f58e2",
+  "offline-release.txt": "5e1123beae093130b01d0acde54524abbe3ca151cbaa636513f246599b8fbdaa",
+  "README.md": "8a3d24bdfa3f8a44f9a85aab6edbb746ed95521266eba29fe12708db1aec841d",
+  "ruff.txt": "51b647c5a6e3ee36024c1c39603f285eb31f4ebb3d3d87d8f96ac5732c43b112"
+}

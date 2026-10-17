@@ -1,0 +1,17 @@
+{
+  "exit_code": 0,
+  "source_before": {
+    "agentkit/cli.py": "00d10185fd31f0488d02ffa77161474eae6731f5c020672dd0ac5c098c6e714f",
+    "tests/test_cli.py": "8e24bb01b3adb465b6dc2e5b342351c270d4e9353964ecabef30abaafdc1a7c0",
+    "agentkit/engine.py": "0c9882d50ce9033367d8809fd697d11c86e29d26438a82c531ea122adc89dfd9",
+    "agentkit/write_policy.py": "65bc013216dcbf6a16d0014dc7e74330a2bbe566de99a11fb9f524a895d9c9ad"
+  },
+  "source_after": {
+    "agentkit/cli.py": "00d10185fd31f0488d02ffa77161474eae6731f5c020672dd0ac5c098c6e714f",
+    "tests/test_cli.py": "8e24bb01b3adb465b6dc2e5b342351c270d4e9353964ecabef30abaafdc1a7c0",
+    "agentkit/engine.py": "0c9882d50ce9033367d8809fd697d11c86e29d26438a82c531ea122adc89dfd9",
+    "agentkit/write_policy.py": "65bc013216dcbf6a16d0014dc7e74330a2bbe566de99a11fb9f524a895d9c9ad"
+  },
+  "source_unchanged": true,
+  "log_sha256": "10a4372bdda26aecbfa4553c48a420ac7e95ed2f81b9a5958cf5831cd65f58e2"
+}

@@ -248,5 +248,7 @@ relative Dateipfade. Der Policy-Hash bleibt an Checkpoints und offene Freigaben
 gebunden; der Planer kann die Liste nicht erweitern. Strikte Codex-Worker liefern
 read-only Vorschlaege an den Host-Executor. DeepSeek prueft Dateiwerkzeuge an
 derselben Schreibgrenze. Projektausfuehrung bleibt dabei gesperrt und muss separat
-vom Host isoliert werden. CLI und Cockpit aktivieren diese optionale Policy noch
-nicht automatisch. [Grenzen und Verwendung](WRITE-POLICY.md).
+vom Host isoliert werden. Die CLI setzt sie mit wiederholtem `--allow-write`;
+erst `--autonomous-writes` deaktiviert einzelne Freigaben fuer neue Auftraege.
+Gespeicherte Freigabepflichten bleiben bei Wiederaufnahme bestehen. Das Cockpit
+bietet die Policy noch nicht an. [Grenzen und Verwendung](WRITE-POLICY.md).

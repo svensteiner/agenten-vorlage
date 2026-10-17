@@ -18,6 +18,7 @@ from .contracts import ContractError, LIBRARY, read_json
 from .engine import Engine
 from .integrations import native_prompt
 from .scaffold import add_skill, create
+from .write_policy import WritePolicy
 
 
 def parser() -> argparse.ArgumentParser:
@@ -57,7 +58,11 @@ def parser() -> argparse.ArgumentParser:
             "--workspace", type=Path, help="Defaults to the pack's workspace directory"
         )
         cmd.add_argument("--backend", choices=("demo", "codex", "deepseek", "api", "anthropic", "ollama"), default="demo")
-        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported backend write/test actions; always enabled for Codex, DeepSeek and API")
+        cmd.add_argument("--require-approvals", action="store_true", help="Pause before supported write/test actions; default for model backends")
+        cmd.add_argument("--allow-write", action="append", metavar="RELATIVE_FILE",
+                         help="Exact file the host permits writing; repeat for each file, no globs. Reuse the same list on resume")
+        cmd.add_argument("--autonomous-writes", action="store_true",
+                         help="Execute permitted writes without individual approval; requires --allow-write. Project execution remains disabled")
         cmd.add_argument(
             "--model",
             help="Optional model override; Codex defaults to gpt-5.6-luna with low reasoning; DeepSeek uses its provider default",
@@ -132,6 +137,11 @@ def main(argv: list[str] | None = None) -> int:
             print(native_prompt(args.agent, args.task))
             return 0
         else:
+            if args.autonomous_writes and not args.allow_write:
+                raise ContractError("--autonomous-writes requires an explicit --allow-write file list.")
+            if args.autonomous_writes and args.require_approvals:
+                raise ContractError("--autonomous-writes cannot be combined with --require-approvals.")
+            write_policy = WritePolicy(args.allow_write) if args.allow_write is not None else None
             catalog = Catalog(args.agent)
             has_worker = any(
                 role["sandbox"] == "workspace-write" and not role["can_review"]
@@ -156,8 +166,11 @@ def main(argv: list[str] | None = None) -> int:
                         reviewer=backend_type(args.review_model) if args.review_model else None,
                         repair_after=args.repair_after)
             workspace = args.workspace or args.agent / "workspace"
-            require_approvals = args.backend in {"codex", "deepseek", "api", "anthropic", "ollama"} or args.require_approvals
-            engine = Engine(args.agent, workspace, backend, require_approvals=require_approvals)
+            require_approvals = not args.autonomous_writes and (
+                args.backend in {"codex", "deepseek", "api", "anthropic", "ollama"} or args.require_approvals
+            )
+            engine = Engine(args.agent, workspace, backend, require_approvals=require_approvals,
+                            write_policy=write_policy)
             if args.command == "run":
                 result = engine.run(args.task)
             else:

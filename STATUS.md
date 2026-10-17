@@ -14,6 +14,17 @@ planen, ausfuehren, pruefen und nacharbeiten. Tests, kritische Abnahme, guenstig
 Modelle und GitHub-Pushes sind verbindlich. Die Mietplattform ist zurueckgestellt.
 **Gesamtziel noch nicht nachgewiesen; keine Produktionsfreigabe.**
 
+## CLI-Dateifreigabe
+
+`run` und `resume` bieten jetzt wiederholtes `--allow-write DATEI` und explizites
+`--autonomous-writes`. Ohne Liste keine autonome Freigabe; gespeicherte
+Aktionsfreigaben bleiben bestehen, geaenderte/fehlende Listen sperren Resume.
+Acht CLI-Tests bestanden; voller kanonischer Lauf: 463 Tests inklusive vier
+Skips, 233,760 Sekunden, Exit 0, getestete Quellen unveraendert. Ruff und alle20
+Offline-Gates bestanden; separate Codepruefung ohne Blocker. Keine neue echte
+Modellabnahme der CLI, Cockpit-Anbindung noch offen.
+[Testbelege und Grenzen](docs/evidence/cli-write-policy-20261017/README.md).
+
 ## Aktuelle Verifikation der Schreibgrenze
 
 Die separat reviewte strikte WritePolicy ist im Hauptprojekt uebernommen.
@@ -43,7 +54,7 @@ Coding-Abnahme. [Rohbelege und kritische Bewertung](docs/evidence/write-policy-l
 
 ## Bestaetigt
 
-- AgentKit: letzter voller kanonischer Lauf 459 Tests inklusive vier Skips,
+- AgentKit: letzter voller kanonischer Lauf 463 Tests inklusive vier Skips,
   keine Fehler; Ruff und 20 Offline-Gates bestanden. Die strikte Schreibpolicy
   wurde separat reviewt. Danach nur Dokumentation und isolierte Diagnostik.
 - Marketingbot/master `db358c51`: Quellenbindung und reproduzierter OS-Sperrenfix.

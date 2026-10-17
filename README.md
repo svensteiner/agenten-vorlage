@@ -64,9 +64,11 @@ Aktionsfreigaben. Codex liefert dafür read-only Vorschläge; ein lokaler Allowl
 Host-Executor führt exakt bestätigte Aktionen aus. Native per-tool interception der
 Codex CLI wird nicht behauptet. [Ablauf und Grenzen](docs/ACTION-APPROVALS.md).
 
-Die Python-API bietet ausserdem eine vom Host festgelegte, unveraenderliche
-Dateiliste fuer autonome Schreibaktionen. Sie ist in CLI und Cockpit noch nicht
-automatisch aktiviert. [Strikte Schreibrechte](docs/WRITE-POLICY.md).
+Die CLI begrenzt Schreibaktionen mit wiederholtem `--allow-write DATEI` auf eine
+vom Host festgelegte Dateiliste. `--autonomous-writes` erlaubt diese Aktionen ohne
+einzelne Zustimmung und verlangt eine solche Liste. Projektausfuehrung bleibt
+dabei gesperrt. Die Python-API bietet dieselbe Policy; das Cockpit bietet sie noch
+nicht an. [Strikte Schreibrechte](docs/WRITE-POLICY.md).
 
 Arbeitsdialoge unterstützen UTF-8-Textanhänge bis 32 KiB sowie PDF-, DOCX-, XLSX-
 und PPTX-Dokumente bis 2 MiB. Extrahierter Text dient als Referenz; die Originaldateien

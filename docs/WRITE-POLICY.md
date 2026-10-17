@@ -2,6 +2,14 @@
 
 Eine Aufgabenbeschreibung begrenzt keine Dateirechte. Im nachgewiesenen Integrationslauf hat der Planer eine eingefrorene Testdatei selbst freigegeben; der Reviewer hat diese Entscheidung akzeptiert. Der externe Hostvergleich hat den Verstoss erkannt. [Originalauftrag und Belege](evidence/source-faithfulness-integration-20261017/README.md).
 
+Die CLI akzeptiert fuer `run` und `resume` wiederholte `--allow-write RELATIVE_DATEI`. Jeder Eintrag ist ein genauer Pfad relativ zum Workspace, kein Glob. Ohne weiteren Schalter bleiben die bisherigen einzelnen Aktionsfreigaben bei Modellbackends aktiv. `--autonomous-writes` erlaubt Schreibaktionen innerhalb dieser Dateiliste ohne einzelne Zustimmung; eine explizite Liste ist dabei Pflicht. Die Kombination mit `--require-approvals` wird abgewiesen.
+
+```powershell
+python -m agentkit run --agent agents/coding --workspace C:/Projekte/isolierter-worktree --backend codex --allow-write src/agent.py --autonomous-writes --task "Verbessere src/agent.py und lasse die Aenderung separat reviewen."
+```
+
+Bei `resume` dieselbe Dateiliste erneut angeben. Andere oder fehlende Schreibrechte werden auch bei abgeschlossenen Laeufen abgewiesen. Eine bereits gespeicherte Pflicht zu einzelnen Freigaben bleibt bestehen; `--autonomous-writes` hebt sie beim Wiederaufnehmen nicht auf. Einen geaenderten Rechteumfang als neuen Auftrag konfigurieren.
+
 Die optionale Python-API `WritePolicy` legt genaue, relative Dateipfade beim Host fest. Das Modell kann diese Liste weder durch Aufgaben- noch durch Rollen- oder Reviewtexte erweitern. Jeder Eintrag bezeichnet genau eine Datei; es gibt keine Glob-Auswertung.
 
 ```python
@@ -13,7 +21,7 @@ from agentkit.write_policy import WritePolicy
 engine = Engine(
     Path("agents/coding"),
     Path("workspaces/isolated-project"),
-    CodexBackend("gpt-6-luna"),
+    CodexBackend("gpt-5.6-luna"),
     write_policy=WritePolicy(["src/agent.py"]),
     require_approvals=True,
 )
@@ -26,4 +34,4 @@ Im strikten Codex-Modus arbeitet das Modell mit read-only Zugriff und liefert ko
 
 `run_pytest` und beliebige Projektausfuehrung sind unter dieser strikten Policy gesperrt: Testcode koennte selbst beliebige Dateien schreiben. Der Host muss Tests getrennt mit einer geeigneten Ausfuehrungsgrenze veranlassen. Diese Policy ist keine Betriebssystem-Sandbox und schuetzt nicht vor einem anderen gleichzeitig schreibenden, privilegierten Hostprozess oder einem boesartigen selbst eingebundenen Python-Backend/Callback.
 
-Ohne `write_policy` bleibt das bisherige Verhalten erhalten. CLI und Cockpit aktivieren die neue Dateiliste noch nicht automatisch; ihre bisherigen Aktionsfreigaben bleiben bestehen. Die neue Policy allein ist weder ein Nachweis vollstaendig autonomen Codings noch eine Produktionsfreigabe. Separate Lauf-/Review-/Test-/Modellqualitaetsnachweise bleiben erforderlich.
+Ohne `write_policy` beziehungsweise `--allow-write` bleibt das bisherige Verhalten erhalten. Das Cockpit bietet die neue Dateiliste noch nicht an. Die neue Policy allein ist weder ein Nachweis vollstaendig autonomen Codings noch eine Produktionsfreigabe. Separate Lauf-/Review-/Test-/Modellqualitaetsnachweise bleiben erforderlich. Der [echte direkte Backend-Negativtest](evidence/write-policy-live-v2-20261017/README.md) belegt zwei abgewehrte Modellvorschlaege; der getrennte normale Engine-Auftrag scheiterte am Zeitlimit und gilt weiterhin als nicht bestanden.
