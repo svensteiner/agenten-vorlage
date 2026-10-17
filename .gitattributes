@@ -52,3 +52,6 @@ docs/evidence/cli-write-policy-20261017/*.txt -text
 
 docs/evidence/source-faithfulness-typed-protocol-20261017/*.json -text
 docs/evidence/source-faithfulness-typed-protocol-20261017/*.txt -text
+
+docs/evidence/source-review-wrapper-20261017/*.json -text
+docs/evidence/source-review-wrapper-20261017/*.txt -text

@@ -1,0 +1,76 @@
+commit b2b0c7e2514ce322b0fedaaea02dc0cef3f07669
+Author:     Sven Steiner <svensteiner@users.noreply.github.com>
+AuthorDate: Sat Oct 17 04:55:27 2026 +0200
+Commit:     Sven Steiner <svensteiner@users.noreply.github.com>
+CommitDate: Sat Oct 17 04:55:27 2026 +0200
+
+    fix: preserve source qualification prompts through LLM adapter
+
+diff --git a/intelligent_features/llm_responder.py b/intelligent_features/llm_responder.py
+index fad1f84e..1eb37ca1 100644
+--- a/intelligent_features/llm_responder.py
++++ b/intelligent_features/llm_responder.py
+@@ -1849,7 +1849,9 @@ class LLMResponder:
+         # Bewertungs-Calls (Gatekeeper-Score / Relevanz-Check), die bewusst STATUS/Score
+         # bzw. JA/NEIN liefern — erkennbar an eindeutigen System-Prompt-Markern.
+         eval_markers = getattr(self, "_EVAL_PROMPT_MARKERS", ())
+-        if task_type != "editorial" and not any(m in (resolved_system or "") for m in eval_markers):
++        if task_type not in {
++            "editorial", "source_faithfulness_review", "source_faithfulness_repair",
++        } and not any(m in (resolved_system or "") for m in eval_markers):
+             messages[-1]["content"] = messages[-1]["content"] + (
+                 "\n\nWICHTIG — NUR DER TWEET: Antworte ausschliesslich mit dem fertigen "
+                 "deutschen Tweet-Text (1-4 Zeilen, max 220 Zeichen). KEINE Vorrede, KEINE "
+diff --git a/tests/unit/test_llm_responder_freeform.py b/tests/unit/test_llm_responder_freeform.py
+index 37d6b035..1c407141 100644
+--- a/tests/unit/test_llm_responder_freeform.py
++++ b/tests/unit/test_llm_responder_freeform.py
+@@ -1,4 +1,48 @@
+ from intelligent_features.llm_responder import LLMResponder
++import pytest
++
++
++@pytest.mark.parametrize("task_type,max_tokens", [
++    ("source_faithfulness_review", 1200),
++    ("source_faithfulness_repair", 150),
++])
++def test_source_qualification_prompts_reach_transport_without_tweet_wrapper(task_type, max_tokens):
++    responder = LLMResponder.__new__(LLMResponder)
++    responder.config = {}
++    captured = {}
++
++    def call(messages, temperature, max_tokens, label, prefer_fast=False):
++        captured.update(messages=messages, temperature=temperature, max_tokens=max_tokens, label=label)
++        return '{"verdict":"reject"}'
++
++    responder._call_llm_api = call
++    user = 'SOURCE_JSON: {"observation":"Payment status unknown."}\nDRAFT_JSON: {"text":"Unpaid?"}'
++    system = "Return the exact requested review JSON or repair text; preserve draft language and limits."
++    result = responder._generate_openai_freeform(
++        user, system, {"task_type": task_type, "temperature": 0, "max_tokens": max_tokens},
++    )
++    assert result == '{"verdict":"reject"}'
++    assert captured["messages"] == [
++        {"role": "system", "content": system}, {"role": "user", "content": user},
++    ]
++    assert captured["temperature"] == 0
++    assert captured["max_tokens"] == max_tokens
++    assert captured["label"] == f"freeform/{task_type}"
++
++
++def test_tweet_task_still_receives_tweet_output_instruction():
++    responder = LLMResponder.__new__(LLMResponder)
++    responder.config = {}
++    captured = {}
++
++    def call(messages, *args, **kwargs):
++        captured["messages"] = messages
++        return "A tweet"
++
++    responder._call_llm_api = call
++    responder._generate_openai_freeform("Write a tweet", "Style", {"task_type": "tweet"})
++    assert captured["messages"][1]["content"].startswith("Write a tweet\n")
++    assert "NUR DER TWEET" in captured["messages"][1]["content"]
+ 
+ 
+ def test_generate_openai_freeform_honors_provider_hint_openai():

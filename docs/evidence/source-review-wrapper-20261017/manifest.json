@@ -1,0 +1,8 @@
+{
+  "before-fix.txt": "503c90cc48beeeef8e8bdfcf63481978683678aa633c9480d9962de6cc04503e",
+  "candidate-full-tests.txt": "d1929d5b84ba45806d287c9596c2a98a4623e961c91484b8c52277300dcad27c",
+  "candidate-validation.json": "d651961378469e48beab57d53769bfa8b6b14dad306dde8135139f66245d260b",
+  "clean-master-full-tests.txt": "4c81f1a1ed298cc254de17fa451679181d349721a867f0266375ad99f97b1134",
+  "clean-master-validation.json": "86b59fd89c43b07a2c6e2496147d318f8d80a53a472a3348f29b007138457e5e",
+  "promoted-fix.patch.txt": "248dd86488a930e06ab714834f7df7f9960e763b3fbde8584499f572043ce7c7"
+}

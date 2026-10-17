@@ -20,19 +20,29 @@ Die getrennten v3/v4-Diagnosen mit echtem Haiku verbessern das API-Format.
 V4 repariert die falsche Zahlungs-/Automatikbehauptung ueber ein explizites,
 streng dekodiertes JSON-Textfeld. Trotzdem keine Abnahme: Das als gueltig
 bezeichnete Kontrollbeispiel behauptet exklusive Controller-Zustaendigkeit,
-obwohl die Quelle nur dessen Zustimmung verlangt. V3 undv4 akzeptieren diese
+obwohl die Quelle nur dessen Zustimmung verlangt. V3 und v4 akzeptieren diese
 Verstaerkung. Die separate kritische Pruefung wertet das als False-Accept.
-Vier Aufrufe je Studie kosten gemeldet0,006434 und0,006625USD; keine unbekannten
+Vier Aufrufe je Studie kosten gemeldet 0,006434 und 0,006625 USD; keine unbekannten
 Ausgaenge. Parser und fruehere fehlgeschlagene Abnahmen bleiben unveraendert.
 [Rohantworten, Dekodierung und semantischer Audit](docs/evidence/source-faithfulness-typed-protocol-20261017/README.md).
 
 Zusaetzlicher echter Integrationsfehler gefunden: Der zentrale Responder haengt
 an Quellenpruefung/Reparatur einen widersprechenden Nur-Tweet-Zusatz an. Zwei
 neue Regressionen waren rot; die enge Ausnahme fuer diese expliziten Tasktypen
-besteht134gezielte Tests und den Kandidaten-Vollauf mit4605Tests,11Skips,
-fuenf erwarteten Fehlern,273,93Sekunden. Eine saubere Uebernahme nur dieses
-kleinen Adapterfixes wird separat auf unveraendertem master vorbereitet;
-der unqualifizierte Quellenchecker wird dabei nicht uebernommen.
+besteht 134 gezielte Tests und den Kandidaten-Vollauf mit 4.605 Tests, elf Skips,
+fuenf erwarteten Fehlern,273,93 Sekunden. Die saubere Uebernahme nur dieses
+kleinen Adapterfixes besteht separat 4.464 Tests auf originalem master, elf Skips,
+fuenf erwartete Fehler,286,32 Sekunden, Exit 0. Der Zwei-Dateien-Fix ist auf
+Marketingbot/master b2b0c7e2 gepusht; der unqualifizierte Quellenchecker ist
+nicht enthalten. [Getrennte Quell-/Test-/Commitbelege](docs/evidence/source-review-wrapper-20261017/README.md).
+
+Der groessere strukturierte API-Kandidat bleibt isoliert. Sicherheitsreview
+fand und korrigierte Fehlerbody-Logging sowie ungueltige Unicode-Surrogate.
+Die ebenfalls nachgewiesene OpenRouter-only-Erreichbarkeitsluecke ohne
+OpenAI-Schluessel ist im isolierten Kandidaten korrigiert; explizite Mock-/
+Local-Konfigurationen bleiben ohne Remotezugriff. 85 gezielte Tests bestehen,
+die finale Review und neue Vollpruefung stehen noch aus. Keine Promotion
+dieses Kandidaten.
 
 ## CLI-Dateifreigabe
 
@@ -40,7 +50,7 @@ der unqualifizierte Quellenchecker wird dabei nicht uebernommen.
 `--autonomous-writes`. Ohne Liste keine autonome Freigabe; gespeicherte
 Aktionsfreigaben bleiben bestehen, geaenderte/fehlende Listen sperren Resume.
 Acht CLI-Tests bestanden; voller kanonischer Lauf: 463 Tests inklusive vier
-Skips, 233,760 Sekunden, Exit 0, getestete Quellen unveraendert. Ruff und alle20
+Skips, 233,760 Sekunden, Exit 0, getestete Quellen unveraendert. Ruff und alle 20
 Offline-Gates bestanden; separate Codepruefung ohne Blocker. Keine neue echte
 Modellabnahme der CLI, Cockpit-Anbindung noch offen.
 [Testbelege und Grenzen](docs/evidence/cli-write-policy-20261017/README.md).
@@ -48,10 +58,10 @@ Modellabnahme der CLI, Cockpit-Anbindung noch offen.
 GitHub CI deckte danach zwei testinterne Abhaengigkeiten von einer installierten
 Codex-CLI auf Linux auf. Beide Fehler sind lokal mit deaktivierter CLI-Suche
 reproduziert. Nur die Command-Discovery-Fixtures wurden korrigiert, die echten
-Policy-Pruefungen bleiben aktiv. Beide Faelle bestehen ohne CLI. GitHub-Lauf38995751553 fuer5995f54 ist
+Policy-Pruefungen bleiben aktiv. Beide Faelle bestehen ohne CLI. GitHub-Lauf 38995751553 fuer 5995f54 ist
 abgeschlossen und gruen: alle sieben Jobs, darunter Linux/Windows mit Python
 3.11/3.12 sowie Browser-, Paket- und Deploymentpruefungen. Die Linux-3.11-Pruefung
-meldet463Tests inklusive21Skips und80% kombinierte Zeilen-/Branch-Abdeckung.
+meldet 463 Tests inklusive 21 Skips und 80% kombinierte Zeilen-/Branch-Abdeckung.
 [Externe Lauf-/Jobbelege](docs/evidence/cli-write-policy-20261017/github-run.json).
 
 ## Aktuelle Verifikation der Schreibgrenze
@@ -86,9 +96,10 @@ Coding-Abnahme. [Rohbelege und kritische Bewertung](docs/evidence/write-policy-l
 - AgentKit: letzter voller kanonischer Lauf 463 Tests inklusive vier Skips,
   keine Fehler; Ruff und 20 Offline-Gates bestanden. Die strikte Schreibpolicy
   wurde separat reviewt. Danach nur Dokumentation und isolierte Diagnostik.
-- Marketingbot/master `db358c51`: Quellenbindung und reproduzierter OS-Sperrenfix.
-  4.461 Unit-Tests bestanden, elf Skips, fuenf erwartete Fehler, 277,69 Sekunden;
-  separate Reviews ohne Blocker. Quellenmetadaten bleiben unverifiziert.
+- Marketingbot/master `b2b0c7e2`: Quellenbindung, OS-Sperrenfix und unveraenderte
+  Weitergabe expliziter Quellenpruefungs-/Reparaturprompts. Der saubere Stand
+  besteht 4.464 Unit-Tests, elf Skips,fuenf erwartete Fehler, 286,32 Sekunden;
+  separate Review ohne Blocker. Quellenmetadaten bleiben unverifiziert.
 - Laufende Originalinstallation nicht umgestellt oder neu gestartet; ihr
   divergierender Arbeitszweig nicht ueberschrieben. Push ist kein Deployment.
 - CLI/Python unterstuetzen guenstiges Primaermodell, separates Review und staerkere

@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "passed": 4464,
+  "scope": "complete tests/unit on pristine db358c51 plus only the central wrapper fix and its three tests",
+  "base_commit": "db358c51e3fe81237c0d026b83492e093853688a",
+  "source_files_unchanged": true,
+  "tested_source_sha256": {
+    "intelligent_features/llm_responder.py": "131a17c99160ed91d9b10a0585f42830052c3343ee6ee621d882d229823f6d29",
+    "tests/unit/test_llm_responder_freeform.py": "d2bf9e49cdb73c68a6dec9f14c3846efb2f97f5a290cac57af14704299389a9f"
+  },
+  "log_sha256": "4c81f1a1ed298cc254de17fa451679181d349721a867f0266375ad99f97b1134",
+  "candidate_source_module_present": false,
+  "source_qualifier_promoted": false
+}
