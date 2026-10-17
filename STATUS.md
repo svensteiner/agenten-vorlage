@@ -30,6 +30,26 @@ bleibt unter strikter Policy gesperrt. Das Cockpit bietet diese Policy noch nich
 
 ## Aktuelle technische Abnahme
 
+Nach dem lokalen Vollauf fand GitHub drei neue Fixtures mit Abhaengigkeit von
+installierter Codex-CLI und Windows-Sandbox-Konfiguration. Der CLI-Fixture-Fix
+und eine eng begruendete Bandit-Markierung fuer die Container-Tmpfs-Pruefung sind
+auf main 2786d99. Linux, Browser, Paket und Deployment bestehen dort; Windows
+3.11 scheiterte an der fehlenden lokalen Sandbox-Konfiguration im Testaufbau.
+Der separat gepruefte Folgefix ist auf main 2c71d7e: 18 Integrationstests bestehen
+auch mit absichtlich fehlender Konfiguration. GitHub-Abnahme dieses Stands offen.
+
+Der echte Coding-Lauf 5e0b73e35b284bada8f4cc44884a637c aenderte nur die erlaubte
+Quelldatei des extrahierten Marketingbot-Bausteins. Alle sechs geschuetzten
+Test-/Hilfsdateien sind bytegleich. Nach Timeout und kontrollierter Wiederaufnahme
+forderte der Agent zweimal selbst die gepinnte Container-Suite an: jeweils
+79 bestanden, keine Skips/Fehler, Cleanup bestaetigt. Ein separates Review fand
+die fehlende Reparaturanweisung; der Agent ergaenzte sie und testete erneut.
+Der Lauf endete dennoch blocked (8 Schritte, 4 Fehlberichte): native read-only
+Shell-Aufrufe lieferten wiederholt keine sichtbaren Quellen-/Diff-Inhalte, daher
+kein finales Review. Ein Worker behauptete zwischenzeitlich faelschlich einen
+leeren Diff. Kein autonomer Gesamterfolg und keine fachliche Abnahme; naechster
+Runtime-Schritt ist eine verlaessliche hostgebundene Lese-/Inspektionsmoeglichkeit.
+
 507 Unit-/Integrationstestfaelle im vollstaendigen Coverage-Lauf: 503 bestanden,
 vier Skips, keine Fehler, Exit 0; ueberwachte Quellen unveraendert. Kombinierte
 Zeilen-/Branch-Abdeckung 80,6264 Prozent (Report gerundet 81 Prozent).
