@@ -42,7 +42,7 @@
   "snapshot_verification": {
     "no_network": "fetch boundary stubbed to return frozen bytes",
     "umlaut_characters": [
-      "\u00c3\u00bc"
+      "\u00fc"
     ],
     "sha256": "a9d687815367775d70fd316f1c2a753f8012a3579a1d671d06fd16b198223de6",
     "replacement_characters": 0,
@@ -60,5 +60,17 @@
     "HTTP charset without an XML declaration is not separately interpreted by this fix.",
     "Patch is relative to the isolated bounded-quality candidate, not current upstream.",
     "No production promotion, original bot restart or X publication."
-  ]
+  ],
+  "four_feed_replay": {
+    "receipt_sha256": "d1cd4d73f82ae4e572e56d1fab50e9e281d442585adc77bc4ead0ae52404c3d7",
+    "cases": 4,
+    "changed_observation_cases": [
+      "rss-02"
+    ],
+    "no_other_selected_observation_changes": true,
+    "replacement_characters": 0,
+    "network_calls": 0,
+    "model_calls": 0
+  },
+  "metadata_correction": "Review snapshot character labels copied with explicit UTF-8 decoding; source/test hashes and test outcomes unchanged."
 }
