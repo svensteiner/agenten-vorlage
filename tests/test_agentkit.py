@@ -25,6 +25,7 @@ from agentkit.engine import Engine
 from agentkit.integrations import issue_to_task, native_prompt, result_to_update
 from agentkit.scaffold import add_skill, create
 from agentkit.storage import lock, save
+from agentkit.write_policy import WritePolicy
 
 
 def decision(action="delegate", role="developer", skills=None):
@@ -289,6 +290,166 @@ class AgentKitTests(unittest.TestCase):
 
         self.assertEqual("blocked", resumed["status"])
         self.assertEqual(1, backend.worker_calls)
+
+    def test_codex_observation_budget_recovery_retains_write_and_prevents_replay(self):
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch("agentkit.backends._windows_sandbox_selection", return_value=None):
+            backend = CodexBackend()
+        backend.max_observation_calls = 1
+        policy = WritePolicy(["draft.txt"])
+        decisions = iter([
+            decision(role="developer"), decision(role="developer"),
+            decision(role="reviewer"), decision("finish", ""),
+        ])
+        prompts = []
+        worker_call = 0
+
+        def step(tool, *, path="", content=""):
+            return {
+                "kind": "proposal", "tool": tool,
+                "arguments": {"path": path, "content": content, "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Use the bounded host action.",
+                "report": {"status": "blocked", "summary": "Action requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            }
+
+        def final():
+            return {
+                "kind": "final", "tool": "none",
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "The bounded assignment is complete.",
+                "report": {"status": "success", "summary": "Verified.", "artifacts": [],
+                           "evidence": ["Observed the saved draft."], "next_actions": []},
+            }
+
+        def fake_call(prompt, contract, context, timeout):
+            nonlocal worker_call
+            prompts.append((prompt, contract))
+            if contract == "decision":
+                return next(decisions)
+            if contract == "report":
+                return report(evidence=["Reviewed the saved draft."])
+            worker_call += 1
+            if worker_call == 1:
+                return step("write_file", path="draft.txt", content="draft body")
+            if worker_call == 2 or worker_call == 3:
+                return step("read_file", path="draft.txt")
+            if worker_call == 4:
+                # This exact write was already completed. The host must reject its replay.
+                return step("write_file", path="draft.txt", content="draft body")
+            return final()
+
+        with patch.object(backend, "_call", side_effect=fake_call):
+            state = Engine(self.agent, self.workspace, backend, write_policy=policy).run(
+                "Save and verify a draft without repeating completed writes."
+            )
+
+        self.assertEqual("completed", state["status"])
+        self.assertEqual("draft body", (self.workspace / "draft.txt").read_text(encoding="utf-8"))
+        completed_writes = [entry for entry in state["completed_actions"]
+                            if entry.get("tool") == "write_file"]
+        self.assertEqual(1, len(completed_writes))
+        self.assertEqual("draft.txt", completed_writes[0]["arguments"]["path"])
+        self.assertEqual(hashlib.sha256(b"draft body").hexdigest(),
+                         completed_writes[0]["arguments"]["content_sha256"])
+        self.assertEqual("needs_revision", state["history"][0]["report"]["status"])
+        self.assertIn("inspection stopped before completion", state["history"][0]["report"]["summary"].lower())
+        self.assertTrue(any("Exact action already completed" in prompt for prompt, _ in prompts))
+        self.assertIsNone(state["in_flight"])
+
+    def test_repeated_codex_observation_stops_use_existing_failure_and_step_caps(self):
+        self.change_limits(max_failures=2)
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch("agentkit.backends._windows_sandbox_selection", return_value=None):
+            backend = CodexBackend()
+        backend.max_observation_calls = 0
+        decisions = iter([decision(role="developer")] * 3)
+
+        def fake_call(prompt, contract, context, timeout):
+            if contract == "decision":
+                return next(decisions)
+            return {
+                "kind": "proposal", "tool": "read_file",
+                "arguments": {"path": "draft.txt", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Inspect the draft.",
+                "report": {"status": "blocked", "summary": "Read requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            }
+
+        with patch.object(backend, "_call", side_effect=fake_call):
+            state = Engine(self.agent, self.workspace, backend,
+                           write_policy=WritePolicy(["draft.txt"])).run("Inspect draft")
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual(2, state["failures"])
+        self.assertEqual(2, state["steps"])
+        self.assertIsNone(state["in_flight"])
+        self.assertEqual(2, sum(record.get("report", {}).get("status") == "needs_revision"
+                                for record in state["history"]))
+
+    def test_codex_observation_stops_also_respect_step_cap(self):
+        self.change_limits(max_steps=1, max_failures=5)
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch("agentkit.backends._windows_sandbox_selection", return_value=None):
+            backend = CodexBackend()
+        backend.max_observation_calls = 0
+
+        def fake_call(prompt, contract, context, timeout):
+            if contract == "decision":
+                return decision(role="developer")
+            return {
+                "kind": "proposal", "tool": "read_file",
+                "arguments": {"path": "draft.txt", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Inspect the draft.",
+                "report": {"status": "blocked", "summary": "Read requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            }
+
+        with patch.object(backend, "_call", side_effect=fake_call):
+            state = Engine(self.agent, self.workspace, backend,
+                           write_policy=WritePolicy(["draft.txt"])).run("Inspect draft")
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual(1, state["failures"])
+        self.assertEqual(1, state["steps"])
+        self.assertIn("Step budget", state["summary"])
+        self.assertIsNone(state["in_flight"])
+
+    def test_codex_observation_errors_remain_unknown_and_in_flight(self):
+        cases = ("transport", "read", "mutation")
+        for case in cases:
+            with self.subTest(case=case):
+                agent = create(self.root / f"agent-{case}", "developer", "cto-dev", "AI_Studioxyz")
+                workspace = agent / "workspace"
+                with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                        patch("agentkit.backends._windows_sandbox_selection", return_value=None):
+                    backend = CodexBackend()
+                def fake_call(prompt, contract, context, timeout):
+                    if contract == "decision":
+                        return decision(role="developer")
+                    if case == "transport":
+                        raise TimeoutError("fixture transport timeout")
+                    tool = "write_file" if case == "mutation" else "read_file"
+                    return {
+                        "kind": "proposal", "tool": tool,
+                        "arguments": {"path": "draft.txt", "content": "draft" if tool == "write_file" else "",
+                                      "old_text": "", "new_text": "", "start_line": None, "max_lines": None},
+                        "rationale": "Bounded fixture action.",
+                        "report": {"status": "blocked", "summary": "Action requested.",
+                                   "artifacts": [], "evidence": [], "next_actions": []},
+                    }
+                with patch.object(backend, "_call", side_effect=fake_call), \
+                        patch.object(backend, "_execute_observation",
+                                     side_effect=RuntimeError("fixture read failed")), \
+                        patch("agentkit.backends.DeepSeekBackend._run_tool",
+                              side_effect=RuntimeError("fixture mutation failed")):
+                    state = Engine(
+                        agent, workspace, backend, write_policy=WritePolicy(["draft.txt"])
+                    ).run("Exercise unknown host action outcomes")
+                self.assertEqual("blocked", state["status"])
+                self.assertEqual("worker", state["in_flight"]["kind"])
 
     def test_premature_finish_replans_to_independent_review(self):
         backend = SequenceBackend(

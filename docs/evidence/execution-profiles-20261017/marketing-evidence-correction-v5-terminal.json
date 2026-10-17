@@ -1,0 +1,37 @@
+{
+  "schema": "agentkit-real-model-trial-terminal/v1",
+  "run_id": "ab20971238a445f985903cad615f558d",
+  "status": "not_qualified",
+  "engine_status": "blocked",
+  "engine_summary": "ContractError: Codex observation context budget exhausted.",
+  "in_flight_preserved": true,
+  "steps": 1,
+  "failures": 0,
+  "completed_host_actions": [
+    {
+      "tool": "edit_file",
+      "path": "tests/unit/test_source_faithfulness_evidence_v2.py"
+    }
+  ],
+  "phase_attempts": 0,
+  "changed_workspace_paths": [
+    "tests/unit/test_source_faithfulness_evidence_v2.py"
+  ],
+  "changed_paths_outside_allowlist": [],
+  "post_audit_error_types": {},
+  "production_file_changed": false,
+  "operator_code_intervention_during_run": false,
+  "replay_permitted": false,
+  "live_marketingbot_changed": false,
+  "marketing_quality_qualification": false,
+  "production_qualification": false,
+  "evidence_sha256": {
+    "preparation.json": "4c4ad001c4bb68a0d8b905fc7759d053d60b275f0de56bc1575bf20eac6f1c92",
+    "runtime-release.json": "961bfa8e4eb7f7ef21d970397c60ddd9004e49b401000896d97b0a9325235392",
+    "independent-preflight.json": "cddc249af27f14782c5e04b98d3902c18c642d65494e09ff419f7c3e345c13f5",
+    "root-authorization.json": "2d5aae191481342de16f50937e5c3272ed6c875ee7d8746248edd47a2a788c9a",
+    "dispatch.json": "a5d40881a516e3a0a50a08e4e8f9482b87e0ea018f32d95c9690e46557443e43",
+    "terminal-result.json": "c8d476893d98afd60197a01bb559bc6a37e67a16b992d64e182c7c5ab08f9e45",
+    "post-engine-integrity.json": "23ce9496de271dc331a0f28c3825fd774797e8c08f1cb0791f0152b8547d6b6b"
+  }
+}

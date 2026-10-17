@@ -83,6 +83,10 @@ class _DuplicateJSONKeyError(json.JSONDecodeError):
     """An ambiguous object must never reach a permissive parser fallback."""
 
 
+class _ObservationBudgetExhausted(Exception):
+    """A bounded host read stopped a normally returned Codex worker step."""
+
+
 class _NoProviderRedirect(urllib.request.HTTPRedirectHandler):
     """Keep bearer credentials bound to the explicitly configured provider."""
 
@@ -908,6 +912,10 @@ class CodexBackend:
                         exclude=frozenset({"sandbox"}),
                         call_timeout_upper_bound_seconds=call_timeout,
                     ),
+                    "remaining_host_observation_budget": {
+                        "calls": max(0, self.max_observation_calls - observation_calls),
+                        "characters": max(0, self.max_observation_chars - observation_chars),
+                    },
                     "completed_action_replay_sha256": completed_digests,
                     "action_history": action_history,
                     "observations": observations,
@@ -965,11 +973,11 @@ class CodexBackend:
                 continue
             if tool in OBSERVATION_TOOLS:
                 if observation_calls >= self.max_observation_calls:
-                    raise ContractError("Codex observation call limit exhausted.")
+                    raise _ObservationBudgetExhausted
                 observation_calls += 1
                 result = self._execute_observation(tool, arguments, read_context, remaining())
                 if observation_chars + len(result) > self.max_observation_chars:
-                    raise ContractError("Codex observation context budget exhausted.")
+                    raise _ObservationBudgetExhausted
                 observation_chars += len(result)
                 observations.append({"tool": tool, "arguments": arguments, "result": result})
                 continue
@@ -1105,10 +1113,16 @@ class CodexBackend:
     def execute(self, decision: dict, context: dict, timeout: float) -> dict:
         if (context.get("test_execution_policy") is not None
                 or (context.get("write_policy") is not None and context.get("sandbox") == "workspace-write")):
-            report = self._execute_approval_gated(decision, context, timeout)
+            try:
+                report = self._execute_approval_gated(decision, context, timeout)
+            except _ObservationBudgetExhausted:
+                report = self._observation_budget_exhausted_report()
             return self._validate_completed_report(report)
         if context.get("require_approvals") and context.get("sandbox") == "workspace-write":
-            report = self._execute_approval_gated(decision, context, timeout)
+            try:
+                report = self._execute_approval_gated(decision, context, timeout)
+            except _ObservationBudgetExhausted:
+                report = self._observation_budget_exhausted_report()
             return self._validate_completed_report(report)
         deadline = time.monotonic() + timeout
         prompt = (
@@ -1141,6 +1155,18 @@ class CodexBackend:
             raise RuntimeError("Codex worker call timed out during prompt preparation.")
         report = self._call(prompt, "report", context, remaining)
         return self._validate_completed_report(report)
+
+    @staticmethod
+    def _observation_budget_exhausted_report() -> dict:
+        return {
+            "status": "needs_revision",
+            "summary": "Host inspection stopped before completion because the read-only observation budget was exhausted.",
+            "artifacts": [],
+            "evidence": [],
+            "next_actions": [
+                "If more inspection is needed, request a narrower bounded assignment; no additional evidence was verified in this step."
+            ],
+        }
 
     @staticmethod
     def _report_rejection_observation(report: object, *, artifact_index: int | None = None) -> dict:
