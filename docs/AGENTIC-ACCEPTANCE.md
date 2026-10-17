@@ -53,7 +53,9 @@ Race: Ein Initialisierungsschreiben vor dem Byte-Lock trifft die bereits gesperr
 temporaer leere Datei und erhaelt PermissionError. Der neue separate Prozess-
 Regressionstest war zuerst rot; nach minimalem Entfernen des ungeschuetzten
 Schreibens bestehen 119 gezielte Tests. Python-/Security-Review ohne Blocker;
-voller abschliessender Lauf und Push dieses Fixes noch offen. Keine Produktionsfreigabe.
+abschliessender voller Lauf bestanden: 4.461 Tests, elf Skips, fuenf erwartete
+Fehler, 277,69 Sekunden. Fix/Regression auf Marketingbot/master unter `db358c51`.
+Keine Produktionsfreigabe und kein Nachweis allgemeiner Agentic-Zuverlaessigkeit.
 
 Die normale Entwurfsqualitaet und ein unbeaufsichtigt bestandener realer
 Projektauftrag bleiben erforderlich. Die laufende Originalinstallation wurde

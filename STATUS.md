@@ -17,6 +17,15 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Abschliessender Marketingbot-Lauf mit dem reproduzierten OS-Sperrenfix:
+  4.461 bestanden, elf Skips, fuenf erwartete Fehler, 277,69 Sekunden.
+  Minimaler Fix, Mehrprozess-Regressionstest und Dokumentation sind auf
+  `marketingbot/master` unter `db358c51` gepusht; separate Python-/Security-
+  Reviews ohne Blocker. Das ist ein voller gruener Unit-Lauf, keine fachliche
+  Qualitaets- oder allgemeine Agentic-Abnahme. Originalinstallation unveraendert.
+  Fuer den naechsten echten Coding-Auftrag liegt eine frische Quellkopie ohne
+  Git-Verweis vor. Vier eingefrorene Prompt-/Persona-/Budget-Pruefungen liefern
+  vor Implementierung zwei erwartete Fehler und zwei bestehende gruene Kontrollen.
 - Marketingbot-Sicherheitspruefungen an aktuelle Vorbedingungen und die bereits
   dokumentierte Quality-first-Policy angepasst; Produktionslogik/Config dabei
   unveraendert. Voller Lauf: 4.460 bestanden, elf Skips, fuenf erwartete Fehler,
