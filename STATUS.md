@@ -55,7 +55,15 @@ Tests und unabhaengiges Review bestanden. Ihr [Gesamttest](docs/evidence/executi
 ist jetzt gruen: 4.670 bestanden, elf Skips und fuenf erwartete Fehlschlaege.
 Der [reviewbare Patch](docs/evidence/execution-profiles-20261017/source-grounded-style.patch)
 ist auf die fruehere isolierte Kandidatenbasis bezogen; keine Produktionsuebernahme.
-Die nachgelagerte echte Inhaltsqualitaet bleibt ungeprueft.
+Die nachgelagerte [Acht-Faelle-Pruefung](docs/evidence/execution-profiles-20261017/marketing-two-cohort-v12-terminal.json)
+ist ebenfalls beendet und gescheitert: null von acht Endtexten bei 39 abgeschlossenen
+Anfragen und 0,062597 USD, keine unbekannten Kosten oder Anfrageausgaenge.
+Vier Faelle bestehen die Quellenqualifikation, erhalten vom Auditor AVERAGE
+mit Vague/No-hook/Generic und werden vom Gatekeeper abgelehnt. Vier weitere
+Faelle erreichen diese Stufe nicht. Beide Gruppen bleiben im Nenner: vier
+synthetische KI-Randfaelle und vier datierte Primaerquellen-News. Keine
+Produktionsfreigabe; als Naechstes ist die sichere Nacharbeit nach dem
+Qualitaetsfeedback zu untersuchen, ohne Pruefschwellen abzusenken.
 
 Die getrennte [v12-Diagnose](docs/evidence/execution-profiles-20261017/marketing-fullpath-v12-offline.json)
 besteht 21 Offline-Tests und ein unabhaengiges Review. Sie fixiert Ergebnisdateipfade

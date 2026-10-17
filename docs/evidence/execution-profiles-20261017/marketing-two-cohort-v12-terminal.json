@@ -1,0 +1,133 @@
+{
+  "schema": "marketing-two-cohort-terminal/v1",
+  "status": "completed_failed_acceptance",
+  "cohorts": [
+    {
+      "cohort": "source-fullpath-v12-20261017",
+      "case_count": 4,
+      "accepted": 0,
+      "physical_requests": 17,
+      "known_provider_cost_usd": "0.027626",
+      "case_status_counts": {
+        "source_rejected_or_unavailable": 3,
+        "gate_dropped": 1
+      },
+      "gate_telemetry": [
+        {
+          "auditor": [],
+          "gatekeeper": []
+        },
+        {
+          "auditor": [
+            {
+              "failure_mode": "Vague",
+              "verdict": "AVERAGE"
+            }
+          ],
+          "gatekeeper": [
+            {
+              "status": "rejected"
+            }
+          ]
+        },
+        {
+          "auditor": [],
+          "gatekeeper": []
+        },
+        {
+          "auditor": [],
+          "gatekeeper": []
+        }
+      ],
+      "terminal_result_sha256": "244a40171706d3731dae6ab49fd3c52890d60ca8b8fde1f6e220a900dff1e531",
+      "pins_sha256": "c7208667e8af39b9ae2d389c2fde00910b1b5eb91b756a11540544c912c307f2"
+    },
+    {
+      "cohort": "source-fullpath-real-news-20261017",
+      "case_count": 4,
+      "accepted": 0,
+      "physical_requests": 22,
+      "known_provider_cost_usd": "0.034971",
+      "case_status_counts": {
+        "gate_dropped": 3,
+        "source_rejected_or_unavailable": 1
+      },
+      "gate_telemetry": [
+        {
+          "auditor": [
+            {
+              "failure_mode": "No-hook",
+              "verdict": "AVERAGE"
+            }
+          ],
+          "gatekeeper": [
+            {
+              "status": "rejected"
+            }
+          ]
+        },
+        {
+          "auditor": [
+            {
+              "failure_mode": "Vague",
+              "verdict": "AVERAGE"
+            }
+          ],
+          "gatekeeper": [
+            {
+              "status": "rejected"
+            }
+          ]
+        },
+        {
+          "auditor": [
+            {
+              "failure_mode": "Generic",
+              "verdict": "AVERAGE"
+            }
+          ],
+          "gatekeeper": [
+            {
+              "status": "rejected"
+            }
+          ]
+        },
+        {
+          "auditor": [],
+          "gatekeeper": []
+        }
+      ],
+      "terminal_result_sha256": "ed6606c17f1d8e5e747a3e81c8ff3d8df226d94cffd01b3026d1a0bd2aa960cf",
+      "pins_sha256": "f46fd2227565fe612a35ce7955c2d1e5f169c2182247b24f5baff1b44e9c9f69"
+    }
+  ],
+  "total_denominator": 8,
+  "accepted": 0,
+  "physical_requests": 39,
+  "known_provider_cost_usd": "0.062597",
+  "unknown_provider_outcomes": 0,
+  "unknown_provider_costs": 0,
+  "post_run_integrity": {
+    "candidate_files_sha256": {
+      "checked": 195,
+      "mismatches": []
+    },
+    "test_files_sha256": {
+      "checked": 321,
+      "mismatches": []
+    }
+  },
+  "plan_sha256": "758e6c69c28d8968c0c051e1f4eece3c95c1316c2a340cc5d3cdfce2d68f1f74",
+  "production_qualified": false,
+  "promoted": false,
+  "findings": [
+    "Four source-qualified outputs reached the actual auditor and gatekeeper; each auditor result was AVERAGE with Vague/No-hook/Generic categories and the gatekeeper rejected.",
+    "No final output exists for blind utility scoring. All eight cases remain in the denominator."
+  ],
+  "limits": [
+    "Different fresh cases and random tones do not provide a before/after improvement comparison.",
+    "Fixed Haiku routes all roles in this diagnostic; not default independent production provider proof.",
+    "Four synthetic edge cases plus four purposive historical primary-source announcements are not representative reach or general reliability evidence.",
+    "Other source rejection/unavailable statuses alone do not identify their exact causes."
+  ]
+}
