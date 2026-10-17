@@ -1,0 +1,54 @@
+{
+  "study": "source-semantic-holdout-v5",
+  "status": "transport_stopped",
+  "model": "anthropic/claude-haiku-4.5",
+  "physical_requests": 10,
+  "purpose_calls": {
+    "review": 7,
+    "repair": 3
+  },
+  "known_provider_cost_usd": "0.015775",
+  "reserved_usd": "0.41666660",
+  "provider_cap_enforced": false,
+  "unknown_outcome_requests": 0,
+  "unknown_cost_requests": 0,
+  "cases_by_status": [
+    {
+      "Name": "accepted",
+      "Count": 3
+    },
+    {
+      "Name": "error",
+      "Count": 1
+    },
+    {
+      "Name": "not_run_after_transport_stop",
+      "Count": 7
+    },
+    {
+      "Name": "rejected",
+      "Count": 1
+    }
+  ],
+  "blind_audit": {
+    "cohort_passed": false,
+    "false_accepts_found": 0,
+    "remaining_semantic_outcomes": "ungraded",
+    "faithful_and_usable": 3,
+    "accepted_audited": 3
+  },
+  "limitations": [
+    "Stopped after five cases; seven untested",
+    "Failure reason and raw review not retained; parser cause unproven",
+    "One blinded evaluator; synthetic cases; no X outcomes",
+    "No promotion; earlier false accepts remain binding"
+  ],
+  "sha256": {
+    "result": "81e73df778d23eba6f88d915b80d4e62de9d0ce810c79efdcf6e51eff36e7e62",
+    "blind_audit": "46f36c32b740bda8be986bbe2e0a50d6501d170475f0217081c20b03138d1e05",
+    "tests": "8952e55a6daba9b46a4665d592a22294d8ebc97ee1f1ac946d591c2fa72f99f1",
+    "helper": "906993a8b489b17afe88eba07ffed5d836e17b5c707326d6fd5922979a7180c4"
+  },
+  "private_artifacts": "Original result, blind mapping, sealed cases/labels and audit remain private to protect evaluation separation",
+  "production_qualified": false
+}

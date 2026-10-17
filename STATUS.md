@@ -66,6 +66,23 @@ Datei-Austausch-Tests bleiben dokumentiert.
 
 ## Marketingbot: fachliche Abnahme weiterhin gescheitert
 
+Der separat vorab gepruefte zwoelfteilige semantische Holdout v5 stoppte nach
+zehn echten zentralen Haiku/OpenRouter-Aufrufen: 0,015775 USD bekannte Kosten,
+keine unbekannten Ausgaenge oder Nutzungsdaten. Fuenf Faelle wurden bearbeitet
+(drei technisch accepted, einer rejected, einer error), sieben blieben ungetestet.
+Der Helfer speicherte beim Fehler weder den Grund noch die rohe Review-Antwort;
+eine konkrete Parserursache ist damit nicht belegt. Keine automatische Wiederholung.
+Accepted ist keine fachliche Wertung. Eine unabhaengige Blindpruefung ohne
+Erwartungslabels bewertet die drei akzeptierten Texte als quellentreu und nutzbar;
+kein False Accept unter diesen drei. Fehlerfall und sieben ungetestete Faelle
+bleiben offen; die zwoelfteilige Gesamtpruefung ist nicht bestanden.
+[Aggregierte Messungen und Grenzen](docs/evidence/source-holdout-partial-20261017/README.md).
+
+Der neue Host-Lesepfad ist noch ein isolierter Kandidat: Code-/Security-Review
+fanden Git-Diff-Lecks fuer geschuetzte Pfade, unvollstaendige Zugangsdaten-
+Dateinamensfilter und eine Ordner-Auflistungs-Race. Der erste Volltest wurde
+deshalb gezielt unterbrochen und gilt nicht als bestanden. Reparatur vor Promotion.
+
 Der kleine zentrale Prompt-Wrapper-Fix ist auf Marketingbot/master b2b0c7e2:
 saubere Uebernahme separat mit 4.464 Tests bestanden. Der groessere strukturierte
 API-/Quellenchecker-Kandidat ist weiterhin isoliert und nicht promoviert.
