@@ -44,8 +44,14 @@ Der isolierte Stilauftrag verwendet Luna fuer Umsetzung und Sol fuer Review/Nach
 Der erste Aenderungsstand bestand 4.661 Tests (elf Skips, fuenf erwartete
 Fehlschlaege), ist aber nicht abgenommen: Ein unabhaengiges Review beanstandet,
 dass die widerspruechlichen Original-Tonbefehle weiterhin im Prompt stehen und
-die neuen Tests nicht die echten zehn Tonvorgaben pruefen. Der native Auftrag
-arbeitet noch nach; die erste gruene Suite deckt spaetere Aenderungen nicht ab.
+die neuen Tests nicht die echten zehn Tonvorgaben pruefen. Der [native Auftrag](docs/evidence/execution-profiles-20261017/native-style-trial-rejected.json)
+ist inzwischen mit Engine-Abschluss und internem Review beendet. Die unabhaengige
+Endpruefung lehnt auch den finalen Stand ab: Die Legacy-Befehle bleiben erhalten,
+und der Test erwartet ihr Verbleiben sogar ausdruecklich. Finale Gesamtsuite:
+4.661 bestanden; 693 andere Baseline-Dateien und 84 Ausfuehrungspins unveraendert.
+Keine Uebernahme dieser Variante. Eine getrennte Korrektur ersetzt inzwischen
+die Tonvorgaben tatsaechlich und prueft alle zehn echten Presets; 197 gezielte
+Tests und unabhaengiges Review bestanden, Gesamttest noch offen.
 
 Die getrennte [v12-Diagnose](docs/evidence/execution-profiles-20261017/marketing-fullpath-v12-offline.json)
 besteht 21 Offline-Tests und ein unabhaengiges Review. Sie fixiert Ergebnisdateipfade

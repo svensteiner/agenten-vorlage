@@ -1,0 +1,43 @@
+{
+  "schema": "native-style-trial-independent-audit/v1",
+  "run_id": "0fe84f4331714aef864824288e4e9e03",
+  "engine_status": "completed",
+  "engine_reviewed": true,
+  "independent_qualification": false,
+  "reason": "Bounded prompts retain conflicting legacy tone instructions; final fixture explicitly expects them to remain. Priority paragraph and green tests do not meet the requested substitution policy.",
+  "models_requested": {
+    "primary": "gpt-6-luna",
+    "reviewer": "gpt-6-sol",
+    "recovery": "gpt-6-sol"
+  },
+  "served_models_attested": false,
+  "external_operator_intervention_during_run": false,
+  "final_full_test": {
+    "receipt_id": "f60c7dbb1936453d954f7095c6397a77",
+    "passed": 4661,
+    "skipped": 11,
+    "xfailed": 5,
+    "scope": "isolated copied project with synthetic config and bundled browser adapter"
+  },
+  "integrity": {
+    "baseline_files": 696,
+    "nonowned_baseline_files_checked": 693,
+    "nonowned_baseline_changed": [],
+    "execution_pins_checked": 84,
+    "execution_pins_changed": []
+  },
+  "final_owned_hashes": {
+    "content/tension_generator.py": "8207397b0fe08277750c43407be3b7b4081ac34f7c43fb0e62ba8de59fd56683",
+    "tests/unit/test_tension_generator.py": "6949cfe297f1781fd584ae668ca1d41cfcc019a25708d6388efe055ec97f2307",
+    "tests/unit/test_source_faithfulness_news.py": "be088fe4389fc54386d2401a0b02782b2f454387d7e3c09f5b666d14b6944347"
+  },
+  "independent_reviewer": "refiner_test_review",
+  "production_qualified": false,
+  "promoted": false,
+  "limits": [
+    "Engine completion and its reviewer acceptance were contradicted by independent semantic review.",
+    "Test scratch and runtime artifacts are outside baseline integrity counts.",
+    "Historical first-red and later reconstructed regression are distinct evidence.",
+    "No real marketing quality claim or original bot modification."
+  ]
+}
