@@ -53,7 +53,11 @@ Regressionen muessen exakte Expansion und unveraenderten Originalparser,
 falsche Nonces/IDs/Typen, gemischte Felder, doppelte JSON-Schluessel,
 unveraenderten Reparaturablauf, verlustlose lange Unicode-Eingaben,
 Uebergroesse vor HTTP und unveraenderte andere Provideraufgaben pruefen.
-Ein gueltiger, aber unpassender Beleg darf keine automatische Freigabe
-erzeugen. Danach sind Gesamttest, separates Review und ein vorab
+Der Adapter darf einen gueltigen Beleg nicht selbst freigeben, sondern muss
+weiter den Originalparser aufrufen. Dieser Parser prueft die Antwortstruktur;
+er erkennt nicht jede semantisch unpassende Zuordnung. Tests muessen sowohl
+die erhaltene Ablehnung als auch ein strukturell gueltiges Gegenbeispiel mit
+unpassendem Beleg dokumentieren, statt semantische Sicherheit vorzutäuschen.
+Danach sind Gesamttest, separates Review und ein vorab
 festgelegter echter Modelllauf notwendig. Vorher gibt es keine
 Produktionsfreigabe oder Behauptung besserer Posts.
