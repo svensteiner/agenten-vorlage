@@ -157,3 +157,13 @@ Damit ist die Lese-/Folgeantwortuebergabe nach der Protokollkorrektur belegt.
 Der blockierte Coding-Gesamtauftrag bleibt gescheitert; ein neuer vollstaendiger
 Auftrag und die fachliche Marketing-Abnahme sind weiterhin erforderlich.
 [Gemeinsame Nachweise und Grenzen](docs/evidence/execution-profiles-20261017/README.md).
+
+## Python-3.11-Nachtrag zu Junction-Regressionen
+
+Die GitHub-Laeufe 39005635763 und 39005760452 fanden fuenf Windows-3.11-Fehler
+in neuen Tests: Path.is_junction existiert dort nicht. Die gepruefte
+Testkorrektur erkennt reale Junctions anhand des lstat-Reparse-Tags; keine
+Assertions oder Sicherheitsfaelle entfallen, die Runtime bleibt unveraendert.
+Alle 21 Faelle bestehen auf Windows Python 3.12 mit entfernter is_junction-API
+und echten Junctions. Dies ist eine Kompatibilitaetssimulation; Python 3.11 ist
+lokal nicht installiert. Der neue GitHub-Lauf muss die native Abnahme liefern.

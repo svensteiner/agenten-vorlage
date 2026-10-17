@@ -129,5 +129,25 @@
     "integrated-ui-protocol-bandit-20261017.log": "0a34e31581f85e42d0b8b29197bb2b811fe46f3b2a3322cffa5f88147f1653e2",
     "integrated-ui-protocol-release-20261017.log": "26dad609d2c3a4869a61bfad969634b3204351f393a04d2751fac7d868715930"
   },
-  "model_scope": "UI journey uses scripted fixture; independent native host read verified two adapter calls, one actual host read and unchanged fixture/runtime; no whole-project acceptance"
+  "model_scope": "UI journey uses scripted fixture; independent native host read verified two adapter calls, one actual host read and unchanged fixture/runtime; no whole-project acceptance",
+  "python311_fixture_followup": {
+    "failed_runs": [
+      39005635763,
+      39005760452
+    ],
+    "cause": "five new regression tests called Path.is_junction, unavailable on Python3.11",
+    "change": "test-only real junction detection using lstat reparse tag; exact-path os.rmdir cleanup; no runtime change or skipped assertions",
+    "test_source_sha256": "01ee0c1d1a1b1fadca38c99f968ecfe2206e30dd41f15fd8654c1b16cf0c048a",
+    "local_validation": {
+      "python": "3.12 Windows",
+      "compatibility_simulation": "Path.is_junction removed at runtime; real Windows junctions still created and verified",
+      "tests": 21,
+      "passed": 21,
+      "skipped": 0,
+      "native_python311_local": "not installed; GitHub matrix required"
+    },
+    "log_sha256": "39e9de46a6ba941dd9cc49648e1ca62d514f66bfabb1630f383227a3fe91576c",
+    "independent_review": "no blocker",
+    "github_new_revision": "pending"
+  }
 }

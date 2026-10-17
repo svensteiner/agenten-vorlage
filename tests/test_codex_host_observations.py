@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -53,12 +54,22 @@ class CodexHostObservationTests(unittest.TestCase):
         return {"workspace": str(self.workspace), "sandbox": "read-only", **updates}
 
     @staticmethod
+    def is_junction(path: Path) -> bool:
+        if os.name != "nt":
+            return False
+        try:
+            return path.lstat().st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+        except OSError:
+            return False
+
+    @staticmethod
     def make_junction(link: Path, target: Path) -> bool:
         completed = subprocess.run(
             ["cmd", "/c", "mklink", "/J", str(link), str(target)],
             capture_output=True, text=True, check=False,
         ) if os.name == "nt" else None
-        return bool(completed and completed.returncode == 0 and link.is_junction())
+        return bool(completed and completed.returncode == 0
+                    and CodexHostObservationTests.is_junction(link))
 
     def test_codex_action_schema_and_canonicalizer_admit_observations_only(self):
         schema_tools = schema("codex_action_step")["properties"]["tool"]["enum"]
@@ -320,7 +331,7 @@ class CodexHostObservationTests(unittest.TestCase):
             "read_file", {"path": "linked/external.txt"}, self.context(), 5,
         ))
         self.assertNotIn("outside", json.dumps(result))
-        if os.name == "nt" and link.is_junction():
+        if self.is_junction(link):
             os.rmdir(link)
 
     @unittest.skipUnless(shutil.which("git"), "Git required")
@@ -349,7 +360,7 @@ class CodexHostObservationTests(unittest.TestCase):
         self.assertTrue(result["filtered_changes_present"])
         self.assertNotIn("OUTSIDE-SECRET-MARKER", encoded)
         self.assertNotIn("linked/content.txt", encoded)
-        if os.name == "nt" and tracked_dir.is_junction():
+        if self.is_junction(tracked_dir):
             os.rmdir(tracked_dir)
 
     @unittest.skipUnless(shutil.which("git"), "Git required")
@@ -391,7 +402,7 @@ class CodexHostObservationTests(unittest.TestCase):
             result = json.loads(self.backend._execute_observation("inspect_git", {}, self.context(), 10))
         self.assertTrue(swapped)
         self.assertNotIn("POSTCHECK-OUTSIDE-SECRET", json.dumps(result))
-        if os.name == "nt" and tracked_dir.is_junction():
+        if self.is_junction(tracked_dir):
             os.rmdir(tracked_dir)
 
     def test_listing_rejects_directory_swapped_to_symlink_after_validation(self):
@@ -436,7 +447,7 @@ class CodexHostObservationTests(unittest.TestCase):
                 result = json.loads(self.backend._execute_observation(
                     "list_files", {"path": "selected"}, self.context(), 5,
                 ))
-            if selected.is_junction():
+            if self.is_junction(selected):
                 os.rmdir(selected)
         else:
             self.skipTest("Host has no tested anchored directory enumeration primitive.")
