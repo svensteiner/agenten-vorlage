@@ -171,6 +171,23 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
         phase_actions.append(self.final_action())
         actions = iter(phase_actions)
         prompts = []
+        reviewer_steps = iter([
+            {
+                "kind": "proposal", "tool": "read_file",
+                "arguments": {"path": "agentkit/worker.py", "content": "", "old_text": "",
+                              "new_text": "", "start_line": 1, "max_lines": 40},
+                "rationale": "Inspect the changed implementation.",
+                "report": {"status": "blocked", "summary": "Observation requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            },
+            {
+                "kind": "final", "tool": "none",
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Review complete.",
+                "report": self.report(),
+            },
+        ])
 
         def fake_call(prompt, contract, context, timeout):
             prompts.append((prompt, contract))
@@ -178,6 +195,8 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
                 return next(decisions)
             if contract == "codex_action_step":
                 return next(actions)
+            if contract == "codex_private_review_action_step":
+                return next(reviewer_steps)
             if contract == "report":
                 return self.report()
             raise AssertionError(f"Unexpected Codex contract: {contract}")
@@ -218,6 +237,13 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
                 return next(decisions)
             if contract == "codex_action_step":
                 return next(actions)
+            if contract == "codex_private_review_action_step":
+                return {
+                    "kind": "final", "tool": "none",
+                    "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                                  "start_line": None, "max_lines": None},
+                    "rationale": "Review complete.", "report": self.report(),
+                }
             if contract == "report":
                 return self.report()
             raise AssertionError(f"Unexpected Codex contract: {contract}")
@@ -246,6 +272,9 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
         attempts = state["local_phase_execution"]["attempts"]
         self.assertEqual(["red", "targeted", "full"], [item["phase"] for item in attempts])
         self.assertTrue(state["reviewed"])
+        self.assertEqual(2, sum(
+            contract == "codex_private_review_action_step" for _, contract in prompts
+        ))
         self.assertTrue(all("authorize_local_mutation" not in prompt for prompt, _ in prompts))
         self.assertTrue(all('"run_local_phase"' not in prompt for prompt, _ in prompts))
         self.assertTrue(all('"local_phase_policy"' not in prompt for prompt, _ in prompts))

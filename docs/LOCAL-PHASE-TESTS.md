@@ -24,6 +24,20 @@ bekannter Versuch derselben Phase und desselben Quellstands wird vor einer neuen
 Reservierung abgelehnt. Gespeicherte Nachweise muessen auch bei Wiederaufnahme
 die Reihenfolge und die Quellbindungen erfuellen.
 
+## Unabhaengiger Reviewer
+
+Eine hostseitig als Reviewer gebundene Rolle mit `read-only`-Sandbox verwendet
+unter der privaten Policy den eigenen Vertrag `codex_private_review_action_step`.
+Er erlaubt nur `read_file`, `list_files`, `inspect_git` oder einen Abschlussbericht.
+Die native Shell bleibt deaktiviert. Schreibvorschlaege, Testphasen und das
+Fortsetzen schreibender Freigaben sind fuer diese Rolle gesperrt. Der Vertrag
+aendert weder Schreibrechte des Entwicklers noch das oeffentliche Testprofil.
+
+Der echte Sol-Lesetest belegt eine Host-Dateibeobachtung und einen korrekten
+Bericht bei unveraendertem Workspace. Er belegt keine vollstaendige Aufgabe
+und keine allgemeine Zuverlaessigkeit des Reviews. Vollstaendige Codekorrektur
+und Marketingqualitaet benoetigen weiterhin eigene Abnahmen.
+
 ## Aussagekraft der Nachweise
 
 Container-Konfiguration, Ein-/Ausgangshashes, Prozessausgang und Bereinigung sind

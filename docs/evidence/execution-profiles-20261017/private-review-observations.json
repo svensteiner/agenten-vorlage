@@ -1,0 +1,96 @@
+{
+  "schema": "agentkit-private-review-observations-technical/v1",
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "full_task_autonomy_qualification": false,
+  "full_suite": {
+    "tests_run": 672,
+    "skipped": 7,
+    "failures": 0,
+    "exit_code": 0,
+    "duration_seconds": 333.31200000003446,
+    "changed_inputs": []
+  },
+  "coverage": {
+    "combined_percent": 80.44624746450305,
+    "statement_percent": 83.21018529043992,
+    "branch_percent": 73.55442176870748
+  },
+  "offline_release": {
+    "passed": 37,
+    "failed": 0
+  },
+  "real_model_smoke": {
+    "schema": "agentkit-real-private-review-observation-smoke/v1",
+    "contracts": [
+      "codex_private_review_action_step",
+      "codex_private_review_action_step"
+    ],
+    "requires_contract": "codex_private_review_action_step",
+    "model": "gpt-6-sol",
+    "model_calls": 2,
+    "observations": [
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "content/source_qualification_protocol.py",
+          "start_line": 1,
+          "max_lines": 30
+        },
+        "result_sha256": "b82ffa08ceca099486eae9276cc64bec7d3821209fbe406b10cdbe7c5c8acee0"
+      }
+    ],
+    "effect_requests_denied": [],
+    "workspace_unchanged": true,
+    "exception_type": null,
+    "report": {
+      "status": "success",
+      "summary": "In den Zeilen 1–30 ist die Konstante REVIEW_SCHEMA definiert.",
+      "artifacts": [],
+      "evidence": [
+        "Host-Beobachtung: content/source_qualification_protocol.py, Zeilen 18–30."
+      ],
+      "next_actions": []
+    },
+    "qualified": true,
+    "proves_full_task_autonomy": false,
+    "production_qualification": false
+  },
+  "independent_review": {
+    "focused_tests_passed": 45,
+    "guard_tests_passed": 21,
+    "receipt_sha256": "da95ae81a5f7b9f97141f036b53e5b5f5e2fe0afcd40b0b6e516fc27a8d4be8b"
+  },
+  "static_checks": [
+    {
+      "name": "ruff",
+      "exit_code": 0
+    },
+    {
+      "name": "bandit",
+      "exit_code": 0
+    },
+    {
+      "name": "workflow",
+      "exit_code": 0
+    }
+  ],
+  "evidence_sha256": {
+    "full.log": "008fde6af448dc7f29d6b9034db4fafd60fa4aeb67f61dd9d5e379df0fca207a",
+    "full-result.json": "f00ace3c583e5bbc940260c2c911a53c488e86817ae2f07805ba7feb956a2f87",
+    "full-inputs.json": "7db93fd5384bdd16b3c9863e63bf09dfba120e45b9b8250a0eae5a7c80f40d86",
+    "coverage.json": "0906a7ea0001ad282d13fc9026d0a899323845a9b82bb42a0c1af5a96daa6fde",
+    "release.log": "8fad774200f1114fd123222ff88a4c41c15f7e02dad1e4768a00c84c850064db",
+    "real-private-review-observation-result.json": "fd003028905aea3cbed9495fc1d1d9a86ab50c7241e28eac75a685a7b63f5a6c",
+    "static-checks.json": "496bc7a1222d1a09fa9c8f31406fd7d9bda4c2c9ddccc617d714b6b93a3212e6"
+  },
+  "source_sha256": {
+    "agentkit\\backends.py": "a04a623b359850d64b1ffbce4b458daf32d10fea3c00be593d51e0ec095e172e",
+    "agentkit\\engine.py": "f3d2afbc6be4aab152f42f23a9a9cec4fa9e829b146b5fad0f5464b1d0242ecf",
+    "agentkit\\schemas\\codex_private_review_action_step.json": "7356e9260643e6172cc4c5f5e68695b35c2781f566845abb03595a30bcfcd620",
+    "tests\\test_codex_host_observations.py": "4d23fe51ae6109b53c335c1140bfc296bdecd13615d7d2a17c5c6aaaa5ef4fa2",
+    "tests\\test_codex_local_phases.py": "06b69bda8daa24f4a9274079a7819bf230e7190a3ccf223173fec61237cd2300",
+    "tests\\test_engine_codex_local_phases.py": "7ba929329eba1fca430138e3482cbd6b22cdf0bd1091a02d3d4be205baf7dc48"
+  },
+  "ci_status": "pending_current_source_commit"
+}

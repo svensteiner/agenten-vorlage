@@ -599,6 +599,8 @@ class Engine:
                 ctx = context()
                 ctx["instructions"] = instructions
                 ctx["sandbox"] = role["sandbox"]
+                # This is a host routing capability, hidden from model context.
+                ctx["role_can_review"] = role["can_review"]
                 if (
                     len(json.dumps(ctx, ensure_ascii=False))
                     > self.limits["max_context_chars"]

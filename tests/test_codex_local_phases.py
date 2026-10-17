@@ -161,6 +161,71 @@ class CodexLocalPhaseTests(unittest.TestCase):
         self.assertIn("reproduced RED", prompts[1][0])
         self.assertEqual("codex_action_step", prompts[2][1])
 
+    def test_read_only_reviewer_uses_only_private_host_observations(self):
+        context = self.context(unittest.mock.Mock())
+        context.update(sandbox="read-only", role_can_review=True)
+        responses = [
+            {
+                "kind": "proposal", "tool": "read_file",
+                "arguments": {"path": "agentkit/worker.py", "content": "", "old_text": "",
+                              "new_text": "", "start_line": 1, "max_lines": 40},
+                "rationale": "Inspect the implementation.",
+                "report": {"status": "blocked", "summary": "Observation requested.",
+                           "artifacts": [], "evidence": [], "next_actions": []},
+            },
+            {
+                "kind": "final", "tool": "none",
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
+                "rationale": "Review complete.",
+                "report": {**self.final["report"], "summary": "Reviewed the implementation."},
+            },
+        ]
+        prompts = []
+
+        def call(prompt, contract, _context, _timeout):
+            prompts.append((prompt, contract))
+            return responses[len(prompts) - 1]
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            report = CodexBackend().execute(
+                {"role": "reviewer", "task": "Review the changed implementation"}, context, 10
+            )
+
+        self.assertEqual("success", report["status"])
+        self.assertEqual(["codex_private_review_action_step"] * 2,
+                         [contract for _, contract in prompts])
+        self.assertIn('"tool":"read_file"', prompts[0][0])
+        self.assertIn("PRIVATE REVIEW OBSERVATION-ONLY PROTOCOL", prompts[0][0])
+        actions_json = prompts[0][0].split("AVAILABLE_HOST_ACTIONS_JSON=", 1)[1].splitlines()[0]
+        self.assertNotIn("write_file", actions_json)
+        self.assertNotIn("run_local_tests", actions_json)
+        self.assertNotIn("run_isolated_tests", actions_json)
+        self.assertNotIn("For edits choose", prompts[0][0])
+        self.assertNotIn("edit_requires_one_match", prompts[0][0])
+        self.assertNotIn("run_local_tests action is available", prompts[0][0])
+        self.assertIn("def work(): return 1", prompts[1][0])
+        self.assertNotIn('"role_can_review"', prompts[0][0])
+
+    def test_read_only_reviewer_schema_rejects_write_before_phase_callback(self):
+        callback = unittest.mock.Mock()
+        context = self.context(callback)
+        context.update(sandbox="read-only", role_can_review=True)
+        write_proposal = {
+            "kind": "proposal", "tool": "write_file",
+            "arguments": {"path": "agentkit/worker.py", "content": "def work(): return 2\n",
+                          "old_text": "", "new_text": "", "start_line": None, "max_lines": None},
+            "rationale": "Try a write.", "report": self.blocked_report(),
+        }
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", return_value=write_proposal):
+            with self.assertRaises(ContractError):
+                CodexBackend().execute(
+                    {"role": "reviewer", "task": "Review without mutation"}, context, 10
+                )
+        callback.assert_not_called()
+
     def test_post_reservation_contract_error_propagates_without_reprompt(self):
         callback = unittest.mock.Mock(
             side_effect=ContractError("Phase outcome is unknown after reservation.")
