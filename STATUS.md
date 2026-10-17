@@ -87,10 +87,15 @@ Gleicher Kandidat/Korpus: keine unabhaengigen Stichproben und kein bestandener
 Gesamtvergleich. Naechste fachliche Arbeit muss die Protokolltreue verbessern,
 ohne Abdeckungsregeln zu lockern; kein blindes Wiederholen des gleichen Stands.
 
-Der neue Host-Lesepfad ist noch ein isolierter Kandidat: Code-/Security-Review
-fanden Git-Diff-Lecks fuer geschuetzte Pfade, unvollstaendige Zugangsdaten-
-Dateinamensfilter und eine Ordner-Auflistungs-Race. Der erste Volltest wurde
-deshalb gezielt unterbrochen und gilt nicht als bestanden. Reparatur vor Promotion.
+Der Host-Lesepfad wurde nach den gefundenen Git-Pfad-Lecks, Filterluecken und
+Austausch-Races korrigiert und unabhaengig geprueft. Der erste unterbrochene
+Vollauf bleibt ein Fehlversuch. Der neue Vollauf nach der nullable-Schemakorrektur
+besteht 528 Faelle (524 bestanden, vier Skips), 80,4805 Prozent kombinierte
+Abdeckung, Ruff, Bandit und 16 Release-Gates. Windows und Linux bestehen jeweils
+73 fokussierte Tests (Windows ein Skip). Eine echte native Schema-Probe liefert
+eine validierte Antwort: ein Adapteraufruf, keine ausgefuehrten Aktionen. Dies
+belegt noch keinen autonomen Gesamtauftrag; der fruehere blockierte Lauf bleibt
+verbindlich. [Nachweise und Grenzen](docs/evidence/host-observations-20261017/README.md).
 
 Der kleine zentrale Prompt-Wrapper-Fix ist auf Marketingbot/master b2b0c7e2:
 saubere Uebernahme separat mit 4.464 Tests bestanden. Der groessere strukturierte

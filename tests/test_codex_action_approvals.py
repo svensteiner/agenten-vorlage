@@ -41,7 +41,8 @@ class CodexActionApprovalTests(unittest.TestCase):
     @staticmethod
     def proposal(tool="write_file", path="result.txt", content="RESULT"):
         return {"kind": "proposal", "tool": tool,
-                "arguments": {"path": path, "content": content, "old_text": "", "new_text": ""},
+                "arguments": {"path": path, "content": content, "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
                 "rationale": "bounded action",
                 "report": {"status": "blocked", "summary": "Awaiting approval.", "artifacts": [],
                            "evidence": [], "next_actions": []}}
@@ -49,7 +50,8 @@ class CodexActionApprovalTests(unittest.TestCase):
     @staticmethod
     def final(summary="verified", artifacts=None):
         return {"kind": "final", "tool": "none",
-                "arguments": {"path": "", "content": "", "old_text": "", "new_text": ""},
+                "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                              "start_line": None, "max_lines": None},
                 "rationale": "bounded work complete",
                 "report": {"status": "success", "summary": summary, "artifacts": artifacts or [],
                            "evidence": ["fixture verified"], "next_actions": []}}
@@ -71,9 +73,9 @@ class CodexActionApprovalTests(unittest.TestCase):
             state = self.engine().run("create file")
         worker_prompt, _, worker_context, _ = call.call_args.args
         self.assertEqual("read-only", worker_context["sandbox"])
-        self.assertIn("native read-only tools", worker_prompt)
+        self.assertIn("Host observation actions read_file, list_files and inspect_git are available", worker_prompt)
         self.assertIn("not to action proposals", worker_prompt)
-        self.assertNotIn("Never use shell commands", worker_prompt)
+        self.assertIn("Follow the configured legacy action and sandbox behavior", worker_prompt)
         self.assertEqual("awaiting_approval", state["status"])
         self.assertIsNone(state["in_flight"])
         self.assertFalse((self.workspace / "created.txt").exists())

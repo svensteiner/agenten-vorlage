@@ -276,7 +276,8 @@ class WritePolicyTests(unittest.TestCase):
         }
         proposal = {
             "kind": "proposal", "tool": "write_file",
-            "arguments": {"path": "allowed.txt", "content": "approved by policy", "old_text": "", "new_text": ""},
+            "arguments": {"path": "allowed.txt", "content": "approved by policy", "old_text": "", "new_text": "",
+                          "start_line": None, "max_lines": None},
             "rationale": "fixture", "report": {
                 "status": "blocked", "summary": "proposal", "artifacts": [],
                 "evidence": [], "next_actions": [],
@@ -284,7 +285,8 @@ class WritePolicyTests(unittest.TestCase):
         }
         final = {
             "kind": "final", "tool": "none",
-            "arguments": {"path": "", "content": "", "old_text": "", "new_text": ""},
+            "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                          "start_line": None, "max_lines": None},
             "rationale": "done", "report": {
                 "status": "success", "summary": "written", "artifacts": ["allowed.txt"],
                 "evidence": ["host wrote the allowed file"], "next_actions": [],
@@ -318,7 +320,8 @@ class WritePolicyTests(unittest.TestCase):
         }
         proposal = {
             "kind": "proposal", "tool": "write_file",
-            "arguments": {"path": "denied.txt", "content": "blocked", "old_text": "", "new_text": ""},
+            "arguments": {"path": "denied.txt", "content": "blocked", "old_text": "", "new_text": "",
+                          "start_line": None, "max_lines": None},
             "rationale": "fixture", "report": {
                 "status": "blocked", "summary": "proposal", "artifacts": [],
                 "evidence": [], "next_actions": [],

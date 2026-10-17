@@ -1,0 +1,67 @@
+{
+  "scope": "host observation and strict nullable wire-schema qualification; no autonomous project or marketing quality acceptance",
+  "production_ready": false,
+  "source_sha256": {
+    "agentkit/workspace_observation.py": "876faa55d2a9a5f910cd80401b00661db85a5e0b9729e084e1d7a6ae82734bc7",
+    "agentkit/backends.py": "bbbab8be8c8f1ca9b79c6601db0101f999374006357eb0122f5d7c56e6190419",
+    "agentkit/api_backend.py": "e145e6d8ab57755e4e574737e6272cca3826319ab064cfd54f7d545c9c9a2b28",
+    "agentkit/schemas/codex_action_step.json": "d22492e3607b530cf3ec9135ad8c4e9870f0171018fd8f1bcf8228afa3cc26ba",
+    "tests/test_codex_host_observations.py": "95b6ff20434c6def197ef7d831199134e4b98059533ba195f2befca6158ced08",
+    "tests/test_codex_action_approvals.py": "a1fde6a943bcdb90e0830bd77129cac1cb14d62965f6aa1f6c3d4741fdc5fc7d",
+    "tests/test_write_policy.py": "5092f08b350bc495a16decd3dce93066d2a73ac30f1a381f7b0dbdc3f86d3a3f",
+    "tests/test_isolated_test_integration.py": "e2b6b2d1f1046fc0a52c644dfc1e3740ada717185b01e44ca52c98d7ffacae70"
+  },
+  "focused": {
+    "windows": {
+      "tests": 73,
+      "skipped": 1,
+      "exit": 0
+    },
+    "linux": {
+      "tests": 73,
+      "skipped": 0,
+      "exit": 0
+    }
+  },
+  "static": {
+    "ruff_exit": 0,
+    "bandit_medium_high_exit": 0,
+    "release_gates_passed": 16,
+    "release_gates_failed": 0
+  },
+  "full_regression": {
+    "status": "passed",
+    "session": 60207,
+    "tests": 528,
+    "passed": 524,
+    "skipped": 4,
+    "test_exit": 0,
+    "coverage_exit": 0,
+    "combined_line_branch_coverage_percent": 80.48045029651222,
+    "scope": "full unittest discovery on frozen candidate; actual model task not included"
+  },
+  "native_schema_probe": {
+    "status": "schema_response_validated",
+    "adapter_invocations": 1,
+    "actions_dispatched": 0,
+    "provider_request_count": null,
+    "usd": null,
+    "script_sha256": "14321335ae88de8cc7aee05446d5b805418a2f45abfba2f0d9fd7273e45c7b1c"
+  },
+  "private_log_sha256": {
+    "codex-strict-schema-windows-focused.log": "69931e2af571cb2b9a911c5d88428f4ca79d45da279aefe62207bcd642dc158b",
+    "codex-strict-schema-linux-focused.log": "917ab6beb3e4e87166542b879829951bdf3cce18f38867a1d1d9867870efc237",
+    "codex-strict-schema-ruff.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+    "codex-strict-schema-bandit.log": "0a34e31581f85e42d0b8b29197bb2b811fe46f3b2a3322cffa5f88147f1653e2",
+    "codex-strict-schema-release.log": "590c8a3aa524baa1c07c7491e7f386587d849bb384817a83cdb5112f9ba6694a",
+    "codex-strict-schema-full-final.log": "a524eb6b1b23a70be11555641d9b100395cbaba55d1408ec163f1779fd1512af",
+    "codex-strict-schema-full-final-result.json": "9fab3ac9a5ee78617aedb25367392d05beae4e7c7a7fdd264d1cc3d564f716ea",
+    "codex-strict-schema-full-coverage.log": "e1121cc1f543f096e45e02bb36f0e47076691014a3ff24047cb0ea43189e0a81",
+    "codex-strict-schema-full-coverage.json": "c1dd0fc67bf347038becbe005f139bf1b6358c20b8d82f4c41cc3208ef864750"
+  },
+  "preserved_failures": [
+    "first full regression interrupted after security rejection, not passed",
+    "POSIX race fixture capability regression failed before correction",
+    "first native schema probe failed; exact provider cause unproven"
+  ]
+}

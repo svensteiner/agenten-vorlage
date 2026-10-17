@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
-import shutil
-import subprocess
-import time
-from pathlib import Path
 
 from .backends import DeepSeekBackend, _process_result, subprocess_environment
 from .contracts import ContractError
+from .workspace_observation import run_workspace_observation
 
 
 class ApiBackend(DeepSeekBackend):
@@ -35,37 +31,10 @@ class ApiBackend(DeepSeekBackend):
             return super()._run_tool(name, arguments, context, timeout)
         if name not in self.allowed_tools or arguments or timeout <= 0:
             raise ContractError("Invalid Git inspection request.")
-        workspace = Path(context["workspace"]).resolve()
-        if not workspace.is_dir():
-            raise ContractError("Git inspection workspace does not exist.")
-        executable = shutil.which("git")
-        if not executable:
-            return json.dumps({"status": "unavailable", "reason": "git_not_installed"})
-        environment = subprocess_environment()
-        environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
-                           GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0")
-        command = [executable, "-c", "core.fsmonitor=false", "-c", "core.pager=cat"]
-        deadline = time.monotonic() + timeout
-        def run(args):
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise subprocess.TimeoutExpired(command, timeout)
-            return _process_result(command + args, "", workspace, remaining, env=environment)
-        try:
-            code, root, _ = run(["rev-parse", "--show-toplevel"])
-            if code or Path(root.strip()).resolve() != workspace:
-                return json.dumps({"status": "unavailable", "reason": "workspace_is_not_git_root"})
-            status_code, status, _ = run(["status", "--porcelain=v1", "--untracked-files=normal"])
-            diff_code, diff, _ = run(["diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--ignore-submodules=all", "HEAD", "--"])
-        except subprocess.TimeoutExpired:
-            return json.dumps({"status": "unavailable", "reason": "git_inspection_timeout"})
-        if status_code or diff_code:
-            return json.dumps({"status": "unavailable", "reason": "git_inspection_failed"})
-        if self.api_key:
-            status = status.replace(self.api_key, "[REDACTED]")
-            diff = diff.replace(self.api_key, "[REDACTED]")
-        return json.dumps({"status": "ok", "git_status": status[:12000], "diff_head": diff[:24000],
-                           "truncated": len(status) > 12000 or len(diff) > 24000}, ensure_ascii=False)
+        return run_workspace_observation(
+            name, arguments, context, timeout, process_result=_process_result,
+            environment_factory=subprocess_environment, redact=self.api_key,
+        )
 
     def __init__(self, model: str | None = None, *, api_key: str | None = None,
                  base_url: str | None = None, json_mode: bool | None = None):

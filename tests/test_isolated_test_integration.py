@@ -297,7 +297,8 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
     def test_codex_proposal_is_host_approved_and_callbacks_stay_out_of_prompt(self):
         policy = self.policy()
         backend = self.codex_backend()
-        args = {"path": "", "content": "", "old_text": "", "new_text": ""}
+        args = {"path": "", "content": "", "old_text": "", "new_text": "",
+                "start_line": None, "max_lines": None}
         backend._call = Mock(return_value={
             "kind": "proposal", "tool": "run_isolated_tests", "arguments": args,
             "rationale": "Run pinned tests", "report": {
@@ -353,7 +354,8 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
                   "evidence": ["reviewed"], "next_actions": []}
         backend._call = Mock(return_value={
             "kind": "final", "tool": "none",
-            "arguments": {"path": "", "content": "", "old_text": "", "new_text": ""},
+            "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                          "start_line": None, "max_lines": None},
             "rationale": "Done", "report": report,
         })
         actions, receipts = [], []

@@ -381,3 +381,12 @@ Fehlerkategorie dokumentiert und nicht durch eine Offline-Demo ersetzt.
 Für die Produktabnahme bleiben alle Anforderungen dieser Tabelle offen, bis ihre
 jeweiligen aktuellen Nachweise geprüft sind. Einzelne grüne Tests erlauben keine
 pauschale Aussage „100 Prozent autonom“ oder „produktionsreif“.
+
+## Hostbeobachtungen: technische Abnahme, Gesamtauftrag weiter offen
+
+Der korrigierte Host-Lesepfad besteht 528 Regressionstestfaelle (524 bestanden,
+vier Skips), die 80-Prozent-Coverage-Grenze und 16 Release-Gates. Eine native
+Schema-Probe bestaetigt die nullable Antwortform; sie fuehrt keine Aktionen aus.
+Der blockierte fruehere Coding-Lauf wird dadurch nicht nachtraeglich erfolgreich.
+Ein neuer echter Auftrag mit Hostbeobachtungen, gepinnten Tests und separatem
+Review ist weiterhin erforderlich. [Quellen und Grenzen](evidence/host-observations-20261017/README.md).

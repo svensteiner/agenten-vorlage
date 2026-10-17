@@ -5,16 +5,18 @@
   "required": ["kind", "tool", "arguments", "rationale", "report"],
   "properties": {
     "kind": {"type": "string", "enum": ["proposal", "final"]},
-    "tool": {"type": "string", "enum": ["none", "write_file", "edit_file", "run_pytest", "run_isolated_tests"]},
+    "tool": {"type": "string", "enum": ["none", "read_file", "list_files", "inspect_git", "write_file", "edit_file", "run_pytest", "run_isolated_tests"]},
     "arguments": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "content", "old_text", "new_text"],
+      "required": ["path", "content", "old_text", "new_text", "start_line", "max_lines"],
       "properties": {
         "path": {"type": "string", "maxLength": 500},
         "content": {"type": "string", "maxLength": 200000},
         "old_text": {"type": "string", "maxLength": 50000},
-        "new_text": {"type": "string", "maxLength": 50000}
+        "new_text": {"type": "string", "maxLength": 50000},
+        "start_line": {"type": ["integer", "null"], "minimum": 1},
+        "max_lines": {"type": ["integer", "null"], "minimum": 1, "maximum": 200}
       }
     },
     "rationale": {"type": "string", "minLength": 1, "maxLength": 2000},
