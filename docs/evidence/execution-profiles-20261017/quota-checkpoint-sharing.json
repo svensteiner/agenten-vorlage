@@ -1,0 +1,120 @@
+{
+  "schema": "agentkit-checkpoint-sharing-qualification/v1",
+  "status": "local_and_final_ci_checks_passed_full_agent_trial_unproven",
+  "production_commit": "46c882aeb7edc02eca8308aa70dacd888ebfc110",
+  "fixture_followup_commit": "6c0e36b43f29a63e2c49da4236dd5ec6e4eb80a5",
+  "source_sha256": {
+    "agentkit\\storage.py": "63e3280faba0ae613677403aa4c74307e6fea806c09ea99ef8a2d67924dcfc1f",
+    "cockpit\\public_server.py": "c7cd15c5f0a3aaefee9a76f2a73d3ce255f0d2cc3f1a28e5a8957b34154c0088",
+    "tests\\test_storage.py": "bf496df8ca6785aadf97e94961ac5476b6521b5d8f94e0e527f1a5a811782c16",
+    "tests\\test_public_server.py": "d27d752b5931d7c57755bee88bd2a4f647d439247d203c481858c9f4accd7bfb"
+  },
+  "change": "Quota writer reuses the existing bounded Windows atomic checkpoint replacement helper after unchanged validation and while holding unchanged quota lock. No model/action retry was added.",
+  "full_windows_tests": {
+    "run": 662,
+    "skipped": 7,
+    "failed": 0,
+    "duration_seconds": 304.519,
+    "input_changes": [],
+    "log_sha256": "a70135402256341d852dfb7bc31afdbea4082bba201923d686686426f0a18827",
+    "inputs_sha256": "025239a91784647fd4154b12ad242d244fb9a9cb93d8b254a216be062ba29438",
+    "scope_note": "Completed before the later test-only module-local OS proxy correction; production bytes match current."
+  },
+  "final_quota_fixture_tests": {
+    "windows_passed": 11,
+    "wsl_linux_passed": 11,
+    "windows_log_sha256": "5a0a44db9fd5c6e23ea77775901b6b35333ca7eb92b4c7695bb80bc0c4ccd6ea",
+    "wsl_log_sha256": "074ba8c019082f835f26dfa5d46df6e83cc32bd1da0ae1a83928ac7d69fb56c9"
+  },
+  "offline_release": {
+    "passed": 35,
+    "failed": 0,
+    "log_sha256": "8498bcdad142a5b5c86720f1c4335f60565426ddd51ed38384948db92508b11e"
+  },
+  "static_and_workflow_checks": [
+    {
+      "check": "ruff",
+      "exit_code": 0
+    },
+    {
+      "check": "bandit",
+      "exit_code": 0
+    },
+    {
+      "check": "workflow",
+      "exit_code": 0
+    },
+    {
+      "check": "release",
+      "exit_code": 0
+    }
+  ],
+  "native_windows_handle_probe": {
+    "actual_windows_read_handle_without_delete_sharing": true,
+    "retrospective_bare_replace_winerror": 5,
+    "retrospective_old_destination_preserved": true,
+    "current_writer_exception": null,
+    "current_writer_new_bytes": true,
+    "elapsed_seconds": 0.17199999996228144,
+    "temporary_files_remaining": [],
+    "source_sha256": {
+      "agentkit\\storage.py": "63e3280faba0ae613677403aa4c74307e6fea806c09ea99ef8a2d67924dcfc1f",
+      "cockpit\\public_server.py": "c7cd15c5f0a3aaefee9a76f2a73d3ce255f0d2cc3f1a28e5a8957b34154c0088"
+    },
+    "comparison_is_retrospective_not_historical_red": true,
+    "proves_original_ci_conflicting_handle_source": false
+  },
+  "failed_ci_retained": [
+    {
+      "run_id": 39039620098,
+      "cause": "Windows 3.12 public checkpoint bare replacement WinError 5."
+    },
+    {
+      "run_id": 39040082446,
+      "cause": "Two new test mocks mutated global os.name on Ubuntu; production fix was unchanged in follow-up."
+    }
+  ],
+  "final_ci": {
+    "run_id": 39040477529,
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "6c0e36b43f29a63e2c49da4236dd5ec6e4eb80a5",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39040477529",
+    "jobs": [
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      }
+    ],
+    "both_quota_regressions_executed_passed_all_four_os_python_jobs": true,
+    "log_sha256": "0d5d9ac7e50e82e6d030501a8a11ca7cbe559e7bbc57678c0354061cffd85b48"
+  },
+  "full_agent_trial_qualified": false,
+  "marketing_quality_qualified": false,
+  "production_qualification": false,
+  "live_marketingbot_changed": false
+}

@@ -47,7 +47,19 @@ V5 ist vorbereitet, noch nicht gestartet. CI 39039620098 scheiterte unter
 Windows 3.12: Ein oeffentlicher Job konnte seinen Checkpoint wegen
 WinError 5 nicht atomar ersetzen. Der Quota-Writer umgeht bisher die
 bereits vorhandene begrenzte Windows-Wiederholung des Standard-Checkpoints.
-Eine gezielte Korrektur wird vor dem naechsten Lauf geprueft.
+Die [Speicherkorrektur](docs/evidence/execution-profiles-20261017/quota-checkpoint-sharing.json)
+verwendet die vorhandene begrenzte Windows-Wiederholung auch im Quota-Writer.
+662 Windows-Gesamttests (sieben Skips, keine Fehler), ein echter Windows-
+Handle-Test und 35 Offline-Pruefungen bestehen. Eine nachtraegliche reine
+Testkorrektur verhindert globale Betriebssystemsimulation; die elf Quotentests
+bestehen danach unter Windows und Linux. Alle sieben Jobs der finalen
+CI 39040477529 sind gruen; beide Quotentests liefen in allen vier
+Betriebssystem-/Python-Kombinationen erfolgreich.
+Der [frische Sol-Lauf V5](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v5-started.json)
+ist gestartet. Eine vorangehende reine Startpruefung hatte eine falsche
+Snapshot-Kennung vor jedem Modellaufruf abgelehnt. Die korrigierte Bindung
+und die zusaetzliche Vorpruefung bestehen 20 Guard-Tests und separates Review.
+Die eigentliche Codekorrektur und Marketingqualitaet sind noch nicht abgenommen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und

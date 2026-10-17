@@ -1,0 +1,41 @@
+{
+  "schema": "agentkit-isolated-real-model-trial-start/v1",
+  "run_id": "ab20971238a445f985903cad615f558d",
+  "observed_at_utc": "2026-10-17T14:33:16.396455+00:00",
+  "status_at_observation": "running",
+  "model": "gpt-6-sol",
+  "limits": {
+    "max_steps": 16,
+    "max_failures": 4,
+    "max_seconds": 3600,
+    "call_timeout_seconds": 1200
+  },
+  "workspace_files": 698,
+  "targeted_test_nodeids": 243,
+  "baseline_full_test_nodeids": 4729,
+  "required_new_regression_nodeids": 4,
+  "requirements": [
+    "Assertion-only RED before production edit",
+    "Fresh targeted and full host test receipts preserving all baseline node IDs",
+    "Independent review after final edit",
+    "Actual production write receipt and unchanged files outside allowlist"
+  ],
+  "previous_operator_precheck": {
+    "rejected_before_engine_dispatch": true,
+    "reason": "Prepared snapshot identifier differed from canonical host snapshot; metadata corrected and preflight regression added.",
+    "model_calls": 0
+  },
+  "preflight_guard_tests_passed": 20,
+  "ci_run_id": 39040477529,
+  "ci_conclusion": "success",
+  "evidence_sha256": {
+    "preparation.json": "4c4ad001c4bb68a0d8b905fc7759d053d60b275f0de56bc1575bf20eac6f1c92",
+    "runtime-release.json": "961bfa8e4eb7f7ef21d970397c60ddd9004e49b401000896d97b0a9325235392",
+    "independent-preflight.json": "cddc249af27f14782c5e04b98d3902c18c642d65494e09ff419f7c3e345c13f5",
+    "root-authorization.json": "2d5aae191481342de16f50937e5c3272ed6c875ee7d8746248edd47a2a788c9a",
+    "dispatch.json": "a5d40881a516e3a0a50a08e4e8f9482b87e0ea018f32d95c9690e46557443e43"
+  },
+  "trial_qualification": false,
+  "production_qualification": false,
+  "live_marketingbot_changed": false
+}
