@@ -1,0 +1,35 @@
+{
+  "status": "failed_frozen_quality_gate",
+  "study_result_sha256": "b856b3799451838925565fcb6a7661f3431399b61d80784802a7819848e4c057",
+  "completed_requests": 36,
+  "spent_usd": 0.044961999999999995,
+  "unknown_cost_requests": 0,
+  "source_unchanged": true,
+  "arms": {
+    "old": {
+      "assigned": 6,
+      "returned": 0,
+      "missing_or_rejected": 6
+    },
+    "new": {
+      "assigned": 6,
+      "returned": 0,
+      "missing_or_rejected": 6
+    }
+  },
+  "attempt_diagnostics": {
+    "markdown_bold": 36
+  },
+  "acceptance": false,
+  "limitation": "Complete failed synthetic cohort; no replacement outputs or changed thresholds. Earlier fixed-nine gate remains failed. No X publishing or reach measurement.",
+  "scoring": {
+    "method": "deterministic frozen missing-output rule; no subjective grader required",
+    "old_mean": 0,
+    "new_mean": 0,
+    "new_mean_advantage": 0,
+    "new_wins": 0,
+    "ties": 6,
+    "hard_failures_old": 6,
+    "hard_failures_new": 6
+  }
+}

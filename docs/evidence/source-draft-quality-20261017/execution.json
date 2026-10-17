@@ -1,0 +1,590 @@
+{
+  "status": "outputs_complete",
+  "prepared_sha256": "12f52b08e8967932daf13ee5af673d6b873d4c79196498bd98b77821c3da5407",
+  "requests": [
+    {
+      "number": 1,
+      "case_id": "dock-scan-gap",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "e6efea97b3f64c775fb36c734526595df380d32fbfe12f6b85385bea5b001ce9",
+      "reported_cost_usd": 0.001053,
+      "response_id": "gen-1792197959-4sqvOjpe2IxF9vTQ6OjQ",
+      "raw_text": "**These:** Sieben Pakete ohne Ladescan sind ein Closeout-Risiko, keine Verwaltungsdetail.\n\n**Grund:** Der Supervisor kann nicht genehmigen, was nicht nachverfolgbar ist. Ohne zweite Batch-Info bleibt unklar, ob die Pakete das Depot verlassen haben.",
+      "input_tokens": 623,
+      "output_tokens": 86
+    },
+    {
+      "number": 2,
+      "case_id": "dock-scan-gap",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "e6efea97b3f64c775fb36c734526595df380d32fbfe12f6b85385bea5b001ce9",
+      "reported_cost_usd": 0.001083,
+      "response_id": "gen-1792197961-5UmbY8sa2UMSYsLTJIXJ",
+      "raw_text": "**These:** Sieben Pakete ohne Ladescan sind ein Kontrolldefekt, nicht ein Datenerfassungsproblem.\n\n**Grund:** Der Supervisor muss vor Schichtende bestätigen, dass alle 38 Pakete physisch verladen wurden – eine Unterschrift ohne Prüfung macht die Log-Kontrolle wirkungslos.",
+      "input_tokens": 623,
+      "output_tokens": 92
+    },
+    {
+      "number": 3,
+      "case_id": "dock-scan-gap",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "e6efea97b3f64c775fb36c734526595df380d32fbfe12f6b85385bea5b001ce9",
+      "reported_cost_usd": 0.001098,
+      "response_id": "gen-1792197964-vROFEn9i0JsFemzrnusC",
+      "raw_text": "**These:** Sieben Pakete verschwinden zwischen Packbereich und Ladebestätigung, weil das System keinen Zwischenschritt erfasst.\n\n**Grund:** Der Supervisor muss vor Schichtende klären, ob diese unter einer anderen Chargennummer geladen wurden – sonst fehlt die Audit-Spur für diese 18 Prozent.",
+      "input_tokens": 623,
+      "output_tokens": 95
+    },
+    {
+      "number": 4,
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "44a306dcffd3df93830ff5459a799ee494eb0acf91c3e4fe9fb79d62f046230a",
+      "reported_cost_usd": 0.001354,
+      "response_id": "gen-1792197966-CkQa2hIzoXXKXf9OoGQR",
+      "raw_text": "**These:** Sieben fehlende Ladescans sind keine Packer-Fehler, sondern ein Kontrolldefizit bei der Schichtabnahme.\n\n**Grund:** Der Supervisor genehmigt den Closeout ohne Sichtbarkeit, ob diese Pakete nachgeladen oder verloren sind – die Lücke liegt im Freigabeprozess, nicht in der Verpackung.",
+      "input_tokens": 839,
+      "output_tokens": 103
+    },
+    {
+      "number": 5,
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "44a306dcffd3df93830ff5459a799ee494eb0acf91c3e4fe9fb79d62f046230a",
+      "reported_cost_usd": 0.001384,
+      "response_id": "gen-1792197968-dvWrxkcXFqWup8dSezWJ",
+      "raw_text": "**These:** Fehlende Ladescanns sind ein Kontrollausfalls-Signal, kein Dateneingabefehler.\n\n**Grund:** Sieben von 38 Paketen haben keine Handover-Scanns – der Supervisor kann nicht nachweisen, ob sie geladen wurden oder verloren gingen. Ohne Freigabepflicht für Lücken bleibt die Abweichung unsichtbar.",
+      "input_tokens": 839,
+      "output_tokens": 109
+    },
+    {
+      "number": 6,
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "44a306dcffd3df93830ff5459a799ee494eb0acf91c3e4fe9fb79d62f046230a",
+      "reported_cost_usd": 0.001474,
+      "response_id": "gen-1792197970-jmlq7r1KpmWneLKnSGAu",
+      "raw_text": "**These:** Sieben fehlende Ladescan-Einträge sind kein Packfehler – sie sind ein Kontrolldefizit bei der Übergabe.\n\n**Grund:** Der Shift Supervisor muss Closeouts freigeben, ohne dass das System unterscheidet, ob Pakete geladen oder nur anders chargenweise erfasst wurden. Ohne explizite Nachverfolgung dieser Lücke beim Handover entsteht ein blinder Fleck zwischen Versand und Tracking.",
+      "input_tokens": 839,
+      "output_tokens": 127
+    },
+    {
+      "number": 7,
+      "case_id": "seat-cap-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "d399f963b811cfb1222f25d223d3bb218082dd790fac0f1c24f84d7b5f49e30d",
+      "reported_cost_usd": 0.001008,
+      "response_id": "gen-1792197972-LxYLJnykkoIjNR47LABA",
+      "raw_text": "**These:** Das System blockiert neue Nutzer, obwohl unbekannt ist, wie viele Accounts inaktiv sind.\n\n**Grund:** Bei 12/12 Plätzen belegt und fehlendem Dormanz-Status kann der Admin die Genehmigung nicht datengestützt treffen.",
+      "input_tokens": 623,
+      "output_tokens": 77
+    },
+    {
+      "number": 8,
+      "case_id": "seat-cap-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "d399f963b811cfb1222f25d223d3bb218082dd790fac0f1c24f84d7b5f49e30d",
+      "reported_cost_usd": 0.001053,
+      "response_id": "gen-1792197974-TUgiHPr7sr8mjlJidJ2b",
+      "raw_text": "**These:** Der Gating-Mechanismus funktioniert, erzeugt aber Blindheit.\n\n**Grund:** 12 von 12 Plätzen belegt, eine Anfrage wartet, niemand weiß ob inaktive Konten den Slot blockieren – ohne Admin-Freigabe bleibt das System stehen.",
+      "input_tokens": 623,
+      "output_tokens": 86
+    },
+    {
+      "number": 9,
+      "case_id": "seat-cap-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "d399f963b811cfb1222f25d223d3bb218082dd790fac0f1c24f84d7b5f49e30d",
+      "reported_cost_usd": 0.001023,
+      "response_id": "gen-1792197976-KtbWiOpz4emNcjxWulGV",
+      "raw_text": "**These:** Das System blockiert die nächste Anfrage, obwohl möglicherweise Kapazität frei ist.\n\n**Grund:** 12 von 12 Plätzen sind belegt, aber die Registratur zeigt nicht, welche Accounts inaktiv sind—der Admin genehmigt blind.",
+      "input_tokens": 623,
+      "output_tokens": 80
+    },
+    {
+      "number": 10,
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "26233d137dae96eeb2bcccc924676d7f6d24e3692f9074354e12eefb92f39d1e",
+      "reported_cost_usd": 0.001344,
+      "response_id": "gen-1792197978-w8YILJy6YiqZ4XlGenkW",
+      "raw_text": "**These:** Die Kapazität ist technisch voll, aber die echte Auslastung bleibt unklar.\n\n**Grund:** 12 von 12 Plätzen besetzt, aber ohne Dormanz-Sichtbarkeit kannst du nicht unterscheiden zwischen aktiven Nutzern und Zombie-Accounts—eine ausstehende Anfrage staut sich deshalb zu Unrecht.",
+      "input_tokens": 839,
+      "output_tokens": 101
+    },
+    {
+      "number": 11,
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "26233d137dae96eeb2bcccc924676d7f6d24e3692f9074354e12eefb92f39d1e",
+      "reported_cost_usd": 0.001299,
+      "response_id": "gen-1792197980-RZ6E9mkG3CJ7XvW2BGIp",
+      "raw_text": "**These:** Das System kann die nächste Anfrage nicht erfüllen, ohne blind zu agieren.\n\n**Grund:** Bei voller Auslastung (12/12 Plätze) fehlt dem Register die Sicht auf inaktive Konten – der Admin genehmigt ohne Datenlage, ob Kapazität durch Cleanup freizulegen ist.",
+      "input_tokens": 839,
+      "output_tokens": 92
+    },
+    {
+      "number": 12,
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "26233d137dae96eeb2bcccc924676d7f6d24e3692f9074354e12eefb92f39d1e",
+      "reported_cost_usd": 0.001269,
+      "response_id": "gen-1792197982-SKsj0beA5TpPvuz8zKQZ",
+      "raw_text": "**These:** Die Kapazität ist formal erreicht, aber die Genehmigung hängt von Datenlücken ab.\n\n**Grund:** Bei 12/12 Plätzen und einer ausstehenden Anfrage fehlt dem Register die Unterscheidung zwischen aktiven und inaktiven Konten – der Administrator genehmigt blind.",
+      "input_tokens": 839,
+      "output_tokens": 86
+    },
+    {
+      "number": 13,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "8f3363439d78a3f92d16f0d5bb16acce66b0fe797503d31136fbfa03f45b6818",
+      "reported_cost_usd": 0.001209,
+      "response_id": "gen-1792197984-tsjaGHwswwZDFv38QgTz",
+      "raw_text": "**These:** Der Schwellenwert wurde erreicht, aber die Trendrichtung entscheidet über Handlung.\n\n**Grund:** 3,0 kW ist Grenzwert; der Anstieg von 2,8 auf 3,0 kW in 30 Minuten signalisiert Drift. Techniker müssen vor Freigabe klären, ob weiterer Anstieg zu erwarten ist oder Stabilität eintritt.",
+      "input_tokens": 634,
+      "output_tokens": 115
+    },
+    {
+      "number": 14,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "8f3363439d78a3f92d16f0d5bb16acce66b0fe797503d31136fbfa03f45b6818",
+      "reported_cost_usd": 0.001179,
+      "response_id": "gen-1792197986-o3DIKk5BxCIOcWwJgsQB",
+      "raw_text": "**These:** Der Schwellwert von 3,0 kW wurde erreicht; ohne Technikerprüfung lässt sich nicht klären, ob dies Betriebsnormal oder Anomalie ist.\n\n**Grund:** Die Messwerte zeigen einen Anstieg von 2,8 auf 3,0 kW in 30 Minuten – das Muster entscheidet, nicht der Punkt selbst.",
+      "input_tokens": 634,
+      "output_tokens": 109
+    },
+    {
+      "number": 15,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "8f3363439d78a3f92d16f0d5bb16acce66b0fe797503d31136fbfa03f45b6818",
+      "reported_cost_usd": 0.001194,
+      "response_id": "gen-1792197988-U7YrVVeSaLRRAiK1qxKB",
+      "raw_text": "**These:** Der Schwellenwert von 3,0 kW ist erreicht, aber die Dynamik zwischen 15:40 und 16:10 entscheidet über die Handlung.\n\n**Grund:** Ein Anstieg von 2,8 auf 3,0 kW in 30 Minuten signalisiert Trend, nicht Zufall. Technische Bewertung vor Serviceentscheidung ist obligatorisch.",
+      "input_tokens": 634,
+      "output_tokens": 112
+    },
+    {
+      "number": 16,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "4fc4dd57b0557000e1629e4214430311b54861d3fc950753b18584942b60de65",
+      "reported_cost_usd": 0.00132,
+      "response_id": "gen-1792197990-MF0wZ2dDe5jz6wJr5qs0",
+      "raw_text": "**These:** Der Schwellenwert ist erreicht, aber nicht überschritten – Wartung muss von Technikern vor Entscheidung freigegeben werden.\n\n**Grund:** 3,0 kW entspricht exakt dem Review-Limit; ohne Technikerbestätigung bleibt unklar, ob Trend oder Messfehler vorliegt.",
+      "input_tokens": 850,
+      "output_tokens": 94
+    },
+    {
+      "number": 17,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "4fc4dd57b0557000e1629e4214430311b54861d3fc950753b18584942b60de65",
+      "reported_cost_usd": 0.001405,
+      "response_id": "gen-1792197992-O9uIYeCFdi90uqkF1W5A",
+      "raw_text": "**These:** Der Schwellwert von 3,0 kW ist erreicht, aber nicht überschritten – Wartung ist noch nicht erzwungen.\n\n**Grund:** Die aktuelle Messung liegt exakt am Grenzwert; erst eine Überschreitung oder ein Trend über mehrere Zyklen rechtfertigt sofortige Maßnahmen. Techniker sollte Entwicklung prüfen, nicht blind warten.",
+      "input_tokens": 850,
+      "output_tokens": 111
+    },
+    {
+      "number": 18,
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "4fc4dd57b0557000e1629e4214430311b54861d3fc950753b18584942b60de65",
+      "reported_cost_usd": 0.001505,
+      "response_id": "gen-1792197994-YzoBrp70m5DLhLORYjDp",
+      "raw_text": "**These:** Der Schwellenwert von 3,0 kW ist erreicht, aber nicht überschritten – eine Grauzone, die Handlung erfordert.\n\n**Grund:** Die letzte Messung (3,0 kW, 16:10) liegt exakt am Limit; ohne Techniker-Freigabe bleibt unklar, ob das Gerät noch sicher läuft oder bereits in den Service muss. Wartungsverzögerung hier kostet mehr als sofortige Diagnose.",
+      "input_tokens": 850,
+      "output_tokens": 131
+    },
+    {
+      "number": 19,
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "7008639ca82d4c9aa4a7b1a9f6a5b2dafaad7170454f5e163bddf5cf6c4ffc3c",
+      "reported_cost_usd": 0.001246,
+      "response_id": "gen-1792197996-alKOHmtgrjHAtz8F0Byx",
+      "raw_text": "**These:** Vergleich ohne Lieferzeit und Leistung ist Augenwischerei.\n\n**Grund:** Bei 200-EUR-Differenz entscheidet, wer wann liefert – nicht der Preis. Scope und Termine fehlen völlig. Vor Budget-Freigabe klären.",
+      "input_tokens": 841,
+      "output_tokens": 81
+    },
+    {
+      "number": 20,
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "7008639ca82d4c9aa4a7b1a9f6a5b2dafaad7170454f5e163bddf5cf6c4ffc3c",
+      "reported_cost_usd": 0.001336,
+      "response_id": "gen-1792197998-qC6Q6cQpYxslv8X8FHEM",
+      "raw_text": "**These:** Drei ähnliche Preise ohne Leistungsvergleich oder Lieferdaten sind keine Entscheidungsgrundlage.\n\n**Grund:** Wer 12.000 EUR freigibt, braucht Scope und Timeline – nicht nur Nummern. Travel-Kosten fehlen komplett; die echte Gesamtsumme bleibt offen.",
+      "input_tokens": 841,
+      "output_tokens": 99
+    },
+    {
+      "number": 21,
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "7008639ca82d4c9aa4a7b1a9f6a5b2dafaad7170454f5e163bddf5cf6c4ffc3c",
+      "reported_cost_usd": 0.001346,
+      "response_id": "gen-1792198000-zICKUQNgfk2mo1sZov1W",
+      "raw_text": "**These:** Preisvergleich ohne Leistungsmerkmale ist Beschaffungsrisiko, nicht Kostenersparnis.\n\n**Grund:** Die drei Angebote unterscheiden sich um 600 EUR, aber Lieferdaten und Leistungsumfang fehlen – und Reisekosten sind offen. Der Budget-Owner unterschreibt ein Loch, nicht einen Vertrag.",
+      "input_tokens": 841,
+      "output_tokens": 101
+    },
+    {
+      "number": 22,
+      "case_id": "quote-scope-variance",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "1182cf35d579f1dfe8884fe266210c2b6ecf8fb3bc39036328bd000719d766e3",
+      "reported_cost_usd": 0.001185,
+      "response_id": "gen-1792198002-CyYyn6irBvrDK7Oo9rLe",
+      "raw_text": "**These:** Die Preisauswahl ohne Leistungsvergleich ist eine Entscheidung ohne Grundlage.\n\n**Grund:** Drei EUR-Differenzen zwischen 11.800 und 12.400 sind bedeutungslos, wenn unklar bleibt, was geliefert wird und wann. Reisekosten fehlen. Ohne Scope und Termine entscheidet der Budget Owner über eine leere Größe.",
+      "input_tokens": 625,
+      "output_tokens": 112
+    },
+    {
+      "number": 23,
+      "case_id": "quote-scope-variance",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "1182cf35d579f1dfe8884fe266210c2b6ecf8fb3bc39036328bd000719d766e3",
+      "reported_cost_usd": 0.001095,
+      "response_id": "gen-1792198004-lcaSky3efcUYwJyWfqYk",
+      "raw_text": "**These:** Ohne Lieferdaten und Leistungsumfang ist die billigste Quote ein Risiko, nicht eine Einsparung.\n\n**Grund:** 11.800 EUR könnte vier Wochen später ankommen oder halbe Leistung bedeuten – Travel noch nicht einkalkuliert. Vor Freigabe müssen Scope und Timeline gleich sein.",
+      "input_tokens": 625,
+      "output_tokens": 94
+    },
+    {
+      "number": 24,
+      "case_id": "quote-scope-variance",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "1182cf35d579f1dfe8884fe266210c2b6ecf8fb3bc39036328bd000719d766e3",
+      "reported_cost_usd": 0.001185,
+      "response_id": "gen-1792198006-jjl0kPaE9Stg87uJVmXw",
+      "raw_text": "**These:** Preisvergleich ohne Lieferdatum und Leistungsumfang ist keine Entscheidungsgrundlage.\n\n**Grund:** Die drei Angebote (11.800–12.400 EUR) unterscheiden sich marginal; reisekosten bleiben offen. Ohne Scope und Lieferzeit wählst du blind nach Preis und unterschreibst später Verzögerungen oder Leistungslücken.",
+      "input_tokens": 625,
+      "output_tokens": 112
+    },
+    {
+      "number": 25,
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "f4b5b58194f4a06520f7605791de0065eef31a90b7b7c4df73b8fb93e93e58e5",
+      "reported_cost_usd": 0.001371,
+      "response_id": "gen-1792198008-SRtHorijtXZkS3JxNLnJ",
+      "raw_text": "**These:** Fünf Tickets verfehlen die 60-Minuten-Antwortfrist, obwohl die Schicht noch läuft.\n\n**Grund:** Das älteste unzugewiesene Ticket ist exakt 60 Minuten alt und bleibt unbearbeitet – ein Indikator für Kapazitätslücken, nicht Priorisierungsfehler beim Lead.",
+      "input_tokens": 841,
+      "output_tokens": 106
+    },
+    {
+      "number": 26,
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "f4b5b58194f4a06520f7605791de0065eef31a90b7b7c4df73b8fb93e93e58e5",
+      "reported_cost_usd": 0.001416,
+      "response_id": "gen-1792198010-KWblHHI3odW5GGaTvDaV",
+      "raw_text": "**These:** Fünf unbearbeitete Tickets nach einer Schicht bedeuten, dass dein Response-Target von 60 Minuten bereits verletzt ist.\n\n**Grund:** Das älteste unzugewiesene Ticket wurde vor genau 60 Minuten eröffnet und wartet immer noch auf Zuweisung – bei 24 Tickets pro Schicht ist das ein Kapazitätssignal, keine Ausnahme.",
+      "input_tokens": 841,
+      "output_tokens": 115
+    },
+    {
+      "number": 27,
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "f4b5b58194f4a06520f7605791de0065eef31a90b7b7c4df73b8fb93e93e58e5",
+      "reported_cost_usd": 0.001311,
+      "response_id": "gen-1792198012-stEv8iGAyXJYwg8wdorF",
+      "raw_text": "**These:** Fünf unbearbeitete Tickets nach einer Schicht zeigen systematisches Kapazitätsproblem, nicht Zufall.\n\n**Grund:** Das älteste liegt exakt bei der 60-Minuten-Zielmarke – das ist nicht knapp verfehlt, sondern Signal, dass die Queue regelmäßig überlastet ist.",
+      "input_tokens": 841,
+      "output_tokens": 94
+    },
+    {
+      "number": 28,
+      "case_id": "queue-target-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "522480eece6e5c8eba88abbffea418801334f0c6d289e70ba6c3f92e378a4af7",
+      "reported_cost_usd": 0.0011,
+      "response_id": "gen-1792198014-vSokuPA7PD1shP47FiUF",
+      "raw_text": "**These:** Das SLA-Fenster ist bereits geschlossen; fünf Tickets verfehlen die 60-Minuten-Antwortfrist beim Schichtwechsel.\n\n**Grund:** Bei 24 Tickets pro Schicht und nur einer Zuordnungsprüfung am Ende liegt der erste unzugewiesene Fall exakt an der Deadline.",
+      "input_tokens": 625,
+      "output_tokens": 95
+    },
+    {
+      "number": 29,
+      "case_id": "queue-target-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "522480eece6e5c8eba88abbffea418801334f0c6d289e70ba6c3f92e378a4af7",
+      "reported_cost_usd": 0.00111,
+      "response_id": "gen-1792198016-HNxe8Jzfhj74x6sIG2Cd",
+      "raw_text": "**These:** Fünf unbearbeitete Tickets bedeuten, dass die Schichtkapazität das 60-Minuten-Ziel systematisch verfehlt.\n\n**Grund:** Ein Ticket überschreitet bereits die Antwortfrist; bei 24 Eingängen pro Schicht reicht die Personalstärke nicht aus, um Puffer zu halten.",
+      "input_tokens": 625,
+      "output_tokens": 97
+    },
+    {
+      "number": 30,
+      "case_id": "queue-target-boundary",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "522480eece6e5c8eba88abbffea418801334f0c6d289e70ba6c3f92e378a4af7",
+      "reported_cost_usd": 0.00114,
+      "response_id": "gen-1792198017-yoC1aAcPVGzsCEpyWtQc",
+      "raw_text": "**These:** Fünf Tickets überschreiten die 60-Minuten-Antwortzeit bereits im laufenden Shift – das Zuweisungssystem hält die SLA nicht.\n\n**Grund:** Bei 24 Tickets pro Shift und fünf ungefilterten Rückständen fehlt entweder die Kapazität oder die automatische Priorisierung schleift durch.",
+      "input_tokens": 625,
+      "output_tokens": 103
+    },
+    {
+      "number": 31,
+      "case_id": "test-flake-denominator",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "436f98b191ca026348dfc9dc5685b736726e6537aa5c1874ae90f6700d97747d",
+      "reported_cost_usd": 0.001274,
+      "response_id": "gen-1792198019-FaKb9bMjYWyKR6UTHz0Z",
+      "raw_text": "**These:** Ein intermittierendes Ausfallmuster ohne Ursachenanalyse ist keine Freigabegrundlage.\n\n**Grund:** 49 von 50 Läufe bestätigen keine Zuverlässigkeit – das Fehlerverhalten bleibt unklassifiziert und könnte unter Produktionslast wieder auftreten. Der Release Owner braucht entweder eine Ursache oder ein bewusstes Risikoacceptance-Statement, nicht nur eine Freigabe.",
+      "input_tokens": 624,
+      "output_tokens": 130
+    },
+    {
+      "number": 32,
+      "case_id": "test-flake-denominator",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "436f98b191ca026348dfc9dc5685b736726e6537aa5c1874ae90f6700d97747d",
+      "reported_cost_usd": 0.001119,
+      "response_id": "gen-1792198023-IA9LWP5EYURkpbJFRwwX",
+      "raw_text": "**These:** Ein Fehler in 50 Läufen ohne Reproduktion ist ein Genehmigungsrisiko, nicht ein Freigabehindernis.\n\n**Grund:** Der Release Owner entscheidet unter Unsicherheit – die Logs geben keine Ursache her, nur Häufigkeit. Ohne Root Cause wird jede Verzögerung zur Spekulation.",
+      "input_tokens": 624,
+      "output_tokens": 99
+    },
+    {
+      "number": 33,
+      "case_id": "test-flake-denominator",
+      "arm": "old",
+      "status": "completed",
+      "payload_sha256": "436f98b191ca026348dfc9dc5685b736726e6537aa5c1874ae90f6700d97747d",
+      "reported_cost_usd": 0.001159,
+      "response_id": "gen-1792198026-BLwYpw2jnXErTSWZajrI",
+      "raw_text": "**These:** Ein nicht reproduzierbarer Fehler in 50 Läufen ist kein Freigabeblock ohne Root-Cause.\n\n**Grund:** Die Genehmigung liegt beim Release Owner—der muss entscheiden, ob eine 98%-Quote mit unbekannter Ursache das Risiko trägt. Der Test selbst ist nicht fehlerhaft genug, um die Entscheidung zu treffen.",
+      "input_tokens": 624,
+      "output_tokens": 107
+    },
+    {
+      "number": 34,
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "843a0a252a63bf84ded39bc0e64fd20d495cc04ec6d119adacc789c8b1358f53",
+      "reported_cost_usd": 0.00156,
+      "response_id": "gen-1792198028-R729nWv4n9NuglFTZtOY",
+      "raw_text": "**These:** Eine einzelne, nicht reproduzierbare Ausfallstelle in 50 Läufen ist kein Freigabe-Blocker, erfordert aber explizite Freigabe des Release-Owners mit dokumentiertem Risiko-Urteil.\n\n**Grund:** Der Test zeigt 98 % Stabilität, die Ursache bleibt ungeklärt, und nur der Owner trägt Verantwortung für die Produktionskonsequenz – Freigabe ohne sein bewusstes Ja ist Verschiebung dieser Haftung.",
+      "input_tokens": 840,
+      "output_tokens": 144
+    },
+    {
+      "number": 35,
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "843a0a252a63bf84ded39bc0e64fd20d495cc04ec6d119adacc789c8b1358f53",
+      "reported_cost_usd": 0.0014,
+      "response_id": "gen-1792198031-mMRvx1KT8p0Ti8z1FA3S",
+      "raw_text": "**These:** Eine intermittierende Ausfallquote von 2 % bleibt ohne Root-Cause-Analyse ein Freigaberisiko.\n\n**Grund:** Der Test zeigt das Problem, nicht seine Ursache – ohne Diagnose kann die gleiche Fehlerquelle in Production wieder zuschlagen, und die Release-Freigabe verschiebt die Haftung auf den Owner, nicht auf die Datengrundlage.",
+      "input_tokens": 840,
+      "output_tokens": 112
+    },
+    {
+      "number": 36,
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "completed",
+      "payload_sha256": "843a0a252a63bf84ded39bc0e64fd20d495cc04ec6d119adacc789c8b1358f53",
+      "reported_cost_usd": 0.001355,
+      "response_id": "gen-1792198033-WdOnQpxJtEFOawxfpvBi",
+      "raw_text": "**These:** Ein Intermittenzfehler bei 1 von 50 Läufen ohne Rootcause bleibt ein Freigaberisiko, auch wenn er nicht reproduziert wurde.\n\n**Grund:** Die Release Owner müssen diese Lücke explizit akzeptieren oder einen weiteren Testdurchlauf fordern – „keine Reproduktion\" ist kein Freigabegrund.",
+      "input_tokens": 840,
+      "output_tokens": 103
+    }
+  ],
+  "reserved_usd": 1.0800000000000007,
+  "spent_usd": 0.044961999999999995,
+  "unknown_cost_requests": 0,
+  "records": [
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "old",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "new",
+      "status": "rejected_or_missing",
+      "text": null,
+      "character_count": 0,
+      "generator_stats": {
+        "generated": 0,
+        "rejected": 0,
+        "tone_distribution": {}
+      }
+    }
+  ],
+  "passed": false,
+  "quality": "pending_independent_blind_grading",
+  "source_unchanged": true
+}

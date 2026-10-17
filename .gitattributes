@@ -9,3 +9,6 @@ docs/evidence/source-first-marketing-20261017/*.json -text whitespace=cr-at-eol
 # Preserve byte-level source-draft qualification hashes.
 docs/evidence/source-draft-coding-20261017/*.json -text
 docs/evidence/source-draft-coding-20261017/*.txt -text
+
+# Preserve exact frozen paid-study captures.
+docs/evidence/source-draft-quality-20261017/*.json -text

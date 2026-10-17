@@ -37,7 +37,7 @@
     "candidate_sha256": "36037c099fb78c82311a9990df54e670194b6ba6bc79b6b31e6ee21799748b79",
     "context": "real detached Marketingbot Git worktree; no live bot changed"
   },
-  "current_candidate_actual_text_quality": "not_run",
+  "current_candidate_actual_text_quality": "failed fresh synthetic six-case paired study: both arms 0/6 final posts; all36 attempts rejected for markdown_bold; see ../source-draft-quality-20261017",
   "production_ready": false,
   "goal_complete": false,
   "promoted_to_marketingbot_master": false,

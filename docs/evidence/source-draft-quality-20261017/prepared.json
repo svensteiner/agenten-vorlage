@@ -1,0 +1,74 @@
+{
+  "case_sha256": "3336e7cd35a8ad1d16ebcf9d09ba6a62be8fb2b3bc9ff772b5b692a2c977ecfb",
+  "sources": {
+    "harness": "384c4bce80240be6c4f885ee53478555f393de26fd04ed327ba856b2b821d3d9",
+    "old": "eed43549877b8852cdb75e2ed1ccc49bf4b3c8e19910d09f86d3bccd9a87eacd",
+    "new": "36037c099fb78c82311a9990df54e670194b6ba6bc79b6b31e6ee21799748b79",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c"
+  },
+  "order": [
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "old"
+    },
+    {
+      "case_id": "dock-scan-gap",
+      "arm": "new"
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "old"
+    },
+    {
+      "case_id": "seat-cap-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "old"
+    },
+    {
+      "case_id": "sensor-threshold-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "new"
+    },
+    {
+      "case_id": "quote-scope-variance",
+      "arm": "old"
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "new"
+    },
+    {
+      "case_id": "queue-target-boundary",
+      "arm": "old"
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "old"
+    },
+    {
+      "case_id": "test-flake-denominator",
+      "arm": "new"
+    }
+  ],
+  "model": "anthropic/claude-haiku-4.5",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "temperature": 0.85,
+  "max_tokens": 150,
+  "max_requests": 36,
+  "max_reported_or_reserved_usd": 1.5,
+  "reservation_per_request_usd": 0.03,
+  "transport_retries": 0,
+  "reach_context": "Write one concise, concrete implication for an operations reader. Keep facts distinct from inference and conditional proposal. Preserve any stated human approval. No forced question; do not add facts or imply outcomes absent from the source.\nMaximal 190 Zeichen inklusive Leerzeichen. Ein deutscher Einzelpost.",
+  "preflight_revision": 3,
+  "component_load_scope": "Reviewed drafting closure only: inert content namespace; pinned modules; full Bot startup not measured by comparison.",
+  "deadline_semantics": "30s caller deadline, remote outcome potentially unknown; no replay or later requests after timeout."
+}
