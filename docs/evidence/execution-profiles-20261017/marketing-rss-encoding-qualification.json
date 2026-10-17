@@ -1,0 +1,64 @@
+{
+  "schema": "marketing-rss-encoding-qualification/v1",
+  "status": "isolated_technical_qualification_passed",
+  "authorship": "Root implementation with independent review; not an autonomous coding-agent result",
+  "workspace": "C:\\agq\\marketing-rss-bytes-20261017",
+  "baseline_commit": "102a5141f65f38c0468a2d0b865287cfc7fe8a71",
+  "baseline_files": 696,
+  "unchanged_other_baseline_files": 695,
+  "source_sha256": "e24b2f9bae628e2428b39b787162361a0cb107c382cc9cfff6f1e9f528a10bb0",
+  "test_sha256": "a49bbe80d22225a6d6619f498ce2b9c24743fd5396fcf897f67a8d866f0e84b4",
+  "patch_sha256": "3d5c698983e20f2dd44de5699def004050a05bb501055adc64732cbe6510e72a",
+  "independent_review_sha256": "9f26413e4e6e49d3fdb7e233555ab343e38ac313ebb3949e608db1a86706f26a",
+  "red": {
+    "failed": 3,
+    "passed": 5,
+    "log_sha256": "02e8bcc9973ebb3f69502ef9313a879ae6a51d6ce253aa4a4d478557567a0ae6"
+  },
+  "targeted": {
+    "passed": 15,
+    "log_sha256": "fe08d00a1b5bf2fbd8ea70ad07a1ed0a7cebb3ff048c6b170fc19956843533ff"
+  },
+  "full": {
+    "passed": 4706,
+    "skipped": 11,
+    "xfailed": 5,
+    "warnings": 42,
+    "elapsed_seconds": 315.187,
+    "receipt_id": "e57fce6f753040cfbb7e5407729c90ea",
+    "receipt_sha256": "eb1c24e85a96b0e831993312db22e592911f2c19794e75b384137d8db2781b77",
+    "log_sha256": "fd06615d83f1a0c288bff154b460227a854f053a40a9f5a2f4456a61272b2f72",
+    "source_files": 195,
+    "unit_files": 322,
+    "source_hashes_stable_during_test": true,
+    "unit_hashes_stable_during_test": true,
+    "entire_python_inventory_stable": false
+  },
+  "change": [
+    "Preserve fetched XML bytes so ElementTree can honor declared encoding and BOM.",
+    "Retain Unicode string parser callers; skip malformed/unsupported XML encodings.",
+    "No observation selection, relevance, length, publishing or account-safety policy changes."
+  ],
+  "snapshot_verification": {
+    "no_network": "fetch boundary stubbed to return frozen bytes",
+    "umlaut_characters": [
+      "\u00c3\u00bc"
+    ],
+    "sha256": "a9d687815367775d70fd316f1c2a753f8012a3579a1d671d06fd16b198223de6",
+    "replacement_characters": 0,
+    "observations_within_280_characters": true,
+    "fetched_bytes_identical": true,
+    "extracted_observations": 3,
+    "maximum_observation_characters": 125,
+    "parsed_items": 40
+  },
+  "limitations": [
+    "Native workspace receipt, not strict host attestation.",
+    "Proxy settings are not an OS firewall.",
+    "Bundled Chromium test adapter; installed Chrome not qualified.",
+    "One saved Golem feed verifies the actual mocked fetch/parse/extract path; not all feeds or real marketing quality.",
+    "HTTP charset without an XML declaration is not separately interpreted by this fix.",
+    "Patch is relative to the isolated bounded-quality candidate, not current upstream.",
+    "No production promotion, original bot restart or X publication."
+  ]
+}

@@ -88,6 +88,24 @@ Der [Patch](docs/evidence/execution-profiles-20261017/marketing-quality-revision
 ist reviewbar, aber noch nicht produktiv integriert. Echter Inhaltsnutzen
 und der neue Testadapter sind weiterhin nicht abgenommen.
 
+Die frische [RSS-Modellabnahme](docs/evidence/execution-profiles-20261017/marketing-rss-v14-terminal.json)
+endet mit null von vier freigegebenen Endtexten: 15 abgeschlossene Anfragen,
+0,023430 USD, keine unbekannten Anfrageausgaenge oder Kosten. Ein Fall
+erschoepft die Generierung, drei stoppen an der Quellenqualifikation. Kein
+Fall erreicht Auditor oder Gatekeeper; die Qualitaetsrevision ist damit im
+echten Modelllauf weiterhin nicht belegt. Der [v13-Testadapter](docs/evidence/execution-profiles-20261017/marketing-fullpath-v13-offline.json)
+besteht nach verschaerfter Rundenzuordnung 42 Offline-Tests und separates Review.
+Die RSS-Eingaben entsprechen exakt dem vorhandenen Extraktor, einschliesslich
+des separat festgestellten Zeichencodierungsfehlers. Keine Produktionsfreigabe.
+
+Der separat [korrigierte RSS-Fetcher](docs/evidence/execution-profiles-20261017/marketing-rss-encoding-qualification.json)
+erhaelt XML-Bytes und damit deklarierte Zeichencodierung/BOM. Acht neue
+Regressionen, 15 gezielte Tests, unabhaengiges Review und der Gesamttest
+mit 4.706 bestandenen Tests sind gruen. Die gespeicherte Golem-Gegenprobe
+enthaelt keine Ersatzzeichen mehr. Der [Patch](docs/evidence/execution-profiles-20261017/marketing-rss-encoding.patch)
+ist eine operatorseitige Korrektur in separater Kopie, keine autonome
+Coding-Abnahme und keine produktive Umstellung.
+
 ## Verwendung
 
 Nach technischer Freigabe startet `Start-Coding-Agent.ps1 -Workspace <isolierter Checkout>`

@@ -1,0 +1,92 @@
+{
+  "schema": "marketing-rss-cohort-terminal/v1",
+  "cohort_id": "source-fullpath-rss-v14-20261017",
+  "evaluator_version": "v13",
+  "status": "completed_failed_acceptance",
+  "case_count": 4,
+  "accepted": 0,
+  "physical_requests": 15,
+  "known_provider_cost_usd": "0.023430",
+  "unknown_outcome_requests": 0,
+  "unknown_cost_requests": 0,
+  "case_status_counts": {
+    "source_rejected_or_unavailable": 3,
+    "regeneration_exhausted": 1
+  },
+  "purpose_counts": {
+    "content_auditor": 0,
+    "content_gatekeeper": 0,
+    "news_generation": 8,
+    "source_repair": 2,
+    "source_review": 5
+  },
+  "qualifier_results": [
+    [
+      {
+        "reason_codes": [
+          "invalid_response"
+        ],
+        "repair_calls": 0,
+        "review_calls": 1,
+        "status": "error",
+        "task_id": "9ab8053f06aa46c3bb70a31302f190d7",
+        "verification": "unverified"
+      }
+    ],
+    [],
+    [
+      {
+        "reason_codes": [
+          "review_rejected"
+        ],
+        "repair_calls": 1,
+        "review_calls": 2,
+        "status": "rejected",
+        "task_id": "9ab8053f06aa46c3bb70a31302f190d7",
+        "verification": "unverified"
+      }
+    ],
+    [
+      {
+        "reason_codes": [
+          "invalid_response"
+        ],
+        "repair_calls": 1,
+        "review_calls": 2,
+        "status": "error",
+        "task_id": "9ab8053f06aa46c3bb70a31302f190d7",
+        "verification": "unverified"
+      }
+    ]
+  ],
+  "grading": {
+    "final_outputs": 0,
+    "quality_scores": null,
+    "missing_cases_remain_in_denominator": true
+  },
+  "pins_sha256": "ad9f648817f71c099732c717eb342715fe7f8e4d0197f72ee5d54e258479904d",
+  "prepared_sha256": "d526df05fca929038a8d4fa6a24331357aad7dc70d89b72be87a754d5d75b887",
+  "result_sha256": "5337b0bd376846d53970e57b0149e56b68cac975a63d3a6a6c4d1fbb9e7e88cd",
+  "cases_sha256": "5a48cbf5963252e80cc4eface225635430b9e8b76ab4b2f98cf059dbf1444aac",
+  "gold_sha256": "a1858ab90b21b7cae82792203a56526766725fe5af6f234735d30069877b4acd",
+  "gold_audit_sha256": "50f210bb5a6ffce200b2e1cb85cf79b54dee0b87ee2e2f4da18e9c2864d3f056",
+  "protocol_sha256": "bed843497e90dd4d1a7baeca08d269e4cbd3411da8a554e8c8ba5b6400483784",
+  "helper_sha256": "f7c820544c8897d120a9e5ace7957cba9f03d5d570443e3928b875e9f004abde",
+  "source_files_count": 195,
+  "unit_test_files_count": 321,
+  "pinned_source_and_tests_unchanged_after_run": true,
+  "local_reservation_cap_usd": "3.00",
+  "physical_request_limit": 64,
+  "per_case_physical_request_limit": 16,
+  "provider_billing_cap_guaranteed": false,
+  "production_qualified": false,
+  "promoted": false,
+  "limitations": [
+    "Four purposively selected real publisher-feed items, not a reach or general reliability benchmark.",
+    "All outputs stopped before ContentAuditor and ContentGatekeeper; the quality-revision feature was not exercised by this paid cohort.",
+    "Two qualifier invalid_response outcomes are parser/contract rejection categories; no exact underlying cause is established from this telemetry.",
+    "The current production feed decoder corruption and ambiguous publisher wording were retained in model-visible observations and gold.",
+    "Evaluator routes all purposes to fixed Haiku; not default production reviewer routing proof.",
+    "No replay, best-of selection, production deployment, live bot restart or X publication."
+  ]
+}

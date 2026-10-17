@@ -1,0 +1,118 @@
+diff --git a/news_agent.py b/news_agent.py
+index bdecb31..e571e20 100644
+--- a/news_agent.py
++++ b/news_agent.py
+@@ -158,12 +158,12 @@ def _save_seen(seen: set) -> None:
+ # RSS Fetch + Parse
+ # ---------------------------------------------------------------------------
+ 
+-def _fetch_feed(url: str, timeout: int = 15) -> Optional[str]:
+-    """Holt RSS-Feed als String. Gibt None bei Fehler zurueck."""
++def _fetch_feed(url: str, timeout: int = 15) -> Optional[bytes]:
++    """Holt XML-Bytes; der Parser wertet die Encoding-Deklaration aus."""
+     try:
+         req = Request(url, headers={"User-Agent": "Mozilla/5.0 (RSS Reader)"})
+         with urlopen(req, timeout=timeout) as resp:
+-            return resp.read().decode("utf-8", errors="replace")
++            return resp.read()
+     except URLError as e:
+         log.warning("Feed-Fetch Fehler (%s): %s", url, e)
+         return None
+@@ -238,12 +238,12 @@ def _extract_observation(title: str, description: str) -> Optional[str]:
+     return obs
+ 
+ 
+-def _parse_feed(xml_content: str, feed_name: str) -> List[dict]:
++def _parse_feed(xml_content: str | bytes, feed_name: str) -> List[dict]:
+     """Parst RSS/Atom XML und gibt Liste von {id, title, description} zurueck."""
+     items = []
+     try:
+         root = ET.fromstring(xml_content)
+-    except ET.ParseError as e:
++    except (ET.ParseError, LookupError) as e:
+         log.warning("XML-Parse-Fehler (%s): %s", feed_name, e)
+         return items
+ 
+diff --git a/tests/unit/test_news_feed_encoding.py b/tests/unit/test_news_feed_encoding.py
+new file mode 100644
+index 0000000..37a2d6d
+--- /dev/null
++++ b/tests/unit/test_news_feed_encoding.py
+@@ -0,0 +1,77 @@
++"""Feed encoding must survive the real fetch/parser boundary without live HTTP."""
++from urllib.error import URLError
++
++import pytest
++
++import news_agent
++
++
++class FeedResponse:
++    def __init__(self, body):
++        self.body = body
++
++    def __enter__(self):
++        return self
++
++    def __exit__(self, *args):
++        return False
++
++    def read(self):
++        return self.body
++
++
++@pytest.mark.parametrize("encoding", ["utf-8", "iso-8859-1", "utf-16"])
++def test_fetch_and_parse_preserve_declared_xml_encoding(monkeypatch, encoding):
++    title = "KI und Datenschutz: Prüfung für Unternehmen in Köln"
++    description = "Der KI-Chatbot nutzt Eingaben für Werbung."
++    xml = (
++        f'<?xml version="1.0" encoding="{encoding}"?>'
++        "<rss><channel><item><guid>item-1</guid>"
++        f"<title>{title}</title><description>{description}</description>"
++        "</item></channel></rss>"
++    ).encode(encoding)
++    requests = []
++
++    def fake_open(request, *, timeout):
++        requests.append((request.full_url, timeout))
++        return FeedResponse(xml)
++
++    monkeypatch.setattr(news_agent, "urlopen", fake_open)
++    fetched = news_agent._fetch_feed("https://publisher.invalid/rss", timeout=7)
++
++    assert requests == [("https://publisher.invalid/rss", 7)]
++    assert fetched == xml
++    items = news_agent._parse_feed(fetched, "fixture")
++    assert items == [{"id": "item-1", "title": title, "description": description}]
++    observation = news_agent._extract_observation(items[0]["title"], items[0]["description"])
++    assert observation == f"{title}. {description}"
++    assert "\ufffd" not in observation
++
++
++def test_utf8_without_xml_declaration_still_parses(monkeypatch):
++    xml = '<rss><channel><item><title>KI für Köln</title></item></channel></rss>'.encode()
++    monkeypatch.setattr(news_agent, "urlopen", lambda *args, **kwargs: FeedResponse(xml))
++    assert news_agent._parse_feed(news_agent._fetch_feed("https://publisher.invalid/rss"), "fixture")[0]["title"] == "KI für Köln"
++
++
++def test_unknown_xml_encoding_skips_feed_instead_of_aborting_cycle(monkeypatch):
++    xml = b'<?xml version="1.0" encoding="not-a-real-charset"?><rss/>'
++    monkeypatch.setattr(news_agent, "urlopen", lambda *args, **kwargs: FeedResponse(xml))
++    assert news_agent._parse_feed(news_agent._fetch_feed("https://publisher.invalid/rss"), "fixture") == []
++
++
++def test_fetch_failure_remains_unavailable(monkeypatch):
++    def fail(*args, **kwargs):
++        raise URLError("fixture network unavailable")
++
++    monkeypatch.setattr(news_agent, "urlopen", fail)
++    assert news_agent._fetch_feed("https://publisher.invalid/rss") is None
++
++
++def test_parse_retains_existing_unicode_callers():
++    assert news_agent._parse_feed('<rss><channel><item><title>KI für Köln</title></item></channel></rss>', "fixture")[0]["title"] == "KI für Köln"
++
++
++def test_malformed_bytes_are_not_silently_replaced():
++    xml = b'<rss><channel><item><title>KI f\xfcr K\xf6ln</title></item></channel></rss>'
++    assert news_agent._parse_feed(xml, "fixture") == []

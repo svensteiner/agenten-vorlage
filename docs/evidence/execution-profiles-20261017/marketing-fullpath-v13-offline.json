@@ -1,0 +1,25 @@
+{
+  "schema": "marketing-fullpath-evaluator-offline/v1",
+  "version": "v13",
+  "status": "offline_qualified_real_rss_utility_failed",
+  "tests_passed": 42,
+  "helper_sha256": "f7c820544c8897d120a9e5ace7957cba9f03d5d570443e3928b875e9f004abde",
+  "tests_sha256": "32c3dff3917d8a6b1a0baf8a90f9d661988784aa803d52ed0ef3b31709e0589d",
+  "receipt_sha256": "1deb3394d445ac59ce6153aff4ae98a3eb1658dbf51c20c00692dbddfb158261",
+  "log_sha256": "0dfeb8313a74b5810b1fdf524d284c666fac79399a5b34fa115715cd1e2aa52f",
+  "checks": [
+    "Exactly one ordered actual unified gate per source qualification; one or two rounds maximum.",
+    "Per-round qualified/gate text hashes and physical request start/end spans match; final gates use their own new completed Auditor/Gatekeeper calls.",
+    "Second round requires a recognized parsed first-round quality rejection.",
+    "Final Auditor origin is llm_parsed and final Gatekeeper explicitly parsed APPROVED.",
+    "Actual two-round fake-HTTP path with distinct drafts; negative omitted/duplicate/swapped gate and revision-provenance tests.",
+    "Long observation remains exact in actual structured source-review payload.",
+    "Pinned V5 transport total limits adapted in evaluator memory to64requests and3.00USD; unchanged per-request reservation."
+  ],
+  "prior_gap": "The first38-test helper lacked strict one-gate-per-qualification pairing. Its old offline/prepared artifacts remain preserved and were not dispatched.",
+  "limitations": [
+    "Offline/fake-HTTP qualification does not prove real-model output quality.",
+    "Native host receipt is not strict host attestation.",
+    "No provider-enforced billing cap."
+  ]
+}
