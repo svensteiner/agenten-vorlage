@@ -46,7 +46,10 @@ Exception-Texte. 91 gezielte Tests bestanden. Der folgende Vollauf besteht
 4.640 Tests und scheitert an einer alten Testannahme: Ein gemockter Generator
 belegt keine OpenAI-Transportherkunft. Nur diese Assertion wurde auf unknown
 korrigiert; separate Review ohne Blocker und 80 relevante Tests bestanden.
-Der neue Vollauf laeuft noch. Gewoehnliche erfolgreiche Antworttexte werden
+Der neue Vollauf besteht: 4.641 Tests, elf Skips, fuenf erwartete Fehler,
+42 Warnungen, 295,53 Sekunden, Exit 0. Zwoelf ueberwachte Dateien bleiben
+bytegleich. [Getrennte Fehl-/Erfolgsbelege](docs/evidence/source-typed-central-20261017/README.md).
+Gewoehnliche erfolgreiche Antworttexte werden
 weiterhin teilweise geloggt; keine allgemeine Datenschutzfreigabe. Keine
 Promotion dieses Kandidaten.
 

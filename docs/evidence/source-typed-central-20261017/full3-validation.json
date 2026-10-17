@@ -1,0 +1,40 @@
+{
+  "exit_code": 0,
+  "passed": 4641,
+  "full_suite": true,
+  "suite_scope": "complete tests/unit; final test-only correction for mocked provider provenance",
+  "source_files_unchanged": true,
+  "tested_source_sha256": {
+    "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "content/source_faithfulness.py": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+    "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+    "tests/unit/test_source_faithfulness_wire_contract.py": "de5e40d128ac3a47ba1b5776a3134227a468fe5eb5f81ce98861b6030c46828b",
+    "intelligent_features/llm_responder.py": "2622a5dc7bb97f426024c68ef82cab2bf61db533c45b369c67c0d6078f477a52",
+    "tests/unit/test_llm_responder_freeform.py": "d2bf9e49cdb73c68a6dec9f14c3846efb2f97f5a290cac57af14704299389a9f",
+    "content/source_qualification_protocol.py": "0d9df54ed8c9dbf36c3d59bf656257f93385b7c91b406dc114cc3639cb1be02e",
+    "tests/unit/test_source_qualification_transport.py": "d988c0e460e82593f6d56e5ba4cd4f620b1de1f9afec571afeb1d7e773f8c3cb",
+    "tests/unit/test_native_anthropic_responder.py": "18a26cef92cc1a73e5956baf12dfd4b5f1cb33289aa72a707c16127acd7b60fc",
+    "tests/unit/test_reply_learning_closure.py": "f984349652b4d12a4167bbd5882142ed26a857fd1d5ec5a35592862ed5fad279"
+  },
+  "source_after_sha256": {
+    "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "content/source_faithfulness.py": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+    "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+    "tests/unit/test_source_faithfulness_wire_contract.py": "de5e40d128ac3a47ba1b5776a3134227a468fe5eb5f81ce98861b6030c46828b",
+    "intelligent_features/llm_responder.py": "2622a5dc7bb97f426024c68ef82cab2bf61db533c45b369c67c0d6078f477a52",
+    "tests/unit/test_llm_responder_freeform.py": "d2bf9e49cdb73c68a6dec9f14c3846efb2f97f5a290cac57af14704299389a9f",
+    "content/source_qualification_protocol.py": "0d9df54ed8c9dbf36c3d59bf656257f93385b7c91b406dc114cc3639cb1be02e",
+    "tests/unit/test_source_qualification_transport.py": "d988c0e460e82593f6d56e5ba4cd4f620b1de1f9afec571afeb1d7e773f8c3cb",
+    "tests/unit/test_native_anthropic_responder.py": "18a26cef92cc1a73e5956baf12dfd4b5f1cb33289aa72a707c16127acd7b60fc",
+    "tests/unit/test_reply_learning_closure.py": "f984349652b4d12a4167bbd5882142ed26a857fd1d5ec5a35592862ed5fad279"
+  },
+  "log_sha256": "f9ddc767989447afacb0356727d12c92dc03a648437eafbdcf61631db332c93c",
+  "promoted": false,
+  "semantic_source_acceptance": false,
+  "ordinary_success_content_logging_remains_legacy": true,
+  "previous_failed_full2_preserved": true
+}

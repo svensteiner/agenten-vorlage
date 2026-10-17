@@ -58,3 +58,6 @@ docs/evidence/source-review-wrapper-20261017/*.txt -text
 
 docs/evidence/docker-isolation-probe-20261017/*.json -text
 docs/evidence/docker-isolation-probe-20261017/*.txt -text
+
+docs/evidence/source-typed-central-20261017/*.json -text
+docs/evidence/source-typed-central-20261017/*.txt -text
