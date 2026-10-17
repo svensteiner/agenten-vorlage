@@ -5,7 +5,7 @@ Eine Aufgabenbeschreibung begrenzt keine Dateirechte. Im nachgewiesenen Integrat
 Die CLI akzeptiert fuer `run` und `resume` wiederholte `--allow-write RELATIVE_DATEI`. Jeder Eintrag ist ein genauer Pfad relativ zum Workspace, kein Glob. Ohne weiteren Schalter bleiben die bisherigen einzelnen Aktionsfreigaben bei Modellbackends aktiv. `--autonomous-writes` erlaubt Schreibaktionen innerhalb dieser Dateiliste ohne einzelne Zustimmung; eine explizite Liste ist dabei Pflicht. Die Kombination mit `--require-approvals` wird abgewiesen.
 
 ```powershell
-python -m agentkit run --agent agents/coding --workspace C:/Projekte/isolierter-worktree --backend codex --allow-write src/agent.py --autonomous-writes --task "Verbessere src/agent.py und lasse die Aenderung separat reviewen."
+python -m agentkit run --agent agents/programming-agent --workspace C:/Projekte/isolierter-worktree --backend codex --allow-write src/agent.py --autonomous-writes --task "Verbessere src/agent.py und lasse die Aenderung separat reviewen."
 ```
 
 Bei `resume` dieselbe Dateiliste erneut angeben. Andere oder fehlende Schreibrechte werden auch bei abgeschlossenen Laeufen abgewiesen. Eine bereits gespeicherte Pflicht zu einzelnen Freigaben bleibt bestehen; `--autonomous-writes` hebt sie beim Wiederaufnehmen nicht auf. Einen geaenderten Rechteumfang als neuen Auftrag konfigurieren.
@@ -19,7 +19,7 @@ from agentkit.engine import Engine
 from agentkit.write_policy import WritePolicy
 
 engine = Engine(
-    Path("agents/coding"),
+    Path("agents/programming-agent"),
     Path("workspaces/isolated-project"),
     CodexBackend("gpt-5.6-luna"),
     write_policy=WritePolicy(["src/agent.py"]),

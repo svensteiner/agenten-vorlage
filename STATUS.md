@@ -28,8 +28,11 @@ Modellabnahme der CLI, Cockpit-Anbindung noch offen.
 GitHub CI deckte danach zwei testinterne Abhaengigkeiten von einer installierten
 Codex-CLI auf Linux auf. Beide Fehler sind lokal mit deaktivierter CLI-Suche
 reproduziert. Nur die Command-Discovery-Fixtures wurden korrigiert, die echten
-Policy-Pruefungen bleiben aktiv. Beide Faelle bestehen ohne CLI; frische volle
-GitHub-Abnahme der Fixturekorrektur steht noch aus.
+Policy-Pruefungen bleiben aktiv. Beide Faelle bestehen ohne CLI. GitHub-Lauf38995751553 fuer5995f54 ist
+abgeschlossen und gruen: alle sieben Jobs, darunter Linux/Windows mit Python
+3.11/3.12 sowie Browser-, Paket- und Deploymentpruefungen. Die Linux-3.11-Pruefung
+meldet463Tests inklusive21Skips und80% kombinierte Zeilen-/Branch-Abdeckung.
+[Externe Lauf-/Jobbelege](docs/evidence/cli-write-policy-20261017/github-run.json).
 
 ## Aktuelle Verifikation der Schreibgrenze
 

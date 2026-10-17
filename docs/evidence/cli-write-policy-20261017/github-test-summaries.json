@@ -1,0 +1,42 @@
+[
+  {
+    "job": "test (windows-latest, 3.12)",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826764",
+    "raw_log_sha256": "241a873fb4dd3387c8fb7a64ab8d27bb8c0f2ac35d8937cbe0576fb7024f8957",
+    "extracted_lines": [
+      "2026-10-17T02:40:43.6185511Z Ran 463 tests in 63.851s",
+      "2026-10-17T02:40:43.6185697Z OK (skipped=16)",
+      "2026-10-17T02:40:44.4093535Z TOTAL                                6052   1029   2284    467    80%"
+    ]
+  },
+  {
+    "job": "test (ubuntu-latest, 3.12)",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826826",
+    "raw_log_sha256": "7c80e2f1b9585d2de7c8139037f23c8c7f06420e8d37cb6efc23cb405885fe98",
+    "extracted_lines": [
+      "2026-10-17T02:40:15.7272545Z Ran 463 tests in 45.378s",
+      "2026-10-17T02:40:15.7272930Z OK (skipped=21)",
+      "2026-10-17T02:40:16.4221559Z TOTAL                                6052   1086   2284    462    80%"
+    ]
+  },
+  {
+    "job": "test (ubuntu-latest, 3.11)",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826831",
+    "raw_log_sha256": "77bd0bd146159bb0e433fa1f8e25d0bc378a07fa154b3e05109dd3a01fff3bbe",
+    "extracted_lines": [
+      "2026-10-17T02:40:04.1370425Z Ran 463 tests in 45.818s",
+      "2026-10-17T02:40:04.1370769Z OK (skipped=21)",
+      "2026-10-17T02:40:04.9363787Z TOTAL                                6052   1086   2284    462    80%"
+    ]
+  },
+  {
+    "job": "test (windows-latest, 3.11)",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826881",
+    "raw_log_sha256": "79a2c6a59625ef1bcaebb153713bfd201e77220f77aaca1e27978a3350fd0688",
+    "extracted_lines": [
+      "2026-10-17T02:41:20.0377962Z Ran 463 tests in 89.216s",
+      "2026-10-17T02:41:20.0378391Z OK (skipped=16)",
+      "2026-10-17T02:41:21.5159848Z TOTAL                                6052   1030   2284    467    80%"
+    ]
+  }
+]

@@ -2,7 +2,10 @@
   "before-implementation.txt": "8046b7353d7de9ce5864dc6ba6ed6508c71e52fcc8536964f9a3d1f91c2eed46",
   "full-unittest.json": "48ce9564986930d444946c7a8169c38515d008a5bf54afd38647c983dc07b6d5",
   "full-unittest.txt": "10a4372bdda26aecbfa4553c48a420ac7e95ed2f81b9a5958cf5831cd65f58e2",
+  "github-run.json": "68415ea5e67b649c57a34c527edec59dee994d47885d55f2502d61bc7dc76b06",
+  "github-test-summaries.json": "58cd26eb1b4dfa51da6d373b9af50469d88a55f124f1e2e3b6d0c08da119b83a",
+  "no-cli-after.txt": "5ab1d916c806a44435868052b2a24023f7c02596334fa58fe9c825e24fbb4129",
+  "no-cli-before.txt": "976ca73930beeb8cf66a6ab6f9fc7c01ecac3697bc18e261d1f72eb8ca621695",
   "offline-release.txt": "5e1123beae093130b01d0acde54524abbe3ca151cbaa636513f246599b8fbdaa",
-  "README.md": "8a3d24bdfa3f8a44f9a85aab6edbb746ed95521266eba29fe12708db1aec841d",
   "ruff.txt": "51b647c5a6e3ee36024c1c39603f285eb31f4ebb3d3d87d8f96ac5732c43b112"
 }

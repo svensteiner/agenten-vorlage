@@ -1,0 +1,949 @@
+{
+  "conclusion": "success",
+  "headSha": "5995f541221c5bda3acad7ef1b2da02e1a82e3da",
+  "jobs": [
+    {
+      "completedAt": "2026-10-17T02:39:33Z",
+      "conclusion": "success",
+      "databaseId": 117287826411,
+      "name": "package",
+      "startedAt": "2026-10-17T02:39:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:06Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:14Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install bandit==1.9.4 pip-audit==2.10.0",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:15Z",
+          "conclusion": "success",
+          "name": "Run python -m bandit -q -ll -r agentkit cockpit",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:23Z",
+          "conclusion": "success",
+          "name": "Run python -m pip_audit --strict --progress-spinner off .",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:25Z",
+          "conclusion": "success",
+          "name": "Run python -m pip wheel . --no-deps --wheel-dir dist",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:27Z",
+          "conclusion": "success",
+          "name": "Run python -m venv smoke-venv",
+          "number": 8,
+          "startedAt": "2026-10-17T02:39:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run smoke-venv/bin/python -m pip install dist/company_agentkit-*.whl",
+          "number": 9,
+          "startedAt": "2026-10-17T02:39:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run smoke-venv/bin/python -m pip check",
+          "number": 10,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run mkdir wheel-smoke-work",
+          "number": 11,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run ../smoke-venv/bin/python -c \"import agentkit; assert 'site-packages' in agentkit.__file__.replace(chr(92), '/')\"",
+          "number": 12,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run ../smoke-venv/bin/python -m agentkit init generated/wheel-smoke --profile developer --name wheel-smoke",
+          "number": 13,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:30Z",
+          "conclusion": "success",
+          "name": "Run ../smoke-venv/bin/python -m agentkit validate --agent generated/wheel-smoke",
+          "number": 14,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:31Z",
+          "conclusion": "success",
+          "name": "Run ../smoke-venv/bin/python -m agentkit run --agent generated/wheel-smoke --backend demo --task \"Wheel installation smoke\"",
+          "number": 15,
+          "startedAt": "2026-10-17T02:39:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:31Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 29,
+          "startedAt": "2026-10-17T02:39:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:31Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 30,
+          "startedAt": "2026-10-17T02:39:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:31Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 31,
+          "startedAt": "2026-10-17T02:39:31Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826411"
+    },
+    {
+      "completedAt": "2026-10-17T02:39:38Z",
+      "conclusion": "success",
+      "databaseId": 117287826701,
+      "name": "public-deployment",
+      "startedAt": "2026-10-17T02:39:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:08Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:08Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:11Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install PyYAML==6.0.2",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:11Z",
+          "conclusion": "success",
+          "name": "Run python -m unittest -v tests.test_public_deployment",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:31Z",
+          "conclusion": "success",
+          "name": "Build the hash-locked public image",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:32Z",
+          "conclusion": "success",
+          "name": "Verify the public runtime excludes test execution dependencies",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:34Z",
+          "conclusion": "success",
+          "name": "Validate Compose interpolation and file-backed secrets",
+          "number": 8,
+          "startedAt": "2026-10-17T02:39:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:36Z",
+          "conclusion": "success",
+          "name": "Start the public command as its image nonroot user",
+          "number": 9,
+          "startedAt": "2026-10-17T02:39:34Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:36Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 17,
+          "startedAt": "2026-10-17T02:39:36Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:36Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 18,
+          "startedAt": "2026-10-17T02:39:36Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:36Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 19,
+          "startedAt": "2026-10-17T02:39:36Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826701"
+    },
+    {
+      "completedAt": "2026-10-17T02:39:59Z",
+      "conclusion": "success",
+      "databaseId": 117287826759,
+      "name": "browser-e2e",
+      "startedAt": "2026-10-17T02:39:10Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:12Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:13Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:13Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:18Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install \".[e2e]\"",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:40Z",
+          "conclusion": "success",
+          "name": "Run python -m playwright install --with-deps chromium",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:55Z",
+          "conclusion": "success",
+          "name": "Run python -m unittest -v tests.test_browser_e2e tests.test_public_browser_e2e",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:57Z",
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:57Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 13,
+          "startedAt": "2026-10-17T02:39:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:57Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 14,
+          "startedAt": "2026-10-17T02:39:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:57Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 15,
+          "startedAt": "2026-10-17T02:39:57Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826759"
+    },
+    {
+      "completedAt": "2026-10-17T02:40:52Z",
+      "conclusion": "success",
+      "databaseId": 117287826764,
+      "name": "test (windows-latest, 3.12)",
+      "startedAt": "2026-10-17T02:39:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:06Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:12Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:12Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:17Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:32Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install \".[execution]\" ruff==0.15.5 coverage==7.13.5",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:32Z",
+          "conclusion": "success",
+          "name": "Run python -m ruff check .",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:43Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:44Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage report --fail-under=75",
+          "number": 8,
+          "startedAt": "2026-10-17T02:40:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:44Z",
+          "conclusion": "skipped",
+          "name": "Run python scripts/verify_release.py",
+          "number": 9,
+          "startedAt": "2026-10-17T02:40:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:47Z",
+          "conclusion": "success",
+          "name": "Run python scripts/verify_release.py",
+          "number": 10,
+          "startedAt": "2026-10-17T02:40:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:47Z",
+          "conclusion": "success",
+          "name": "Run node scripts/test_workflow_trace.cjs",
+          "number": 11,
+          "startedAt": "2026-10-17T02:40:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:47Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit init generated/smoke --profile developer --name smoke",
+          "number": 12,
+          "startedAt": "2026-10-17T02:40:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:48Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit run --agent generated/smoke --backend demo --task \"Offline workflow smoke\"",
+          "number": 13,
+          "startedAt": "2026-10-17T02:40:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:48Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 24,
+          "startedAt": "2026-10-17T02:40:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:48Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 25,
+          "startedAt": "2026-10-17T02:40:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:49Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 26,
+          "startedAt": "2026-10-17T02:40:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:49Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 27,
+          "startedAt": "2026-10-17T02:40:49Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826764"
+    },
+    {
+      "completedAt": "2026-10-17T02:40:21Z",
+      "conclusion": "success",
+      "databaseId": 117287826826,
+      "name": "test (ubuntu-latest, 3.12)",
+      "startedAt": "2026-10-17T02:39:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:08Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:08Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:09Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:16Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install \".[execution]\" ruff==0.15.5 coverage==7.13.5",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:17Z",
+          "conclusion": "success",
+          "name": "Run python -m ruff check .",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:15Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:16Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage report --fail-under=75",
+          "number": 8,
+          "startedAt": "2026-10-17T02:40:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:17Z",
+          "conclusion": "success",
+          "name": "Run python scripts/verify_release.py",
+          "number": 9,
+          "startedAt": "2026-10-17T02:40:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:17Z",
+          "conclusion": "skipped",
+          "name": "Run python scripts/verify_release.py",
+          "number": 10,
+          "startedAt": "2026-10-17T02:40:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:17Z",
+          "conclusion": "success",
+          "name": "Run node scripts/test_workflow_trace.cjs",
+          "number": 11,
+          "startedAt": "2026-10-17T02:40:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:17Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit init generated/smoke --profile developer --name smoke",
+          "number": 12,
+          "startedAt": "2026-10-17T02:40:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:17Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit run --agent generated/smoke --backend demo --task \"Offline workflow smoke\"",
+          "number": 13,
+          "startedAt": "2026-10-17T02:40:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:18Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 24,
+          "startedAt": "2026-10-17T02:40:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:18Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 25,
+          "startedAt": "2026-10-17T02:40:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:18Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 26,
+          "startedAt": "2026-10-17T02:40:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:18Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 27,
+          "startedAt": "2026-10-17T02:40:18Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826826"
+    },
+    {
+      "completedAt": "2026-10-17T02:40:08Z",
+      "conclusion": "success",
+      "databaseId": 117287826831,
+      "name": "test (ubuntu-latest, 3.11)",
+      "startedAt": "2026-10-17T02:39:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:06Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:07Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:08Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:17Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install \".[execution]\" ruff==0.15.5 coverage==7.13.5",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:17Z",
+          "conclusion": "success",
+          "name": "Run python -m ruff check .",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:04Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:05Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage report --fail-under=75",
+          "number": 8,
+          "startedAt": "2026-10-17T02:40:04Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:05Z",
+          "conclusion": "success",
+          "name": "Run python scripts/verify_release.py",
+          "number": 9,
+          "startedAt": "2026-10-17T02:40:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:05Z",
+          "conclusion": "skipped",
+          "name": "Run python scripts/verify_release.py",
+          "number": 10,
+          "startedAt": "2026-10-17T02:40:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Run node scripts/test_workflow_trace.cjs",
+          "number": 11,
+          "startedAt": "2026-10-17T02:40:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit init generated/smoke --profile developer --name smoke",
+          "number": 12,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit run --agent generated/smoke --backend demo --task \"Offline workflow smoke\"",
+          "number": 13,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 24,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 25,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 26,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:40:06Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 27,
+          "startedAt": "2026-10-17T02:40:06Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826831"
+    },
+    {
+      "completedAt": "2026-10-17T02:41:32Z",
+      "conclusion": "success",
+      "databaseId": 117287826881,
+      "name": "test (windows-latest, 3.11)",
+      "startedAt": "2026-10-17T02:39:07Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-17T02:39:10Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-17T02:39:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:18Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 2,
+          "startedAt": "2026-10-17T02:39:10Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:18Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 3,
+          "startedAt": "2026-10-17T02:39:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:23Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 4,
+          "startedAt": "2026-10-17T02:39:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:48Z",
+          "conclusion": "success",
+          "name": "Run python -m pip install \".[execution]\" ruff==0.15.5 coverage==7.13.5",
+          "number": 5,
+          "startedAt": "2026-10-17T02:39:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:39:49Z",
+          "conclusion": "success",
+          "name": "Run python -m ruff check .",
+          "number": 6,
+          "startedAt": "2026-10-17T02:39:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:20Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v",
+          "number": 7,
+          "startedAt": "2026-10-17T02:39:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:21Z",
+          "conclusion": "success",
+          "name": "Run python -m coverage report --fail-under=75",
+          "number": 8,
+          "startedAt": "2026-10-17T02:41:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:21Z",
+          "conclusion": "skipped",
+          "name": "Run python scripts/verify_release.py",
+          "number": 9,
+          "startedAt": "2026-10-17T02:41:21Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:25Z",
+          "conclusion": "success",
+          "name": "Run python scripts/verify_release.py",
+          "number": 10,
+          "startedAt": "2026-10-17T02:41:21Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:26Z",
+          "conclusion": "success",
+          "name": "Run node scripts/test_workflow_trace.cjs",
+          "number": 11,
+          "startedAt": "2026-10-17T02:41:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:27Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit init generated/smoke --profile developer --name smoke",
+          "number": 12,
+          "startedAt": "2026-10-17T02:41:26Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:27Z",
+          "conclusion": "success",
+          "name": "Run python -m agentkit run --agent generated/smoke --backend demo --task \"Offline workflow smoke\"",
+          "number": 13,
+          "startedAt": "2026-10-17T02:41:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:27Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "number": 24,
+          "startedAt": "2026-10-17T02:41:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:28Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "number": 25,
+          "startedAt": "2026-10-17T02:41:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:30Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "number": 26,
+          "startedAt": "2026-10-17T02:41:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-17T02:41:30Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 27,
+          "startedAt": "2026-10-17T02:41:30Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553/job/117287826881"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/38995751553"
+}
