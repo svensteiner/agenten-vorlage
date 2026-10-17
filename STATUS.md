@@ -30,8 +30,12 @@ deckte einen echten Symlink-Fehler im gemeinsamen Datei-Leser sowie weitere
 hostabhaengige Fixtures auf. Die Korrekturen sind unabhaengig und lokal
 geprueft; alle sieben Jobs der CI 39038388607 sind gruen, einschliesslich
 der ausgefuehrten Link-Regressionen unter Windows 3.11 und 3.12.
-Ein echter autonomer Modelllauf und die
-Marketingqualitaet bleiben offen.
+Der echte [Korrekturlauf V4](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v4-terminal.json)
+ist dagegen nicht abgenommen: vier blockierte Luna-Schritte, keine
+Host-Aktion, keine Dateiaenderung und keine Testphase. Die Worker suchten
+Host-Aktionen als native Werkzeuge statt JSON-Vorschlaege zurueckzugeben.
+Laufzeit, Quelldateien und Schreibgrenzen blieben unveraendert. Die
+Werkzeugschnittstelle und Marketingqualitaet bleiben offen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und

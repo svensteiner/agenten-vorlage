@@ -1,0 +1,68 @@
+{
+  "schema": "agentkit-real-model-trial/v1",
+  "run_id": "26935c910c244960b91b71f43c466950",
+  "status": "not_qualified",
+  "engine_status": "blocked",
+  "steps": 4,
+  "failures": 4,
+  "worker_results": [
+    {
+      "step": 1,
+      "status": "blocked",
+      "model_route": {
+        "backend": "codex",
+        "model": "gpt-6-luna",
+        "reason": "primary",
+        "revisions": 0
+      }
+    },
+    {
+      "step": 2,
+      "status": "blocked",
+      "model_route": {
+        "backend": "codex",
+        "model": "gpt-6-luna",
+        "reason": "primary",
+        "revisions": 0
+      }
+    },
+    {
+      "step": 3,
+      "status": "blocked",
+      "model_route": {
+        "backend": "codex",
+        "model": "gpt-6-luna",
+        "reason": "primary",
+        "revisions": 0
+      }
+    },
+    {
+      "step": 4,
+      "status": "blocked",
+      "model_route": {
+        "backend": "codex",
+        "model": "gpt-6-luna",
+        "reason": "primary",
+        "revisions": 0
+      }
+    }
+  ],
+  "completed_host_actions": 0,
+  "phase_attempts": 0,
+  "changed_workspace_paths": [],
+  "changed_paths_outside_allowlist": [],
+  "post_audit_error_types": {},
+  "result": "Workers reported missing native host tools instead of returning AgentKit JSON action proposals; no correction or tests performed.",
+  "replay_permitted": false,
+  "live_marketingbot_changed": false,
+  "production_qualification": false,
+  "evidence_sha256": {
+    "preparation.json": "b5d9e2bbf576163de9400d356d41dc79ee522ad3f2ce3b00d51bcb31f5e6393d",
+    "runtime-release.json": "331b785aba2a6a78fdd19ab09ca4f29de9fba4d0e8d968146182f60025f51417",
+    "independent-preflight.json": "218b02a127b5b45cb45a9465182902beb69e392a6bf9792a236ce58b0e0202e9",
+    "root-authorization.json": "34790a4529726f8a3f46628e2b97409a32b665c152f3c9e370f6fa7608a60e35",
+    "dispatch.json": "d2a91d071ee61a3d306607a7ec039faef2c0450183575df1b15baec3992d34e4",
+    "terminal-result.json": "fcc3e668948eeefcc7c6f74debfe737e53ed95f02a35c6c052587a24ba5fcf80",
+    "post-engine-integrity.json": "1095fb493b0cc23735deffd39cc393e0e5c196beb317adecfcd1de73c9ace702"
+  }
+}
