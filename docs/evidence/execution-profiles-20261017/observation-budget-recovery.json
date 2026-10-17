@@ -1,0 +1,102 @@
+{
+  "schema": "agentkit-observation-budget-recovery-qualification/v1",
+  "commit": "0ce5c1bdc4f48a35a74f5268133c75598e69121d",
+  "status": "offline_and_ci_checks_passed_real_task_not_yet_qualified",
+  "source_sha256": {
+    "agentkit\\backends.py": "f379cab694b2baaa877e96cef6ae6f13c0b9398c976f54be9935c85ffa4d9ea5",
+    "tests\\test_codex_host_observations.py": "fe3a418e1380d38a6569b27aa26ee9da58a95a8e3c0f032ef5ad6844bc02b0aa",
+    "tests\\test_agentkit.py": "a4adc93dcaa6285428924a50893fa9f867bf46191528b3f5e4144147669a99f8"
+  },
+  "behavior": {
+    "known_read_call_or_retained_character_budget_stop_returns_host_needs_revision": true,
+    "over_limit_read_result_discarded": true,
+    "completed_write_receipts_and_replay_protection_retained": true,
+    "generic_transport_read_mutation_errors_still_block_in_flight": true,
+    "remaining_read_budget_in_worker_prompt": true,
+    "budgets_and_permissions_unchanged": true,
+    "extra_model_retry_not_added": true
+  },
+  "unchanged_observation_limits": {
+    "calls_per_worker": 24,
+    "retained_result_characters": 48000
+  },
+  "full_tests": {
+    "run": 668,
+    "skipped": 7,
+    "failed": 0,
+    "duration_seconds": 309.947,
+    "input_changes": [],
+    "log_sha256": "7c6264fad7a8d15ac7fe45e0e57aef2c197e55fa136b837cc0e859cf44952b91",
+    "inputs_sha256": "3968068777852390da2c0358e894655ce160559e842e20407b6825787f35019c"
+  },
+  "independent_review": {
+    "affected_module_tests_passed": 100,
+    "subtests_passed": 57,
+    "source_hashes_unchanged": true,
+    "transcription_sha256": "abdc63550cf16b4ec40998289f5ad36d43536c6d0293148852c0038c5bd6af99"
+  },
+  "offline_release": {
+    "passed": 36,
+    "failed": 0,
+    "log_sha256": "2d4e9f5e646d98b048d7d5519e6d2fa47b26ce3e20e3dd652a2558d418e9e5c5",
+    "count_note": "Includes the fresh V6 generated pack."
+  },
+  "static_checks": [
+    {
+      "check": "ruff",
+      "exit_code": 0
+    },
+    {
+      "check": "bandit",
+      "exit_code": 0
+    },
+    {
+      "check": "workflow",
+      "exit_code": 0
+    }
+  ],
+  "ci": {
+    "run_id": 39041971315,
+    "head_sha": "0ce5c1bdc4f48a35a74f5268133c75598e69121d",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39041971315",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      }
+    ],
+    "all_five_critical_regressions_executed_passed_all_four_os_python_jobs": true,
+    "log_sha256": "443e407ac7492bee73bf60d55e3ca88c75d93bef4a1c1c0333cc9efa5ddb7f75"
+  },
+  "red_log_sha256": "f06faa5ed541fb3ebac01bbaecbefc7c299a9c5222ef8919e0129950f7962bd9",
+  "historical_v5_status": "not_qualified; in_flight retained; no resume",
+  "real_coding_task_qualified": false,
+  "marketing_quality_qualified": false,
+  "production_qualification": false,
+  "live_marketingbot_changed": false
+}

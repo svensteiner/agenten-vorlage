@@ -1,0 +1,32 @@
+{
+  "schema": "agentkit-isolated-real-model-trial-start/v1",
+  "run_id": "f599a148f9894114bbd1cb30f080b846",
+  "observed_at_utc": "2026-10-17T14:49:07.908885+00:00",
+  "status_at_observation": "running",
+  "model": "gpt-6-sol",
+  "core_commit": "0ce5c1bdc4f48a35a74f5268133c75598e69121d",
+  "source_snapshot_sha256": "423bd80801046c6ccb557618f283086d643470a5080850401fae589413e99251",
+  "workspace_files": 698,
+  "targeted_test_nodeids": 243,
+  "baseline_full_test_nodeids": 4729,
+  "required_new_regression_nodeids": 4,
+  "preflight_guard_tests_passed": 20,
+  "limits": {
+    "max_steps": 16,
+    "max_failures": 4,
+    "max_seconds": 3600,
+    "call_timeout_seconds": 1200
+  },
+  "evidence_sha256": {
+    "preparation.json": "9a44990df4ce7f399ca8b08b13e09dd9f9fa27ac7e054c5e2227d2386df028c7",
+    "runtime-release.json": "be30fccf08d7671a4fc3b08789829ca98f52af756687ae427f4e98eeb1b1a482",
+    "independent-preflight.json": "0061e3f537d0489b93be4f5884d0c472cff90f8a7901996f28d1da0bedb76371",
+    "root-authorization.json": "a532be31c762d984a948522e76d46a74dbf0fa0cc7ca469e8f8798cf59ba5fa4",
+    "dispatch.json": "62c0a587f990c53be956273e7d2f6bc5b347bbffae7e8c8daadff455864bbf8e"
+  },
+  "operator_code_intervention_during_run": false,
+  "trial_qualification": false,
+  "marketing_quality_qualification": false,
+  "production_qualification": false,
+  "live_marketingbot_changed": false
+}

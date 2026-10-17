@@ -63,10 +63,15 @@ der Lauf wird nicht wiederholt. Eine vorangehende reine Startpruefung hatte eine
 Snapshot-Kennung vor jedem Modellaufruf abgelehnt. Die korrigierte Bindung
 und die zusaetzliche Vorpruefung bestehen 20 Guard-Tests und separates Review.
 Die eigentliche Codekorrektur und Marketingqualitaet sind noch nicht abgenommen.
-Eine Folgekorrektur gibt bekannte reine Lesebudget-Stopps als Host-Nacharbeit
+Die [Folgekorrektur](docs/evidence/execution-profiles-20261017/observation-budget-recovery.json)
+gibt bekannte reine Lesebudget-Stopps als Host-Nacharbeit
 an den Planer zurueck. Limits und Sperren fuer unklare Ausgaenge bleiben
 unveraendert. Beide betroffenen Testmodule bestehen unabhaengig mit 100 Tests;
-die vollstaendige lokale und CI-Abnahme des neuen Standes laufen noch.
+668 Gesamttests (sieben Skips, keine Fehler), 36 Offline-Pruefungen und alle
+sieben Jobs der CI 39041971315 sind bestanden. Der neue
+[Sol-Auftrag V6](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v6-started.json)
+ist mit frischem Originalsnapshot und 20 Guard-Tests gestartet. Seine
+eigentliche autonome Codekorrektur ist noch nicht abgenommen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und
