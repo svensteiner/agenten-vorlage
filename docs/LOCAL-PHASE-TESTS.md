@@ -13,6 +13,12 @@ Der Host erzwingt folgende Bedingungen:
 
 - `red` weist die benannten Assertion-Fehler am unveraenderten Produktionsstand nach.
 - Produktionsaenderungen benoetigen diesen Nachweis mit unveraenderten Testdateien.
+  Eine ausdruecklich vorgeschlagene Wiederherstellung darf auch bei veraltetem RED
+  nur exakt die gepinnten Produktions-Ausgangsbytes schreiben. Der Host berechnet
+  die endgueltigen Schreibbytes, prueft sie an der Schreibgrenze und nach dem
+  Schreiben. Ungeklaerte Testausgaenge sperren weiterhin jede Mutation. Bei
+  geaenderten Tests ist ein neuer RED-Nachweis erforderlich; gezielte und volle
+  Tests muessen weiterhin den abschliessenden Quellstand pruefen.
 - `targeted` prueft die festgelegten Tests am aktuellen Quellstand.
 - `full` benoetigt einen erfolgreichen gezielten Test desselben Quellstands und
   fuehrt die gesamte festgelegte Testsuite aus.
@@ -37,6 +43,11 @@ Der echte Sol-Lesetest belegt eine Host-Dateibeobachtung und einen korrekten
 Bericht bei unveraendertem Workspace. Er belegt keine vollstaendige Aufgabe
 und keine allgemeine Zuverlaessigkeit des Reviews. Vollstaendige Codekorrektur
 und Marketingqualitaet benoetigen weiterhin eigene Abnahmen.
+
+Fehlgeschlagene, abgeschlossene Phasen geben dem Modell hoechstens 4.000 Zeichen
+Testdiagnostik als unvertrauenswuerdige Beobachtung. Der Ausschnitt erteilt keine
+Rechte und ersetzt weder Status-, Sammlungs- noch Ergebnisnachweise. Bei
+unbekanntem Ausgang gibt es keinen solchen Modellbericht und keine Wiederholung.
 
 ## Aussagekraft der Nachweise
 

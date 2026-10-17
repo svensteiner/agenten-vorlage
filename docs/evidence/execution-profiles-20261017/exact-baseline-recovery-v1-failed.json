@@ -1,0 +1,28 @@
+{
+  "schema": "agentkit-recovery-candidate-failed/v1",
+  "status": "not_qualified",
+  "source_committed": false,
+  "full_suite": {
+    "tests_run": 677,
+    "skipped": 7,
+    "failures": 2,
+    "exit_code": 1,
+    "duration_seconds": 467.68800000002375,
+    "changed_inputs": []
+  },
+  "failing_tests": [
+    "tests.test_codex_host_observations.CodexHostObservationTests.test_actual_host_file_contents_reach_next_codex_prompt_not_checkpoint_history",
+    "tests.test_codex_host_observations.CodexHostObservationTests.test_strict_action_prompt_requires_host_observations_and_marks_them_untrusted"
+  ],
+  "failure_reason": "Exact prompt assertions no longer matched reworded untrusted-data guidance. Restore the original sentence and add private diagnostic guidance separately.",
+  "usability_finding": "Hash-only restoration requires old bytes which are not retained across worker calls. The fixture proved mechanics, not generally usable autonomous restoration.",
+  "next_change": "Host-retained verified baseline cache and private path-only restore action; no model reconstruction or plaintext history expansion.",
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "evidence_sha256": {
+    "full.log": "6f41a59147b1b2c03d5dc9c71dc546550b89f9c26cb3f114f577c6513d73921e",
+    "full-result.json": "624da483aded46a3410b272e72a637ae3fdc551c969cfe9dfe32486491caa9de",
+    "full-inputs.json": "4e24968d71a4d4646262307826f4d2ff7ad84ecfbbf24f325c971126515eb0a1",
+    "independent-code-review.json": "37df595311257d2af2f87510caec7c80030e02d07682b389aa1f261e35e04fc6"
+  }
+}
