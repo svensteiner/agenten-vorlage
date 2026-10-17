@@ -1,0 +1,1284 @@
+diff --git a/bot.py b/bot.py
+index 0fbbd4f..953b6a0 100644
+--- a/bot.py
++++ b/bot.py
+@@ -5565,7 +5565,7 @@ class ReplyButtonOptimiertBotEnhanced(
+             'format': selected_format,
+         }
+ 
+-    @bounded_llm_task(label="news_generation")
++    @bounded_llm_task(label="news_generation", local_max_calls=16)
+     def _generate_news_commentary_tweet(self):
+         """Generate a current-event commentary tweet from recent RSS observations."""
+         bank = getattr(self, '_observation_bank', None)
+@@ -5698,13 +5698,6 @@ class ReplyButtonOptimiertBotEnhanced(
+             selected_format = str(
+                 prompt_controls.get("content_format") or "thesis_reason"
+             )
+-            tweet_text = gen.generate(
+-                observation,
+-                content_format=selected_format,
+-                reach_context=(PERSPECTIVE_INSTRUCTION
+-                               if arm == 'perspective' else None),
+-                max_chars=190,
+-            )
+         except Exception as e:
+             try:
+                 append_control_event(
+@@ -5716,33 +5709,82 @@ class ReplyButtonOptimiertBotEnhanced(
+             self.safe_log(f"NEWS_COMMENTARY Generator fehlgeschlagen: {e}", "NEWS", "WARNING")
+             return None
+ 
+-        if not tweet_text or len(tweet_text) > 190:
+-            self.safe_log("NEWS_COMMENTARY Generator lieferte keinen Text", "NEWS", "DEBUG")
+-            return None
++        from core.llm_task_budget import current_call_slice
++        call_slice = current_call_slice()
++        revision_code = None
++        final_text = None
++        for pass_index in range(2):
++            try:
++                generation_args = {
++                    "content_format": selected_format,
++                    "reach_context": (PERSPECTIVE_INSTRUCTION
++                                      if arm == 'perspective' else None),
++                    "max_chars": 190,
++                }
++                if revision_code is not None:
++                    generation_args["revision_code"] = revision_code
++                tweet_text = gen.generate(observation, **generation_args)
++            except Exception as exc:
++                self.safe_log(f"NEWS_COMMENTARY Generator fehlgeschlagen: {type(exc).__name__}",
++                              "NEWS", "WARNING")
++                return None
++            if not tweet_text or len(tweet_text) > 190:
++                self.safe_log("NEWS_COMMENTARY Generator lieferte keinen Text", "NEWS", "DEBUG")
++                return None
+ 
+-        try:
+-            from content.source_faithfulness import qualify_source_draft
+-            qualified = qualify_source_draft(
+-                observation, tweet_text, reviewer=getattr(self, 'llm_responder', None),
+-                repairer=getattr(self, 'llm_responder', None), max_chars=190,
++            try:
++                from content.source_faithfulness import qualify_source_draft
++                qualified = qualify_source_draft(
++                    observation, tweet_text, reviewer=getattr(self, 'llm_responder', None),
++                    repairer=getattr(self, 'llm_responder', None), max_chars=190,
++                )
++            except Exception:
++                qualified = None
++            task_id = current_budget().task_id if current_budget() is not None else None
++            if (not isinstance(qualified, dict) or qualified.get("status") != "accepted"
++                    or qualified.get("verification") != "unverified"
++                    or type(qualified.get("review_calls")) is not int
++                    or qualified["review_calls"] not in (1, 2)
++                    or type(qualified.get("repair_calls")) is not int
++                    or qualified["repair_calls"] not in (0, 1)
++                    or not isinstance(qualified.get("text"), str) or not qualified["text"].strip()
++                    or len(qualified["text"]) > 190
++                    or qualified.get("reason_codes") != []
++                    or not task_id or qualified.get("task_id") != task_id):
++                self.safe_log("NEWS_COMMENTARY Quellenpruefung fehlgeschlagen", "NEWS", "WARNING")
++                return None
++            qualified_text = qualified["text"]
++            outcome_trace = {}
++            final_text = self._apply_unified_quality_gate(
++                qualified_text, source="news_commentary", topic="news",
++                outcome_trace=outcome_trace,
+             )
+-        except Exception:
+-            qualified = None
+-        task_id = current_budget().task_id if current_budget() is not None else None
+-        if (not isinstance(qualified, dict) or qualified.get("status") != "accepted"
+-                or qualified.get("verification") != "unverified"
+-                or type(qualified.get("review_calls")) is not int
+-                or qualified["review_calls"] not in (1, 2)
+-                or type(qualified.get("repair_calls")) is not int
+-                or qualified["repair_calls"] not in (0, 1)
+-                or not isinstance(qualified.get("text"), str) or not qualified["text"].strip()
+-                or len(qualified["text"]) > 190
+-                or qualified.get("reason_codes") != []
+-                or not task_id or qualified.get("task_id") != task_id):
+-            self.safe_log("NEWS_COMMENTARY Quellenpruefung fehlgeschlagen", "NEWS", "WARNING")
+-            return None
+-        qualified_text = qualified["text"]
+-        final_text = self._apply_unified_quality_gate(qualified_text, source="news_commentary", topic="news")
++            if final_text and final_text == qualified_text:
++                break
++            if final_text:
++                self.safe_log("NEWS_COMMENTARY Quality Gate veraenderte qualifizierten Text",
++                              "NEWS", "WARNING")
++                return None
++
++            # A single retry is allowed only after a locally observed, completed
++            # quality rejection; raw model reasons and rejected text stay private.
++            next_revision = outcome_trace.get("revision_code")
++            if (pass_index != 0 or next_revision not in {
++                    "auditor_quality_rejected", "gatekeeper_quality_rejected"}):
++                final_text = None
++                break
++            if (call_slice is None or not call_slice.calls_completed_ok()
++                    or not call_slice.can_reserve(8)):
++                final_text = None
++                break
++            revision_code = next_revision
++            emit_experiment_event(
++                "quality_revision_requested", component="news_experiment_policy",
++                status="retrying", context={**(assignment_context or {}),
++                                             "revision_code": revision_code,
++                                             "attempt": 2},
++            )
++
+         if not final_text:
+             try:
+                 append_control_event(
+@@ -5753,10 +5795,6 @@ class ReplyButtonOptimiertBotEnhanced(
+                 pass
+             return None
+ 
+-        if final_text != qualified_text:
+-            self.safe_log("NEWS_COMMENTARY Quality Gate veraenderte qualifizierten Text", "NEWS", "WARNING")
+-            return None
+-
+         try:
+             append_control_event(
+                 "approved", component="news_experiment_policy", status="approved",
+@@ -7089,7 +7127,8 @@ class ReplyButtonOptimiertBotEnhanced(
+         return False
+ 
+     @bounded_llm_task(label="quality_gate")
+-    def _apply_unified_quality_gate(self, text, source, topic=None, skip_gatekeeper=False):
++    def _apply_unified_quality_gate(self, text, source, topic=None, skip_gatekeeper=False,
++                                    outcome_trace=None):
+         """Unified quality gate for ALL tweet paths.
+ 
+         Verdict-only stages (cheapest first):
+@@ -7104,6 +7143,9 @@ class ReplyButtonOptimiertBotEnhanced(
+ 
+         Returns: cleaned text or None.
+         """
++        if isinstance(outcome_trace, dict):
++            outcome_trace.clear()
++            outcome_trace.update(revision_code=None, auditor_parsed=False)
+         if self._required_content_gatekeeper() is None:
+             return None
+         if not text or not isinstance(text, str):
+@@ -7268,13 +7310,21 @@ class ReplyButtonOptimiertBotEnhanced(
+             llm = getattr(self, "llm_responder", None)
+             auditor = ContentAuditor(llm_responder=llm, logger=self.safe_log)
+             audit_result = auditor.audit(text, topic=topic)
++            if isinstance(outcome_trace, dict):
++                outcome_trace["auditor_parsed"] = auditor._last_audit_origin == "llm_parsed"
+             if self._quality_first_enabled() and audit_result.get("Verdict") != "STRONG":
++                if (auditor._last_audit_origin == "llm_parsed"
++                        and isinstance(outcome_trace, dict)):
++                    outcome_trace["revision_code"] = "auditor_quality_rejected"
+                 self.safe_log(
+                     f"Quality-first DROP: audit={audit_result.get('Verdict')}, source={source}",
+                     "AUDIT", "INFO",
+                 )
+                 return None
+             if not auditor.should_post(audit_result):
++                if (auditor._last_audit_origin == "llm_parsed"
++                        and isinstance(outcome_trace, dict)):
++                    outcome_trace["revision_code"] = "auditor_quality_rejected"
+                 verdict = audit_result.get("Verdict", "TRASH")
+                 failure_mode = audit_result.get("Primary Failure Mode", "Unknown")
+                 self.safe_log(
+@@ -7301,11 +7351,19 @@ class ReplyButtonOptimiertBotEnhanced(
+             return None
+         if gatekeeper and not skip_gatekeeper:
+             try:
+-                approved, _ignored_text = gatekeeper.check(
+-                    text,
+-                    content_type="tweet",
+-                )
++                gate_trace = {}
++                if isinstance(outcome_trace, dict):
++                    approved, _ignored_text = gatekeeper.check(
++                        text, content_type="tweet", outcome_trace=gate_trace,
++                    )
++                else:
++                    approved, _ignored_text = gatekeeper.check(text, content_type="tweet")
+                 if not approved:
++                    if (approved is False
++                            and isinstance(outcome_trace, dict)
++                            and outcome_trace.get("auditor_parsed") is True
++                            and gate_trace.get("revision_code") == "gatekeeper_quality_rejected"):
++                        outcome_trace["revision_code"] = gate_trace["revision_code"]
+                     self.safe_log(
+                         f"Quality-Gate DROP: Gatekeeper score too low, source={source}",
+                         "AUDIT", "WARNING",
+diff --git a/content/content_auditor.py b/content/content_auditor.py
+index 4cee704..4747d20 100644
+--- a/content/content_auditor.py
++++ b/content/content_auditor.py
+@@ -122,6 +122,9 @@ IMPORTANT:
+         """
+         self._llm = llm_responder
+         self._logger = logger
++        # Per-call provenance is local control state, never part of the audit
++        # result supplied by the model.
++        self._last_audit_origin = "unavailable"
+ 
+     def _log(self, msg: str, level: str = "DEBUG") -> None:
+         """Log a message if logger is available."""
+@@ -151,6 +154,9 @@ IMPORTANT:
+             - Missed Opportunity: optional
+             - Actionable Direction: optional
+         """
++        # Reset before every path so a previous parsed answer cannot authorize
++        # a retry after this call falls back or is unavailable.
++        self._last_audit_origin = "unavailable"
+         # Fail-closed: empty input -> TRASH
+         if not tweet_text or not tweet_text.strip():
+             self._log("Audit: Empty tweet_text -> TRASH", "WARNING")
+@@ -162,10 +168,12 @@ IMPORTANT:
+         if self._llm and hasattr(self._llm, "generate_freeform"):
+             result = self._audit_with_llm(cleaned, topic)
+             if result:
++                self._last_audit_origin = "llm_parsed"
+                 return result
+             self._log("LLM audit failed, falling back to rules", "WARNING")
+ 
+         # Fallback: rule-based scoring
++        self._last_audit_origin = "rules_fallback"
+         return self._audit_with_rules(cleaned, topic)
+ 
+     def _audit_with_llm(
+diff --git a/content/tension_generator.py b/content/tension_generator.py
+index 8c8a60a..6123fe6 100644
+--- a/content/tension_generator.py
++++ b/content/tension_generator.py
+@@ -40,6 +40,16 @@ _RETRY_FEEDBACK = {
+     "empty": "Gib einen nichtleeren, fertigen Post aus.",
+ }
+ _SAFE_RETRY_FALLBACK = "Prüfe die Quellenbindung und gib ausschließlich einen fertigen, unbeschrifteten Einzelpost aus, ohne Meta-Text oder erfundene Angaben."
++_QUALITY_REVISION_FEEDBACK = {
++    "auditor_quality_rejected": (
++        "Prüfe den konkreten, belegten Punkt und entwickle seine nützliche Bedeutung. "
++        "Erfinde keine Pointe; erhalte Freigaben und Unsicherheit."
++    ),
++    "gatekeeper_quality_rejected": (
++        "Prüfe den konkreten, belegten Punkt und entwickle seine nützliche Bedeutung. "
++        "Erfinde keine Pointe; erhalte Freigaben und Unsicherheit."
++    ),
++}
+ 
+ 
+ def _overlength_retry_feedback(max_chars: int) -> str:
+@@ -156,8 +166,11 @@ class TensionGenerator:
+         reach_context: Optional[str] = None,
+         content_format: Optional[str] = None,
+         max_chars: Optional[int] = None,
++        revision_code: Optional[str] = None,
+     ) -> Optional[str]:
+         """Convert an observation into one post using the selected standalone format."""
++        if revision_code is not None and revision_code not in _QUALITY_REVISION_FEEDBACK:
++            raise ValueError("Unknown quality revision code")
+         if not self._llm or not hasattr(self._llm, "generate_freeform"):
+             self._log("No LLM available for tension generation", "WARNING")
+             return None
+@@ -184,7 +197,12 @@ class TensionGenerator:
+             system_prompt = system_prompt.replace("Maximal 280 Zeichen.", f"Maximal {max_chars} Zeichen.")
+         if reach_context:
+             system_prompt += "\n\n" + reach_context
+-        user_prompt = self._user_prompt(source_observation, tone.value, selected_format, format_instruction)
++        revision_note = ""
++        if revision_code is not None:
++            revision_note = " Qualitätskorrektur: " + _QUALITY_REVISION_FEEDBACK[revision_code]
++        user_prompt = self._user_prompt(
++            source_observation, tone.value, selected_format, format_instruction, revision_note
++        )
+ 
+         for attempt in range(self.MAX_RETRIES):
+             try:
+@@ -208,6 +226,7 @@ class TensionGenerator:
+                     "ohne Markdown, Überschrift, Label, Analyse oder Erklärung. Halte alle Quellen- und "
+                     "Freigabegrenzen ein."
+                     + _overlength_retry_feedback(max_chars)
++                    + revision_note
+                 )
+                 user_prompt = self._user_prompt(
+                     source_observation, tone.value, selected_format, format_instruction, retry_note
+@@ -220,7 +239,7 @@ class TensionGenerator:
+                 self._rejected_count += 1
+                 user_prompt = self._user_prompt(
+                     source_observation, tone.value, selected_format, format_instruction,
+-                    " Korrektur: Gib ausschließlich einen schlichten, unbeschrifteten deutschen Post aus; ohne Markdown, Überschrift, Label, Analyse oder Erklärung. Halte alle Quellen- und Freigabegrenzen ein. " + _SAFE_RETRY_FALLBACK,
++                    " Korrektur: Gib ausschließlich einen schlichten, unbeschrifteten deutschen Post aus; ohne Markdown, Überschrift, Label, Analyse oder Erklärung. Halte alle Quellen- und Freigabegrenzen ein. " + _SAFE_RETRY_FALLBACK + revision_note,
+                 )
+                 continue
+             ok, reason = kill_gate(tweet, tone=tone.value)
+@@ -237,6 +256,7 @@ class TensionGenerator:
+             retry_note = (
+                 " Korrektur: Gib ausschließlich einen schlichten, unbeschrifteten deutschen Post aus; ohne Markdown, Überschrift, Label, Analyse oder Erklärung. Halte alle Quellen- und Freigabegrenzen ein."
+                 + _retry_feedback(reason)
++                + revision_note
+             )
+             user_prompt = self._user_prompt(source_observation, tone.value, selected_format, format_instruction, retry_note)
+ 
+diff --git a/core/llm_task_budget.py b/core/llm_task_budget.py
+index ae33e3f..02eeee8 100644
+--- a/core/llm_task_budget.py
++++ b/core/llm_task_budget.py
+@@ -7,7 +7,7 @@ token-count telemetry afterwards.
+ 
+ from __future__ import annotations
+ 
+-from contextlib import contextmanager
++from contextlib import contextmanager, nullcontext
+ from contextvars import ContextVar
+ from functools import wraps
+ import threading
+@@ -30,6 +30,8 @@ _T = TypeVar("_T")
+ _CURRENT_BUDGET: ContextVar[TaskBudget | None] = ContextVar(
+     "llm_task_budget", default=None
+ )
++_CALL_SLICES: ContextVar[tuple] = ContextVar("llm_call_slices", default=())
++
+ _TOKEN_ALIASES = {
+     "input_tokens": "input_tokens",
+     "prompt_tokens": "input_tokens",
+@@ -75,7 +77,10 @@ class TaskBudget:
+     @property
+     def exhausted(self) -> bool:
+         with self._lock:
+-            return self._exhausted
++            return self._exhausted or any(
++                frame.budget is self and (frame.exhausted or frame.closed)
++                for frame in _CALL_SLICES.get()
++            )
+ 
+     def reserve(self, provider: str, model: str, *, inference: bool = True) -> str:
+         """Reserve one attempt before starting provider transport."""
+@@ -95,6 +100,12 @@ class TaskBudget:
+                     f"LLM task budget exhausted for {self.label!r}"
+                 )
+ 
++            frames = [frame for frame in _CALL_SLICES.get() if frame.budget is self]
++            for frame in frames:
++                if frame.closed or frame.exhausted or len(frame.attempt_ids) >= frame.max_calls:
++                    frame.exhausted = True
++                    raise BudgetExceeded("Local LLM call slice exhausted")
++
+             attempt_id = f"{self.task_id}:{len(self.attempts) + 1}"
+             self.attempts.append(
+                 {
+@@ -106,6 +117,8 @@ class TaskBudget:
+                     "inference": inference,
+                 }
+             )
++            for frame in frames:
++                frame.attempt_ids.add(attempt_id)
+             if inference:
+                 self._inference_calls += 1
+             # A reservation consumes its slot even when transport later fails.
+@@ -197,7 +210,7 @@ class TaskBudget:
+                 "max_calls": self.max_calls,
+                 "max_inference_calls": self.max_inference_calls,
+                 "inference_count": self._inference_calls,
+-                "exhausted": self._exhausted,
++                "exhausted": self.exhausted,
+                 "attempts": attempts,
+                 "attempt_count": len(attempts),
+                 "tokens_known": tokens_known,
+@@ -212,6 +225,73 @@ def current_budget() -> TaskBudget | None:
+     return _CURRENT_BUDGET.get()
+ 
+ 
++class TaskCallSlice:
++    """A context-local physical-call cap sharing the parent identity/accounting.
++
++    Capacity checks do not reserve future slots. Provider fallbacks still use
++    reserve(), so they cannot bypass the local or parent limits.
++    """
++
++    def __init__(self, budget: TaskBudget, max_calls: int) -> None:
++        if not _valid_limit(max_calls):
++            raise BudgetExceeded("Invalid local LLM call limit")
++        self.budget = budget
++        self.max_calls = max_calls
++        self.attempt_ids: set[str] = set()
++        self.exhausted = False
++        self.closed = False
++
++    def can_reserve(self, count: int) -> bool:
++        with self.budget._lock:
++            if (not _valid_limit(count) or self.closed or self.exhausted
++                    or self not in _CALL_SLICES.get() or current_budget() is not self.budget
++                    or self.budget.exhausted or not _valid_limit(self.budget.max_calls)
++                    or len(self.budget.attempts) + count > self.budget.max_calls):
++                return False
++            inference_limit = self.budget.max_inference_calls
++            if inference_limit is not None and (
++                not _valid_limit(inference_limit)
++                or self.budget._inference_calls + count > inference_limit
++            ):
++                return False
++            return all(
++                not frame.closed and not frame.exhausted
++                and len(frame.attempt_ids) + count <= frame.max_calls
++                for frame in _CALL_SLICES.get() if frame.budget is self.budget
++            )
++
++    def calls_completed_ok(self) -> bool:
++        """Unknown, pending or failed transports never authorize a revision."""
++        with self.budget._lock:
++            if self.closed or not self.attempt_ids or self not in _CALL_SLICES.get():
++                return False
++            return (self.attempt_ids <= self.budget._recorded and all(
++                attempt["status"] == "ok" for attempt in self.budget.attempts
++                if attempt["attempt_id"] in self.attempt_ids
++            ))
++
++
++def current_call_slice() -> TaskCallSlice | None:
++    budget = current_budget()
++    return next((frame for frame in reversed(_CALL_SLICES.get())
++                 if frame.budget is budget and not frame.closed), None)
++
++
++@contextmanager
++def task_call_slice(max_calls: int) -> Iterator[TaskCallSlice]:
++    budget = current_budget()
++    if budget is None:
++        raise BudgetExceeded("Local call slice requires an active task budget")
++    frame = TaskCallSlice(budget, max_calls)
++    token = _CALL_SLICES.set((*_CALL_SLICES.get(), frame))
++    try:
++        yield frame
++    finally:
++        with budget._lock:
++            frame.closed = True
++        _CALL_SLICES.reset(token)
++
++
+ @contextmanager
+ def task_budget(max_calls: int = 96, label: str = "task") -> Iterator[TaskBudget]:
+     """Activate a budget, reusing the outer budget for nested scopes."""
+@@ -245,6 +325,8 @@ def bounded_llm_task(
+     label: str,
+     max_calls: int = 96,
+     failure_value: _T | None = None,
++    *,
++    local_max_calls: int | None = None,
+ ) -> Callable[[Callable[..., _T]], Callable[..., _T | None]]:
+     """Decorate a task with a reusable call budget and safe failure value."""
+ 
+@@ -252,15 +334,17 @@ def bounded_llm_task(
+         @wraps(func)
+         def wrapped(*args: Any, **kwargs: Any) -> _T | None:
+             with task_budget(max_calls=max_calls, label=label) as budget:
+-                if budget.exhausted:
+-                    return failure_value
+                 try:
+-                    result = func(*args, **kwargs)
++                    scope = task_call_slice(local_max_calls) if local_max_calls is not None else nullcontext()
++                    with scope:
++                        if budget.exhausted:
++                            return failure_value
++                        result = func(*args, **kwargs)
++                        if budget.exhausted:
++                            return failure_value
++                        return result
+                 except BudgetExceeded:
+                     return failure_value
+-                if budget.exhausted:
+-                    return failure_value
+-                return result
+ 
+         return cast(Callable[..., _T | None], wrapped)
+ 
+@@ -270,6 +354,9 @@ def bounded_llm_task(
+ __all__ = [
+     "BudgetExceeded",
+     "TaskBudget",
++    "TaskCallSlice",
++    "task_call_slice",
++    "current_call_slice",
+     "bounded_llm_task",
+     "current_budget",
+     "task_budget",
+diff --git a/intelligent_features/content_gatekeeper.py b/intelligent_features/content_gatekeeper.py
+index 6c9278a..978f9f7 100644
+--- a/intelligent_features/content_gatekeeper.py
++++ b/intelligent_features/content_gatekeeper.py
+@@ -530,7 +530,8 @@ class ContentGatekeeper:
+         self._learning = self._load_learning()
+ 
+     @bounded_llm_task(label="content_check", max_calls=24, failure_value=(False, ""))
+-    def check(self, text: str, content_type: str = "tweet", original_tweet: str = "") -> Tuple[bool, str]:
++    def check(self, text: str, content_type: str = "tweet", original_tweet: str = "",
++              outcome_trace: Optional[Dict[str, Optional[str]]] = None) -> Tuple[bool, str]:
+         """
+         Check content; regenerate rejected replies and quotes only.
+ 
+@@ -543,6 +544,9 @@ class ContentGatekeeper:
+             (approved, final_text) - If approved, final_text may be improved or regenerated.
+             If fully rejected after regen attempts, returns (False, "").
+         """
++        if isinstance(outcome_trace, dict):
++            outcome_trace.clear()
++            outcome_trace.update(parsed_verdict=None, revision_code=None)
+         self._last_check_unavailable = False
+         if not self.enabled:
+             return True, text
+@@ -589,7 +593,12 @@ class ContentGatekeeper:
+                 return False, ""
+ 
+         # Stage 1: Gate the original text
+-        approved, result, reason, score = self._gate(llm, text, content_type)
++        if isinstance(outcome_trace, dict):
++            approved, result, reason, score = self._gate(
++                llm, text, content_type, outcome_trace=outcome_trace
++            )
++        else:
++            approved, result, reason, score = self._gate(llm, text, content_type)
+         if reason in _UNAVAILABLE_GATE_REASONS:
+             self._stats["dropped"] += 1
+             return False, ""
+@@ -615,6 +624,10 @@ class ContentGatekeeper:
+         # match the persisted format arm.
+         if content_type == "tweet":
+             if not approved:
++                if (isinstance(outcome_trace, dict)
++                        and outcome_trace.get("parsed_verdict") == "rejected"
++                        and not _force_no_anchor and not _force_no_weak_q):
++                    outcome_trace["revision_code"] = "gatekeeper_quality_rejected"
+                 self._stats["dropped"] += 1
+                 if _monitor:
+                     _monitor.on_gatekeeper_rejected(content_type, score)
+@@ -1086,7 +1099,9 @@ class ContentGatekeeper:
+         )
+         return False, ""
+ 
+-    def _gate(self, llm, text: str, content_type: str) -> Tuple[bool, str, str, float | int]:
++    def _gate(self, llm, text: str, content_type: str,
++              outcome_trace: Optional[Dict[str, Optional[str]]] = None
++              ) -> Tuple[bool, str, str, float | int]:
+         """
+         Run the gatekeeper LLM check.
+ 
+@@ -1120,7 +1135,18 @@ class ContentGatekeeper:
+                 self._last_check_unavailable = True
+                 return False, text, "empty_gatekeeper_response", 0
+ 
++            explicit_status = (
++                _STATUS_RE.search(response)
++                or _STATUS_BARE_RE.search(response)
++                or _STATUS_VERDICT_RE.search(response)
++            )
+             parsed = self._parse_response(response, text, content_type)
++            if (isinstance(outcome_trace, dict) and explicit_status
++                    and parsed[2] not in _UNAVAILABLE_GATE_REASONS):
++                status = explicit_status.group(1).lower()
++                expected_approved = status == "approved"
++                if parsed[0] is expected_approved:
++                    outcome_trace["parsed_verdict"] = status
+             if parsed[2] in _UNAVAILABLE_GATE_REASONS:
+                 self._last_check_unavailable = True
+             return parsed
+diff --git a/tests/unit/test_content_auditor.py b/tests/unit/test_content_auditor.py
+index 723e2cf..8a6bc15 100644
+--- a/tests/unit/test_content_auditor.py
++++ b/tests/unit/test_content_auditor.py
+@@ -147,3 +147,33 @@ class TestRuleBasedFallback:
+         """< 50 chars → -2 score → likely WEAK/TRASH."""
+         result = auditor_no_llm.audit("hi")
+         assert result["Verdict"] in ("WEAK", "TRASH")
++
++
++class TestPerCallAuditProvenance:
++    def test_only_a_valid_llm_parsed_result_has_llm_provenance_and_it_resets(self) -> None:
++        llm = MagicMock()
++        llm.generate_freeform.side_effect = [
++            '{"Verdict":"WEAK","Primary Failure Mode":"Vague"}',
++            "not-json-provider-body",
++        ]
++        auditor = ContentAuditor(llm_responder=llm)
++
++        parsed = auditor.audit("A sufficiently long first audit candidate with details.")
++        assert parsed["Verdict"] == "WEAK"
++        assert auditor._last_audit_origin == "llm_parsed"
++
++        fallback = auditor.audit("A sufficiently long second audit candidate with details.")
++        assert fallback["Verdict"] in ContentAuditor.VERDICTS
++        assert auditor._last_audit_origin == "rules_fallback"
++
++    def test_no_llm_empty_input_and_exception_are_not_llm_quality_rejections(self) -> None:
++        assert ContentAuditor()._last_audit_origin == "unavailable"
++        no_llm = ContentAuditor()
++        no_llm.audit("")
++        assert no_llm._last_audit_origin != "llm_parsed"
++
++        llm = MagicMock()
++        llm.generate_freeform.side_effect = RuntimeError("private provider detail")
++        auditor = ContentAuditor(llm_responder=llm)
++        auditor.audit("A sufficiently long candidate that triggers the audit path.")
++        assert auditor._last_audit_origin == "rules_fallback"
+diff --git a/tests/unit/test_content_gatekeeper_standalone_quality.py b/tests/unit/test_content_gatekeeper_standalone_quality.py
+index d23f11e..4f87eb8 100644
+--- a/tests/unit/test_content_gatekeeper_standalone_quality.py
++++ b/tests/unit/test_content_gatekeeper_standalone_quality.py
+@@ -133,3 +133,52 @@ def test_missing_llm_responder_fails_closed_for_standalone():
+ 
+     assert approved is False
+     assert text == ""
++
++
++def test_local_policy_veto_after_parsed_approval_is_not_retryable():
++    gatekeeper = ContentGatekeeper(_Bot(_ApprovedLLM()))
++    trace = {}
++    text = "Mein eigenes Setup kostet 47 Euro im Monat; die Freigabe bleibt offen."
++
++    approved, result = gatekeeper.check(text, content_type="tweet", outcome_trace=trace)
++
++    assert approved is False
++    assert result == ""
++    assert trace == {"parsed_verdict": "approved", "revision_code": None}
++
++
++def test_only_explicitly_parsed_rejection_is_retryable():
++    gatekeeper = ContentGatekeeper(_Bot(_RejectedLLM()))
++    trace = {}
++
++    approved, result = gatekeeper.check(
++        "Ein prüfbarer Punkt braucht eine klare Freigabe.",
++        content_type="tweet",
++        outcome_trace=trace,
++    )
++
++    assert approved is False
++    assert result == ""
++    assert trace == {
++        "parsed_verdict": "rejected",
++        "revision_code": "gatekeeper_quality_rejected",
++    }
++
++
++def test_last_resort_rejected_word_does_not_authorize_retry():
++    class _ChattyLLM:
++        def generate_freeform(self, **_kwargs):
++            return "The draft might be rejected because it feels generic."
++
++    gatekeeper = ContentGatekeeper(_Bot(_ChattyLLM()))
++    trace = {}
++
++    approved, result = gatekeeper.check(
++        "Ein prüfbarer Punkt braucht eine klare Freigabe.",
++        content_type="tweet",
++        outcome_trace=trace,
++    )
++
++    assert approved is False
++    assert result == ""
++    assert trace == {"parsed_verdict": None, "revision_code": None}
+diff --git a/tests/unit/test_llm_task_budget.py b/tests/unit/test_llm_task_budget.py
+index d2e7acf..aa9f01f 100644
+--- a/tests/unit/test_llm_task_budget.py
++++ b/tests/unit/test_llm_task_budget.py
+@@ -264,3 +264,130 @@ def test_polling_still_obeys_total_request_limit():
+         budget.reserve("openai", "agent", inference=False)
+         with pytest.raises(BudgetExceeded):
+             budget.reserve("openai", "agent", inference=False)
++
++
++def test_local_slice_caps_nested_outer_budget_without_poisoning_parent():
++    import core.llm_task_budget as module
++    with task_budget(96, "outer") as budget:
++        budget.max_inference_calls = 96  # explicit larger enclosing inference budget
++        identity = budget.task_id
++        with module.task_call_slice(16) as local:
++            assert module.current_call_slice() is local
++            assert local.can_reserve(16)
++            assert not local.calls_completed_ok()
++            for _ in range(16):
++                attempt = budget.reserve("fixture", "local")
++                budget.record(attempt, status="ok")
++            assert local.calls_completed_ok()
++            assert not local.can_reserve(1)
++            with pytest.raises(BudgetExceeded):
++                budget.reserve("fixture", "over-limit")
++            assert budget.exhausted
++        assert not budget.exhausted
++        assert budget.max_calls == 96 and budget.task_id == identity
++        assert len(budget.attempts) == 16
++        assert module.current_call_slice() is None
++        assert not local.can_reserve(1)
++        budget.record(budget.reserve("fixture", "parent"), status="ok")
++        assert len(budget.attempts) == 17
++
++
++def test_nested_local_slices_count_only_accepted_reservations():
++    import core.llm_task_budget as module
++    with task_budget(10) as budget:
++        with module.task_call_slice(2) as outer:
++            with module.task_call_slice(1) as inner:
++                budget.record(budget.reserve("fixture", "nested"), status="ok")
++                assert not outer.can_reserve(1)  # active inner has no capacity
++                with pytest.raises(BudgetExceeded):
++                    budget.reserve("fixture", "blocked")
++            assert outer.can_reserve(1)
++            budget.record(budget.reserve("fixture", "outer"), status="ok")
++            assert len(budget.attempts) == 2
++            assert not outer.can_reserve(1)
++        assert not budget.exhausted
++
++
++def test_slice_capacity_respects_parent_and_requires_completed_ok_calls():
++    import core.llm_task_budget as module
++    with task_budget(3) as budget:
++        with module.task_call_slice(16) as local:
++            assert not local.can_reserve(8)
++            attempt = budget.reserve("fixture", "pending")
++            assert not local.calls_completed_ok()
++            budget.record(attempt, status="error")
++            assert not local.calls_completed_ok()
++            assert local.can_reserve(2)
++            assert not local.can_reserve(True)
++
++
++def test_bounded_decorator_local_limit_preserves_identity_and_last_success():
++    import core.llm_task_budget as module
++    @bounded_llm_task("local-success", max_calls=2, local_max_calls=2)
++    def two_calls():
++        budget = current_budget()
++        assert module.current_call_slice() is not None
++        for _ in range(2):
++            budget.record(budget.reserve("fixture", "success"), status="ok")
++        return budget.task_id
++    @bounded_llm_task("local-refusal", max_calls=2, local_max_calls=2)
++    def three_calls():
++        for _ in range(3):
++            current_budget().reserve("fixture", "refusal")
++        return "unreachable"
++    with task_budget(96) as budget:
++        assert two_calls() == budget.task_id
++        assert three_calls() is None
++        assert len(budget.attempts) == 4
++        assert not budget.exhausted
++        assert budget.max_calls == 96
++
++
++def test_local_slice_shared_copied_context_is_atomic_across_threads():
++    import core.llm_task_budget as module
++    from contextvars import copy_context
++    with task_budget(96) as budget:
++        budget.max_inference_calls = 96
++        with module.task_call_slice(16):
++            def consume():
++                for _ in range(20):
++                    try:
++                        attempt = budget.reserve("fixture", "thread")
++                    except BudgetExceeded:
++                        return
++                    budget.record(attempt, status="ok")
++            contexts = [copy_context() for _ in range(4)]
++            threads = [threading.Thread(target=ctx.run, args=(consume,)) for ctx in contexts]
++            for thread in threads: thread.start()
++            for thread in threads: thread.join()
++            assert len(budget.attempts) == 16
++        assert not budget.exhausted
++
++
++def test_closed_slice_in_copied_context_cannot_dispatch_after_owner_exit():
++    import core.llm_task_budget as module
++    from contextvars import copy_context
++    with task_budget(10) as budget:
++        with module.task_call_slice(2):
++            inherited = copy_context()
++        with pytest.raises(BudgetExceeded):
++            inherited.run(budget.reserve, "fixture", "closed")
++        assert budget.attempts == []
++        assert not budget.exhausted
++        budget.record(budget.reserve("fixture", "parent"), status="ok")
++
++
++def test_local_cap_counts_non_inference_calls_and_invalid_limit_fails_closed():
++    import core.llm_task_budget as module
++    with task_budget(10) as budget:
++        with module.task_call_slice(1):
++            budget.record(budget.reserve("fixture", "physical", inference=False), status="ok")
++            with pytest.raises(BudgetExceeded):
++                budget.reserve("fixture", "extra", inference=False)
++        assert len(budget.attempts) == 1 and not budget.exhausted
++        @bounded_llm_task("invalid-local", local_max_calls=0)
++        def invalid():
++            pytest.fail("invalid local limit must stop before function entry")
++        assert invalid() is None
++        assert not budget.exhausted
++        assert module.current_call_slice() is None
+diff --git a/tests/unit/test_news_experiment_pipeline.py b/tests/unit/test_news_experiment_pipeline.py
+index b1ee732..53752c0 100644
+--- a/tests/unit/test_news_experiment_pipeline.py
++++ b/tests/unit/test_news_experiment_pipeline.py
+@@ -56,15 +56,15 @@ def test_real_evidence_reaches_next_news_without_bypassing_gate(
+         _get_session_prompt_controls=lambda: {"content_format": "thesis_reason"},
+         _apply_unified_quality_gate=MagicMock(return_value="Approved text" if approved else None),
+     )
+-    generator = MagicMock()
+-    generator.return_value.generate.return_value = "Draft"
+-    monkeypatch.setattr("content.tension_generator.TensionGenerator", generator)
+-    from core.llm_task_budget import current_budget
+-    gate_input = "Approved text" if approved else "Draft"
+-    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
+-        "status": "accepted", "verification": "unverified", "review_calls": 1,
+-        "repair_calls": 0, "text": gate_input, "reason_codes": [], "task_id": current_budget().task_id,
+-    })
++    generator = MagicMock()
++    generator.return_value.generate.return_value = "Draft"
++    monkeypatch.setattr("content.tension_generator.TensionGenerator", generator)
++    from core.llm_task_budget import current_budget
++    gate_input = "Approved text" if approved else "Draft"
++    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
++        "status": "accepted", "verification": "unverified", "review_calls": 1,
++        "repair_calls": 0, "text": gate_input, "reason_codes": [], "task_id": current_budget().task_id,
++    })
+     monkeypatch.setattr("bot.time.time", lambda: NOW)
+     monkeypatch.setattr("bot.append_control_event", MagicMock(
+         side_effect=OSError("telemetry unavailable") if telemetry_fails else None,
+@@ -83,7 +83,7 @@ def test_real_evidence_reaches_next_news_without_bypassing_gate(
+     if persist_fails:
+         assert not state.exists()
+     subject._apply_unified_quality_gate.assert_called_once_with(
+-        gate_input, source="news_commentary", topic="news",
++        gate_input, source="news_commentary", topic="news", outcome_trace={},
+     )
+     if not approved:
+         assert payload is None
+diff --git a/tests/unit/test_news_perspective.py b/tests/unit/test_news_perspective.py
+index 2841a80..a7bdf03 100644
+--- a/tests/unit/test_news_perspective.py
++++ b/tests/unit/test_news_perspective.py
+@@ -76,7 +76,7 @@ def test_real_news_path_preserves_gate_and_assignment(arm, approved, source_qual
+         observation, "Draft", reviewer=subject.llm_responder,
+         repairer=subject.llm_responder, max_chars=190)
+     subject._apply_unified_quality_gate.assert_called_once_with(
+-        "Finaltext", source="news_commentary", topic="news")
++        "Finaltext", source="news_commentary", topic="news", outcome_trace={})
+     if not approved:
+         assert payload is None
+         return
+@@ -128,6 +128,6 @@ def test_policy_decision_controls_next_news_without_fabricated_experiment(
+         observation, "Draft", reviewer=subject.llm_responder,
+         repairer=subject.llm_responder, max_chars=190)
+     subject._apply_unified_quality_gate.assert_called_once_with(
+-        "Finaltext", source="news_commentary", topic="news")
++        "Finaltext", source="news_commentary", topic="news", outcome_trace={})
+     assert payload["news_policy"]["arm"] == expected_arm
+     assert "editorial_experiment" not in payload
+diff --git a/tests/unit/test_news_source_context.py b/tests/unit/test_news_source_context.py
+index 0326928..99f5ed9 100644
+--- a/tests/unit/test_news_source_context.py
++++ b/tests/unit/test_news_source_context.py
+@@ -43,15 +43,15 @@ def test_recent_record_is_detached_and_consumed_exactly_once(tmp_path):
+     assert reloaded._entries[0]["used"] is True
+ 
+ 
+-def test_actual_news_generation_keeps_selected_record_and_final_gate_text(tmp_path, monkeypatch):
++def test_actual_news_generation_keeps_selected_record_and_final_gate_text(tmp_path, monkeypatch):
+     bank = ObservationBank(str(tmp_path / "bank.jsonl"))
+     bank.add(FACT, source="rss", source_id="article-17")
+-    subject = news_subject(tmp_path, bank)
+-    from core.llm_task_budget import current_budget
+-    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
+-        "status": "accepted", "verification": "unverified", "review_calls": 1,
+-        "repair_calls": 0, "text": POST, "reason_codes": [], "task_id": current_budget().task_id,
+-    })
++    subject = news_subject(tmp_path, bank)
++    from core.llm_task_budget import current_budget
++    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
++        "status": "accepted", "verification": "unverified", "review_calls": 1,
++        "repair_calls": 0, "text": POST, "reason_codes": [], "task_id": current_budget().task_id,
++    })
+     generator = MagicMock()
+     generator.return_value.generate.return_value = "Draft before the normal gate"
+     monkeypatch.setattr("content.tension_generator.TensionGenerator", generator)
+@@ -64,17 +64,17 @@ def test_actual_news_generation_keeps_selected_record_and_final_gate_text(tmp_pa
+     assert bank.unused_count == 0
+     assert generator.return_value.generate.call_args.args[0] == FACT
+     assert generator.return_value.generate.call_count == 1
+-    subject._apply_unified_quality_gate.assert_called_once_with(
+-        POST, source="news_commentary", topic="news")
++    subject._apply_unified_quality_gate.assert_called_once_with(
++        POST, source="news_commentary", topic="news", outcome_trace={})
+ 
+ 
+-def test_legacy_string_only_bank_never_fabricates_source_identity(tmp_path, monkeypatch):
+-    subject = news_subject(tmp_path, SimpleNamespace(draw_recent=lambda **kwargs: FACT))
+-    from core.llm_task_budget import current_budget
+-    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
+-        "status": "accepted", "verification": "unverified", "review_calls": 1,
+-        "repair_calls": 0, "text": POST, "reason_codes": [], "task_id": current_budget().task_id,
+-    })
++def test_legacy_string_only_bank_never_fabricates_source_identity(tmp_path, monkeypatch):
++    subject = news_subject(tmp_path, SimpleNamespace(draw_recent=lambda **kwargs: FACT))
++    from core.llm_task_budget import current_budget
++    monkeypatch.setattr("content.source_faithfulness.qualify_source_draft", lambda observation, draft, **kw: {
++        "status": "accepted", "verification": "unverified", "review_calls": 1,
++        "repair_calls": 0, "text": POST, "reason_codes": [], "task_id": current_budget().task_id,
++    })
+     generator = MagicMock()
+     generator.return_value.generate.return_value = POST
+     monkeypatch.setattr("content.tension_generator.TensionGenerator", generator)
+diff --git a/tests/unit/test_source_faithfulness_news.py b/tests/unit/test_source_faithfulness_news.py
+index 7cfdc6e..898e507 100644
+--- a/tests/unit/test_source_faithfulness_news.py
++++ b/tests/unit/test_source_faithfulness_news.py
+@@ -203,3 +203,236 @@ def test_news_overlong_retries_without_valid_result_fail_closed(tmp_path,monkeyp
+     assert Bot._generate_news_commentary_tweet(bot) is None
+     assert len(llm.calls)==3
+     assert all("190 Zeichen" in prompt for prompt in llm.calls[1:])
++
++
++def _real_quality_retry_bot(tmp_path, monkeypatch, *, gatekeeper_answers,
++                            auditor_answers=None, source_reject=False, call_status="ok",
++                            observation=None, drafts=None):
++    """Actual news generator, source qualifier, auditor, and gatekeeper; fake provider only."""
++    import json
++    from unittest.mock import Mock
++    from intelligent_features.content_gatekeeper import ContentGatekeeper
++
++    observation = observation or (
++        "Seven scans are missing. Loading status is unknown. A supervisor must approve closeout."
++    )
++    first = "Sieben Scans fehlen; Ladestatus unbekannt. Abschluss erst nach Freigabe durch eine Aufsichtsperson."
++    revised = "Sieben Scans fehlen; der Ladestatus bleibt unklar. Abschluss nur nach Freigabe durch die Aufsichtsperson."
++    drafts = list(drafts or [first, revised])
++    first, revised = drafts[0], drafts[1] if len(drafts) > 1 else drafts[0]
++    gatekeeper_answers = list(gatekeeper_answers)
++    auditor_answers = list(auditor_answers or ["STRONG", "STRONG"])
++
++    class BudgetedResponder:
++        def __init__(self):
++            self.calls = []
++            self.completed = []
++            self.generated = []
++
++        def generate_freeform(self, user_prompt, system_prompt=None, context=None):
++            context = context or {}
++            self.calls.append((user_prompt, system_prompt or "", dict(context)))
++            active = budgets.current_budget()
++            if active is not None:
++                attempt_id = active.reserve("offline-test", "synthetic")
++                active.record(attempt_id, usage={"total_tokens": 1}, status=call_status)
++                self.completed.append(attempt_id)
++            task_type = context.get("task_type")
++            if task_type == "source_faithfulness_review":
++                if source_reject:
++                    return json.dumps({"verdict": "reject", "issues": ["format"],
++                        "claims": [], "human_controls_preserved": False,
++                        "uncertainty_preserved": False})
++                draft_line = next(line[len("DRAFT_JSON: "):] for line in user_prompt.splitlines()
++                                  if line.startswith("DRAFT_JSON: "))
++                source_line = next(line[len("SOURCE_JSON: "):] for line in user_prompt.splitlines()
++                                   if line.startswith("SOURCE_JSON: "))
++                draft = json.loads(draft_line)["text"]
++                source = json.loads(source_line)["observation"]
++                return json.dumps({"verdict": "accept", "issues": [], "claims": [
++                    {"draft_span": draft, "source_quote": source, "kind": "inference"}],
++                    "human_controls_preserved": True, "uncertainty_preserved": True})
++            if "Audit this tweet:" in user_prompt:
++                verdict = auditor_answers.pop(0)
++                failure_mode = "Vague" if verdict == "WEAK" else "NONE"
++                return json.dumps({"Verdict": verdict, "Primary Failure Mode": failure_mode,
++                    "Why It Would / Would Not Perform": "PRIVATE_AUDITOR_REASON_MUST_NOT_FEED_RETRY"})
++            if "VERDICT-ONLY FUER STANDALONE-POSTS" in system_prompt:
++                answer = gatekeeper_answers.pop(0)
++                if answer == "invalid":
++                    return "PRIVATE_GATE_RESPONSE_WITHOUT_A_VERDICT"
++                status = "APPROVED" if answer == "approved" else "REJECTED"
++                reason = "PRIVATE_GATE_REASON_MUST_NOT_FEED_RETRY"
++                return f"STATUS: {status}\nTYPE: AUTHORITY\nSCORE: 9\nREASON: {reason}"
++            draft = drafts.pop(0)
++            self.generated.append(draft)
++            return draft
++
++    responder = BudgetedResponder()
++    bank = ObservationBank(str(tmp_path / "quality-loop-bank.jsonl"))
++    bank.add(observation, source="rss", source_id="quality-loop-synthetic")
++    bot = Bot.__new__(Bot)
++    bot.config = {"news_commentary": {"enabled": True,
++        "news_experiment_policy_state_file": str(tmp_path / "quality-loop-policy.json")},
++        "editorial_policy": {"quality_first": False}}
++    bot._observation_bank = bank
++    bot.llm_responder = responder
++    bot.safe_log = Mock()
++    bot._get_session_prompt_controls = lambda: {"content_format": "thesis_reason"}
++    bot._is_recent_duplicate_post = Mock(return_value=False)
++    monkeypatch.setattr("intelligent_features.content_gatekeeper._LEARNING_FILE",
++                        str(tmp_path / "quality-loop-gatekeeper-learning.json"))
++    bot.content_gatekeeper = ContentGatekeeper(bot, enabled=True)
++    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
++    monkeypatch.setattr(budgets, "append_control_event", MagicMock())
++    monkeypatch.setattr("bot.append_control_event", MagicMock())
++    return bot, responder, observation, first, revised
++
++
++def test_one_completed_gatekeeper_rejection_revises_then_requalifies_and_reruns_real_gates(
++        tmp_path, monkeypatch):
++    import content.news_perspective as perspective
++    from content.tweet_archetypes import TonePreset
++
++    bot, llm, observation, first, revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "approved"])
++    monkeypatch.setattr(perspective, "assign_perspective", lambda _obs: {
++        "id": "news-perspective-v1", "arm": "perspective", "observation_hash": "a" * 64})
++    monkeypatch.setattr("content.tweet_archetypes.select_tone_with_instruction",
++                        lambda: (TonePreset.DIRECT, "Direct."))
++
++    payload = Bot._generate_news_commentary_tweet(bot)
++
++    assert payload["text"] == revised
++    assert llm.generated == [first, revised]
++    assert len([c for c in llm.calls if c[2].get("task_type") == "source_faithfulness_review"]) == 2
++    assert len([c for c in llm.calls if "Audit this tweet:" in c[0]]) == 2
++    assert len([c for c in llm.calls if "VERDICT-ONLY FUER STANDALONE-POSTS" in c[1]]) == 2
++    gen_calls = [c for c in llm.calls if c[2].get("max_tokens") == 150]
++    assert len(gen_calls) == 2
++    assert all(observation in call[0] for call in gen_calls)
++    assert all("FORMAT: thesis_reason" in call[0] for call in gen_calls)
++    assert all("UNTRUSTED-REJECTED-DRAFT" not in call[0] for call in gen_calls)
++    assert "PRIVATE_GATE_REASON_MUST_NOT_FEED_RETRY" not in gen_calls[1][0]
++    assert "PRIVATE_AUDITOR_REASON_MUST_NOT_FEED_RETRY" not in gen_calls[1][0]
++    assert "Redaktionelle Perspektive:" in gen_calls[1][1]
++    assert llm.completed and bot.content_gatekeeper._stats["checked"] == 2
++
++
++def test_parsed_auditor_rejection_revises_but_does_not_run_first_gatekeeper(
++        tmp_path, monkeypatch):
++    bot, llm, _observation, first, revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["approved"],
++        auditor_answers=["WEAK", "STRONG"])
++
++    payload = Bot._generate_news_commentary_tweet(bot)
++
++    assert payload["text"] == revised
++    assert llm.generated == [first, revised]
++    assert len([c for c in llm.calls if "Audit this tweet:" in c[0]]) == 2
++    assert len([c for c in llm.calls if "VERDICT-ONLY FUER STANDALONE-POSTS" in c[1]]) == 1
++    revised_prompt = next(c[0] for c in llm.calls if c[2].get("max_tokens") == 150
++                          and c[0] != llm.calls[0][0])
++    assert first not in revised_prompt
++    assert "PRIVATE_AUDITOR_REASON_MUST_NOT_FEED_RETRY" not in revised_prompt
++
++
++def test_second_completed_quality_rejection_is_final_and_never_causes_third_generation(
++        tmp_path, monkeypatch):
++    bot, llm, _observation, first, revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "rejected"])
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first, revised]
++    assert len([c for c in llm.calls if c[2].get("max_tokens") == 150]) == 2
++    assert bot.content_gatekeeper._stats["checked"] == 2
++
++
++def test_source_rejection_never_uses_quality_revision(tmp_path, monkeypatch):
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["approved"], source_reject=True)
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    assert not any("Audit this tweet:" in c[0] for c in llm.calls)
++    assert not any("VERDICT-ONLY FUER STANDALONE-POSTS" in c[1] for c in llm.calls)
++
++
++def test_unavailable_gatekeeper_response_does_not_trigger_quality_revision(tmp_path, monkeypatch):
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["invalid", "approved"])
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    assert len([c for c in llm.calls if c[2].get("max_tokens") == 150]) == 1
++
++
++def test_rules_fallback_auditor_does_not_authorize_quality_revision(tmp_path, monkeypatch):
++    observation = (
++        "2026: Eine Tabelle für 12 Tests zeigt 37 Prozent Ausfälle. "
++        "Status unbekannt. Freigabe bleibt bei einer Aufsichtsperson."
++    )
++    draft = (
++        "2026 zeigen 12 geprüfte Abläufe eine Ausfallquote von 37 Prozent. "
++        "Der Status bleibt unbekannt; freigeben darf nur die Aufsichtsperson."
++    )
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "approved"],
++        auditor_answers=["NOT_A_VERDICT"], observation=observation, drafts=[draft, draft])
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    assert len([c for c in llm.calls if "Audit this tweet:" in c[0]]) == 1
++    assert len([c for c in llm.calls if "VERDICT-ONLY FUER STANDALONE-POSTS" in c[1]]) == 1
++
++
++def test_unknown_completed_transport_prevents_quality_revision(tmp_path, monkeypatch):
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "approved"],
++        call_status="unknown")
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    assert len([c for c in llm.calls if c[2].get("max_tokens") == 150]) == 1
++
++
++def test_nonboolean_gatekeeper_result_is_not_completed_quality_rejection(tmp_path, monkeypatch):
++    from unittest.mock import Mock
++
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "approved"])
++    bot.content_gatekeeper.check = Mock(return_value=(0, ""))
++    bot.content_gatekeeper._last_check_unavailable = False
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    bot.content_gatekeeper.check.assert_called_once()
++
++
++def test_gatekeeper_local_cost_anchor_veto_after_approval_does_not_retry(tmp_path, monkeypatch):
++    observation = (
++        "Das eigene Setup kostet 47 Euro im Monat. Der Zahlungsstatus bleibt unklar; "
++        "eine Aufsichtsperson muss den Abschluss freigeben."
++    )
++    draft = (
++        "Das eigene Setup kostet 47 Euro im Monat. Der Zahlungsstatus bleibt unklar; "
++        "eine Aufsichtsperson muss den Abschluss freigeben."
++    )
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["approved"],
++        observation=observation, drafts=[draft])
++
++    assert Bot._generate_news_commentary_tweet(bot) is None
++    assert llm.generated == [first]
++    assert bot.content_gatekeeper._stats["checked"] == 1
++
++
++def test_quality_revision_requires_enough_shared_budget_remaining(tmp_path, monkeypatch):
++    bot, llm, _observation, first, _revised = _real_quality_retry_bot(
++        tmp_path, monkeypatch, gatekeeper_answers=["rejected", "approved"])
++
++    with budgets.task_budget(max_calls=10, label="small-quality-loop-test"):
++        assert Bot._generate_news_commentary_tweet(bot) is None
++
++    assert llm.generated == [first]
++    assert len(llm.completed) == 4
+diff --git a/tests/unit/test_source_faithfulness_news_metadata.py b/tests/unit/test_source_faithfulness_news_metadata.py
+index 136b492..6e3a369 100644
+--- a/tests/unit/test_source_faithfulness_news_metadata.py
++++ b/tests/unit/test_source_faithfulness_news_metadata.py
+@@ -64,4 +64,4 @@ def test_caller_accepts_legitimate_review_repair_review_result(setup):
+     module.qualify_source_draft.side_effect=qualification
+     payload=Bot._generate_news_commentary_tweet(subject)
+     assert payload["text"]==POST
+-    subject._apply_unified_quality_gate.assert_called_once_with(POST,source="news_commentary",topic="news")
++    subject._apply_unified_quality_gate.assert_called_once_with(POST,source="news_commentary",topic="news",outcome_trace={})
+diff --git a/tests/unit/test_tension_generator.py b/tests/unit/test_tension_generator.py
+index aa5ef35..32be6a5 100644
+--- a/tests/unit/test_tension_generator.py
++++ b/tests/unit/test_tension_generator.py
+@@ -169,6 +169,85 @@ class TestTensionGeneratorCleaning:
+         assert "Maximal 280 Zeichen" in llm.generate_freeform.call_args.kwargs["system_prompt"]
+         assert "190 Zeichen" not in llm.generate_freeform.call_args.kwargs["system_prompt"]
+ 
++    @pytest.mark.parametrize("revision_code", [
++        "gatekeeper_quality_rejected", "auditor_quality_rejected",
++    ])
++    def test_quality_revision_code_adds_only_closed_static_source_feedback(self, revision_code):
++        class RecordingResponder:
++            def __init__(self):
++                self.calls = []
++            def generate_freeform(self, user_prompt, system_prompt=None, context=None):
++                self.calls.append((user_prompt, system_prompt, context))
++                return "Die Freigabe bleibt offen, bis eine Aufsichtsperson zustimmt."
++
++        llm = RecordingResponder()
++        gen = TensionGenerator(llm_responder=llm)
++        observation = "Die Freigabe bleibt offen; der Zahlungsstatus ist unklar."
++        rejected_draft = "UNTRUSTED-REJECTED-DRAFT-DO-NOT-ECHO"
++
++        with patch("content.tension_generator.select_tone_with_instruction",
++                   return_value=(TonePreset.DIRECT, "Be direct.")), \
++             patch("content.tension_generator.kill_gate", return_value=(True, "")):
++            result = gen.generate(
++                observation, content_format="thesis_reason", max_chars=190,
++                revision_code=revision_code,
++            )
++
++        assert result == "Die Freigabe bleibt offen, bis eine Aufsichtsperson zustimmt."
++        prompt = llm.calls[0][0]
++        assert observation in prompt
++        assert rejected_draft not in prompt
++        assert "konkreten, belegten Punkt" in prompt
++        assert "Freigaben und Unsicherheit" in prompt
++        assert len(llm.calls) == 1
++
++    @pytest.mark.parametrize("revision_code", ["gatekeeper_quality_rejected", "auditor_quality_rejected"])
++    def test_quality_revision_requires_exact_code(self, revision_code):
++        llm = MagicMock()
++        llm.generate_freeform.return_value = "Ein belegter Punkt mit klarer Freigabe bleibt offen."
++        gen = TensionGenerator(llm_responder=llm)
++        with patch("content.tension_generator.select_tone_with_instruction",
++                   return_value=(TonePreset.DIRECT, "Be direct.")), \
++             patch("content.tension_generator.kill_gate", return_value=(True, "")):
++            result = gen.generate("Die Freigabe bleibt offen.", max_chars=190,
++                                  revision_code=revision_code)
++        assert result == "Ein belegter Punkt mit klarer Freigabe bleibt offen."
++
++    def test_unknown_quality_revision_code_fails_before_llm(self):
++        llm = MagicMock()
++        gen = TensionGenerator(llm_responder=llm)
++        with pytest.raises(ValueError, match="revision code"):
++            gen.generate("Eine Beobachtung.", max_chars=190,
++                         revision_code="RAW_MODEL_REASON: send rejected output")
++        llm.generate_freeform.assert_not_called()
++
++    def test_quality_revision_guidance_survives_generator_internal_retry(self):
++        rejected = "OVERLONG_REJECTED_OUTPUT_" + "x" * 200
++        accepted = "Die Freigabe bleibt offen, bis eine Aufsichtsperson zustimmt."
++
++        class RecordingResponder:
++            def __init__(self):
++                self.calls = []
++            def generate_freeform(self, user_prompt, system_prompt=None, context=None):
++                self.calls.append(user_prompt)
++                return rejected if len(self.calls) == 1 else accepted
++
++        llm = RecordingResponder()
++        gen = TensionGenerator(llm_responder=llm)
++        with patch("content.tension_generator.select_tone_with_instruction",
++                   return_value=(TonePreset.DIRECT, "Be direct.")), \
++             patch("content.tension_generator.kill_gate", return_value=(True, "")):
++            assert gen.generate(
++                "Die Freigabe bleibt offen; der Zahlungsstatus ist unklar.",
++                content_format="thesis_reason", max_chars=190,
++                revision_code="gatekeeper_quality_rejected",
++            ) == accepted
++
++        assert len(llm.calls) == 2
++        assert "konkreten, belegten Punkt" in llm.calls[0]
++        assert "konkreten, belegten Punkt" in llm.calls[1]
++        assert rejected not in llm.calls[1]
++
+     def test_strips_quotes(self):
+         llm = FakeLLM([
+             '"Your AI vendor has more data access than your CISO."'
+diff --git a/tests/unit/test_x_content_policy_integration.py b/tests/unit/test_x_content_policy_integration.py
+index 8da3a60..226c734 100644
+--- a/tests/unit/test_x_content_policy_integration.py
++++ b/tests/unit/test_x_content_policy_integration.py
+@@ -117,7 +117,12 @@ def test_every_active_external_input_path_uses_and_persists_selected_format() ->
+             getattr(bot_module.ReplyButtonOptimiertBotEnhanced, method_name)
+         )
+         assert "selected_format" in source
+-        assert "content_format=selected_format" in source
++        if method_name == "_generate_news_commentary_tweet":
++            # Both initial generation and revision use the same selected format.
++            assert '"content_format": selected_format' in source
++            assert "gen.generate(observation, **generation_args)" in source
++        else:
++            assert "content_format=selected_format" in source
+         assert "'format': selected_format" in source
+ 
+ 

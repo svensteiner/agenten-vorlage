@@ -79,6 +79,15 @@ vorbereiteten v13-Laborfaelle mit 719 bis 928 Zeichen sind daher kein
 repraesentativer Nachweis fuer den produktiven RSS-Pfad. Dessen Nutzen muss
 mit frischen, tatsaechlich extrahierten Kurzquellen separat nachgewiesen werden.
 
+Die isolierte [Qualitaetsnacharbeit](docs/evidence/execution-profiles-20261017/marketing-quality-revision-technical.json)
+besteht jetzt den Gesamttest: 4.698 bestanden, elf Skips, fuenf erwartete
+Fehlschlaege. Maximal eine Revision darf nach expliziter abgeschlossener
+Qualitaetsablehnung erneut Quellen- und Inhaltspruefungen durchlaufen;
+Quellenablehnung oder unbekannte Ergebnisse erlauben keine Wiederholung.
+Der [Patch](docs/evidence/execution-profiles-20261017/marketing-quality-revision.patch)
+ist reviewbar, aber noch nicht produktiv integriert. Echter Inhaltsnutzen
+und der neue Testadapter sind weiterhin nicht abgenommen.
+
 ## Verwendung
 
 Nach technischer Freigabe startet `Start-Coding-Agent.ps1 -Workspace <isolierter Checkout>`

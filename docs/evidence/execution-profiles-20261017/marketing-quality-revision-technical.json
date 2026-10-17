@@ -1,0 +1,63 @@
+{
+  "schema": "marketing-quality-revision-technical/v1",
+  "status": "offline_full_suite_passed_real_utility_unproven",
+  "workspace": "C:\\agq\\marketing-quality-loop-20261017",
+  "baseline_commit": "a1524d96a59aaf848f0dac3db86c959cead003cc",
+  "changed_file_sha256": {
+    "bot.py": "014560218b230b3ae1082cd0b736a4bb8099c56f891986bc4913b5b1667eb411",
+    "content/content_auditor.py": "7517c8cfb0dadb5e3885c3137772b0a2a2e247c47c2f79b4823c8435b74300d1",
+    "content/tension_generator.py": "41058e216cb9c6ff41b8c68938fcd5d806a64827679ee099a45a1a79b6882203",
+    "core/llm_task_budget.py": "c826cd2d932f04faeda848946959f597c38f0b1ae12b47c9e5c22a6e2a394b0b",
+    "intelligent_features/content_gatekeeper.py": "be6213e080e8fed3b9d994efd4d7cf2b6f7e7132e5d73ac24e309e8f54b5ebe1",
+    "tests/unit/test_content_auditor.py": "730e32ee9d6efce0d05bc69fa0f0e108953825d61167628695592cf1be7713cc",
+    "tests/unit/test_content_gatekeeper_standalone_quality.py": "89399727f945e0c0933fcdb83e14b2955a6653f3870e3a7f6368b74aacc65138",
+    "tests/unit/test_llm_task_budget.py": "a7c171edc0eea6e95dc62f466cde3942ab28c7fa26f8e05bb3c606ec7167bb52",
+    "tests/unit/test_news_experiment_pipeline.py": "947cd8f4ab1da5df605d82e1760c7579b1b10df90d536291c1427efac09eeba9",
+    "tests/unit/test_news_perspective.py": "c37307484160a61c23834768a62817af1ed2cb46dd0807a9db16e27ed59c5a48",
+    "tests/unit/test_news_source_context.py": "82fa5f231f68b405ef8df2d18e14acc0bad2058789ff90c70723882a372ce24a",
+    "tests/unit/test_source_faithfulness_news.py": "217f08883e8e4b855b653ab2a4e6dd652c46929547647bb27dffc32ce3763f31",
+    "tests/unit/test_source_faithfulness_news_metadata.py": "28ae1d3d4c659ef2d66a7c43c95b94affda1527352b99cb630b381a3cd3a3532",
+    "tests/unit/test_tension_generator.py": "afc39845b9bc97cccd1befff342beaf88ebd59657629b60b70ce73c3473bf172",
+    "tests/unit/test_x_content_policy_integration.py": "91c57272b3a78b95e46ad7d13aac55a50df6ab9dfc7c2ddc167536a094995381"
+  },
+  "patch_sha256": "617dcd68a97e3e692fc63987f6359ca936de20113b7542ea9a1346fdcbc0e62c",
+  "full_suite": {
+    "receipt_id": "636791f01df64762b09bf5590f887670",
+    "receipt_sha256": "88c6eb48308cff5ca06fdda5e8cb8e9afae6fab3774e311eba8efe6e28e2a1db",
+    "log_sha256": "395076b16daef51ed3afd11f679412625759124775da0d852a7da75d533aa6ea",
+    "passed": 4698,
+    "skipped": 11,
+    "xfailed": 5,
+    "warnings": 42,
+    "elapsed_seconds": 292.109,
+    "outcome": "completed",
+    "exit_code": 0,
+    "product_file_count": 195,
+    "unit_test_file_count": 321,
+    "product_hashes_unchanged_during_suite": true,
+    "unit_test_hashes_unchanged_during_suite": true,
+    "entire_python_inventory_unchanged": true
+  },
+  "prior_failed_full_suite": {
+    "receipt_id": "fcebec8380574d93986e21af0adee46a",
+    "passed": 4672,
+    "failed": 26,
+    "reason": "25 exact mock expectations omitted the new per-call outcome_trace argument; one source-shape test expected direct keyword syntax instead of the kwargs dictionary. Assertions updated; independently reviewed. Failed evidence retained."
+  },
+  "behavior": [
+    "At most one quality revision after a completed explicit parsed quality rejection.",
+    "Source qualification and actual content gates repeat for the revised text; qualified and final text identity retained.",
+    "Same source observation, selected format and experiment arm across revision.",
+    "Local 16 physical-call slice stays on the parent task budget; minimum 8 available slots checks eligibility, not worst-case completion guarantee.",
+    "No retry on unavailable/unknown/error/rules fallback or source rejection. No raw feedback forwarded into revision prompt."
+  ],
+  "limitations": [
+    "Native workspace receipt, not strict host attestation.",
+    "Proxy settings are not an OS firewall.",
+    "Bundled Chromium test adapter; installed Chrome not qualified.",
+    "Offline and fake-provider tests do not prove real-model marketing utility.",
+    "No production promotion, live bot restart or X publication.",
+    "Patch applies to this isolated candidate baseline; not a standalone patch against current upstream.",
+    "RSS measurement corpus is not yet independently cleared; no paid quality run."
+  ]
+}
