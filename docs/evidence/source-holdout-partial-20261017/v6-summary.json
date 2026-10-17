@@ -1,0 +1,52 @@
+{
+  "study": "source-semantic-holdout-v6",
+  "same_corpus_as_v5": true,
+  "candidate_unchanged_from_v5": true,
+  "status": "transport_stopped",
+  "physical_requests": 15,
+  "purpose_calls": {
+    "review": 11,
+    "repair": 4
+  },
+  "known_provider_cost_usd": "0.024394",
+  "reserved_usd": "0.62499990",
+  "provider_cap_enforced": false,
+  "unknown_outcome_requests": 0,
+  "unknown_cost_requests": 0,
+  "cases_by_status": [
+    {
+      "Name": "accepted",
+      "Count": 6
+    },
+    {
+      "Name": "error",
+      "Count": 1
+    },
+    {
+      "Name": "not_run_after_transport_stop",
+      "Count": 5
+    }
+  ],
+  "blind_audit": {
+    "remaining_semantic_outcomes": "ungraded",
+    "false_accepts_found": 0,
+    "faithful_and_usable": 6,
+    "accepted_audited": 6,
+    "cohort_passed": false
+  },
+  "diagnosis": "Captured response passes schema/exact spans/source quotes; final punctuation outside spans violates strict non-whitespace coverage; parser rejection is correct",
+  "limitations": [
+    "Five cases untested; cohort incomplete",
+    "Repeated same corpus and unchanged candidate; cannot pool as independent samples",
+    "One blind evaluator; synthetic cases; no X outcomes",
+    "No promotion; prior false accepts remain binding"
+  ],
+  "sha256": {
+    "tests": "75037095ef394138fdd7a8b462260cbb6b65e60e4a538a27f1e1d520707da9eb",
+    "helper": "1d4aaaf35eefc88b08cf6f919fd8b72b4acb24e2346d5448c81618d12dcaa5e4",
+    "result": "764a9927683dee9b2573c98726c142e118f844074cafb79718c47ff158e73f72",
+    "parse_diagnosis": "1406fcd7ac28f1dee31cd31a58e14a44a6ea8ad26b2ffa24a95c0deea237afa9",
+    "blind_audit": "51453666c88d60151d023f36568a050cafea7c30e6425ea921959b250d289a33"
+  },
+  "production_qualified": false
+}

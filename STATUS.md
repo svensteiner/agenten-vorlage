@@ -78,6 +78,15 @@ kein False Accept unter diesen drei. Fehlerfall und sieben ungetestete Faelle
 bleiben offen; die zwoelfteilige Gesamtpruefung ist nicht bestanden.
 [Aggregierte Messungen und Grenzen](docs/evidence/source-holdout-partial-20261017/README.md).
 
+V6 ergaenzt nur die Diagnose (fuenf Offline-Tests, separates Code-/Security-Review),
+nicht den Qualifier. Neuer Lauf: 15 Anfragen, 0,024394 USD, sechs accepted,
+ein error, fuenf ungetestet, keine unbekannten Ausgaenge/Kosten. Blindpruefung:
+sechs akzeptierte Texte quellentreu/nutzbar. Die erhaltene rohe Review belegt
+ein nicht abgedecktes letztes Satzzeichen; der Parser lehnt korrekt ab.
+Gleicher Kandidat/Korpus: keine unabhaengigen Stichproben und kein bestandener
+Gesamtvergleich. Naechste fachliche Arbeit muss die Protokolltreue verbessern,
+ohne Abdeckungsregeln zu lockern; kein blindes Wiederholen des gleichen Stands.
+
 Der neue Host-Lesepfad ist noch ein isolierter Kandidat: Code-/Security-Review
 fanden Git-Diff-Lecks fuer geschuetzte Pfade, unvollstaendige Zugangsdaten-
 Dateinamensfilter und eine Ordner-Auflistungs-Race. Der erste Volltest wurde
