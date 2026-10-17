@@ -13,6 +13,14 @@ from .contracts import ContractError, read_json, validate
 from .storage import lock, save
 from .write_policy import WritePolicy
 from .test_execution import TestExecutionPolicy, validate_test_receipt
+from .write_provenance import (
+    capture_baseline as capture_write_baseline,
+    make_write_receipt,
+    summarize_run_writes,
+    unknown_baseline as unknown_write_baseline,
+    validate_baseline as validate_write_baseline,
+    validate_receipts as validate_write_receipts,
+)
 from .approvals import (
     ApprovalRequired,
     action_digest,
@@ -214,6 +222,24 @@ class Engine:
             expected_test_policy = self.test_execution_policy.sha256 if self.test_execution_policy else ""
             if state.get("test_execution_policy_sha256", "") != expected_test_policy:
                 raise ContractError("Cannot resume with a changed or missing host test execution policy.")
+            if self.write_policy is not None:
+                baseline = state.get("write_provenance_baseline")
+                if baseline is None:
+                    # A legacy checkpoint has no trustworthy run-start baseline.
+                    # Never recapture at resume and reclassify old workspace state.
+                    baseline = unknown_write_baseline(self.write_policy)
+                else:
+                    try:
+                        validate_write_baseline(baseline, self.write_policy)
+                    except ValueError as exc:
+                        raise ContractError("Persisted run-write provenance baseline is invalid.") from exc
+                receipts = state.get("write_provenance_receipts", [])
+                try:
+                    validate_write_receipts(receipts, self.write_policy)
+                except ValueError as exc:
+                    raise ContractError("Persisted run-write provenance receipts are invalid.") from exc
+                state["write_provenance_baseline"] = baseline
+                state["write_provenance_receipts"] = receipts
             if expected_test_policy:
                 receipt = state.get("latest_test_execution_receipt")
                 if receipt is not None:
@@ -338,6 +364,11 @@ class Engine:
                 "completed_actions": [],
                 "core_snapshot": self.core_snapshot if self.core_snapshot is not None else self.catalog.core(),
             }
+            if self.write_policy is not None:
+                state["write_provenance_baseline"] = capture_write_baseline(
+                    self.workspace, self.write_policy
+                )
+                state["write_provenance_receipts"] = []
         if path.exists() and state.get("require_approvals"):
             # A persisted approval policy is sticky across process restarts;
             # callers cannot resume a gated run with approvals disabled.
@@ -351,6 +382,11 @@ class Engine:
 
         def checkpoint() -> None:
             nonlocal reservation
+            if self.write_policy is not None:
+                state["run_write_provenance"] = summarize_run_writes(
+                    self.workspace, self.write_policy,
+                    state["write_provenance_baseline"], state["write_provenance_receipts"],
+                )
             state["elapsed_seconds"] = round(
                 elapsed_before + time.monotonic() - started, 3
             )
@@ -388,6 +424,11 @@ class Engine:
                 "run_id": state["run_id"],
                 "test_execution_runs": state.get("test_execution_runs", 0),
             }
+            if self.write_policy is not None:
+                result["run_write_provenance"] = summarize_run_writes(
+                    self.workspace, self.write_policy,
+                    state["write_provenance_baseline"], state["write_provenance_receipts"],
+                )
             if self.write_policy is not None:
                 # Trusted, JSON-safe guidance for planning. Enforcement still uses
                 # the host-created WritePolicy instance attached only to worker context.
@@ -532,8 +573,30 @@ class Engine:
                     if not _valid_completed_actions(candidate):
                         raise ContractError("Backend returned an invalid or exhausted completed action history.")
                     completed.append(entry)
+                    if self.write_policy is not None:
+                        provenance_receipt = make_write_receipt(
+                            self.workspace, self.write_policy, entry
+                        )
+                        if provenance_receipt is not None:
+                            state.setdefault("write_provenance_receipts", []).append(provenance_receipt)
+                            try:
+                                validate_write_receipts(
+                                    state["write_provenance_receipts"], self.write_policy
+                                )
+                            except ValueError as exc:
+                                raise ContractError("Run-write provenance receipt history is invalid.") from exc
                     if entry.get("tool") in {"write_file", "edit_file"}:
                         state["latest_test_execution_receipt"] = None
+                    if self.write_policy is not None:
+                        updated_provenance = summarize_run_writes(
+                            self.workspace, self.write_policy,
+                            state["write_provenance_baseline"], state["write_provenance_receipts"],
+                        )
+                        state["run_write_provenance"] = updated_provenance
+                        visible_provenance = ctx.get("run_write_provenance")
+                        if isinstance(visible_provenance, dict):
+                            visible_provenance.clear()
+                            visible_provenance.update(updated_provenance)
                     checkpoint()
                 def begin_test_execution() -> None:
                     if self.test_execution_policy is None:

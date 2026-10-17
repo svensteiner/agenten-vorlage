@@ -12,7 +12,8 @@ from urllib.parse import parse_qs, urlsplit
 from unittest.mock import patch
 
 from agentkit.scaffold import create
-from cockpit.server import JobManager, ThreadingHTTPServer, make_handler
+from cockpit.conversations import Conversations
+from cockpit.server import Job, JobManager, ThreadingHTTPServer, make_handler
 
 try:
     from playwright.sync_api import sync_playwright
@@ -92,6 +93,215 @@ class BrowserReleaseTests(unittest.TestCase):
     @staticmethod
     def wait_until_connected(page) -> None:
         page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+
+    def _seed_completed_job(self, result: dict) -> str:
+        job_id = uuid.uuid4().hex
+        payload = {
+            "agent": str(self.agent),
+            "backend": "demo",
+            "workspace": str(self.workspace),
+            "task": "Host provenance display fixture",
+        }
+        self.manager.jobs[job_id] = Job(
+            job_id, payload, status="completed", result=result
+        )
+        return job_id
+
+    def test_write_provenance_separates_attributed_unmatched_and_legacy_changes(self):
+        unmatched_job = self._seed_completed_job({
+            "summary": "Model summary is not host evidence.",
+            "run_write_provenance": {
+                "status": "complete",
+                "baseline_status": "captured",
+                "changed_by_run": [],
+                "changed_without_matching_receipt": ["existing-before-run.py"],
+                "unknown_paths": [],
+                "unknown_path_count": 0,
+                "write_receipt_count": 0,
+            },
+        })
+        page, errors = self.new_page()
+        page.goto(f"{self.base_url}/?job={unmatched_job}", wait_until="domcontentloaded")
+        self.wait_until_connected(page)
+        provenance = page.locator("#writeProvenance")
+        provenance.wait_for(state="visible", timeout=5_000)
+        text = provenance.inner_text()
+        self.assertIn(
+            "Keine eigenen Schreibaktionen belegt; vorhandene Änderungen sind kein Implementierungsnachweis",
+            text,
+        )
+        self.assertIn("Unzugeordnete Änderungen", text)
+        self.assertIn("existing-before-run.py", text)
+        self.assertNotIn("Model summary", text)
+        self.assertEqual([], errors)
+
+        attributed_job = self._seed_completed_job({
+            "summary": "A file was updated.",
+            "run_write_provenance": {
+                "status": "complete",
+                "baseline_status": "captured",
+                "changed_by_run": ["content/updated.md"],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": [],
+                "unknown_path_count": 0,
+                "write_receipt_count": 1,
+            },
+        })
+        page.goto(f"{self.base_url}/?job={attributed_job}", wait_until="domcontentloaded")
+        provenance = page.locator("#writeProvenance")
+        page.wait_for_function(
+            "id => document.querySelector('#jobTask')?.textContent && location.search.includes(id)",
+            arg=attributed_job,
+        )
+        provenance.wait_for(state="visible", timeout=5_000)
+        self.assertIn("Änderungen, die diesem Lauf zugeordnet sind", provenance.inner_text())
+        self.assertIn("content/updated.md", provenance.inner_text())
+
+        legacy_job = self._seed_completed_job({"summary": "Older saved result."})
+        page.goto(f"{self.base_url}/?job={legacy_job}", wait_until="domcontentloaded")
+        provenance = page.locator("#writeProvenance")
+        provenance.wait_for(state="visible", timeout=5_000)
+        self.assertIn("Änderungsherkunft nicht belegt", provenance.inner_text())
+        self.assertNotIn("Schreibbelege: 0", provenance.inner_text())
+
+        unknown_job = self._seed_completed_job({
+            "summary": "Unknown provenance fixture.",
+            "run_write_provenance": {
+                "status": "unknown",
+                "baseline_status": "unknown",
+                "changed_by_run": [],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": [],
+                "unknown_path_count": 3,
+                "write_receipt_count": 0,
+            },
+        })
+        page.goto(f"{self.base_url}/?job={unknown_job}", wait_until="domcontentloaded")
+        provenance = page.locator("#writeProvenance")
+        provenance.wait_for(state="visible", timeout=5_000)
+        self.assertIn("Änderungsherkunft nicht belegt", provenance.inner_text())
+        self.assertIn("Unbekannte Pfade: 3", provenance.inner_text())
+        self.assertEqual([], errors)
+
+    def test_write_provenance_renders_paths_as_text_and_is_hidden_in_public_ui(self):
+        path = "<img src=x onerror=alert(1)>"
+        job_id = self._seed_completed_job({
+            "summary": "Host evidence fixture.",
+            "run_write_provenance": {
+                "status": "partial",
+                "baseline_status": "partial",
+                "changed_by_run": [path],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": ["unclassified/file.py"],
+                "unknown_path_count": 2,
+                "write_receipt_count": 1,
+            },
+        })
+        page, errors = self.new_page()
+        page.goto(f"{self.base_url}/?job={job_id}", wait_until="domcontentloaded")
+        self.wait_until_connected(page)
+        provenance = page.locator("#writeProvenance")
+        provenance.wait_for(state="visible", timeout=5_000)
+        self.assertIn(path, provenance.inner_text())
+        self.assertIn("Unbekannte Pfade: 2", provenance.inner_text())
+        self.assertEqual(0, provenance.locator("img").count())
+
+        # Simulate a public configuration paired with an overbroad response;
+        # the UI must still keep host-only details hidden.
+        def public_config(route):
+            response = route.fetch()
+            config = response.json()
+            config["public_multiuser"] = True
+            route.fulfill(response=response, json=config)
+
+        page.route("**/api/config", public_config)
+        raw = page.request.get(f"{self.base_url}/api/jobs/{job_id}").json()
+        self.assertIn("run_write_provenance", raw["result"])
+        page.goto(f"{self.base_url}/?job={job_id}", wait_until="domcontentloaded")
+        page.locator("#workspaceTopbar").get_by_text("Öffentlicher Arbeitsbereich").wait_for(timeout=5_000)
+        self.assertTrue(page.locator("#writeProvenance").evaluate("node => node.hidden"))
+        self.assertNotIn(path, page.locator("body").inner_text())
+        self.assertEqual([], errors)
+
+    def test_persisted_conversation_shows_host_provenance_separately(self):
+        conversations = Conversations(self.manager)
+        conversation = conversations.create({
+            "request_id": uuid.uuid4().hex,
+            "title": "Provenance chat fixture",
+            "agent": str(self.agent),
+            "workspace": str(self.workspace),
+            "backend": "demo",
+        })
+        conversation_id = conversation["id"]
+        conversations.send(conversation_id, {
+            "content": "A conversation with write evidence",
+            "request_id": uuid.uuid4().hex,
+            "run_write_provenance": {
+                "status": "complete",
+                "baseline_status": "captured",
+                "changed_by_run": ["forged.txt"],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": [],
+                "unknown_path_count": 0,
+                "write_receipt_count": 99,
+            },
+        })
+        turn_id = conversations.get(conversation_id)["messages"][0]["id"]
+        job = self.manager.get(turn_id)
+        job.thread.join(10)
+        job.result["run_write_provenance"] = {
+            "status": "complete",
+            "baseline_status": "captured",
+            "changed_by_run": ["content/conversation.md"],
+            "changed_without_matching_receipt": [],
+            "unknown_paths": [],
+            "unknown_path_count": 0,
+            "write_receipt_count": 1,
+        }
+        self.manager._persist(job)
+
+        page, errors = self.new_page()
+        page.add_init_script(
+            f"sessionStorage.setItem('ai-studio-chat-current', {json.dumps(conversation_id)})"
+        )
+        page.goto(self.base_url + "/chat", wait_until="domcontentloaded")
+        page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+        note = page.locator(".message.assistant .write-provenance")
+        note.wait_for(state="visible", timeout=5_000)
+        self.assertIn("content/conversation.md", note.inner_text())
+        self.assertIn("diesem Lauf zugeordnet", note.inner_text())
+        user_message = page.locator(".message.user")
+        self.assertNotIn("write-provenance", user_message.get_attribute("class"))
+        self.assertNotIn("forged.txt", page.locator("#transcript").inner_text())
+        self.assertEqual([], errors)
+
+    def test_job_provenance_rejects_unbounded_metadata_as_unknown(self):
+        cases = [
+            {"changed_by_run": [f"src/file-{index}.py" for index in range(65)]},
+            {"changed_by_run": ["x" * 501]},
+            {"write_receipt_count": 49},
+            {"unknown_path_count": 65},
+        ]
+        page, errors = self.new_page()
+        for invalid_fields in cases:
+            provenance = {
+                "status": "complete",
+                "baseline_status": "captured",
+                "changed_by_run": [],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": [],
+                "unknown_path_count": 0,
+                "write_receipt_count": 0,
+                **invalid_fields,
+            }
+            job_id = self._seed_completed_job({"run_write_provenance": provenance})
+            page.goto(f"{self.base_url}/?job={job_id}", wait_until="domcontentloaded")
+            panel = page.locator("#writeProvenance")
+            panel.wait_for(state="visible", timeout=5_000)
+            self.assertIn("Änderungsherkunft nicht belegt", panel.inner_text())
+            self.assertNotIn("Schreibbelege:", panel.inner_text())
+            self.assertNotIn("src/file-0.py", panel.inner_text())
+        self.assertEqual([], errors)
 
     def test_provider_settings_switches_to_anthropic_without_console_errors(self):
         page, errors = self.new_page()

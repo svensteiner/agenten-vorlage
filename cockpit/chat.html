@@ -104,6 +104,9 @@
       .bubble { padding: 13px 15px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
       .user .bubble { border-color: #3d4936; background: #273024; }
       .bubble p { margin: 0; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+      .write-provenance { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+      .write-provenance ul { margin: 4px 0 8px; padding-left: 20px; }
+      .write-provenance p + p { margin-top: 5px; }
       .message-meta { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; color: var(--muted); font-size: 11px; }
       .message-status { color: var(--accent); }
       .message-status.blocked, .message-status.error { color: var(--red); }
@@ -695,6 +698,65 @@
         showNotice("Diese Übermittlung wurde unterbrochen. Die ursprüngliche Nachricht ist vorbereitet; sie wird erst nach deiner ausdrücklichen Aktion mit derselben ID erneut gesendet.");
         lockUi(); $("message").focus();
       }
+      function renderWriteProvenance(message) {
+        const panel = el("section", undefined, "write-provenance");
+        panel.setAttribute("aria-label", "Host-Nachweis für Schreibaktionen");
+        panel.append(el("strong", "Host-Nachweis für Schreibaktionen"));
+        const provenance = message.run_write_provenance;
+        if (!provenance || typeof provenance !== "object" || Array.isArray(provenance)) {
+          panel.append(el("p", "Änderungsherkunft nicht belegt"));
+          return panel;
+        }
+        const validLists = [
+          "changed_by_run", "changed_without_matching_receipt", "unknown_paths",
+        ].every((key) => Array.isArray(provenance[key])
+          && provenance[key].length <= 64
+          && provenance[key].every((path) =>
+            typeof path === "string" && path.trim() && path.length <= 500));
+        const validCounts = Number.isSafeInteger(provenance.write_receipt_count)
+          && provenance.write_receipt_count >= 0
+          && provenance.write_receipt_count <= 48
+          && Number.isSafeInteger(provenance.unknown_path_count)
+          && provenance.unknown_path_count >= 0
+          && provenance.unknown_path_count <= 64;
+        const statuses = new Set(["complete", "partial", "unknown"]);
+        const baselines = new Set(["captured", "partial", "unknown"]);
+        if (!validLists || !validCounts) {
+          panel.append(el("p", "Änderungsherkunft nicht belegt"));
+          return panel;
+        }
+        const status = statuses.has(provenance.status) ? provenance.status : "unknown";
+        const baseline = baselines.has(provenance.baseline_status)
+          ? provenance.baseline_status : "unknown";
+        const attributed = provenance.changed_by_run.slice(0, 10);
+        const unmatched = provenance.changed_without_matching_receipt.slice(0, 10);
+        const unknown = provenance.unknown_paths.slice(0, 10);
+        if (status === "unknown" || baseline === "unknown") {
+          panel.append(el("p", "Änderungsherkunft nicht belegt"));
+        } else if (provenance.write_receipt_count === 0 && baseline === "captured" && !attributed.length) {
+          panel.append(el("p", "Keine eigenen Schreibaktionen belegt; vorhandene Änderungen sind kein Implementierungsnachweis"));
+        } else if (status === "partial" || baseline === "partial") {
+          panel.append(el("p", "Erfassungsstatus: teilweise gemeldet"));
+        } else {
+          panel.append(el("p", "Erfassungsstatus: vollständig gemeldet"));
+        }
+        const baselineLabel = { captured: "erfasst", partial: "teilweise erfasst", unknown: "unbekannt" }[baseline];
+        panel.append(el("p", `Baseline: ${baselineLabel} · Schreibbelege: ${provenance.write_receipt_count}`));
+        const appendPaths = (label, paths, total) => {
+          if (!paths.length) return;
+          panel.append(el("p", label));
+          const list = el("ul");
+          for (const path of paths) list.append(el("li", path));
+          if (total > paths.length) list.append(el("li", `Weitere Pfade nicht angezeigt (${total - paths.length}).`));
+          panel.append(list);
+        };
+        appendPaths("Änderungen, die diesem Lauf zugeordnet sind:", attributed, provenance.changed_by_run.length);
+        appendPaths("Unzugeordnete Änderungen:", unmatched, provenance.changed_without_matching_receipt.length);
+        if (provenance.unknown_path_count > 0 || unknown.length > 0)
+          panel.append(el("p", `Unbekannte Pfade: ${provenance.unknown_path_count}`));
+        appendPaths("Unbekannte Pfadbeispiele:", unknown, provenance.unknown_path_count);
+        return panel;
+      }
       function renderTranscript(messages) {
         const transcript = $("transcript"); transcript.replaceChildren();
         for (const message of messages || []) {
@@ -706,6 +768,8 @@
           if (message.created_at) meta.append(el("time", new Date(message.created_at).toLocaleString("de-AT", { dateStyle: "short", timeStyle: "short" })));
           const content = el("p", message.content || (BUSY.has(message.status) ? "Auftrag läuft …" : ""));
           bubble.append(meta, content);
+          if (message.role !== "user" && !state.publicMode)
+            bubble.append(renderWriteProvenance(message));
           if (Array.isArray(message.attachments) && message.attachments.length) {
             const files = el("div", undefined, "message-attachments");
             for (const attachment of message.attachments) {

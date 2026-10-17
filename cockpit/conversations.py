@@ -20,6 +20,9 @@ _PUBLIC_TEXT_EXTENSIONS = frozenset({
     "txt", "md", "csv", "json", "yaml", "yml", "log", "py", "js", "ts",
     "tsx", "jsx", "html", "css", "sql", "xml", "toml",
 })
+_MAX_PROVENANCE_PATHS = 64
+_MAX_PROVENANCE_PATH_CHARS = 500
+_MAX_PROVENANCE_RECEIPTS = 48
 
 
 def identifier(value: Any) -> str:
@@ -190,6 +193,51 @@ class Conversations:
             raise ContractError("Message identity belongs to another conversation.")
         return job
 
+    @staticmethod
+    def _write_provenance(snapshot: dict | None) -> dict | None:
+        """Project only the host provenance fields from a trusted job snapshot."""
+        result = snapshot.get("result") if isinstance(snapshot, dict) else None
+        provenance = result.get("run_write_provenance") if isinstance(result, dict) else None
+        if not isinstance(provenance, dict):
+            return None
+        statuses = {"complete", "partial", "unknown"}
+        baselines = {"captured", "partial", "unknown"}
+        list_keys = (
+            "changed_by_run", "changed_without_matching_receipt", "unknown_paths"
+        )
+        if (
+            not isinstance(provenance.get("status"), str)
+            or provenance["status"] not in statuses
+            or not isinstance(provenance.get("baseline_status"), str)
+            or provenance["baseline_status"] not in baselines
+            or any(
+                not isinstance(provenance.get(key), list)
+                or len(provenance[key]) > _MAX_PROVENANCE_PATHS
+                or any(not isinstance(path, str) or not path.strip() for path in provenance[key])
+                or any(len(path) > _MAX_PROVENANCE_PATH_CHARS for path in provenance[key])
+                for key in list_keys
+            )
+            or any(
+                not isinstance(provenance.get(key), int)
+                or isinstance(provenance.get(key), bool)
+                or provenance[key] < 0
+                or provenance[key] > (
+                    _MAX_PROVENANCE_RECEIPTS
+                    if key == "write_receipt_count"
+                    else _MAX_PROVENANCE_PATHS
+                )
+                for key in ("unknown_path_count", "write_receipt_count")
+            )
+        ):
+            return None
+        return {
+            "status": provenance["status"],
+            "baseline_status": provenance["baseline_status"],
+            **{key: copy.deepcopy(provenance[key]) for key in list_keys},
+            "unknown_path_count": provenance["unknown_path_count"],
+            "write_receipt_count": provenance["write_receipt_count"],
+        }
+
     def get(self, conversation_id: str) -> dict:
         with self._lock:
             value = self._read(conversation_id)
@@ -211,7 +259,11 @@ class Conversations:
                     answer = (snapshot.get("result") or {}).get("summary") or snapshot.get("error") or "Kein Ergebnis vorhanden."
                 else:
                     answer = turn.get("error") or "Übermittlung unterbrochen. Die ursprüngliche Nachricht mit derselben request_id erneut senden; kein automatischer Neustart."
-                result["messages"].append({**common, "role": "assistant", "content": answer})
+                assistant_message = {**common, "role": "assistant", "content": answer}
+                provenance = self._write_provenance(snapshot)
+                if provenance is not None:
+                    assistant_message["run_write_provenance"] = provenance
+                result["messages"].append(assistant_message)
             return result
 
     def send(self, conversation_id: str, payload: dict) -> dict:

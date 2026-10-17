@@ -123,6 +123,105 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(job.result["summary"], snapshot["messages"][1]["content"])
         self.assertEqual("completed", snapshot["messages"][1]["status"])
 
+    def test_assistant_host_provenance_comes_from_job_snapshot_and_survives_restore(self):
+        forged = {"status": "complete", "write_receipt_count": 99}
+        self.conversations.send(
+            self.cid,
+            {"content": "Check provenance binding", "request_id": "2" * 32,
+             "run_write_provenance": forged},
+        )
+        job = self.manager.get("2" * 32)
+        job.thread.join(10)
+        provenance = {
+            "status": "complete",
+            "baseline_status": "captured",
+            "changed_by_run": ["content/result.md"],
+            "changed_without_matching_receipt": [],
+            "unknown_paths": [],
+            "unknown_path_count": 0,
+            "write_receipt_count": 1,
+        }
+        job.result["run_write_provenance"] = provenance
+        self.manager._persist(job)
+
+        restored = Conversations(JobManager(self.root)).get(self.cid)["messages"]
+        self.assertNotIn("run_write_provenance", restored[0])
+        self.assertEqual(provenance, restored[1]["run_write_provenance"])
+
+    def test_oversized_provenance_is_dropped_instead_of_truncated(self):
+        valid = {
+            "status": "complete",
+            "baseline_status": "captured",
+            "changed_by_run": [],
+            "changed_without_matching_receipt": [],
+            "unknown_paths": [],
+            "unknown_path_count": 0,
+            "write_receipt_count": 0,
+        }
+        cases = (
+            {"changed_by_run": ["src/file.py"] * 65},
+            {"changed_by_run": ["x" * 501]},
+            {"write_receipt_count": 49},
+            {"unknown_path_count": 65},
+        )
+        for changes in cases:
+            with self.subTest(changes=tuple(changes)):
+                payload = {**valid, **changes}
+                snapshot = {"result": {"run_write_provenance": payload}}
+                self.assertIsNone(Conversations._write_provenance(snapshot))
+
+    def test_public_conversation_never_exposes_host_provenance(self):
+        public_root = self.root / "public"
+        workspace_root = public_root / "workspaces"
+        (workspace_root / "default").mkdir(parents=True)
+        manager = JobManager(
+            self.root,
+            state_dir=public_root / "state",
+            public_mode=True,
+            workspace_root=workspace_root,
+        )
+        conversations = Conversations(manager)
+        conversation = conversations.create({
+            "request_id": "8" * 32,
+            "title": "Public provenance fixture",
+            "agent": "assistant",
+            "workspace": "default",
+            "backend": "demo",
+        })
+        conversations.send(conversation["id"], {
+            "content": "Public fixture run",
+            "request_id": "9" * 32,
+            "run_write_provenance": {
+                "status": "complete",
+                "baseline_status": "captured",
+                "changed_by_run": ["forged.txt"],
+                "changed_without_matching_receipt": [],
+                "unknown_paths": [],
+                "unknown_path_count": 0,
+                "write_receipt_count": 1,
+            },
+        })
+        job = manager.get("9" * 32)
+        job.thread.join(10)
+        job.result["run_write_provenance"] = {
+            "status": "complete",
+            "baseline_status": "captured",
+            "changed_by_run": ["private/path.txt"],
+            "changed_without_matching_receipt": [],
+            "unknown_paths": [],
+            "unknown_path_count": 0,
+            "write_receipt_count": 1,
+        }
+        manager._persist(job)
+
+        messages = conversations.get(conversation["id"])["messages"]
+        self.assertNotIn("run_write_provenance", messages[0])
+        self.assertNotIn("run_write_provenance", messages[1])
+        self.assertNotIn("private/path.txt", json.dumps(messages))
+        for item in manager.recent(1000):
+            if item.thread:
+                item.thread.join(10)
+
     def test_existing_task_id_cannot_be_claimed_by_conversation(self):
         payload = {key: value for key, value in self.payload.items() if key not in {"title", "request_id"}}
         job = self.manager.start({**payload, "task": "Ordinary task", "request_id": "2" * 32})

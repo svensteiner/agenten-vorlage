@@ -642,6 +642,10 @@
                   <div class="eyebrow">Ergebnis & Fortschritt</div>
                   <div id="summary" class="summary"></div>
                 </div>
+                <section id="writeProvenance" class="card" hidden aria-labelledby="writeProvenanceTitle">
+                  <h2 id="writeProvenanceTitle">Host-Nachweis für Schreibaktionen</h2>
+                  <div id="writeProvenanceBody" aria-live="polite"></div>
+                </section>
                 <section id="approvalCard" class="approval-card card" hidden aria-labelledby="approvalTitle">
                   <h2 id="approvalTitle">Freigabe erforderlich</h2>
                   <p class="approval-intro">Der Auftrag wartet auf deine Entscheidung für diese konkrete Tool-Aktion:</p>
@@ -1189,6 +1193,122 @@
         wrap.append(el("dt", label), el("dd", value || "—"));
         $("dossier").append(wrap);
       }
+      function renderWriteProvenance(job) {
+        const section = $("writeProvenance");
+        const body = $("writeProvenanceBody");
+        body.replaceChildren();
+        section.hidden = true;
+        if (state.publicMode) return;
+
+        section.hidden = false;
+        const provenance = job.result?.run_write_provenance;
+        if (!provenance || typeof provenance !== "object" || Array.isArray(provenance)) {
+          body.append(el("p", "Änderungsherkunft nicht belegt"));
+          return;
+        }
+
+        const knownStatuses = new Set(["complete", "partial", "unknown"]);
+        const knownBaselines = new Set(["captured", "partial", "unknown"]);
+        const requiredArrays = [
+          "changed_by_run",
+          "changed_without_matching_receipt",
+          "unknown_paths",
+        ];
+        const countsValid =
+          Number.isSafeInteger(provenance.write_receipt_count)
+          && provenance.write_receipt_count >= 0
+          && provenance.write_receipt_count <= 48
+          && Number.isSafeInteger(provenance.unknown_path_count)
+          && provenance.unknown_path_count >= 0
+          && provenance.unknown_path_count <= 64;
+        if (
+          !requiredArrays.every(
+            (key) =>
+              Array.isArray(provenance[key])
+              && provenance[key].length <= 64
+              && provenance[key].every((path) =>
+                typeof path === "string" && path.trim() && path.length <= 500,
+              ),
+          )
+          || !countsValid
+        ) {
+          body.append(el("p", "Änderungsherkunft nicht belegt"));
+          return;
+        }
+        const status = knownStatuses.has(provenance.status)
+          ? provenance.status
+          : "unknown";
+        const baseline = knownBaselines.has(provenance.baseline_status)
+          ? provenance.baseline_status
+          : "unknown";
+        const receiptCount = provenance.write_receipt_count;
+        const unknownCount = provenance.unknown_path_count;
+        const paths = (value) => value.filter((path) => path.trim()).slice(0, 10);
+        const attributed = paths(provenance.changed_by_run);
+        const unmatched = paths(provenance.changed_without_matching_receipt);
+        const unknown = paths(provenance.unknown_paths);
+
+        if (status === "unknown" || baseline === "unknown") {
+          body.append(el("p", "Änderungsherkunft nicht belegt"));
+        } else if (receiptCount === 0 && baseline === "captured" && !attributed.length) {
+          body.append(
+            el(
+              "p",
+              "Keine eigenen Schreibaktionen belegt; vorhandene Änderungen sind kein Implementierungsnachweis",
+            ),
+          );
+        } else if (status === "partial" || baseline === "partial") {
+          body.append(el("p", "Erfassungsstatus: teilweise gemeldet"));
+        } else {
+          body.append(el("p", "Erfassungsstatus: vollständig gemeldet"));
+        }
+
+        const baselineLabel = {
+          captured: "erfasst",
+          partial: "teilweise erfasst",
+          unknown: "unbekannt",
+        }[baseline];
+        body.append(el("p", `Baseline: ${baselineLabel}`));
+        body.append(el("p", `Schreibbelege: ${receiptCount}`));
+        if (attributed.length) {
+          body.append(el("p", "Änderungen, die diesem Lauf zugeordnet sind:"));
+          const list = el("ul");
+          for (const path of attributed) list.append(el("li", path));
+          if (provenance.changed_by_run.length > attributed.length) {
+            list.append(
+              el(
+                "li",
+                `Weitere Pfade nicht angezeigt (${provenance.changed_by_run.length - attributed.length}).`,
+              ),
+            );
+          }
+          body.append(list);
+        }
+        if (unmatched.length) {
+          body.append(el("p", "Unzugeordnete Änderungen:"));
+          const list = el("ul");
+          for (const path of unmatched) list.append(el("li", path));
+          if (provenance.changed_without_matching_receipt.length > unmatched.length) {
+            list.append(
+              el(
+                "li",
+                `Weitere Pfade nicht angezeigt (${provenance.changed_without_matching_receipt.length - unmatched.length}).`,
+              ),
+            );
+          }
+          body.append(list);
+        }
+        if (unknownCount > 0 || unknown.length > 0) {
+          body.append(el("p", `Unbekannte Pfade: ${unknownCount}`));
+        }
+        if (unknown.length) {
+          const list = el("ul");
+          for (const path of unknown) list.append(el("li", path));
+          if (unknownCount > unknown.length)
+            list.append(el("li", `Weitere Pfade nicht angezeigt (${unknownCount - unknown.length}).`));
+          body.append(list);
+        }
+      }
       function workflowNodes(job) {
         const history = Array.isArray(job.result?.history) ? job.result.history : [];
         const roleNames = { developer: "Umsetzung", reviewer: "Prüfung", planner: "Planung", researcher: "Recherche", writer: "Redaktion", finish: "Abschluss", blocked: "Klärung" };
@@ -1260,6 +1380,7 @@
           (busy(job)
             ? "Dein Assistent arbeitet. Neue Schritte erscheinen hier automatisch."
             : "Für diesen Lauf liegt noch keine Zusammenfassung vor.");
+        renderWriteProvenance(job);
         renderApproval(job);
         renderWorkflowTrace(job);
         $("dossier").replaceChildren();
