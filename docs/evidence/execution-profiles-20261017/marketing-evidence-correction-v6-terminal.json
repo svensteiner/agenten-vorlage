@@ -1,0 +1,38 @@
+{
+  "schema": "agentkit-real-model-trial-terminal/v1",
+  "run_id": "f599a148f9894114bbd1cb30f080b846",
+  "status": "not_qualified",
+  "engine_status": "blocked",
+  "engine_summary": "ContractError: Host phase runner differs from the operator-pinned implementation.",
+  "steps": 4,
+  "failures": 2,
+  "changed_workspace_paths": [
+    "tests/unit/test_source_faithfulness_evidence_v2.py",
+    "tests/unit/test_source_qualification_transport.py"
+  ],
+  "changed_paths_outside_allowlist": [],
+  "runtime_files_changed": [],
+  "production_file_changed": false,
+  "production_write_proven": false,
+  "separate_reviewed": false,
+  "preparation_error": {
+    "pinned_host_runner_sha256": "157a92611cd6a6b1fbce5a5a770afdb14ffae53bda3941de9670ef5d7c77b5a3",
+    "actual_host_runner_sha256": "3d18c5d7dba059eaac9a4710fed125b6bc865ad5bd2006eec5b7ddb598f429f1",
+    "cause": "Preparation pinned launcher digest instead of host phase runner digest. Runtime integrity check correctly rejected the mismatch."
+  },
+  "operator_code_intervention_during_run": false,
+  "replay_permitted": false,
+  "live_marketingbot_changed": false,
+  "marketing_quality_qualification": false,
+  "production_qualification": false,
+  "evidence_sha256": {
+    "preparation.json": "9a44990df4ce7f399ca8b08b13e09dd9f9fa27ac7e054c5e2227d2386df028c7",
+    "operator-policy.json": "9ea67b8f698dcc6ea3762d6d368a3a663c02ce4aadd29a70ff252b9a57504968",
+    "runtime-release.json": "be30fccf08d7671a4fc3b08789829ca98f52af756687ae427f4e98eeb1b1a482",
+    "independent-preflight.json": "0061e3f537d0489b93be4f5884d0c472cff90f8a7901996f28d1da0bedb76371",
+    "root-authorization.json": "a532be31c762d984a948522e76d46a74dbf0fa0cc7ca469e8f8798cf59ba5fa4",
+    "dispatch.json": "62c0a587f990c53be956273e7d2f6bc5b347bbffae7e8c8daadff455864bbf8e",
+    "terminal-result.json": "47983511aa9f709689762891ddc099fb4dbd68226becf286fd61efa110ba908d",
+    "post-engine-integrity.json": "45aab6c467bdb858702467be2f6fcd2af1d880eb9c5e7e10f48648c814311d66"
+  }
+}
