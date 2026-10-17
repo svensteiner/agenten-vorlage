@@ -1,0 +1,26 @@
+{
+  "scope": "partial sealed semantic v7 evaluation; no semantic or production acceptance",
+  "status": "transport_stopped",
+  "candidate_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+  "helper_sha256": "c430d93d8f75d2c30792e3916678a3b90a254b8092e022afea22d8f1227617e3",
+  "helper_integrity": "Root external exact hash guard executed immediately before BOTH offline prepare and one-shot run; no wrapper self-pin in prepared record",
+  "case_count": 12,
+  "case_status_counts": {
+    "rejected": 1,
+    "error": 1,
+    "not_run_after_transport_stop": 10
+  },
+  "physical_requests": 4,
+  "purpose_calls": {
+    "review": 3,
+    "repair": 1
+  },
+  "known_provider_cost_usd": "0.006287",
+  "unknown_outcomes": 0,
+  "unknown_costs": 0,
+  "failure_classification": "All four requests completed HTTP200 with usage and cost. First case rejected after repair; second reply rejected by qualifier as invalid_response. Global transport_stopped is inherited wrapper terminology, not proof of network failure. Ten cases unrun.",
+  "private_result_sha256": "c770b69a50f5aeea728cdd3e0a26d34e99fc92eb2fd339c82b3651a5bccf734b",
+  "diagnostics_sha256": "bf5cd43da83c4361f2556d8007cd06f3a35a400e3f714eac7be6fa9f42cb27cb",
+  "production_qualified": false,
+  "promoted": false
+}

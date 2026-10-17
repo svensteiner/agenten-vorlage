@@ -196,3 +196,15 @@ promoviert. Weitere Worker meldeten weiter faelschlich fehlende Hostaktionen.
 Die erfolgreiche kleine Leseprobe belegt deshalb keinen stabilen Gesamtworkflow.
 [Originalstatus und Pruefsummen](docs/evidence/host-observations-20261017/native-task-protocol-attempt.json).
 Eine getrennte begrenzte Modellgegenprobe ist der naechste Schritt.
+
+## Neue Inhaltspruefung: keine fachliche Abnahme
+
+Der unabhaengig gepruefte Coding-Kandidat eaa2829 wurde einmalig gegen den neuen,
+vorab getrennt beurteilten Zwölf-Faelle-Satz geprueft. Vier HTTP-200-Antworten mit
+vollstaendiger Verbrauchs-/Kostentelemetrie kosteten gemeldet 0,006287 US-Dollar.
+Ein Fall blieb nach Reparatur abgelehnt; der naechste wurde vom strengen lokalen
+Pruefer als invalid_response zurueckgewiesen. Danach stoppte der geerbte Runner
+unter dem Status transport_stopped; zehn Faelle wurden nicht ausgefuehrt.
+Es gab keinen unbekannten Netzwerkausgang. Kein Replay, keine Regel-Lockerung,
+keine semantische Abnahme oder Promotion in den laufenden Marketingbot.
+[Ergebnis und Aussagegrenzen](docs/evidence/host-observations-20261017/semantic-v7-partial.json).
