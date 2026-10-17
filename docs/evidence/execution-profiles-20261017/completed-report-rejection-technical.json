@@ -1,0 +1,62 @@
+{
+  "schema": "completed-report-rejection-technical-qualification/v1",
+  "status": "offline_core_and_ui_projection_review_passed",
+  "behavior": "Normally returned Codex reports rejected by schema or lexical artifact validation yield a typed bounded host observation for replanning. No worker replay or report acceptance; unknown backend failures remain blocked.",
+  "core_sha256": {
+    "agentkit/backends.py": "fa15c4e00c6348af4a68f02f80047f573777bb7ea359a2e2c69119ff7f303a78",
+    "agentkit/contracts.py": "abb3d524277fc78efc3d6932e1d7ceb452a98f631cfaf995ebb79dd916adf966",
+    "agentkit/engine.py": "0bd896dfbb46e5c71e6637adc4146136157c359e31f92c430bfac24a23827033",
+    "tests/test_completed_report_rejection.py": "84b73c8af30d0eb85538ad9554535700820c7a870f061a508f643cac7b8448f0"
+  },
+  "ui_sha256": {
+    "cockpit/index.html": "793c7f8fac8de809177366b4e669d2230c6a38af0a4885e69d591c904af90e24",
+    "scripts/test_workflow_trace.cjs": "68ed8ddbaa3c90789eabf403d7c096dcf98ccbd740c808dbbee9457629421b6c"
+  },
+  "checks": {
+    "focused": {
+      "run": 29,
+      "failed": 0,
+      "seconds": 22.251
+    },
+    "full_python": {
+      "run": 584,
+      "skipped": 4,
+      "failed": 0,
+      "seconds": 287.9
+    },
+    "release": {
+      "passed": 32,
+      "failed": 0,
+      "offline_only": true,
+      "model_tested": false
+    },
+    "workflow_projection": {
+      "measured_scenarios": 13,
+      "failed": 0
+    },
+    "ruff": "passed for four reviewed Python files"
+  },
+  "artifacts_sha256": {
+    "focused.log": "e19481c94e77de2c4e522ce1760a0b2186357f9d495b66fe121d893afbb80167",
+    "full.log": "a84a841e6405272d6744d86a76f08f7d76a423d2d11e7228abf950eeff2fd6b5",
+    "release-root.log": "11af05e78e5920b8c57c07dc8b11fa0830027ca865868f5533e424c950075699",
+    "green.log": "fc0f8b0cd2572f3f082033cf82a852be5bbc32fe461320e1c6fc37a4b4c954c8",
+    "independent-review.json": "a93573af5f76524c19ca6d1dc34de7a7b52c2fffe3660bd7a392f024969005c4",
+    "ui-independent-review.json": "7df15c8772f16fb460bb04b10436261b08259ba2d44c39c579acb5ac5904bda1"
+  },
+  "behavior_red_log_sha256": "c6f52696b185355fb80349bbbfbf30c9eaa3065366b69cf4e33a2503d80be994",
+  "behavior_red": {
+    "run": 11,
+    "failed": 4,
+    "setup_import_error_not_counted": true
+  },
+  "limits": [
+    "No real model or provider recovery trial; this is offline technical evidence.",
+    "The new UI projection was verified separately using its actual HTML function; the Python browser portion ran before the small UI edit. No new UI-browser acceptance claimed.",
+    "Generic backend artifact failures and uncertain transport/execute errors keep the original conservative in-flight behavior.",
+    "Later Engine filesystem artifact checks remain unchanged; this signal classifies completed Codex schema and lexical-path rejection only.",
+    "Codex structured output is bounded to 200000 bytes; arbitrary future backends must enforce their own output limits before reuse.",
+    "Frozen prior trial7cb remains blocked; no retroactive acceptance or replay.",
+    "Marketing protocol defects and actual content quality remain open."
+  ]
+}

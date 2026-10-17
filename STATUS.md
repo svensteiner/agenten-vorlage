@@ -45,9 +45,13 @@ Nur zwei Testdateien wurden geaendert, kein Produktionscode. Vier neue Tests
 schlugen fehl; drei ValueError-Ausgaenge erfuellten den geforderten Assertion-
 RED-Nachweis nicht. Runtime, Launcher und Paket blieben unveraendert. Der
 Bericht wurde vor seiner Speicherung abgelehnt; der Checkpoint bleibt
-unbekannt und wird nicht wiederholt. Die Engine muss solche zurueckgegebenen,
-aber ungueltigen Berichte von unterbrochenen Aufrufen unterscheiden koennen,
-ohne Artefaktschutz oder Wiederholungssperren aufzuweichen.
+unbekannt und wird nicht wiederholt. Der [eng begrenzte Berichtspfad](docs/evidence/execution-profiles-20261017/completed-report-rejection-technical.json)
+ist nun offline und unabhaengig geprueft: 29 gezielte Tests, 584 Gesamttests
+mit vier Skips und ohne Fehler sowie 32 Releasepruefungen. Die getrennt
+gepruefte Workflow-Anzeige besteht 13 gezaehlte Szenarien. Nur ein normal
+zurueckgegebener, abgelehnter Codex-Bericht wird zur Planerbeobachtung; unsichere
+Backend-Ausgaenge bleiben gesperrt. Die neue Runtime muss sich im naechsten
+echten Coding-Lauf noch bewaehren.
 
 Die [frische RSS-Abnahme](docs/evidence/execution-profiles-20261017/marketing-rss-v16-prospective.json)
 ist unabhaengig auf Quellen und sichtbare Goldlabels geprueft, aber noch ohne
@@ -71,7 +75,7 @@ Die Diagnose veraendert keine Modellantwort oder Freigabe.
 | Echter Cockpit-Lauf | [UI-Profillauf](docs/evidence/execution-profiles-20261017/real-ui-profile-trial.json): 79 Tests und Review, aber keine eigene Quellaenderung. Modellberichte schreiben einen vorhandenen Diff falsch dem neuen Lauf zu. |
 | Inhaltspruefung Haiku | [v7, alle zwoelf Faelle](docs/evidence/host-observations-20261017/semantic-v7-complete-accounting.json): vier akzeptiert, vier abgelehnt, vier Protokollfehler. Blindpruefung beanstandet zwei der vier akzeptierten Texte; ein weiterer bleibt mehrdeutig. Keine Freigabe. |
 | Modell-Gegenprobe Sonnet | [v8, unvollstaendig](docs/evidence/host-observations-20261017/semantic-v8-model-partial.json): vier akzeptiert, ein Fehler, sieben ungeprueft. Zwei akzeptierte Texte nicht vollstaendig gestuetzt; drei Mehrdeutigkeitsbefunde ueberlappen diese Bewertungen. Kein frischer Holdout oder Qualitaetsgewinn belegt. |
-| Letzter gepruefter Technikstand | Commit `2321d7b`: 561 Tests bestanden, vier Skips, 24 Offline-Releasepruefungen, 81 % Coverage mit Branch-Messung; alle sieben CI-Jobs im Lauf `39012516342` erfolgreich. Gilt nicht automatisch fuer spaetere Aenderungen. |
+| Letzter separat gepruefter Technikstand | Commit `ab73926`: 570 Gesamttests ausgefuehrt, vier Skips, 31 Offline-Releasepruefungen; alle sieben CI-Jobs im Lauf `39030502612` erfolgreich. [Begrenzte Codex-Berichtsausgabe](docs/evidence/execution-profiles-20261017/codex-console-capture-technical.json). Spaetere Runtime-Aenderungen sind darin nicht enthalten. |
 | Aenderungsnachweise | Host erfasst Ausgangshashes und abgeschlossene Schreibaktionen getrennt. Nicht zuordenbare Aenderungen und fehlende Nachweise bleiben explizit unbekannt; separate Anzeige in Auftrag und Dialog. Unabhaengige Reviews abgeschlossen; kombinierte technische Pruefung: 554 bestanden, vier Skips, 81 % Coverage mit Branch-Messung und 21 Offline-Releasepruefungen. [Quellhashes und Grenzen](docs/evidence/host-observations-20261017/provenance-technical-qualification.json). [Echte Gegenproben](docs/evidence/execution-profiles-20261017/paired-provenance-trial.json): A meldet korrekt null eigene Schreibaktionen; B hat drei eigene Schreibbelege, frische 79 Tests und Review. B benoetigte nach Zeitabbruch eine operatorgestuetzte Wiederaufnahme; kein unbeaufsichtigter Gesamterfolg. |
 | Budgetsteuerung | Hostbudget und aktuelles Aufruflimit werden sichtbar; Vorbereitungskosten werden vor dem Dispatch abgezogen. Unabhaengig geprueft: 561 Tests bestanden, vier Skips, 81 % Coverage mit Branch-Messung, 24 Releasepruefungen. [Quellhashes und Grenzen](docs/evidence/host-observations-20261017/execution-budget-qualification.json). Alle sieben CI-Jobs erfolgreich. [Frischer Coding-Lauf](docs/evidence/execution-profiles-20261017/budget-unassisted-trial.json): vier Schritte, keine Fehler oder Operatorhilfe, 79 Tests und separates Review; unabhaengig nachgeprueft. Gilt nur fuer den begrenzten Bausteinauftrag. |
 

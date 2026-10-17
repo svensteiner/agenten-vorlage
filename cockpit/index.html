@@ -1319,13 +1319,16 @@
           ["action", "role", "task", "reason"].every((key) => a[key] === b[key]) &&
           JSON.stringify(a.skills || []) === JSON.stringify(b.skills || []);
         const last = history[history.length - 1];
-        const activeMatchesLast = active && last && !last.report && !last.error &&
+        const lastReportRejected = last?.worker_return?.kind === "completed_report_rejected";
+        const activeMatchesLast = active && last && !last.report && !last.error && !lastReportRejected &&
           (active.kind === "worker-resume" || sameDecision(active.decision, last.decision));
         const activeOutcome = () => running
           ? { detail: "Läuft", kind: "running" }
           : { detail: "Ausgang ungeklärt", kind: "pending" };
         const outcome = (entry, index) => {
           if (entry.error) return { detail: "Fehlgeschlagen", kind: "failed" };
+          if (entry.worker_return?.kind === "completed_report_rejected")
+            return { detail: "Bericht abgelehnt", kind: "review" };
           const status = entry.report?.status;
           if (status === "needs_revision") return { detail: "Überarbeitung nötig", kind: "review" };
           if (status === "success") return { detail: "Abgeschlossen", kind: "done" };

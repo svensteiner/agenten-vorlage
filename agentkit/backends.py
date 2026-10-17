@@ -20,7 +20,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from .contracts import ContractError, ROOT, schema, validate
+from .contracts import CompletedReportRejected, ContractError, ROOT, schema, validate
 from .approvals import (
     ACTION_TOOLS,
     ApprovalRequired,
@@ -704,7 +704,19 @@ class CodexBackend:
                 }, ensure_ascii=False)
             )
             response = self._call(prompt, "codex_action_step", read_context, remaining())
-            validate(response, "codex_action_step")
+            if type(response) is dict and response.get("kind") == "final":
+                # Validate the action-step envelope independently from its report.
+                # A normally returned but invalid report is classified by execute()
+                # as a completed-report rejection; malformed action metadata remains
+                # an ordinary contract error with an unknown worker outcome.
+                envelope = dict(response)
+                envelope["report"] = {
+                    "status": "blocked", "summary": "Report validation is deferred.",
+                    "artifacts": [], "evidence": [], "next_actions": [],
+                }
+                validate(envelope, "codex_action_step")
+            else:
+                validate(response, "codex_action_step")
             if response["kind"] == "final":
                 if response["tool"] != "none" or any(response["arguments"].values()):
                     if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
@@ -716,8 +728,12 @@ class CodexBackend:
                     }]
                     self._validate_action_history(action_history)
                     continue
+                if "report" not in response:
+                    raise CompletedReportRejected(
+                        "report_schema_invalid",
+                        self._report_rejection_observation(None),
+                    )
                 report = response["report"]
-                validate(report, "report")
                 return report
             try:
                 tool, arguments = self._action_from_step(response)
@@ -830,9 +846,11 @@ class CodexBackend:
     def execute(self, decision: dict, context: dict, timeout: float) -> dict:
         if (context.get("test_execution_policy") is not None
                 or (context.get("write_policy") is not None and context.get("sandbox") == "workspace-write")):
-            return self._execute_approval_gated(decision, context, timeout)
+            report = self._execute_approval_gated(decision, context, timeout)
+            return self._validate_completed_report(report)
         if context.get("require_approvals") and context.get("sandbox") == "workspace-write":
-            return self._execute_approval_gated(decision, context, timeout)
+            report = self._execute_approval_gated(decision, context, timeout)
+            return self._validate_completed_report(report)
         deadline = time.monotonic() + timeout
         prompt = (
             "Execute this bounded assignment using the selected role/skills. Do not spawn more agents. "
@@ -862,7 +880,50 @@ class CodexBackend:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise RuntimeError("Codex worker call timed out during prompt preparation.")
-        return self._call(prompt, "report", context, remaining)
+        report = self._call(prompt, "report", context, remaining)
+        return self._validate_completed_report(report)
+
+    @staticmethod
+    def _report_rejection_observation(report: object, *, artifact_index: int | None = None) -> dict:
+        report_types = {dict: "object", list: "array", str: "string", int: "number",
+                        float: "number", bool: "boolean", type(None): "null"}
+        report_type = report_types.get(type(report), "unserializable")
+        encoded = None
+        try:
+            encoded = json.dumps(report, ensure_ascii=False, sort_keys=True,
+                                 separators=(",", ":"), allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError, RecursionError, UnicodeEncodeError):
+            pass
+        observation = {
+            "report_type": report_type,
+            "report_sha256": hashlib.sha256(encoded).hexdigest() if encoded is not None else None,
+            "report_bytes": len(encoded) if encoded is not None and len(encoded) <= 200_000 else None,
+            "artifact_count": (len(report["artifacts"])
+                               if type(report) is dict and type(report.get("artifacts")) is list
+                               and len(report["artifacts"]) <= 40 else None),
+        }
+        if artifact_index is not None:
+            observation["artifact_index"] = artifact_index
+        return observation
+
+    @classmethod
+    def _validate_completed_report(cls, report: object) -> dict:
+        """Classify only normally returned invalid reports; transport errors stay unknown."""
+        try:
+            validate(report, "report")
+        except (ContractError, RecursionError, TypeError):
+            raise CompletedReportRejected(
+                "report_schema_invalid", cls._report_rejection_observation(report)
+            ) from None
+        for index, artifact in enumerate(report["artifacts"]):
+            try:
+                _validate_tool_path_text(artifact)
+            except ContractError:
+                raise CompletedReportRejected(
+                    "artifact_path_invalid",
+                    cls._report_rejection_observation(report, artifact_index=index),
+                ) from None
+        return report
 
 
 def _read_cli_version(command: list[str], timeout: float = 5.0) -> str | None:

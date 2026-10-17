@@ -78,6 +78,16 @@ Checkpoint. Vor einem Modell-/Worker-Aufruf wird `in_flight` gespeichert; nach e
 Ergebnis wird es entfernt. Nach einem Crash ist dadurch eine möglicherweise bereits ausgeführte
 Aktion erkennbar. Keine automatische Wiederholung unbekannter Seiteneffekte.
 
+Ein normal zurueckgegebener Codex-Bericht kann an Schema oder Artefaktpfad
+scheitern. Nur dafuer gibt es das explizite Hostsignal
+`CompletedReportRejected`: Die Engine speichert begrenzte Ablehnungsmetadaten
+in `worker_return`, zaehlt einen Fehler und gibt die Beobachtung an den Planer
+zurueck. Sie speichert keinen akzeptierten `report` und wiederholt keinen
+Worker automatisch. Aktions- und Schreibbelege bleiben erhalten; Review und
+Testfreigabe werden entwertet. Ein Abschluss braucht den validierten Erfolg
+der letzten Delegation. Transportfehler, Zeitabbrueche und allgemeine
+Artefaktfehler behalten die konservative Sperre mit offenem `in_flight`.
+
 Neue Läufe speichern die gemeinsamen Anweisungen aus STATUS/AGENTS/SOUL/WORKFLOW
 als `core_snapshot`. Planer, Worker und Wiederaufnahme verwenden diesen Stand;
 ein explizit abweichender Snapshot kann keine offene Ausführung übernehmen.

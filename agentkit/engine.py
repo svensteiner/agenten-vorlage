@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from .catalog import Catalog
-from .contracts import ContractError, read_json, validate
+from .contracts import CompletedReportRejected, ContractError, read_json, validate
 from .storage import lock, save
 from .write_policy import WritePolicy
 from .test_execution import TestExecutionPolicy, validate_test_receipt
@@ -495,12 +495,17 @@ class Engine:
                     state.update(status="blocked", summary=decision["task"])
                     break
                 if decision["action"] == "finish":
-                    reports = [h["report"] for h in state["history"] if "report" in h]
+                    latest_delegation = next(
+                        (h for h in reversed(state["history"])
+                         if h.get("decision", {}).get("action") == "delegate"),
+                        None,
+                    )
+                    latest_report = latest_delegation.get("report") if latest_delegation else None
                     completion_error = None
                     if (
-                        not reports
-                        or reports[-1]["status"] != "success"
-                        or not reports[-1]["evidence"]
+                        not isinstance(latest_report, dict)
+                        or latest_report.get("status") != "success"
+                        or not latest_report.get("evidence")
                     ):
                         completion_error = "Completion requires a successful, evidence-bearing final report."
                     elif (
@@ -648,7 +653,24 @@ class Engine:
                 if execution_route is not None:
                     record["model_route"] = execution_route(decision, ctx)
                     checkpoint()
-                report = self.backend.execute(decision, ctx, timeout())
+                try:
+                    report = self.backend.execute(decision, ctx, timeout())
+                except CompletedReportRejected as exc:
+                    # This signal is only for a normally completed worker call whose
+                    # report failed host validation. It must never consume an approval
+                    # continuation or be used to replay an uncertain operation.
+                    if state.get("status") == "awaiting_approval" or state.get("pending_approval") is not None:
+                        raise
+                    record["worker_return"] = {
+                        "kind": "completed_report_rejected",
+                        **exc.safe_observation(),
+                    }
+                    state["latest_test_execution_receipt"] = None
+                    state["reviewed"] = False
+                    state["failures"] += 1
+                    state["in_flight"] = None
+                    checkpoint()
+                    continue
                 validate(report, "report")
                 for artifact in report["artifacts"]:
                     self._verify_artifact(artifact, timeout())

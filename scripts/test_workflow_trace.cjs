@@ -9,7 +9,11 @@ const context = vm.createContext({});
 vm.runInContext(source, context);
 const decision = {action:'delegate', role:'developer', task:'Write result', reason:'Need result', skills:['implement-feature']};
 const entry = {step:1, decision};
-const project = (status, history, extra={}) => context.workflowNodes({status, result:{history,...extra}});
+let projectInvocationCount = 0;
+const project = (status, history, extra={}) => {
+  projectInvocationCount++;
+  return context.workflowNodes({status, result:{history,...extra}});
+};
 let nodes = project('running', [entry], {in_flight:{kind:'worker', decision}});
 assert.equal(nodes.length, 1);
 assert.equal(nodes[0].kind, 'running');
@@ -40,4 +44,28 @@ nodes = project('completed', [
 ]);
 assert.equal(nodes.map(n=>n.kind).join(','), 'done,review,done,done,done');
 assert.equal(project('blocked', [{decision:{action:'blocked'}}])[0].kind, 'failed');
-console.log('Workflow trace: 10 checkpoint scenarios passed');
+// A host-confirmed completion rejection is a review outcome, even while planning resumes.
+nodes = project('running', [
+  {...entry, worker_return:{kind:'completed_report_rejected'}},
+], {in_flight:{kind:'planner',step:2}});
+assert.equal(nodes.length, 2);
+assert.equal(nodes[0].detail, 'Bericht abgelehnt');
+assert.equal(nodes[0].kind, 'review');
+assert.equal(nodes[1].label, 'Planung');
+assert.equal(nodes[1].kind, 'running');
+// A same-decision active worker is separate from this terminal rejection.
+nodes = project('running', [
+  {...entry, worker_return:{kind:'completed_report_rejected'}},
+], {in_flight:{kind:'worker',decision}});
+assert.equal(nodes.length, 2);
+assert.equal(nodes[0].kind, 'review');
+assert.equal(nodes[1].kind, 'running');
+// Later overall completion must not rewrite the earlier rejected report as done.
+nodes = project('completed', [
+  {...entry, worker_return:{kind:'completed_report_rejected'}},
+  {decision:{action:'finish'}},
+]);
+assert.equal(nodes[0].detail, 'Bericht abgelehnt');
+assert.equal(nodes[0].kind, 'review');
+assert.equal(nodes[1].kind, 'done');
+console.log(`Workflow trace: ${projectInvocationCount} checkpoint scenarios passed`);

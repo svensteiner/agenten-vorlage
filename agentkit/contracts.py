@@ -15,6 +15,59 @@ class ContractError(ValueError):
     """Invalid or out-of-scope input; do not execute it."""
 
 
+class CompletedReportRejected(ContractError):
+    """A backend returned normally, but its report failed host-side validation.
+
+    This signal is intentionally distinct from transport and timeout errors,
+    whose outcome may be unknown. Its attached observation is allowlisted,
+    bounded metadata only; report text and arbitrary provider values are never
+    retained here.
+    """
+
+    REASONS = frozenset({"report_schema_invalid", "artifact_path_invalid"})
+    REPORT_TYPES = frozenset({
+        "object", "array", "string", "number", "boolean", "null", "unserializable",
+    })
+
+    def __init__(self, reason: str, observation: object = None):
+        if type(reason) is not str or reason not in self.REASONS:
+            raise ValueError("Unknown completed-report rejection reason.")
+        self.reason = reason
+        self.observation = self._safe_metadata(observation)
+        super().__init__(f"Codex returned a report rejected by host validation ({reason}).")
+
+    @classmethod
+    def _safe_metadata(cls, observation: object) -> dict[str, object]:
+        value = observation if type(observation) is dict else {}
+        report_type = value.get("report_type")
+        report_sha256 = value.get("report_sha256")
+        report_bytes = value.get("report_bytes")
+        artifact_count = value.get("artifact_count")
+        artifact_index = value.get("artifact_index")
+        safe = {
+            "report_type": (report_type if type(report_type) is str
+                            and report_type in cls.REPORT_TYPES else "unserializable"),
+            "report_sha256": report_sha256 if _is_sha256(report_sha256) else None,
+            "report_bytes": (report_bytes if type(report_bytes) is int
+                             and 0 <= report_bytes <= 200_000 else None),
+            "artifact_count": (artifact_count if type(artifact_count) is int
+                               and 0 <= artifact_count <= 40 else None),
+        }
+        if type(artifact_index) is int and 0 <= artifact_index < 40:
+            safe["artifact_index"] = artifact_index
+        return safe
+
+    def safe_observation(self) -> dict[str, object]:
+        """Return a fresh JSON-safe projection suitable for the run checkpoint."""
+        reason = self.reason if type(self.reason) is str and self.reason in self.REASONS else "report_schema_invalid"
+        return {"reason": reason, **self._safe_metadata(self.observation)}
+
+
+def _is_sha256(value: object) -> bool:
+    return (isinstance(value, str) and len(value) == 64
+            and all(char in "0123456789abcdef" for char in value))
+
+
 def slug(value: str) -> str:
     if not isinstance(value, str) or not SLUG.fullmatch(value) or len(value) > 64:
         raise ContractError("Use 1–64 lowercase letters, digits and single hyphens.")
