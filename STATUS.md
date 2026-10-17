@@ -37,6 +37,18 @@ Host-Aktionen als native Werkzeuge statt JSON-Vorschlaege zurueckzugeben.
 Laufzeit, Quelldateien und Schreibgrenzen blieben unveraendert. Die
 Werkzeugschnittstelle und Marketingqualitaet bleiben offen.
 
+Die anschliessende [private Aktionsanweisung](docs/evidence/execution-profiles-20261017/private-action-interface.json)
+nennt die Host-Aktionen explizit und enthaelt schema-gueltige Beispiele.
+658 Gesamttests (sieben Skips, keine Fehler) und 35 Offline-Pruefungen
+bestehen. Im echten, gegen Aenderungen gesperrten Lesetest scheitert Luna
+weiterhin; Sol liest die Datei ueber den Host und berichtet korrekt.
+Das qualifiziert nur die Leseaktion. Der naechste vollstaendige Korrekturlauf
+V5 ist vorbereitet, noch nicht gestartet. CI 39039620098 scheiterte unter
+Windows 3.12: Ein oeffentlicher Job konnte seinen Checkpoint wegen
+WinError 5 nicht atomar ersetzen. Der Quota-Writer umgeht bisher die
+bereits vorhandene begrenzte Windows-Wiederholung des Standard-Checkpoints.
+Eine gezielte Korrektur wird vor dem naechsten Lauf geprueft.
+
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und
 4.702 vollstaendige Tests bestanden. Die unabhaengige Nachpruefung findet

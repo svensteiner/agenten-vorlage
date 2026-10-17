@@ -1,0 +1,92 @@
+{
+  "schema": "agentkit-private-action-interface-qualification/v1",
+  "commit": "ee9a471ab909c5c4621740fbc62a1e898d39bdd7",
+  "status": "local_checks_passed_windows_ci_failed_full_agent_task_unproven",
+  "source_sha256": {
+    "agentkit\\backends.py": "fa89e4c9382075b90a2ab67bd7b710c1a19ad53712161c8380372104ebb2d67e",
+    "tests\\test_codex_local_phases.py": "4bf23e09088172a10d0503f79dd08af9238370f4b8f9ced52676a250e8a10d33"
+  },
+  "change": "Private-only action manifest and schema-valid read/phase examples. Public prompt, permissions, budgets and routing unchanged.",
+  "full_tests": {
+    "run": 658,
+    "skipped": 7,
+    "failed": 0,
+    "duration_seconds": 323.404,
+    "input_changes": [],
+    "log_sha256": "8f49be453d134fe3286ea684581d1d58bada423431857bcd99d65e732ad50631"
+  },
+  "offline_release": {
+    "passed": 35,
+    "failed": 0,
+    "log_sha256": "8498bcdad142a5b5c86720f1c4335f60565426ddd51ed38384948db92508b11e",
+    "count_note": "Includes discovery of the new V5 generated pack."
+  },
+  "static_checks": {
+    "ruff": "passed",
+    "bandit_ci_medium_high_threshold": "passed",
+    "bandit_all_severities": "19 low findings, zero medium/high; retained separately",
+    "workflow_scenarios": "passed"
+  },
+  "real_observation_smokes": [
+    {
+      "model": "gpt-6-luna",
+      "model_calls": 1,
+      "qualified": false,
+      "host_observations": 0,
+      "workspace_unchanged": true,
+      "effect_requests_denied": 0
+    },
+    {
+      "model": "gpt-6-sol",
+      "model_calls": 2,
+      "qualified": true,
+      "host_observations": 1,
+      "workspace_unchanged": true,
+      "effect_requests_denied": 0
+    }
+  ],
+  "smoke_scope": "One bounded source-file read and correct report; mutations and phase executions denied by callbacks. Not a full Engine coding task.",
+  "independent_review_transcription_sha256": "31f48f3cfabc2a2f1af23e7bc366e1eb6aa0358a20e1feb93fb7a1b3dfa5c841",
+  "ci": {
+    "run_id": 39039620098,
+    "status": "completed",
+    "conclusion": "failure",
+    "head_sha": "ee9a471ab909c5c4621740fbc62a1e898d39bdd7",
+    "jobs": [
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "failure"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      }
+    ],
+    "failure": "Windows 3.12 public job blocked on WinError 5 during quota-writer atomic checkpoint replacement.",
+    "failed_log_sha256": "8fd896e9bbc574658ba37ee033bdc47fb17d270d55b15535ff4d43618e7bd448"
+  },
+  "full_coding_task_qualified": false,
+  "marketing_quality_qualified": false,
+  "live_marketingbot_changed": false,
+  "production_qualification": false
+}
