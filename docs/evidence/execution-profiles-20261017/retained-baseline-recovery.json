@@ -78,7 +78,8 @@
     "independent-code-review.json": "0111986f89bfd10a41e586496c02d57ea058971e9685832e587d0cece689155a",
     "actual-windows-cache-probe.json": "a2dd149d74dd91f54123f140ae49109bd41b39e57a73f47a70d795841e4ce26c",
     "legacy_cache_resume_probe.py": "88145b75c3f45cc2629d5b40186c9dd3ae4a1ea7d711e3097bea99820abfd0a7",
-    "result.json": "77524e87715dcea3ffb76ac809fe970bfb6e6d169503fcf096283fa17bff899a"
+    "result.json": "77524e87715dcea3ffb76ac809fe970bfb6e6d169503fcf096283fa17bff899a",
+    "inside-workspace-cache-probe.json": "fad0e233480d118f8be7b079dfffd6b9aaecb962863642886eef7bad13eadf91"
   },
   "source_sha256": {
     "agentkit\\backends.py": "42dee34572da41402cf311d4d0748518b4ddfdde4178bda6b5b7a83286809751",
@@ -99,5 +100,53 @@
     "preparation_sha256": "98ff85b865429498c0c2aaa22f6483a59d95a1720d78cd5970241a0f41f609cb",
     "code_preparation_review_sha256": "01b81f616024dc756f4e170ce6ee8367b046c5d6d3d0ae8f5d58084ceb43959e"
   },
-  "ci_status": "pending_current_source_commit"
+  "ci": {
+    "run_id": 39047216916,
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "902b80931311be58c3ab22045652a1d684a389a9",
+    "jobs": [
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      }
+    ],
+    "critical_regression_passes": 24,
+    "evidence_sha256": "f057a4af169b1735d2900c05b55d9e07a40574771bd9201e5e726b178c0dc58b",
+    "log_sha256": "92a49e6b7a3eaac007d789fe2e4cde1b5e32a36778c93be29c8aedfcbc7cfdb2"
+  },
+  "inside_workspace_cache_probe": {
+    "schema": "agentkit-correctly-shaped-inside-workspace-cache-probe/v1",
+    "status": "passed",
+    "valid_agent_run_directory_shape": true,
+    "outside_workspace_guard_rejected": true,
+    "source_unchanged": true,
+    "cache_created": false,
+    "real_model_calls": 0,
+    "note": "Exercises the outside-workspace check with a valid agent/.runs/run-id shape, rather than an earlier shape rejection."
+  }
 }

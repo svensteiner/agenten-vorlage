@@ -13,16 +13,18 @@ pruefen und nacharbeiten. Die Mietplattform ist zurueckgestellt.
 Der laufende Original-Marketingbot bleibt unveraendert; Versuche verwenden
 isolierte Kopien. Technische Tests ersetzen keine Inhaltsqualifikation.
 
-## Recovery-Kandidat: lokal geprueft, CI noch offen
+## Technisch gepruefter Runtime-Stand
 
 Die [hostseitige Ausgangskopie](docs/evidence/execution-profiles-20261017/retained-baseline-recovery.json)
 und private pfadgebundene Ruecksetzung bestehen 702 Gesamttests mit neun Skips
 und ohne Fehler; alle erfassten Quell-/Schemaeingaben blieben unveraendert.
 38 Offline-Releasepruefungen, separates Review und Windows-Cache-/Legacy-
-Resume-Gegenproben bestehen. Die CI dieses Quellstands und der frische
-vollstaendige Coding-Auftrag V8 stehen noch aus. Keine Produktionsfreigabe.
+Resume-Gegenproben bestehen. Alle sieben Jobs der CI 39047216916 sind am
+Runtime-Commit 902b809 gruen. Der [frische Coding-Auftrag V8](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v8-started.json)
+ist nach abschliessender Vorpruefung gestartet; sein Ergebnis steht noch aus.
+Keine Produktionsfreigabe.
 
-## Letzter vollstaendig gepruefter Runtime-Stand
+## Vorheriger gepruefter Runtime-Stand
 
 Commit `f46a97b`: [private Reviewer-Schnittstelle](docs/evidence/execution-profiles-20261017/private-review-observations.json).
 
