@@ -1,0 +1,11 @@
+{
+  "result_sha256": "fa4046bad69c3bd9573d659d6eda0664fb700106ef150b7d843da5861cd791e9",
+  "terminal_status": "diagnostic_complete",
+  "physical_calls": 4,
+  "task_budget_attempts": 4,
+  "known_provider_cost_usd": "0.006543",
+  "unknown_requests": 0,
+  "protocol_diagnostic_passed": true,
+  "semantic_quality_acceptance": false,
+  "promoted": false
+}

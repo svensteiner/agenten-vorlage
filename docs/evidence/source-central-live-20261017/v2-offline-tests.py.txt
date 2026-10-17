@@ -1,0 +1,388 @@
+"""Offline tests for the central LLMResponder qualification transport diagnostic."""
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+HELPER = Path(__file__).with_name("source_central_transport_v2_job.py")
+SPEC = importlib.util.spec_from_file_location("central_transport_v1_target", HELPER)
+TARGET = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = TARGET
+SPEC.loader.exec_module(TARGET)
+
+
+class FakeResponse:
+    status_code = 200
+
+    def __init__(self, body):
+        self.body = body
+        self.closed = False
+
+    def iter_content(self, chunk_size):
+        yield self.body
+
+    def close(self):
+        self.closed = True
+
+
+def provider_body(content, number):
+    return json.dumps({
+        "id": f"synthetic-{number}",
+        "model": TARGET.MODEL,
+        "usage": {"prompt_tokens": 20, "completion_tokens": 15,
+                  "total_tokens": 35, "cost": 0.001},
+        "choices": [{"finish_reason": "stop", "message": {"content": content}}],
+    }, separators=(",", ":")).encode("utf-8")
+
+
+def review(verdict, claims=(), issues=()):
+    return json.dumps({
+        "verdict": verdict,
+        "issues": list(issues),
+        "claims": list(claims),
+        "human_controls_preserved": verdict == "accept",
+        "uncertainty_preserved": verdict == "accept",
+    }, separators=(",", ":"))
+
+
+def request_state(purpose="review"):
+    return {
+        "requests": [],
+        "reserved_usd": "0",
+        "known_provider_cost_usd": "0",
+        "unknown_outcome_requests": 0,
+        "unknown_cost_requests": 0,
+        "purpose_calls": {"review": 0, "repair": 0},
+        "status": "running",
+    }
+
+
+class CentralTransportOfflineTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        TARGET.validate_gate()
+        parent = TARGET.load_parent()
+        _, _, _, cls.protocol = TARGET._load_responder(parent)
+
+    def test_frozen_synthetic_cases_and_limits_are_narrow(self):
+        self.assertEqual(TARGET.MAX_CALLS, 4)
+        self.assertEqual(str(TARGET.MAX_USD), "0.20")
+        self.assertEqual(str(TARGET.RESERVE), "0.05")
+        self.assertEqual([case["case_id"] for case in TARGET.CASES],
+                         ["synthetic-valid", "synthetic-invalid"])
+        self.assertEqual(TARGET.CASES[0]["draft"],
+                         "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. "
+                         "Die Freigabe erfordert die Zustimmung eines Controllers.")
+        self.assertEqual(TARGET.CASES[1]["draft"],
+                         "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben.")
+
+    def test_prepare_validates_pins_without_loading_key_or_posting(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prepared = Path(directory) / "prepared.json"
+            with patch.object(TARGET, "PREPARED", prepared):
+                with patch.object(TARGET, "load_parent", wraps=TARGET.load_parent):
+                    with patch.object(TARGET, "_load_key_only",
+                                      side_effect=AssertionError("prepare must not load credentials")):
+                        with patch("requests.post",
+                                   side_effect=AssertionError("prepare must not issue HTTP")):
+                            TARGET.prepare()
+            value = json.loads(prepared.read_text(encoding="utf-8"))
+            self.assertEqual(value["model"], TARGET.MODEL)
+            self.assertEqual(value["limits"]["max_physical_requests"], 4)
+            self.assertEqual(value["limits"]["local_reservation_usd"], "0.20")
+            self.assertIs(value["promoted"], False)
+            self.assertIs(value["semantic_quality_claim"], False)
+
+    def test_wrong_endpoint_or_schema_is_rejected_before_http(self):
+        class Budget:
+            halted = False
+
+        state = request_state()
+        budget = Budget()
+        post = Mock(side_effect=AssertionError("must not reach HTTP"))
+        wrapper = TARGET.CentralBoundedPost(
+            key="test-only-key",
+            state=state,
+            persist=lambda: None,
+            post=post,
+            budget=budget,
+            protocol=self.protocol,
+        )
+        for url, payload in [
+            ("https://evil.invalid/chat", TARGET.sample_payload("review")),
+            (TARGET.URL, {**TARGET.sample_payload("review"), "response_format": {"type": "json_object"}}),
+        ]:
+            with self.subTest(url=url):
+                wrapper = TARGET.CentralBoundedPost(
+                    key="test-only-key", state=request_state(), persist=lambda: None,
+                    post=post, budget=budget, protocol=self.protocol,
+                )
+                with self.assertRaises(ValueError):
+                    wrapper(url, **TARGET.sample_kwargs("test-only-key", payload))
+        post.assert_not_called()
+        self.assertEqual(state["requests"], [])
+
+    def test_review_and_repair_schema_are_validated_but_payload_is_not_modified(self):
+        class Budget:
+            halted = False
+
+        payload = TARGET.sample_payload("review")
+        original = json.loads(json.dumps(payload))
+        state = request_state()
+        sent = []
+
+        def fake_post(url, **kwargs):
+            sent.append((url, kwargs))
+            return FakeResponse(TARGET.sample_response_body())
+
+        wrapper = TARGET.CentralBoundedPost(
+            key="test-only-key", state=state, persist=lambda: None, post=fake_post,
+            budget=Budget(), protocol=self.protocol,
+        )
+        response = wrapper(TARGET.URL, **TARGET.sample_kwargs("test-only-key", payload))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), json.loads(TARGET.sample_response_body()))
+        self.assertEqual(payload, original)
+        self.assertIs(sent[0][1]["json"], payload)
+        self.assertEqual(len(state["requests"]), 1)
+        self.assertEqual(state["requests"][0]["purpose"], "review")
+        self.assertEqual(state["requests"][0]["status"], "completed")
+        self.assertEqual(state["reserved_usd"], "0.05")
+        self.assertEqual(state["known_provider_cost_usd"], "0.001")
+
+    def test_unknown_transport_outcome_halts_and_cannot_replay(self):
+        class Budget:
+            halted = False
+
+        state = request_state()
+        calls = []
+        def fail_after_start(url, **kwargs):
+            calls.append(url)
+            raise TimeoutError("private transport detail")
+
+        wrapper = TARGET.CentralBoundedPost(
+            key="test-only-key", state=state, persist=lambda: None,
+            post=fail_after_start, budget=Budget(),
+            protocol=self.protocol,
+        )
+        kwargs = TARGET.sample_kwargs("test-only-key", TARGET.sample_payload("review"))
+        with self.assertRaisesRegex(RuntimeError, "no retry"):
+            wrapper(TARGET.URL, **kwargs)
+        self.assertTrue(wrapper.halted)
+        self.assertEqual(state["unknown_outcome_requests"], 1)
+        self.assertNotIn("private transport detail", repr(state))
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            wrapper(TARGET.URL, **kwargs)
+        self.assertEqual(len(calls), 1)
+
+    def test_limit_and_checkpoint_failures_stop_before_http(self):
+        class Budget:
+            halted = False
+
+        for state, persist, expected in [
+            ({**request_state(), "reserved_usd": "0.20"}, lambda: None, "reservation"),
+            (request_state(), lambda: (_ for _ in ()).throw(OSError("disk")), "checkpoint"),
+        ]:
+            with self.subTest(expected=expected):
+                post = Mock(side_effect=AssertionError("must not reach HTTP"))
+                wrapper = TARGET.CentralBoundedPost(
+                    key="test-only-key", state=state, persist=persist, post=post,
+                    budget=Budget(),
+                    protocol=self.protocol,
+                )
+                with self.assertRaisesRegex(RuntimeError, expected):
+                    wrapper(TARGET.URL, **TARGET.sample_kwargs(
+                        "test-only-key", TARGET.sample_payload("review")))
+                post.assert_not_called()
+
+    def test_existing_result_or_lock_rejects_before_key_loader(self):
+        for existing in ("result", "lock"):
+            with self.subTest(existing=existing), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                prepared = root / "prepared.json"
+                prepared.write_text("{}", encoding="utf-8")
+                result = root / "result.json"
+                lock = root / "attempt.lock"
+                (result if existing == "result" else lock).write_text("occupied", encoding="utf-8")
+                with patch.object(TARGET, "PREPARED", prepared), \
+                     patch.object(TARGET, "RESULT", result), \
+                     patch.object(TARGET, "LOCK", lock), \
+                     patch.object(TARGET, "_load_key_only",
+                                  side_effect=AssertionError("key loader must not run")):
+                    with self.assertRaisesRegex(RuntimeError, "never replayed"):
+                        TARGET.run()
+
+    def test_real_public_responder_path_handles_review_and_envelope_repair_offline(self):
+        faithfulness, budget_module, responder_module, protocol = TARGET._load_responder(
+            TARGET.load_parent())
+        valid_draft = TARGET.CASES[0]["draft"]
+        repaired_draft = ("Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. "
+                          "Freigabe nur nach Zustimmung eines Controllers.")
+        valid_claims = [
+            {"draft_span": "Sieben Rechnungen sind zugeordnet;",
+             "source_quote": "seven matched invoices", "kind": "fact"},
+            {"draft_span": "Zahlungsstatus unklar.",
+             "source_quote": "Payment status is unknown.", "kind": "fact"},
+            {"draft_span": "Die Freigabe erfordert die Zustimmung eines Controllers.",
+             "source_quote": "A controller must approve release.",
+             "kind": "conditional_proposal"},
+        ]
+        repaired_claims = [
+            {"draft_span": "Sieben Rechnungen sind zugeordnet;",
+             "source_quote": "seven matched invoices", "kind": "fact"},
+            {"draft_span": "Zahlungsstatus unklar.",
+             "source_quote": "Payment status is unknown.", "kind": "fact"},
+            {"draft_span": "Freigabe nur nach Zustimmung eines Controllers.",
+             "source_quote": "A controller must approve release.",
+             "kind": "conditional_proposal"},
+        ]
+        responses = [
+            review("accept", valid_claims),
+            review("reject", issues=["unsupported_fact", "human_control_omitted"]),
+            json.dumps({"text": repaired_draft}, ensure_ascii=False),
+            review("accept", repaired_claims),
+        ]
+        physical = []
+
+        def fake_post(url, **kwargs):
+            physical.append((url, kwargs))
+            self.assertLessEqual(len(physical), 4)
+            return FakeResponse(provider_body(responses[len(physical) - 1], len(physical)))
+
+        state = request_state()
+        state["active_case"] = "synthetic-valid"
+        budget = budget_module.TaskBudget(4, label="offline_central_transport",
+                                          max_inference_calls=4)
+        token = budget_module._CURRENT_BUDGET.set(budget)
+        wrapper = TARGET.CentralBoundedPost(
+            key="test-only-key", state=state, persist=lambda: None,
+            post=fake_post, budget=budget, protocol=protocol,
+        )
+        original_post = __import__("requests").post
+        try:
+            __import__("requests").post = wrapper
+            with TARGET._cleared_provider_environment():
+                bot = type("Bot", (), {"config": {"llm": {
+                    "provider": "openrouter", "api_key": "", "model": TARGET.MODEL,
+                    "openrouter_model": TARGET.MODEL, "openrouter_enabled": True,
+                    "openrouter_primary": True, "openrouter_api_key": "test-only-key",
+                    "openrouter_base_url": TARGET.URL, "kimi_enabled": False}},
+                    "safe_log": lambda *a, **k: None})()
+                responder = responder_module.LLMResponder(bot)
+                valid_result = faithfulness.qualify_source_draft(
+                    TARGET.SOURCE, valid_draft, reviewer=responder, repairer=responder,
+                    max_chars=190)
+                state["active_case"] = "synthetic-invalid"
+                invalid_result = faithfulness.qualify_source_draft(
+                    TARGET.SOURCE, TARGET.CASES[1]["draft"], reviewer=responder,
+                    repairer=responder, max_chars=190)
+            self.assertEqual(valid_result["status"], "accepted")
+            self.assertEqual(valid_result["text"], valid_draft)
+            self.assertEqual((valid_result["review_calls"], valid_result["repair_calls"]), (1, 0))
+            self.assertEqual(invalid_result["status"], "accepted")
+            self.assertEqual(invalid_result["text"], repaired_draft)
+            self.assertEqual((invalid_result["review_calls"], invalid_result["repair_calls"]), (2, 1))
+            self.assertEqual([item["purpose"] for item in state["requests"]],
+                             ["review", "review", "repair", "review"])
+            self.assertEqual(len(physical), 4)
+            self.assertEqual(state["unknown_outcome_requests"], 0)
+            self.assertEqual(state["unknown_cost_requests"], 0)
+            self.assertEqual(state["purpose_calls"], {"review": 3, "repair": 1})
+            for _, kwargs in physical:
+                name = kwargs["json"]["response_format"]["json_schema"]["name"]
+                self.assertIn(name, {"source_faithfulness_review", "source_faithfulness_repair"})
+                self.assertEqual(kwargs["json"]["provider"],
+                                 {"require_parameters": True, "allow_fallbacks": False})
+        finally:
+            __import__("requests").post = original_post
+            budget_module._CURRENT_BUDGET.reset(token)
+
+    def test_entire_run_completes_with_actual_budget_and_mocked_transport(self):
+        faithfulness, budget_module, responder_module, protocol = TARGET._load_responder(
+            TARGET.load_parent())
+        valid_draft = TARGET.CASES[0]["draft"]
+        repaired_draft = ("Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. "
+                          "Freigabe nur nach Zustimmung eines Controllers.")
+        claims_for_valid = [
+            {"draft_span": "Sieben Rechnungen sind zugeordnet;",
+             "source_quote": "seven matched invoices", "kind": "fact"},
+            {"draft_span": "Zahlungsstatus unklar.",
+             "source_quote": "Payment status is unknown.", "kind": "fact"},
+            {"draft_span": "Die Freigabe erfordert die Zustimmung eines Controllers.",
+             "source_quote": "A controller must approve release.",
+             "kind": "conditional_proposal"},
+        ]
+        claims_for_repair = [
+            {"draft_span": "Sieben Rechnungen sind zugeordnet;",
+             "source_quote": "seven matched invoices", "kind": "fact"},
+            {"draft_span": "Zahlungsstatus unklar.",
+             "source_quote": "Payment status is unknown.", "kind": "fact"},
+            {"draft_span": "Freigabe nur nach Zustimmung eines Controllers.",
+             "source_quote": "A controller must approve release.",
+             "kind": "conditional_proposal"},
+        ]
+        wire_contents = [
+            review("accept", claims_for_valid),
+            review("reject", issues=["unsupported_fact", "human_control_omitted"]),
+            json.dumps({"text": repaired_draft}, ensure_ascii=False),
+            review("accept", claims_for_repair),
+        ]
+        calls = []
+
+        class Session:
+            trust_env = True
+            def mount(self, *args): pass
+            def close(self): pass
+
+        def fake_session_post(session, url, **kwargs):
+            calls.append((url, kwargs))
+            return FakeResponse(provider_body(wire_contents[len(calls) - 1], len(calls)))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prepared, result, lock = root / "prepared.json", root / "result.json", root / "attempt.lock"
+            with patch.object(TARGET, "PREPARED", prepared), \
+                 patch.object(TARGET, "RESULT", result), patch.object(TARGET, "LOCK", lock):
+                gate = TARGET.validate_gate()
+                parent = TARGET.load_parent()
+                TARGET.write_once(prepared, TARGET.build_prepared(parent, gate))
+                with patch.object(TARGET, "_load_key_only", return_value="test-only-key"), \
+                     patch("requests.Session", return_value=Session()), \
+                     patch.object(TARGET, "_session_post", side_effect=fake_session_post):
+                    TARGET.run()
+            final = json.loads(result.read_text(encoding="utf-8"))
+            self.assertEqual(final["status"], "diagnostic_complete")
+            self.assertEqual(len(calls), 4)
+            self.assertEqual(len(final["requests"]), 4)
+            self.assertEqual(final["purpose_calls"], {"review": 3, "repair": 1})
+            self.assertEqual([item["status"] for item in final["case_results"]],
+                             ["accepted", "accepted"])
+            self.assertEqual(final["case_results"][0]["qualified_text"], valid_draft)
+            self.assertEqual(final["case_results"][1]["qualified_text"], repaired_draft)
+            self.assertEqual(final["unknown_outcome_requests"], 0)
+            self.assertEqual(final["unknown_cost_requests"], 0)
+            self.assertFalse(final["provider_cap_enforced"])
+
+    def test_entire_run_rejects_precondition_before_key_or_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prepared, result, lock = root / "prepared.json", root / "result.json", root / "attempt.lock"
+            prepared.write_text("{}", encoding="utf-8")
+            with patch.object(TARGET, "PREPARED", prepared), \
+                 patch.object(TARGET, "RESULT", result), patch.object(TARGET, "LOCK", lock), \
+                 patch.object(TARGET, "_load_key_only",
+                              side_effect=AssertionError("precondition must precede key load")), \
+                 patch("requests.post", side_effect=AssertionError("precondition must precede HTTP")):
+                with self.assertRaisesRegex(ValueError, "Prepared inputs/pins changed"):
+                    TARGET.run()
+            self.assertFalse(lock.exists())
+            self.assertFalse(result.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

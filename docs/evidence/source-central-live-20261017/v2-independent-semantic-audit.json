@@ -1,0 +1,63 @@
+{
+  "audit_id": "source-central-transport-v2-semantic-audit-20261017",
+  "prepared_path": ".runs/qualification/source-central-transport-v2-prepared-20261017.json",
+  "prepared_sha256": "8519f8639ddce05b098e6af8da9e5b68964ced25849b79fe4be489b5760ff046",
+  "result_path": ".runs/qualification/source-central-transport-v2-result-20261017.json",
+  "result_sha256": "fa4046bad69c3bd9573d659d6eda0664fb700106ef150b7d843da5861cd791e9",
+  "source": "The sample ledger lists seven matched invoices. Payment status is unknown. A controller must approve release.",
+  "diagnostic_status": "diagnostic_complete",
+  "wire_integration": "The central public responder path completed four physical requests (three reviews, one repair) with reported known cost 0.006543 USD and no unknown outcomes. This establishes only that the path ran and produced parseable responses; it is not semantic validation.",
+  "cases": [
+    {
+      "case_id": "synthetic-valid",
+      "qualified_text": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Die Freigabe erfordert die Zustimmung eines Controllers.",
+      "harness_status": "accepted",
+      "audit_verdict": "plausibly_faithful_for_this_synthetic_case",
+      "reason": "The wording preserves the count and matched/assigned invoices, states that payment status is unknown, and retains the controller's required approval before release. The review response's cited spans and quotes correspond to those propositions. This is a single human semantic judgment, not a general accuracy result.",
+      "raw_review_assessment": "The first review accepted, with exact source quotes for the count/matching, unknown payment status, and controller approval. Its last claim was labeled fact; that label is acceptable for this direct source assertion.",
+      "request_numbers": [
+        1
+      ],
+      "response_ids": [
+        "gen-1792207772-5mRtbWYjqXlpogiBBqlq"
+      ],
+      "raw_response_sha256": [
+        "94aafb9946a056d2f75f9c8a56389d29907b3fa2961b0a01cef4e742bf80d529"
+      ]
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "input_draft": "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben.",
+      "qualified_text": "Sieben Rechnungen sind erfasst. Zahlungsstatus unbekannt. Freigabe erfordert Kontrolle.",
+      "harness_status": "accepted",
+      "audit_verdict": "semantic_false_accept_on_human_control_specificity",
+      "reason": "The repair correctly removes the unsupported assertion that all invoices are paid and automatically released, and it preserves unknown payment status. However, 'Freigabe erfordert Kontrolle' means release requires a check/control; it omits that a controller must approve release. The source names a human role and an approval action, which is materially more specific than generic Kontrolle. This weakens the required human-approval condition. The rereview nevertheless accepted it and marked human_controls_preserved=true. It also drops the source qualifier that these were matched invoices, saying only that they were recorded.",
+      "raw_review_assessment": "The final review's last claim maps 'Freigabe erfordert Kontrolle.' to the exact quote 'A controller must approve release.' and labels it fact. Quote containment is exact, but the paraphrase does not preserve the human actor or approval requirement. The claim therefore demonstrates the known semantic false-accept risk rather than validating the paraphrase.",
+      "request_numbers": [
+        2,
+        3,
+        4
+      ],
+      "response_ids": [
+        "gen-1792207774-8R0fpjK6PzLIb6bHsqfl",
+        "gen-1792207776-Wk5bS2XUiqAYrO1XNmWt",
+        "gen-1792207777-pqa8uvExA5H0q67JW13w"
+      ],
+      "raw_response_sha256": [
+        "65ab221412854b4c6c7716ce9e1d56d7b6c4c8bb54f677d36b23643b592a2226",
+        "28e3b9a7975f528fe96ec04cefcce671e506af96a635a55ec7963407e37bdf4d",
+        "8cf91d0e718c1ba97c218ce544b5be373bb2316d9b046bac1ec4152c4d7174e5"
+      ]
+    }
+  ],
+  "overall_verdict": "wire_path_demonstrated_but_semantic_acceptance_failed",
+  "limitations": [
+    "Only two fixed synthetic drafts were evaluated.",
+    "One output was materially accepted despite weakening the explicit human approval condition.",
+    "The prior v3/v4 false-accept evidence remains binding; this v2 result does not qualify the checker or production use.",
+    "Provider-reported cost is telemetry; the 0.20 USD amount is a local reservation limit, not a provider-enforced spend ceiling."
+  ],
+  "promoted": false,
+  "semantic_quality_proven": false,
+  "production_qualified": false
+}

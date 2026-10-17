@@ -1,0 +1,1 @@
+{"calls": 0, "known_provider_cost_usd": "0", "quality_grade": null, "reserved_usd": "0", "status": "stopped", "unknown_outcome_requests": 0}

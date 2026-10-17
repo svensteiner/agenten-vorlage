@@ -1,0 +1,10 @@
+{
+  "helper_sha256": "737ab7d61738705a48a15303158f6a5be70ec4e95ef3e5a45af89abe7049f847",
+  "offline_tests_sha256": "0752ab99209cedd09d325fb979ce7d52e6d088691a2736554b6c6cd1200c1668",
+  "prepared_sha256": "6b52dc846c2289b3f568dcdce2afe4013f9768e66230ee45bd1513fd5fcf8c68",
+  "independent_pre_live_review": "no concrete safety blocker; result status, not process exit, controls diagnostic outcome",
+  "max_physical_calls": 4,
+  "local_reservation_usd": "0.20",
+  "provider_enforced_spend_cap": false,
+  "quality_acceptance": false
+}

@@ -1,0 +1,10 @@
+{
+  "helper_sha256": "192bdc5eeeaf3fb7db939a2af4b0805727e820782e2f7800f6f71444bdded81d",
+  "offline_tests_sha256": "b025bf6322e6cdb64ebf58c9beb5897c6128df78c24cc724e5cbffffd0dadbf4",
+  "prepared_sha256": "8519f8639ddce05b098e6af8da9e5b68964ced25849b79fe4be489b5760ff046",
+  "independent_pre_live_review": "no concrete safety blocker; fullrun mocked4post pattern tested; inspect result status not process exit",
+  "max_physical_calls": 4,
+  "local_reservation_usd": "0.20",
+  "provider_enforced_spend_cap": false,
+  "quality_acceptance": false
+}

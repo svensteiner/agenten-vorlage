@@ -64,3 +64,6 @@ docs/evidence/source-typed-central-20261017/*.txt -text
 
 docs/evidence/trusted-test-image-20261017/*.json -text
 docs/evidence/trusted-test-image-20261017/*.txt -text
+
+docs/evidence/source-central-live-20261017/*.json -text
+docs/evidence/source-central-live-20261017/*.txt -text

@@ -1,0 +1,1 @@
+{"calls": 4, "known_provider_cost_usd": "0.006543", "quality_grade": null, "reserved_usd": "0.20", "status": "diagnostic_complete", "unknown_outcome_requests": 0}

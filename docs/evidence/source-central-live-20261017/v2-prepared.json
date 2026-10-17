@@ -1,0 +1,75 @@
+{
+  "study_id": "source-central-transport-v2-synthetic-20261017",
+  "supersedes_stopped_attempt": {
+    "helper_sha256": "737ab7d61738705a48a15303158f6a5be70ec4e95ef3e5a45af89abe7049f847",
+    "prepared_sha256": "6b52dc846c2289b3f568dcdce2afe4013f9768e66230ee45bd1513fd5fcf8c68",
+    "result_sha256": "d60c6ccec0c5ae37466850a36e9e161cc3c188ff5e20ee8a1a1dad4c6b8757b6",
+    "lock_sha256": "6a42febb78c676a648d7c2606772744194ee4a2917cc10b56091a297614f02b7",
+    "review_sha256": "a0ada0fd7d1080cbb3ef7982bd9047893cf5d9ef4f276ba7e767cc5013148f09",
+    "physical_requests": 0
+  },
+  "scope": "Actual central LLMResponder structured review/repair wire path; two fixed synthetic cases; diagnostic only.",
+  "harness_sha256": "192bdc5eeeaf3fb7db939a2af4b0805727e820782e2f7800f6f71444bdded81d",
+  "parent_sha256": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+  "v4_sha256": "ddbd2a7a17174c2bc87ecf31710de54b6ecd0bf964ebe3d2d2244c5174b46cfc",
+  "full_suite_gate": {
+    "sha256": "8976ffefcbd3321ef9d8dcb58700b49c4a9d6e3e9e9b4a17fc64b6b1f4618bdb",
+    "log_sha256": "f9ddc767989447afacb0356727d12c92dc03a648437eafbdcf61631db332c93c",
+    "passed": 4641,
+    "exit_code": 0
+  },
+  "source_sha256": {
+    "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "content/source_faithfulness.py": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+    "content/source_qualification_protocol.py": "0d9df54ed8c9dbf36c3d59bf656257f93385b7c91b406dc114cc3639cb1be02e",
+    "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "intelligent_features/llm_responder.py": "2622a5dc7bb97f426024c68ef82cab2bf61db533c45b369c67c0d6078f477a52",
+    "tests/unit/test_llm_responder_freeform.py": "d2bf9e49cdb73c68a6dec9f14c3846efb2f97f5a290cac57af14704299389a9f",
+    "tests/unit/test_native_anthropic_responder.py": "18a26cef92cc1a73e5956baf12dfd4b5f1cb33289aa72a707c16127acd7b60fc",
+    "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+    "tests/unit/test_reply_learning_closure.py": "f984349652b4d12a4167bbd5882142ed26a857fd1d5ec5a35592862ed5fad279",
+    "tests/unit/test_source_faithfulness_wire_contract.py": "de5e40d128ac3a47ba1b5776a3134227a468fe5eb5f81ce98861b6030c46828b",
+    "tests/unit/test_source_qualification_transport.py": "d988c0e460e82593f6d56e5ba4cd4f620b1de1f9afec571afeb1d7e773f8c3cb"
+  },
+  "model": "anthropic/claude-haiku-4.5",
+  "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+  "limits": {
+    "max_physical_requests": 4,
+    "local_reservation_usd": "0.20",
+    "per_request_reservation_usd": "0.05",
+    "provider_enforced_cap": false,
+    "redirects": false,
+    "retries": 0
+  },
+  "source": "The sample ledger lists seven matched invoices. Payment status is unknown. A controller must approve release.",
+  "cases": [
+    {
+      "case_id": "synthetic-valid",
+      "draft": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Die Freigabe erfordert die Zustimmung eines Controllers.",
+      "draft_sha256": "672bd57d92a139ac906818341e4b9cde413e31d90903448843c257ac1a01a263"
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "draft": "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben.",
+      "draft_sha256": "0de7b03812b4bcdf208ec6a85849b9f7eccf72bcc0a6deef35546e1cc79363d0"
+    }
+  ],
+  "expected_calls": {
+    "synthetic-valid": {
+      "review": 1,
+      "repair": 0
+    },
+    "synthetic-invalid": {
+      "review": 2,
+      "repair": 1
+    }
+  },
+  "claims": {
+    "semantic_quality_proven": false,
+    "production_qualified": false,
+    "provider_output_unverified": true
+  },
+  "promoted": false,
+  "semantic_quality_claim": false
+}

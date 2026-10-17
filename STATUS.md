@@ -64,6 +64,18 @@ Noch kein AgentKit-Testwerkzeug, keine Projektabhaengigkeiten und kein echter
 Coding-Abschluss darin. run_pytest bleibt unter WritePolicy gesperrt.
 [Belege und verbleibender Integrationsvertrag](docs/evidence/docker-isolation-probe-20261017/README.md).
 
+## Zentraler echter API-Nachtest
+
+Der zentrale Responder-Kandidat fuehrt nach einer separat korrigierten
+Diagnoseharness-Panne vier echte Haiku/OpenRouter-Aufrufe aus: drei Reviews,
+eine Reparatur, gemeldet 0,006543 USD, keine unbekannten Ausgaenge. Die
+API-/Schema-/Dekodierintegration funktioniert. Die unabhaengige Inhaltspruefung
+findet jedoch erneut einen False-Accept: erforderliche Controller-Zustimmung
+wird zur allgemeinen Kontrolle abgeschwaecht und vom Reviewer akzeptiert.
+Keine semantische Abnahme oder Promotion. Der vorherige Harness-Fehlversuch
+mit null Aufrufen/Kosten ist separat erhalten.
+[Rohbelege, Ganzablauf-Tests und kritischer Audit](docs/evidence/source-central-live-20261017/README.md).
+
 ## CLI-Dateifreigabe
 
 `run` und `resume` bieten jetzt wiederholtes `--allow-write DATEI` und explizites
