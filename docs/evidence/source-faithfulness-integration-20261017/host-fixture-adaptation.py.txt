@@ -1,0 +1,133 @@
+"""News experiment assignment and real generation-to-metadata integration."""
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from bot import ReplyButtonOptimiertBotEnhanced as Bot
+from content.news_perspective import assign_perspective
+from learning.news_experiment_policy import NewsExperimentPolicy
+
+
+@pytest.fixture
+def source_qualification(monkeypatch):
+    """Stub the explicitly injected source qualifier for legacy path tests."""
+    from core.llm_task_budget import current_budget
+    from content import source_faithfulness
+
+    def accepted(observation, draft, *, reviewer, repairer=None, max_chars=190):
+        budget = current_budget()
+        return {
+            "text": "Finaltext",
+            "verification": "unverified",
+            "review_calls": 1,
+            "repair_calls": 0,
+            "task_id": budget.task_id if budget is not None else None,
+            "status": "accepted",
+            "reason_codes": [],
+        }
+
+    qualifier = MagicMock(side_effect=accepted)
+    monkeypatch.setattr(source_faithfulness, "qualify_source_draft", qualifier)
+    return qualifier
+
+
+def test_assignment_stable_and_contains_both_arms():
+    observations = [f"Source observation {i}" for i in range(40)]
+    first = [assign_perspective(text) for text in observations]
+    assert first == [assign_perspective(text) for text in observations]
+    assert {item["arm"] for item in first} == {"control", "perspective"}
+    assert len({item["observation_hash"] for item in first}) == 40
+
+
+def test_assignment_survives_learning_persistence(tmp_path):
+    from learning.tweet_learner import TweetLearner
+    path = tmp_path / "learning.json"
+    experiment = assign_perspective("A source fact")
+    learner = TweetLearner(state_path=path)
+    learner.record_tweet("Ein konkreter Quellenfakt bleibt erhalten.",
+                         source="news_commentary",
+                         content_metadata={"editorial_experiment": experiment})
+    reloaded = TweetLearner(state_path=path)
+    assert reloaded._data["tweets"][-1]["content_metadata"]["editorial_experiment"] == experiment
+
+
+@pytest.mark.parametrize("arm", ["control", "perspective"])
+@pytest.mark.parametrize("approved", [True, False])
+def test_real_news_path_preserves_gate_and_assignment(arm, approved, source_qualification):
+    observation = next(f"Source observation {i}" for i in range(100)
+                       if assign_perspective(f"Source observation {i}")["arm"] == arm)
+    assignment = assign_perspective(observation)
+    bank = SimpleNamespace(draw_recent=MagicMock(return_value=observation))
+    subject = SimpleNamespace(
+        config={"news_commentary": {"enabled": True}}, _observation_bank=bank,
+        llm_responder=object(), safe_log=MagicMock(),
+        _get_session_prompt_controls=lambda: {"content_format": "thesis_reason"},
+        _apply_unified_quality_gate=MagicMock(return_value="Finaltext" if approved else None),
+    )
+    with patch("content.tension_generator.TensionGenerator") as generator:
+        generator.return_value.generate.return_value = "Draft"
+        payload = Bot._generate_news_commentary_tweet(subject)
+    call = generator.return_value.generate.call_args
+    assert call.args == (observation,)
+    assert bool(call.kwargs.get("reach_context")) is (arm == "perspective")
+    generator.return_value.generate.assert_called_once()
+    source_qualification.assert_called_once_with(
+        observation, "Draft", reviewer=subject.llm_responder,
+        repairer=subject.llm_responder, max_chars=190)
+    subject._apply_unified_quality_gate.assert_called_once_with(
+        "Finaltext", source="news_commentary", topic="news")
+    if not approved:
+        assert payload is None
+        return
+    metadata = Bot._build_publish_metadata(subject, payload, "Finaltext")
+    assert metadata["editorial_experiment"] == assignment
+    assert payload["source"] == "news_commentary"
+    assert payload["format"] == "thesis_reason"
+
+
+@pytest.mark.parametrize(("decision", "expected_arm", "has_context"), [
+    ("keep", "perspective", True),
+    ("rollback", "control", False),
+])
+def test_policy_decision_controls_next_news_without_fabricated_experiment(
+    tmp_path, decision, expected_arm, has_context, source_qualification
+):
+    policy_path = tmp_path / "policy.json"
+    policy = NewsExperimentPolicy(policy_path)
+    evidence = [f"id-{i}" for i in range(24)]
+    views = (100, 120) if decision == "keep" else (100, 70)
+    policy._persist({
+        "status": decision,
+        "evidence_fingerprint": "a" * 64,
+        "counts": {"eligible": 24},
+        "arms": {
+            "control": {"count": 12, "mean_views": views[0], "median_views": views[0], "median_likes": 1, "median_replies": 1},
+            "perspective": {"count": 12, "mean_views": views[1], "median_views": views[1], "median_likes": 1, "median_replies": 1},
+        },
+        "evidence_ids": evidence,
+        "started_at": 1,
+        "evaluated_at": 1_000_000,
+    }, 1_000_000)
+    observation = "Source observation policy"
+    bank = SimpleNamespace(draw_recent=MagicMock(return_value=observation))
+    subject = SimpleNamespace(
+        config={"news_commentary": {"enabled": True, "news_experiment_policy_state_file": str(policy_path)}},
+        _observation_bank=bank, llm_responder=object(), safe_log=MagicMock(),
+        _get_session_prompt_controls=lambda: {"content_format": "thesis_reason"},
+        _apply_unified_quality_gate=MagicMock(return_value="Finaltext"),
+        outcome_ledger=None,
+    )
+    with patch("bot.append_control_event"), patch("content.tension_generator.TensionGenerator") as generator:
+        generator.return_value.generate.return_value = "Draft"
+        payload = Bot._generate_news_commentary_tweet(subject)
+
+    call = generator.return_value.generate.call_args
+    assert bool(call.kwargs.get("reach_context")) is has_context
+    source_qualification.assert_called_once_with(
+        observation, "Draft", reviewer=subject.llm_responder,
+        repairer=subject.llm_responder, max_chars=190)
+    subject._apply_unified_quality_gate.assert_called_once_with(
+        "Finaltext", source="news_commentary", topic="news")
+    assert payload["news_policy"]["arm"] == expected_arm
+    assert "editorial_experiment" not in payload

@@ -1,0 +1,51 @@
+"""Host-frozen integration expectations; no live provider/browser/publication."""
+import hashlib
+import sys
+from types import ModuleType,SimpleNamespace
+from unittest.mock import MagicMock
+import pytest
+
+# Run from the integration workspace with PYTHONPATH=. so the actual Bot is used.
+from bot import ReplyButtonOptimiertBotEnhanced as Bot
+from content.observation_bank import ObservationBank
+import core.llm_task_budget as budgets
+
+FACT="Seven scans are missing. Loading status is unknown. A supervisor must approve closeout."
+DRAFT="Entwurf vor der Quellenprüfung."
+POST="Sieben Scans fehlen; Ladestatus unklar, Abschluss nur mit Supervisor-Freigabe."
+
+@pytest.fixture
+def setup(tmp_path,monkeypatch):
+    import content
+    monkeypatch.setattr(budgets,"append_control_event",MagicMock())
+    bank=ObservationBank(str(tmp_path/"bank.jsonl"));bank.add(FACT,source="rss",source_id="fixture-17")
+    events=[];llm=SimpleNamespace(generate_freeform=MagicMock())
+    subject=SimpleNamespace(config={"news_commentary":{"enabled":True,"news_experiment_policy_state_file":str(tmp_path/"policy.json")}},
+        _observation_bank=bank,llm_responder=llm,safe_log=MagicMock(),
+        _get_session_prompt_controls=lambda:{"content_format":"thesis_reason"})
+    def gate(text,**kwargs):events.append(("gate",text));return POST
+    subject._apply_unified_quality_gate=MagicMock(side_effect=gate)
+    def qualification(observation,draft,*,reviewer,repairer=None,max_chars=190):
+        assert observation==FACT and draft==DRAFT and reviewer is llm
+        assert repairer is llm and max_chars==190
+        events.append(("qualify",budgets.current_budget().task_id))
+        return {"text":POST,"status":"accepted","verification":"unverified","review_calls":1,"repair_calls":0,"task_id":budgets.current_budget().task_id,"reason_codes":[]}
+    fake=ModuleType("content.source_faithfulness");fake.qualify_source_draft=MagicMock(side_effect=qualification)
+    monkeypatch.setitem(sys.modules,"content.source_faithfulness",fake)
+    monkeypatch.setattr(content,"source_faithfulness",fake,raising=False)
+    generator=MagicMock();generator.return_value.generate.return_value=DRAFT
+    monkeypatch.setattr("content.tension_generator.TensionGenerator",generator)
+    monkeypatch.setattr("bot.append_control_event",MagicMock())
+    return subject,fake,events
+
+
+@pytest.mark.parametrize("gate_result",[None,""])
+def test_rejected_final_gate_retains_existing_control_event(setup,gate_result):
+    subject,module,events=setup
+    subject._apply_unified_quality_gate.side_effect=lambda *a,**k:gate_result
+    assert Bot._generate_news_commentary_tweet(subject) is None
+    callback=sys.modules["bot"].append_control_event
+    matches=[c for c in callback.call_args_list if c.args and c.args[0]=="gate_rejected"]
+    assert len(matches)==1
+    assert matches[0].kwargs["component"]=="news_experiment_policy"
+    assert matches[0].kwargs["status"]=="rejected"

@@ -19,6 +19,36 @@
     "host-tests.txt": "460eb84d3235bbe7967496a5ecef426da27b79883c4ed88ebcf8a39086a1c5b3",
     "native-tests.txt": "dca6869bc63c87c0fe944af487099da128e83d8318aaeb568fb9ff0d4c70ece9",
     "planner-and-review.json": "a7c52916a40d343b8513b83246936610b380d2df11955cece870d08689eed8fd",
-    "scope-escalation.json": "bffb80f9160e351fed2687e75b61166a0ba2e48db890b36d57df559636cced06"
+    "scope-escalation.json": "bffb80f9160e351fed2687e75b61166a0ba2e48db890b36d57df559636cced06",
+    "host-full-first.txt": "87480310becda59b9cf84d7c25c60da5da20f9dacb6a97126392d6bcd214b2dc",
+    "host-full-first-validation.json": "ab47c3a372a2211c6dd9634af26ed185fae1d3d8acfad9b0d53c94640ac98b20",
+    "host-event-red.txt": "d16b63bea7701fd208f14fecc8fc5b8eb5083520fdf91571596dfb6b3313cd17",
+    "host-event-counterexamples.py.txt": "4b5f50cacda373baac0385d3eeab639e05ce9ff69f98da7abbdbc85e2a84f6e4",
+    "host-fixture-tests.txt": "d0b7b52c1136d04cf7aeffd7e5e4eeb2a81379fea7dc9015db77879fc02d1daf",
+    "host-fixture-adaptation.py.txt": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118"
+  },
+  "separate_host_adoption": {
+    "native_candidate_unchanged": true,
+    "bot_sha256": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "correction": "finalgate rejection event branch before equalitycheck",
+    "event_red_cases": 2,
+    "independent_review": "no failopen",
+    "full_unit_first": {
+      "exit_code": 1,
+      "passed": 4591,
+      "failed": 6,
+      "skipped": 11,
+      "xfailed": 5,
+      "seconds": 277.32,
+      "failure_scope": "test_news_perspective.py fixtures missing mandatory qualification stub"
+    },
+    "full_regression_passed": false,
+    "fixture_adaptation": {
+      "tests_passed": 36,
+      "seconds": 3.24,
+      "file_sha256": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+      "full_unit_rerun": "pending",
+      "qualification": "hostfixtureadaptation;notnativeunassisted"
+    }
   }
 }

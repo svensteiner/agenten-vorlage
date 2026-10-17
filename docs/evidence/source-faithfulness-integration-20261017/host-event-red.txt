@@ -1,0 +1,40 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+________ test_rejected_final_gate_retains_existing_control_event[None] ________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...icMock id='1182647009984'>), <module 'content.source_faithfulness'>, [('qualify', '3dc8c3d1fced42bd8ca49296690f24cd')])
+gate_result = None
+
+    @pytest.mark.parametrize("gate_result",[None,""])
+    def test_rejected_final_gate_retains_existing_control_event(setup,gate_result):
+        subject,module,events=setup
+        subject._apply_unified_quality_gate.side_effect=lambda *a,**k:gate_result
+        assert Bot._generate_news_commentary_tweet(subject) is None
+        callback=sys.modules["bot"].append_control_event
+        matches=[c for c in callback.call_args_list if c.args and c.args[0]=="gate_rejected"]
+>       assert len(matches)==1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+..\source_faithfulness_news_event_contract_20261017.py:49: AssertionError
+__________ test_rejected_final_gate_retains_existing_control_event[] __________
+
+setup = (namespace(config={'news_commentary': {'enabled': True, 'news_experiment_policy_state_file': 'C:\\Users\\botrunner\\Do...icMock id='1182647832688'>), <module 'content.source_faithfulness'>, [('qualify', 'f3ba733f0d4b47488299904667028adb')])
+gate_result = ''
+
+    @pytest.mark.parametrize("gate_result",[None,""])
+    def test_rejected_final_gate_retains_existing_control_event(setup,gate_result):
+        subject,module,events=setup
+        subject._apply_unified_quality_gate.side_effect=lambda *a,**k:gate_result
+        assert Bot._generate_news_commentary_tweet(subject) is None
+        callback=sys.modules["bot"].append_control_event
+        matches=[c for c in callback.call_args_list if c.args and c.args[0]=="gate_rejected"]
+>       assert len(matches)==1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+..\source_faithfulness_news_event_contract_20261017.py:49: AssertionError
+=========================== short test summary info ===========================
+FAILED ..\source_faithfulness_news_event_contract_20261017.py::test_rejected_final_gate_retains_existing_control_event[None]
+FAILED ..\source_faithfulness_news_event_contract_20261017.py::test_rejected_final_gate_retains_existing_control_event[]
+2 failed in 2.15s

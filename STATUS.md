@@ -95,8 +95,8 @@ wird in isolierter Kopie entwickelt; workspace-write allein begrenzt keine Datei
 ## Offene Abnahme
 
 1. Fruehere Generatorreparatur: volle Unit-Regression4.495 bestanden. Neue
-   Quellenintegration: volle Unit-Regression noch laufend, Bereichsabnahme
-   gescheitert. Uebernahme bleibt von Umfangsschutz, Textqualitaet und Betrieb abhaengig.
+   Quellenintegration: erster voller Unit-Lauf4.591 bestanden/sechs alte
+   Experiment-Fixturefehler; Bereichsabnahme gescheitert. Uebernahme bleibt von Umfangsschutz, Textqualitaet und Betrieb abhaengig.
 2. Echte Marketingausgaben verblindet bewerten. Bisherige feste Neuner-Abnahme
    verfehlt die vorbestehende +0,5-Grenze; interne Scores sind keine Reichweite.
    Auch die sechs frischen synthetischen Quellen sind gescheitert (0/6 je Variante).
