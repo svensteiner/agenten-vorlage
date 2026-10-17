@@ -5,16 +5,25 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from agentkit.contracts import ContractError
 from agentkit.phase_test_execution import (
     LocalPhaseTestPolicy,
+    _is_link,
     authorize_phase,
     verify_phase_freshness,
 )
 
 
 class LocalPhaseTestPolicyTests(unittest.TestCase):
+    def test_windows_reparse_point_is_rejected_without_junction_api(self):
+        path = SimpleNamespace(
+            is_symlink=lambda: False,
+            lstat=lambda: SimpleNamespace(st_file_attributes=0x400),
+        )
+        self.assertTrue(_is_link(path))
+
     def test_allowed_production_write_requires_baseline_hash(self):
         self.data["snapshot_paths"].append("agentkit/unpinned.py")
         self.data["allowed_write_paths"].append("agentkit/unpinned.py")

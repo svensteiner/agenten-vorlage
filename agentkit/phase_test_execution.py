@@ -86,6 +86,9 @@ def _is_link(path: Path) -> bool:
     try:
         if path.is_symlink():
             return True
+        # Python 3.11 has no Path.is_junction on Windows.
+        if getattr(path.lstat(), "st_file_attributes", 0) & 0x400:
+            return True
         checker = getattr(path, "is_junction", None)
         return bool(checker()) if checker is not None else False
     except OSError as exc:

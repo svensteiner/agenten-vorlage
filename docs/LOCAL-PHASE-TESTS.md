@@ -80,7 +80,8 @@ enthaelt die zu diesem Zeitpunkt vorhandenen generierten Pakete.
 [Quellbindungen, Ergebnisse und Grenzen](evidence/execution-profiles-20261017/private-local-phase-technical.json).
 
 Der [Folgestand](evidence/execution-profiles-20261017/private-local-phase-recovery-technical.json)
-besteht 651 Tests mit fuenf Skips, ohne Fehler und mit 80 % Branch-Coverage.
+besteht 651 Tests mit fuenf Skips, ohne Fehler und mit 80 % kombinierter
+Statement-/Branch-Coverage (83,15 % Statements, 73,44 % Branches).
 Bekannte verfruehte Phasen- oder Produktionsschreibvorschlaege werden vor
 Seiteneffekten als begrenzte Korrekturbeobachtung an den Worker gegeben.
 Allgemeine Fehler, unbekannte Ausgaenge und Fehler nach einer Reservierung
@@ -89,6 +90,17 @@ bleiben gesperrt. Vorhandene Korrektur- und Historienbudgets gelten weiter.
 Exakte, hostseitig gebundene Test-IDs duerfen bis zu 16.384 Zeichen enthalten;
 die Manifestgrenze von 200.000 Bytes und die Anzahlgrenzen bleiben erhalten.
 Damit ist auch ein bestehender parametrisierter Fall mit 8.284 Zeichen ohne
-Verkleinerung der gezielten Suite waehlbar. Das oeffentliche v1-Profil bleibt
-unveraendert. Ein echter autonomer Coding-Auftrag und die Marketingqualitaet
+Verkleinerung der gezielten Suite waehlbar. Aktions- und Policy-Vertrag des
+oeffentlichen v1-Profils bleiben unveraendert.
+
+Die [Windows-Link-Korrektur](evidence/execution-profiles-20261017/snapshot-link-safety.json)
+haertet den gemeinsamen Datei-Leser fuer beide Profile: Er prueft weiter
+die Workspace-Grenze, oeffnet aber den nicht aufgeloesten Dateipfad fuer die
+Windows-Handlepruefung. Bereits vorhandene Datei- und Verzeichnislinks koennen
+dadurch nicht vor der Reparse-Pruefung verschwinden. Ein echter lokaler
+Junction-Vergleich bestaetigt Ablehnung statt Dateilesen; Datei-Symlinks
+bleiben lokal wegen fehlender Erstellungsrechte ungeprueft. Der neue Stand
+besteht 656 Tests mit sieben Skips, ohne Fehler und mit 80,37 % kombinierter
+Coverage (83,15 % Statements, 73,45 % Branches). Die korrigierte Windows-CI
+steht noch aus. Ein echter autonomer Coding-Auftrag und die Marketingqualitaet
 sind weiterhin nicht abgenommen.

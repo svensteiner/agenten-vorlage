@@ -249,6 +249,35 @@ class TestExecutionPolicyTests(unittest.TestCase):
     def test_snapshot_read_rejects_parent_component_symlink_swap(self):
         self._assert_source_symlink_swap_never_returns_outside_bytes(parent=True)
 
+    def test_snapshot_handle_retains_lexical_path_after_canonical_validation(self):
+        relative = "tests/test_alias.py"
+        lexical = self.workspace.resolve(strict=True) / "tests" / "test_alias.py"
+        resolved = self.workspace / "app.py"
+        with patch("agentkit.test_execution.safe_workspace_path", return_value=resolved), \
+                patch("agentkit.test_execution._open_source_handle",
+                      side_effect=ContractError("stop before read")) as opened:
+            with self.assertRaisesRegex(ContractError, "stop before read"):
+                _safe_source_bytes(self.workspace, relative, 1024)
+        opened.assert_called_once_with(self.workspace.resolve(strict=True), lexical, relative)
+
+    def test_snapshot_read_rejects_existing_file_symlink_inside_workspace(self):
+        link = self.tests / "test_alias.py"
+        try:
+            link.symlink_to(self.workspace / "app.py")
+        except OSError as exc:
+            self.skipTest(f"file symlink unavailable: {exc}")
+        with self.assertRaises(ContractError):
+            _safe_source_bytes(self.workspace, "tests/test_alias.py", 1024)
+
+    def test_snapshot_read_rejects_existing_parent_symlink_inside_workspace(self):
+        link = self.workspace / "alias_tests"
+        try:
+            link.symlink_to(self.tests, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"directory symlink unavailable: {exc}")
+        with self.assertRaises(ContractError):
+            _safe_source_bytes(self.workspace, "alias_tests/test_ok.py", 1024)
+
     def test_wrong_image_inspection_never_starts_container_and_cleans_it(self):
         policy = TestExecutionPolicy.from_file(self.manifest)
         calls = []

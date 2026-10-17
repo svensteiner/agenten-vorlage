@@ -25,7 +25,17 @@
     "percent": 80,
     "branch_measurement": true,
     "minimum_percent": 75,
-    "log_sha256": "1718a2a7e18c9bc244f4a96717355e2b2e027e9a341cfc7e1dab0b602efaee56"
+    "log_sha256": "1718a2a7e18c9bc244f4a96717355e2b2e027e9a341cfc7e1dab0b602efaee56",
+    "measurement": "combined statement and branch coverage",
+    "combined_percent": 80.36819811013359,
+    "statement_percent": 83.15068493150685,
+    "branch_percent": 73.43572241183163,
+    "covered_statements": 7284,
+    "total_statements": 8760,
+    "covered_branches": 2582,
+    "total_branches": 3516,
+    "minimum_applies_to": "combined coverage",
+    "json_sha256": "4cd79bc158bf3fefa92a360251f8198cc23125a51824ed034502e375f61d00cb"
   },
   "offline_release": {
     "passed": 34,
@@ -81,5 +91,10 @@
   "autonomous_qualification": false,
   "production_qualification": false,
   "marketing_quality_qualification": false,
-  "live_marketingbot_changed": false
+  "live_marketingbot_changed": false,
+  "typed_denial_red_provenance": {
+    "retained_on_disk": false,
+    "reported_by_implementer": "Two runtime assertions failed before implementation; available only in the agent command transcript.",
+    "qualification_limit": "No independently retained pre-fix behavioral RED artifact is claimed. Green and independent review checks are retained."
+  }
 }

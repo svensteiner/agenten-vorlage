@@ -1,0 +1,98 @@
+{
+  "schema": "agentkit-technical-qualification/v1",
+  "status": "offline_checks_passed_new_ci_pending",
+  "scope": "Windows snapshot alias safety and host-independent Codex phase test fixtures",
+  "source_sha256": {
+    "agentkit/test_execution.py": "f822231b3a3e6ba1b307584ad8b69c77e5d248e83cb80f5536788dca6bc127cc",
+    "agentkit/phase_test_execution.py": "4e44df3bda891b45708a22420e31330d4117262ed1b9d05451178aa0c6cd71f3",
+    "tests/test_test_execution.py": "28a00b1e579f8d56bd94777298bdbc6e42caf490489c384596e882baf500a4d2",
+    "tests/test_phase_test_execution.py": "14d049caae9e1da1d2ffbf0caf0e8aa69d47de89c80f9f57e93f623f357d6d0f",
+    "tests/test_codex_local_phases.py": "e2ce0620bd6c755656770ada1ef150b6da551744e2f07041a820c6319d2f499e"
+  },
+  "source_hash_basis": "Raw host worktree bytes; Git line ending conversion may change byte hashes.",
+  "full_tests": {
+    "run": 656,
+    "skipped": 7,
+    "failed": 0,
+    "duration_seconds": 320.885,
+    "inputs": 88,
+    "input_changes": [],
+    "log_sha256": "a7c1774db459baff2f9ee6f1f8bbd93b1444d56bed9883313ce8301a43030668"
+  },
+  "coverage": {
+    "combined_percent": 80.36964663735547,
+    "statement_percent": 83.14696485623003,
+    "branch_percent": 73.45082433200682,
+    "minimum_combined_percent": 75,
+    "json_sha256": "c2bd4316e8438fd302a8361b650e662450ebcae0f7d461957bdf461910cd1491"
+  },
+  "offline_release": {
+    "passed": 34,
+    "failed": 0,
+    "log_sha256": "053a06f074a786bf56bf8a6ebeec73803ba6d02c07827b32eb318793af62baf9"
+  },
+  "static_and_workflow_checks": {
+    "ruff": {
+      "exit_code": 0,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "bandit": {
+      "exit_code": 0,
+      "log_sha256": "bf7f469779498a04e792f6261b60c160931016c24528a7336e54ddaca1533950"
+    },
+    "workflow_trace": {
+      "exit_code": 0,
+      "log_sha256": "fc0f8b0cd2572f3f082033cf82a852be5bbc32fe461320e1c6fc37a4b4c954c8"
+    }
+  },
+  "independent_review_sha256": "5aa09bc6a89d2d932a436d81615eed4c654245e9e5a99e2d8b18d26b515e54fa",
+  "regression_artifacts": {
+    "red-canonical-root.log": "d5245ace599f9569d950b834942f7044e625fd65335e134852aa7fa8b601234f",
+    "reparse-red.log": "d6b5d60f60fce80323d5a653af01031b1189bddd61fff5b36dd11429d7e8f603",
+    "actual-junction-result.json": "a74f2ac4d2e664fcd1eba6e5ddd86ba78c0d094d57ada68b0e0ac165f59f6ea6",
+    "actual-junction-old-vs-new.json": "dd360893a6d225123aa44959bddb086c90c557959f2b73c834467407c6e61934"
+  },
+  "behavior": {
+    "containment_validation_retained": true,
+    "lexical_file_path_opened_for_windows_handle_checks": true,
+    "existing_reparse_and_hardlink_and_final_path_checks_retained": true,
+    "posix_dirfd_nofollow_branch_unchanged": true,
+    "private_reparse_attribute_check_supports_python_311": true,
+    "public_v1_api_action_policy_limits_unchanged": true,
+    "shared_reader_implementation_hardened_for_public_and_private_profiles": true
+  },
+  "actual_local_junction": {
+    "normal_read_passed": true,
+    "same_workspace_parent_junction_rejected": true,
+    "private_reparse_check_rejected": true,
+    "old_commit_9601e22_accepted_same_junction": true,
+    "comparison_is_retrospective_not_historical_red": true,
+    "does_not_prove_file_symlink_case": true
+  },
+  "previous_ci": {
+    "run_id": 39037449182,
+    "conclusion": "failure",
+    "head_sha": "9601e22f22f7c9bfcfef8a781dd444a75cb5195a",
+    "retained": true,
+    "windows_test_result": {
+      "run": 651,
+      "failed": 4,
+      "errors": 7,
+      "skipped": 21
+    },
+    "causes": [
+      "Remaining CodexLocalPhase fixtures read the Windows user configuration.",
+      "Preexisting symlink inside the workspace was resolved before Windows handle validation."
+    ],
+    "log_sha256": "afffb0f45ab52264dea8fa8d12fa6ea68a1b639084d20288ffac40eeb7841e1f"
+  },
+  "limitations": [
+    "Local symlink creation needs unavailable privileges; seven suite skips remain counted. Real local directory-junction evidence is separate from file symlink evidence.",
+    "The corrected Windows CI has not yet completed.",
+    "No actual model task or marketing-quality acceptance occurred in this technical qualification."
+  ],
+  "model_calls": 0,
+  "live_marketingbot_changed": false,
+  "autonomous_qualification": false,
+  "production_qualification": false
+}

@@ -17,6 +17,16 @@ from agentkit.write_policy import WritePolicy
 
 class CodexLocalPhaseTests(unittest.TestCase):
     def setUp(self):
+        codex_command_patch = patch(
+            "agentkit.backends.codex_command", return_value=["codex-fixture"]
+        )
+        sandbox_selection_patch = patch(
+            "agentkit.backends._windows_sandbox_selection", return_value=None
+        )
+        self.codex_command = codex_command_patch.start()
+        self.windows_sandbox_selection = sandbox_selection_patch.start()
+        self.addCleanup(codex_command_patch.stop)
+        self.addCleanup(sandbox_selection_patch.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.workspace = self.root / "workspace"
@@ -230,7 +240,6 @@ class CodexLocalPhaseTests(unittest.TestCase):
                     {"role": "worker", "task": "test"}, self.context(callback), 10
                 )
         callback.assert_not_called()
-
         unsupported = self.context(callback)
         unsupported.pop("write_policy")
         with patch("agentkit.backends.codex_command", return_value=["codex"]), \
@@ -240,7 +249,6 @@ class CodexLocalPhaseTests(unittest.TestCase):
                     {"role": "worker", "task": "test"}, unsupported, 10
                 )
         callback.assert_not_called()
-
         mismatched = self.context(callback)
         mismatched["write_policy"] = WritePolicy(["agentkit/worker.py"])
         with patch("agentkit.backends.codex_command", return_value=["codex"]), \
@@ -250,6 +258,14 @@ class CodexLocalPhaseTests(unittest.TestCase):
                     {"role": "worker", "task": "test"}, mismatched, 10
                 )
         callback.assert_not_called()
+
+    def test_backend_fixture_does_not_depend_on_host_cli_or_windows_config(self):
+        backend = CodexBackend()
+
+        self.assertEqual(["codex-fixture"], backend.command)
+        self.assertIsNone(backend.windows_sandbox)
+        self.codex_command.assert_called_once_with()
+        self.windows_sandbox_selection.assert_called_once_with()
 
     def test_local_action_is_not_a_public_action_or_path_bearing_tool(self):
         with self.assertRaises(ContractError):

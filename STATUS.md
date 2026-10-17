@@ -14,20 +14,22 @@ pruefen und nacharbeiten. Die Mietplattform ist zurueckgestellt.
 Der Original-Marketingbot bleibt unveraendert. Isolierte Cockpit-Abnahmen
 verwenden Port 8766; die Laufprotokolle belegen ihren jeweiligen Betriebsstand.
 
-Die neuen [privaten lokalen Docker-Testphasen](docs/LOCAL-PHASE-TESTS.md)
-haben einen technischen Nachweis: 643 AgentKit-Gesamttests mit fuenf Skips,
-keine Fehler, 34 Offline-Releasepruefungen und ein vollstaendiger Containerlauf
-mit 4.729 erfassten Testfaellen in 321 Dateien. Alle 698 Eingaben blieben
-unveraendert; der Host validierte den Bericht und die Containerbereinigung.
-Zwei zuvor unbekannt beendete Diagnoselaeufe bleiben getrennt erhalten.
-[Quellhashes und Grenzen](docs/evidence/execution-profiles-20261017/private-local-phase-technical.json).
-Das Profil ist nur operatorseitig ueber Python verfuegbar. Der
-[Folgestand mit begrenzten Korrekturbeobachtungen](docs/evidence/execution-profiles-20261017/private-local-phase-recovery-technical.json)
-besteht 651 Gesamttests mit fuenf Skips, ohne Fehler und mit 80 % Branch-Coverage
-sowie 34 Offline-Releasepruefungen. Die vorherige GitHub-CI scheiterte an
-hostabhaengigen Test-Fixtures und drei Scannerbefunden an reinen Container-
-Metadatenvergleichen; die Korrekturen sind lokal geprueft, die neue CI steht aus.
-Ein echter autonomer Modelllauf und die Marketingqualitaet bleiben offen.
+Die [privaten lokalen Docker-Testphasen](docs/LOCAL-PHASE-TESTS.md) sind nur
+operatorseitig ueber Python verfuegbar. Der aktuelle
+[technische Stand](docs/evidence/execution-profiles-20261017/snapshot-link-safety.json)
+besteht 656 Gesamttests mit sieben Skips, ohne Fehler und mit 80,37 %
+kombinierter Coverage (83,15 % Statements, 73,45 % Branches) sowie 34
+Offline-Releasepruefungen. Bekannte verfruehte Vorschlaege erhalten begrenzte
+Korrekturbeobachtungen; unbekannte Ausgaenge bleiben gesperrt.
+
+Ein separat validierter [Containerlauf](docs/evidence/execution-profiles-20261017/private-local-phase-technical.json)
+erfasst 4.729 Testfaelle in 321 Dateien; alle 698 Host- und Scratch-Eingaben
+blieben unveraendert, der Container wurde entfernt. Fruehere unbekannte
+Diagnoselaeufe und fehlgeschlagene CI-Laeufe bleiben erhalten. Die Windows-CI
+deckte einen echten Symlink-Fehler im gemeinsamen Datei-Leser sowie weitere
+hostabhaengige Fixtures auf. Die Korrekturen sind unabhaengig und lokal
+geprueft; die neue CI steht aus. Ein echter autonomer Modelllauf und die
+Marketingqualitaet bleiben offen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und

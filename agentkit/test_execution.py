@@ -326,9 +326,13 @@ def _open_source_handle(workspace: Path, target: Path, relative: str) -> int:
 
 
 def _safe_source_bytes(workspace: Path, relative: str, max_bytes: int) -> bytes:
-    target = safe_workspace_path(workspace, relative)
+    safe_workspace_path(workspace, relative)
     try:
-        fd = _open_source_handle(workspace.resolve(strict=True), target, relative)
+        canonical_workspace = workspace.resolve(strict=True)
+        # Validate containment without erasing a pre-existing reparse point.
+        # Windows must open the lexical path so its handle checks can reject it.
+        target = canonical_workspace / relative
+        fd = _open_source_handle(canonical_workspace, target, relative)
         try:
             before = os.fstat(fd)
             if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
