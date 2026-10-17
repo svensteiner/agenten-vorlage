@@ -1,0 +1,50 @@
+{
+  "schema": "agentkit-technical-evidence/v1",
+  "date": "2026-10-17",
+  "status": "linux_suite_compatible_not_agent_qualified",
+  "scope": "Isolated complete Marketingbot tests/unit suite; four test-fixture changes only",
+  "candidate_files": 698,
+  "changed_paths": [
+    "tests/unit/test_graph_engineering.py",
+    "tests/unit/test_graph_engineering_advanced.py",
+    "tests/unit/test_growth_runner_lifecycle.py",
+    "tests/unit/test_runtime_recovery_regressions.py"
+  ],
+  "changed_hashes": {
+    "tests/unit/test_graph_engineering.py": "7645f4ae30a4d93b73c4ec41d3ad8ce7e42b3446c74e627c5ac6dbb0344f49bd",
+    "tests/unit/test_graph_engineering_advanced.py": "cc48f828f5da940db0e77aea6e19b9b99968c6030268d6b987d0067dcb35a6b1",
+    "tests/unit/test_growth_runner_lifecycle.py": "f751a879a5c221d5800d04cfbe3480275d00d6f7d5a2c54389d2e23139ead42e",
+    "tests/unit/test_runtime_recovery_regressions.py": "0ecdb45fc22d44e9066c40cff91be5d7af7c6cbf6d2a60931e578879b7e6a449"
+  },
+  "targeted": {
+    "passed": 77,
+    "exit_code": 0,
+    "log_sha256": "9b082b449144e389c720142c29bca8214dca8609bb26cefb657977d5b4743ef5"
+  },
+  "full": {
+    "passed": 4714,
+    "failed": 0,
+    "skipped": 12,
+    "xfailed": 5,
+    "duration_seconds": 148.39,
+    "log_sha256": "010ee8d6a9c9838239ee830101d1b4807085f45a36fea5904f8fd64398b37bf6"
+  },
+  "image_ref": "sha256:c67fd231003f12395a5eb411b2aaad640f18a72c82a6112680ef2612b0786520",
+  "fixture_patch_sha256": "8850ad36872335cfc3f45c9fa26a0581de363fbed19f39f0c43d2a02e5ce3885",
+  "independent_review_sha256": "c8e07212c0614641eb3dfda2790678146b56664dcb727da74174c714e59da11b",
+  "prior_attempts": [
+    "Initial image lacked Anthropic SDK; collection failed.",
+    "Detached run stopped after Docker daemon restart; exit255 and partial results retained.",
+    "Complete unmodified Linux suite:4705 passed,9 Windows-assumption failures,12 skipped,5 xfailed.",
+    "First fixture targeted revision:76 passed,1 failure because wrapped OS constant became a Mock."
+  ],
+  "boundaries": [
+    "No marketing production source changed or promoted.",
+    "Original live Marketingbot unchanged.",
+    "Host698 input hashes verified unchanged after test.",
+    "Scratch post-source integrity not retained by this diagnostic runner.",
+    "Not a qualified autonomous Coding-agent receipt or content-quality result."
+  ],
+  "model_calls": 0,
+  "production_ready": false
+}

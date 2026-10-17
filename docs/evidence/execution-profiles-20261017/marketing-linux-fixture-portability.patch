@@ -1,0 +1,143 @@
+--- a/tests/unit/test_graph_engineering.py
++++ b/tests/unit/test_graph_engineering.py
+@@ -1,7 +1,9 @@
+ from __future__ import annotations
+ 
+ import json
++import os
+ from pathlib import Path
++from types import SimpleNamespace
+ from unittest.mock import Mock, patch
+ 
+ import pytest
+@@ -192,7 +194,10 @@
+     assert outcome["metrics"]["views"] == 10
+ 
+ 
+-def test_runtime_probe_counts_only_canonical_browser_process():
++def test_runtime_probe_counts_only_canonical_browser_process(monkeypatch):
++    windows_os = SimpleNamespace(**vars(os))
++    windows_os.name = "nt"
++    monkeypatch.setattr("intelligent_features.graph_engineering.os", windows_os)
+     completed = Mock(
+         stdout=(
+             f'chrome.exe --remote-debugging-port=9223 --user-data-dir="{Path.cwd() / "chrome_debug"}"\n'
+--- a/tests/unit/test_graph_engineering_advanced.py
++++ b/tests/unit/test_graph_engineering_advanced.py
+@@ -1,8 +1,10 @@
+ from __future__ import annotations
+ 
+ import json
++import os
+ from datetime import UTC, datetime, timedelta
+ from pathlib import Path
++from types import SimpleNamespace
+ from unittest.mock import Mock, patch
+ 
+ import pytest
+@@ -148,7 +150,10 @@
+     assert assessment["signals"]["runtime"]["age_seconds"] >= 7_000
+ 
+ 
+-def test_runtime_probe_uses_explicit_project_root_for_canonical_profile(tmp_path):
++def test_runtime_probe_uses_explicit_project_root_for_canonical_profile(tmp_path, monkeypatch):
++    windows_os = SimpleNamespace(**vars(os))
++    windows_os.name = "nt"
++    monkeypatch.setattr("intelligent_features.graph_engineering.os", windows_os)
+     project = tmp_path / "project"
+     expected_profile = project / "chrome_debug"
+     completed = Mock(
+@@ -176,7 +181,10 @@
+     assert result["cdp_ok"] is True
+ 
+ 
+-def test_runtime_health_covers_scheduler_healer_news_heartbeat_and_locks(tmp_path):
++def test_runtime_health_covers_scheduler_healer_news_heartbeat_and_locks(tmp_path, monkeypatch):
++    windows_os = SimpleNamespace(**vars(os))
++    windows_os.name = "nt"
++    monkeypatch.setattr("intelligent_features.graph_engineering.os", windows_os)
+     project = tmp_path / "project"
+     state = project / "state"
+     logs = project / "logs"
+--- a/tests/unit/test_growth_runner_lifecycle.py
++++ b/tests/unit/test_growth_runner_lifecycle.py
+@@ -139,7 +139,7 @@
+ 
+ def test_windows_parent_probe_api_failure_is_fail_closed() -> None:
+     with patch.object(growth_runner.os, "name", "nt"):
+-        with patch("ctypes.WinDLL", side_effect=OSError("winapi unavailable")):
++        with patch("ctypes.WinDLL", side_effect=OSError("winapi unavailable"), create=True):
+             probe = growth_runner._ParentProcessProbe(1234)
+ 
+     assert probe.is_alive() is False
+@@ -176,7 +176,7 @@
+     kernel32.AssignProcessToJobObject.return_value = True
+ 
+     with patch.object(growth_runner.os, "name", "nt"):
+-        with patch("ctypes.WinDLL", return_value=kernel32):
++        with patch("ctypes.WinDLL", return_value=kernel32, create=True):
+             with patch.object(growth_runner, "_PROCESS_JOB_HANDLE", None):
+                 assert growth_runner._bind_process_tree_to_kill_on_close_job() is True
+ 
+@@ -194,8 +194,8 @@
+     kernel32.AssignProcessToJobObject.return_value = False
+ 
+     with patch.object(growth_runner.os, "name", "nt"):
+-        with patch("ctypes.WinDLL", return_value=kernel32):
+-            with patch("ctypes.get_last_error", return_value=5):
++        with patch("ctypes.WinDLL", return_value=kernel32, create=True):
++            with patch("ctypes.get_last_error", return_value=5, create=True):
+                 with patch.object(growth_runner, "_PROCESS_JOB_HANDLE", None):
+                     assert growth_runner._bind_process_tree_to_kill_on_close_job() is False
+ 
+@@ -207,8 +207,8 @@
+     kernel32.CreateJobObjectW.return_value = 0
+ 
+     with patch.object(growth_runner.os, "name", "nt"):
+-        with patch("ctypes.WinDLL", return_value=kernel32):
+-            with patch("ctypes.get_last_error", return_value=5):
++        with patch("ctypes.WinDLL", return_value=kernel32, create=True):
++            with patch("ctypes.get_last_error", return_value=5, create=True):
+                 with patch.object(growth_runner, "_PROCESS_JOB_HANDLE", None):
+                     assert growth_runner._bind_process_tree_to_kill_on_close_job() is False
+ 
+--- a/tests/unit/test_runtime_recovery_regressions.py
++++ b/tests/unit/test_runtime_recovery_regressions.py
+@@ -7,6 +7,7 @@
+ import sys
+ import time
+ from pathlib import Path
++from types import SimpleNamespace
+ from unittest.mock import MagicMock, call, patch
+ 
+ 
+@@ -76,9 +77,13 @@
+     assert "netstat" not in command[-1].lower()
+ 
+ 
+-def test_kill_chrome_on_port_removes_all_validated_listeners() -> None:
++def test_kill_chrome_on_port_removes_all_validated_listeners(monkeypatch) -> None:
+     """IPv4 and IPv6 Chrome roots on the same port must both be removed."""
+     from core import chrome_launcher
++
++    windows_os = SimpleNamespace(**vars(os))
++    windows_os.name = "nt"
++    monkeypatch.setattr(chrome_launcher, "os", windows_os)
+ 
+     with (
+         patch.object(
+@@ -110,9 +115,13 @@
+     ]
+ 
+ 
+-def test_chrome_launch_is_pinned_to_ipv4_loopback() -> None:
++def test_chrome_launch_is_pinned_to_ipv4_loopback(monkeypatch) -> None:
+     """The canonical browser must not create a second IPv6-only CDP root."""
+     from core import chrome_launcher
++
++    windows_os = SimpleNamespace(**vars(os))
++    windows_os.name = "nt"
++    monkeypatch.setattr(chrome_launcher, "os", windows_os)
+ 
+     with (
+         patch.object(
