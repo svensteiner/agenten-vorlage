@@ -22,6 +22,12 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+Ein frischer, operatorseitig vorbereiteter Coding-Lauf mit Budgetkontext schloss
+einen begrenzten Bausteinauftrag ohne Zwischenhilfe ab: vier Schritte, keine
+Fehler, drei Schreibbelege, 79 frische Tests und separates Review. Geschuetzte
+Dateien, Paket und Runtime blieben unveraendert. Das ist ein Einzelnachweis,
+keine Vollprojekt- oder Qualitaetsfreigabe. [Hashgebundener Lauf](evidence/execution-profiles-20261017/budget-unassisted-trial.json).
+
 ### Prompt-/Persona-Integration: native Reparatur belegt, Ergebnisqualitaet offen
 
 `fa3edbfab7b94739b8c5c94d9d58b497` endete nach eigener Nachbesserung mit Review,

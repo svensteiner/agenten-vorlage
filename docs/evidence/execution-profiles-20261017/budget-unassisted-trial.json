@@ -1,0 +1,73 @@
+{
+  "schema": "agentkit-evidence/v1",
+  "scope": "One unassisted bounded real-component coding task in an operator-prepared isolated fixture; not a complete marketingbot task.",
+  "runtime_commit": "2321d7b5d6d7befe5c88bf31b0704d3a6730ea71",
+  "ci": {
+    "id": 39012516342,
+    "jobs_successful": 7,
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39012516342"
+  },
+  "job_id": "245b8a8ae49d4758ab148a3a730a9393",
+  "run_id": "967bd72a379e4754a739aa67d113f3c2",
+  "requested_model": "gpt-6-sol",
+  "served_model_and_cost": "not independently recorded",
+  "task_original_sha256": "70faf81408bc394800b0fa751615ad36de0737f662dd9d69e647192590991b3a",
+  "ui_task_matches_original_after_strip": true,
+  "preparation_sha256": "e6ff7e5f8e24fb3ccea9c009c6f599b17305cd551cc8c3f4c77d24e318a26cfe",
+  "launch_receipt_sha256": "3a73ec76d04c13e58b6d5fdc53c9709de609bfe4b5ca9483b8f2e4512cc11844",
+  "final_state_sha256": "f0c1bb5d39120bd3dcadcb7886c25ac87a5f4b292a881dd55cf6a5ba9d17e4e2",
+  "independent_audit_sha256": "bfa33da6b720a397520be724b9045682074476d7184bd8a779dfcbe3fae0f55d",
+  "result": {
+    "status": "completed",
+    "steps": 4,
+    "failures": 0,
+    "reviewed": true,
+    "operator_feedback_count": 0,
+    "operator_interruption_acknowledgments": 0,
+    "host_code_edits_during_run": 0,
+    "test_execution_runs": 1,
+    "provenance": {
+      "status": "complete",
+      "baseline_status": "captured",
+      "changed_by_run": [
+        "content/source_faithfulness.py"
+      ],
+      "changed_without_matching_receipt": [],
+      "unknown_paths": [],
+      "unknown_path_count": 0,
+      "write_receipt_count": 3
+    },
+    "source_final_sha256": "3c5f1ff800162514af005104caf4731bc9b106e68bb25fb5e44aa84fa1846548",
+    "source_git_diff": "Only content/source_faithfulness.py;10insertions5deletions;review/repair prompt wording only"
+  },
+  "test_receipt": {
+    "status": "passed",
+    "policy_sha256": "138d6b99be5edd5a34b23e5200690d17f778acbfb1189f9a85dfa41896c9cbf7",
+    "workspace_fingerprint": "8931a58ce41313fc0921a431b8ebb0a446fcf9b474dd86de69db73a59af03626",
+    "test_outcomes": {
+      "passed": 79,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0,
+      "deselected": 0
+    },
+    "cleanup_confirmed": true
+  },
+  "independent_checks": {
+    "test_matches_final_write_fingerprint": true,
+    "separate_review_after_final_test": true,
+    "no_later_writes": true,
+    "protected_files_unchanged": 6,
+    "pack_assets_unchanged": 22,
+    "runtime_pins_unchanged": 144
+  },
+  "limits": [
+    "Single unblinded trial; no universal reliability estimate or causal proof from one before/after observation.",
+    "No replayable reviewer observation transcript is retained.",
+    "Prompt-only source change and79frozen component tests do not validate full marketing integration or semantic quality.",
+    "Earlier timeout and operator-assisted attempt remain separately documented in paired-provenance-trial.json.",
+    "Original live marketingbot unchanged; no X action or production approval."
+  ]
+}
