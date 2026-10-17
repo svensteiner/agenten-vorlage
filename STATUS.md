@@ -123,3 +123,12 @@ Protokolltests beweisen keinen allgemeinen autonomen Projektabschluss.
 Die vollstaendige Abnahmeliste und historische Gegenbeweise stehen in
 [AGENTIC-ACCEPTANCE.md](docs/AGENTIC-ACCEPTANCE.md); ihre Fehlschlaege bleiben offen.
 Der laufende Original-Marketingbot wurde nicht umgestellt oder neu gestartet.
+
+## CI-Nachtrag: Hostbeobachtungs-Fixture
+
+GitHub-Lauf 39004612791 auf c26855d scheiterte unter Linux an 21 neuen Tests,
+deren Fixture eine lokal installierte Codex-CLI voraussetzte. Die lokale
+Vollabnahme widerlegt diese CI-Luecke nicht. Der eng gepruefte Testfix mockt nur
+CLI-/Windows-Konfigurationssuche beim Konstruktor; Runtime und Assertions bleiben
+unveraendert. Alle 21 Faelle bestehen auf Windows sowie Linux ohne Codex im PATH.
+Der neue GitHub-Lauf muss die plattformuebergreifende Abnahme noch bestaetigen.

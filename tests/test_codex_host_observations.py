@@ -20,12 +20,11 @@ class CodexHostObservationTests(unittest.TestCase):
         self.workspace.mkdir()
         self.codex_home = self.root / "codex-home"
         self.codex_home.mkdir()
-        (self.codex_home / "config.toml").write_text(
-            '[windows]\nsandbox = "unelevated"\n', encoding="utf-8"
-        )
         self.env = patch.dict(os.environ, {"CODEX_HOME": str(self.codex_home)}, clear=False)
         self.env.start()
-        self.backend = CodexBackend()
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch("agentkit.backends._windows_sandbox_selection", return_value=None):
+            self.backend = CodexBackend()
 
     def tearDown(self):
         self.env.stop()

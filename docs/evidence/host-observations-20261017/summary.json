@@ -63,5 +63,24 @@
     "first full regression interrupted after security rejection, not passed",
     "POSIX race fixture capability regression failed before correction",
     "first native schema probe failed; exact provider cause unproven"
-  ]
+  ],
+  "ci_fixture_followup": {
+    "failed_run": 39004612791,
+    "failed_commit": "c26855d9795222cc1496bcd46cc9a355b479ca76",
+    "errors": 21,
+    "cause": "new fixture constructed CodexBackend using host CLI discovery; absent on Linux CI",
+    "change": "mock only constructor-time CLI and Windows sandbox discovery; no runtime or assertion change",
+    "test_source_sha256": "20deb5267613354f10239f6c07a6ccaf4e5d19e6a9347341efd5a29a9e5cbbf0",
+    "focused_windows": {
+      "tests": 21,
+      "passed": 21
+    },
+    "focused_linux_codex_absent_git_available": {
+      "tests": 21,
+      "passed": 21
+    },
+    "independent_code_review": "no blocker",
+    "github_fixed_revision": "pending new run",
+    "scope": "prior full-run source pins remain historical; this test-only delta has separate focused validation"
+  }
 }
