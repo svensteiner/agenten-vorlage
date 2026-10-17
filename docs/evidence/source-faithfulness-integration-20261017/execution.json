@@ -1,0 +1,76 @@
+{
+  "run_id": "daad6945d814431b948eee42b2010dfa",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 6,
+  "failures": 3,
+  "protected_source_unchanged": false,
+  "pack_unchanged": true,
+  "protected_source_files": 894,
+  "frozen": {
+    "tests/unit/test_source_draft_retry_language.py": "634e95fad9eed705d2ad7be0b0227862adcd35bbe9dce2bc2df08c0d4b029120",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d",
+    "tests/unit/test_source_faithfulness_protocol.py": "740d18ce45f9816ea818542be92ed967359430d8c1dd2648f4535fe7e4573f6e",
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    ".qualification/protected-inputs.json": "e2d07a5123189cc705d7cb67c96f6ab4a7d6232a590dbc4424d0e8fb5b4c6111",
+    "tests/unit/test_source_draft_retry_feedback.py": "fb9f71a0fd552fe809a280d9223a0450cab7b95937c2314d67a22ddc1feb3658",
+    "content/source_faithfulness.py": "0a6038ded538c6f2f7ed1f1ae2d1acd4efaba6fac6eac1c84a88427778bc593c",
+    "tests/unit/test_source_faithfulness_news.py": "46fbbfa752c56d3740c167f2984c16c5135fe108f2d196611be43dbb58cd1ea1",
+    "tests/unit/test_source_draft_reason_feedback.py": "4f249e0d985d7d407279d4ee75da40fefc77e605c66dee111b0751b1a326e6fc",
+    "tests/unit/test_source_faithfulness_contract.py": "3139f167311861c2c09e906019fb1e1399ee41dee3923761c1ce163bb89611e4"
+  },
+  "allowed_initial": {
+    "bot.py": "13c5a8e9ab1e2de7bcbbbc1f8df7674422cdef49f736be1be010286777356e99",
+    "tests/unit/test_news_experiment.py": "0733b5ec50cae991acd9bd803ebf46d1f82aee0951ef1c0ce3c042f762dc8b1a",
+    "tests/unit/test_news_experiment_pipeline.py": "8070be8787fad0de2acbf7643c9e6bd6723a035976694fa0ba9d2438bf8083b5",
+    "tests/unit/test_news_source_context.py": "8f224394fd154d2a8e61b482f90dcca72863a366dc8af5cefe9b43dd6aec3792"
+  },
+  "allowed_final": {
+    "bot.py": "33067eae70d7be605b5c46944cb7487dbad4014b42e6ce96699c232f04a08ec1",
+    "tests/unit/test_news_experiment.py": "0733b5ec50cae991acd9bd803ebf46d1f82aee0951ef1c0ce3c042f762dc8b1a",
+    "tests/unit/test_news_experiment_pipeline.py": "26c7a322855084a426956ed895394b39ecf1ca063cdc08b5eb3cd227718d420d",
+    "tests/unit/test_news_source_context.py": "9a88abdff6ef51f1f2d4792ab632dc901ec14b28126c8cfba176d0d36fadbc34"
+  },
+  "allowed_changes": [
+    "bot.py",
+    "tests/unit/test_news_experiment.py",
+    "tests/unit/test_news_experiment_pipeline.py",
+    "tests/unit/test_news_source_context.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "repeated_revision",
+      "revisions": 2
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "repeated_revision",
+      "revisions": 3
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 3
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

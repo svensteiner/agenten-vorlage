@@ -1,0 +1,24 @@
+{
+  "native_qualified": false,
+  "protected_changed": [
+    "tests/unit/test_source_draft_contract.py"
+  ],
+  "unauthorized_added": [
+    ".qualification/source-faithfulness-news-tests.log"
+  ],
+  "host_targeted_passed": 209,
+  "coverage_percent": 90.41,
+  "full_regression": false,
+  "actual_model_quality": false,
+  "promoted": false,
+  "files_sha256": {
+    "adapted-budget-test.py.txt": "2a73366c0c8fafbe1c2a686c5380e1dc21a46f8fa5d7e98e3fd8f3fa3f5bf478",
+    "bot-candidate.py.txt": "33067eae70d7be605b5c46944cb7487dbad4014b42e6ce96699c232f04a08ec1",
+    "execution.json": "50d00b2638532e36bd3775e3ebd79b7c29c1e8820d77ded5cfb21519eba3b807",
+    "extra-tests.py.txt": "2cd4df4efdc389975080b7e60736cd60b0b35030513c30fdff28a133c2a6a205",
+    "host-tests.txt": "460eb84d3235bbe7967496a5ecef426da27b79883c4ed88ebcf8a39086a1c5b3",
+    "native-tests.txt": "dca6869bc63c87c0fe944af487099da128e83d8318aaeb568fb9ff0d4c70ece9",
+    "planner-and-review.json": "a7c52916a40d343b8513b83246936610b380d2df11955cece870d08689eed8fd",
+    "scope-escalation.json": "bffb80f9160e351fed2687e75b61166a0ba2e48db890b36d57df559636cced06"
+  }
+}

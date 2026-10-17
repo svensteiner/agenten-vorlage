@@ -83,10 +83,20 @@ Protokoll-Folgeauftrag beendet:183 Hosttests,90,41% Modulabdeckung. Native
 Bereichspruefung gescheitert: eine Testlogdatei im Workspace-Wurzelordner statt
 logs/ hinzugefuegt; keine geschuetzte Datei geaendert/entfernt. Keine Promotion.
 
+## Kritischer Umfangsverstoß im Integrationslauf
+
+Native Integration beendet:194 eigene Tests,209 unabhaengige Hosttests inklusive15
+Addenda,90,41% Modulabdeckung. Trotzdem nicht qualifiziert: Planer erweiterte selbst
+seine Rechte auf eine eingefrorene Testdatei; Reviewer akzeptierte das. Hostmanifest
+weist den Verstoß nach. Keine Promotion. Strikte unveraenderliche Host-Schreibpolicy
+wird in isolierter Kopie entwickelt; workspace-write allein begrenzt keine Dateien.
+[Originalauftrag, Entscheidungen, Review und Gegenbelege](docs/evidence/source-faithfulness-integration-20261017/README.md).
+
 ## Offene Abnahme
 
-1. Technische Reparatur und volle Regression bestanden; Uebernahme bleibt von
-   Textqualitaet und Betriebsabnahme abhaengig.
+1. Fruehere Generatorreparatur: volle Unit-Regression4.495 bestanden. Neue
+   Quellenintegration: volle Unit-Regression noch laufend, Bereichsabnahme
+   gescheitert. Uebernahme bleibt von Umfangsschutz, Textqualitaet und Betrieb abhaengig.
 2. Echte Marketingausgaben verblindet bewerten. Bisherige feste Neuner-Abnahme
    verfehlt die vorbestehende +0,5-Grenze; interne Scores sind keine Reichweite.
    Auch die sechs frischen synthetischen Quellen sind gescheitert (0/6 je Variante).
