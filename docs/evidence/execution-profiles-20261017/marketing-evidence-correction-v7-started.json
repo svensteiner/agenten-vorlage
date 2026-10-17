@@ -1,0 +1,24 @@
+{
+  "schema": "agentkit-real-model-trial-started/v1",
+  "run_id": "fa796e2198f8432aaeac5388dcb2fccf",
+  "session_id": 2295,
+  "observed_at_utc": "2026-10-17T15:16:11.308696+00:00",
+  "status": "running",
+  "steps": 1,
+  "failures": 0,
+  "replay_permitted": false,
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "runtime_commit": "f46a97bc96bcdd839cd49d493f0786b1c7d5d625",
+  "source_file_count": 698,
+  "agent_pack_file_count": 19,
+  "baseline_nodeids_count": 4729,
+  "targeted_nodeids_count": 243,
+  "evidence_sha256": {
+    "preparation.json": "31120758078142e539f6a05a08a2d4f64f6adf69c6c7d1f3486ce294af192985",
+    "runtime-release.json": "0d0bd195c73f0576a5c7df0f202900427d4b6e9eb21cba30e82579c36fe4197a",
+    "independent-preflight.json": "3c21cd6146bb5434889523469587a58995c500c1275408d57af7579034f3c9e6",
+    "root-authorization.json": "7935622e6ea6fdd5904e1c4387ad11123056ac8cf5c3edfd591a6a63fb54e140",
+    "dispatch.json": "0911992ac6d29ce3e325ed87915fd73753ca472c60a34823ed44165dec7723d9"
+  }
+}

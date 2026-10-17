@@ -92,5 +92,43 @@
     "tests\\test_codex_local_phases.py": "06b69bda8daa24f4a9274079a7819bf230e7190a3ccf223173fec61237cd2300",
     "tests\\test_engine_codex_local_phases.py": "7ba929329eba1fca430138e3482cbd6b22cdf0bd1091a02d3d4be205baf7dc48"
   },
-  "ci_status": "pending_current_source_commit"
+  "ci": {
+    "run_id": 39043783201,
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "f46a97bc96bcdd839cd49d493f0786b1c7d5d625",
+    "jobs": [
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      }
+    ],
+    "critical_regression_passes": 16,
+    "evidence_sha256": "f85cea4066da18a8da8a248a4e5e07555d1d9eaba7df618de022588090290c1c",
+    "log_sha256": "778d91208b3344281359428c6e688d308305b870de2ab75c35ce4c066bc81e44"
+  }
 }

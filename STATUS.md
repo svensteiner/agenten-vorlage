@@ -9,7 +9,7 @@ last_updated: "2026-10-17"
 
 ## Aktueller Nachweis: private Reviewer-Schnittstelle
 
-Die [neue private Reviewer-Schnittstelle](docs/evidence/execution-profiles-20261017/private-review-observations.json) erlaubt ausschliesslich Host-Leseaktionen und Berichte; native Shell, Aenderungen und Testphasen bleiben fuer diese Rolle gesperrt. 672 Gesamttests bestehen mit sieben Skips, ohne Fehler und unveraenderten Quell-/Schemaeingaben. 37 Offline-Pruefungen, separates Review und ein echter Sol-Lesetest bestehen. Der naechste Coding-Auftrag V7 ist frisch vorbereitet, aber noch nicht gestartet. Keine Abnahme der Marketingqualitaet oder des Gesamtziels.
+Die [neue private Reviewer-Schnittstelle](docs/evidence/execution-profiles-20261017/private-review-observations.json) erlaubt ausschliesslich Host-Leseaktionen und Berichte; native Shell, Aenderungen und Testphasen bleiben fuer diese Rolle gesperrt. 672 Gesamttests bestehen mit sieben Skips, ohne Fehler und unveraenderten Quell-/Schemaeingaben. 37 Offline-Pruefungen, separates Review und ein echter Sol-Lesetest bestehen. Alle sieben Jobs der CI 39043783201 bestehen am Runtime-Commit f46a97b. Der [frische Coding-Auftrag V7](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v7-started.json) ist nach separater abschliessender Vorpruefung gestartet; sein Ergebnis steht noch aus. Keine Abnahme der Marketingqualitaet oder des Gesamtziels.
 
 ## Vorheriger Nachweis: V6 beendet (keine Abnahme)
 
