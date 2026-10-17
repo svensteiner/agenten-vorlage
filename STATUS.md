@@ -39,6 +39,13 @@ qualifiziert weder den gestoppten Worker nachtraeglich noch echte Modelllaeufe.
 Numerische Beleg-IDs ersetzen kopierte Zitate, beweisen aber keine semantisch
 richtige Belegwahl. Keine Implementierungs-, Inhalts- oder Produktionsfreigabe.
 
+Der [frische Korrekturauftrag](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-running.json)
+ist nach unabhaengiger Startpruefung und 23 Guard-Tests gestartet. Er verwendet
+einen eigenen 698-Dateien-Snapshot und die gepruefte Runtime `ab73926`.
+Angefordert sind Luna fuer Umsetzung und Sol fuer Review/Nacharbeit. Die beiden
+Quellenbeleg-Fehler sowie Gesamttests und finales Review sind noch offen.
+Der vorherige unbekannte Worker wird nicht wiederholt.
+
 Die [frische RSS-Abnahme](docs/evidence/execution-profiles-20261017/marketing-rss-v16-prospective.json)
 ist unabhaengig auf Quellen und sichtbare Goldlabels geprueft, aber noch ohne
 Modelllauf. Die [Reparaturdiagnose](docs/evidence/execution-profiles-20261017/marketing-v16-diagnostic-tooling.json)

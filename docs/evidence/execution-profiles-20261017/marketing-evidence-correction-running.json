@@ -1,0 +1,33 @@
+{
+  "schema": "marketing-evidence-correction-running/v1",
+  "run_id": "7cb04ba4e8934ec48fd5df0122345c61",
+  "execution_session": 44589,
+  "status": "dispatched; no completion claim",
+  "requested_models": {
+    "primary": "gpt-6-luna",
+    "reviewer": "gpt-6-sol",
+    "recovery": "gpt-6-sol",
+    "repair_after": 1
+  },
+  "workspace_baseline_files": 698,
+  "runtime_inputs": 60,
+  "launcher_inputs": 9,
+  "pack_files": 21,
+  "guard_tests_passed": 23,
+  "scope": "Correct ordinal fragment IDs and Anthropic wire compatibility; keep OpenRouter schema and local validation unchanged.",
+  "artifacts_sha256": {
+    "preparation.json": "9a7213d8e6a78a2d8adae2a025663f26c7c09d83e10acd1180f038e0fefcec61",
+    "root-runtime-before.json": "cd8298d3f03c43e1c76ba5d1b67390cf31a4a58c5304704f17a16fbee2cf99c3",
+    "runtime-release.json": "bdb1a1e3b3507c8e6cd861506a01ece65b671632d9e42efd54f50f4743f369e3",
+    "independent-preflight.json": "e72377f85b3d244ad56b5740468c24fbab0b6c4868dd73cd8eac1eaecf734134",
+    "root-authorization.json": "45cf1f2d20f65800d757cfdcf77485d8359296908665ffa2e52ec2d35125efd5",
+    "dispatch.json": "277b70f0388fcf17ed63e802ad8e322c6b264e10d2e9db0171a419505b6e9e0a"
+  },
+  "limits": [
+    "Previous native515 worker remains unknown, not resumed.",
+    "Preexisting implementation is attributed to native515; Root supplied counterexamples and runtime fix before this new trial.",
+    "Separate final review and full test receipts still required.",
+    "No original Marketingbot or live X changes.",
+    "No actual content-quality or production qualification."
+  ]
+}

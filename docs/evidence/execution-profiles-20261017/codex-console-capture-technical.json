@@ -43,5 +43,21 @@
     "Cleanup regression RED was observed in terminal but no separate durable RED log was saved.",
     "Ruff executable unavailable; no Ruff check claimed.",
     "Marketing usefulness and protocol defects remain separate open requirements."
-  ]
+  ],
+  "ci": {
+    "head_sha": "ab73926e81592f07204dfc2f4dfafa30d2ddf32d",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39030502612",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs_passed": 7,
+    "jobs": [
+      "package",
+      "browser-e2e",
+      "test (ubuntu-latest, 3.11)",
+      "test (windows-latest, 3.12)",
+      "test (ubuntu-latest, 3.12)",
+      "public-deployment",
+      "test (windows-latest, 3.11)"
+    ]
+  }
 }
