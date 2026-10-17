@@ -14,6 +14,22 @@ planen, ausfuehren, pruefen und nacharbeiten. Tests, kritische Abnahme, guenstig
 Modelle und GitHub-Pushes sind verbindlich. Die Mietplattform ist zurueckgestellt.
 **Gesamtziel noch nicht nachgewiesen; keine Produktionsfreigabe.**
 
+## Aktuelle Verifikation der Schreibgrenze
+
+Die separat reviewte strikte WritePolicy ist im Hauptprojekt uebernommen.
+Ruff und alle 20 Offline-Release-Gates bestehen. Der volle kanonische Lauf
+umfasst 459 Tests: 455 bestanden, vier Skips, 209,059 Sekunden, Exit 0;
+die getesteten Quelldateien blieben unveraendert. Ein echter Modelltest dieser
+neuen Grenze steht noch aus. [Testbelege](docs/evidence/write-policy-20261017/README.md).
+[API, Verwendung und Grenzen](docs/WRITE-POLICY.md).
+
+Der neueste Marketingbot-Kandidat besteht 4.602 Unit-Tests, elf Skips und fuenf
+erwartete Fehler. Die Promptkorrektur fuer die Quellenpruefung ist im echten
+zweiten Protokollnachtest dennoch gescheitert: zwei Reviewantworten in Codebloecken,
+beide streng verworfen, keine verwertbaren Endtexte. Kein Qualitaetsnachweis und
+keine Promotion in den laufenden Bot. Der naechste Ansatz muss die API-Ausgabeform
+verbindlich steuern; die fehlgeschlagenen Abnahmen bleiben bestehen.
+
 ## Bestaetigt
 
 - AgentKit: letzter voller Lauf 432 Tests, drei erwartete Skips, keine Fehler;

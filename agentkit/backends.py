@@ -290,6 +290,7 @@ def _windows_sandbox_selection() -> str | None:
 class CodexBackend:
     name = "codex"
     supports_action_approvals = True
+    supports_write_policy = True
     default_model = "gpt-5.6-luna"
     max_action_history = 48
     max_action_history_chars = 40_000
@@ -447,6 +448,9 @@ class CodexBackend:
             if not isinstance(resume, dict) or resume.get("kind") != "codex-action":
                 raise ContractError("Invalid Codex approval continuation.")
             tool, arguments = self._validate_action(resume.get("tool"), resume.get("arguments"))
+            policy = context.get("write_policy")
+            if policy is not None:
+                policy.authorize_action(Path(context["workspace"]), tool, arguments)
             approved = context.get("approved_action")
             if (not isinstance(approved, dict) or approved.get("tool") != tool
                     or approved.get("arguments") != arguments
@@ -479,7 +483,14 @@ class CodexBackend:
         read_context["sandbox"] = "read-only"
         read_context.pop("approval_resume", None)
         read_context.pop("approved_action", None)
-        for correction in range(self.max_proposal_corrections + 1):
+        policy = context.get("write_policy")
+        iteration_limit = (
+            self.max_action_history
+            if policy is not None and not context.get("require_approvals")
+            else self.max_proposal_corrections + 1
+        )
+        rejected_proposals = 0
+        for _ in range(iteration_limit):
             current_fingerprint = workspace_fingerprint(Path(context["workspace"]))
             completed_digests = [
                 entry.get("replay_sha256") for entry in action_history
@@ -509,7 +520,7 @@ class CodexBackend:
                     "context": {key: value for key, value in context.items()
                                 if key not in {"request_approval", "record_completed_action",
                                                "approval_resume", "approved_action", "sandbox",
-                                               "mutation_writer"}},
+                                               "mutation_writer", "write_policy"}},
                     "completed_action_replay_sha256": completed_digests,
                     "action_history": action_history,
                     "report_schema": schema("report"),
@@ -519,8 +530,9 @@ class CodexBackend:
             validate(response, "codex_action_step")
             if response["kind"] == "final":
                 if response["tool"] != "none" or any(response["arguments"].values()):
-                    if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                    if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
                         raise ContractError("Codex repeatedly returned an invalid final action step.")
+                    rejected_proposals += 1
                     action_history = [*action_history, {
                         "kind": "rejected_proposal", "tool": str(response.get("tool", ""))[:100],
                         "reason": "A final step must use tool=none and four empty argument strings.",
@@ -533,18 +545,33 @@ class CodexBackend:
             try:
                 tool, arguments = self._action_from_step(response)
             except ContractError as exc:
-                if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
                     raise ContractError("Codex repeatedly returned invalid action proposals.") from exc
+                rejected_proposals += 1
                 action_history = [*action_history, {
                     "kind": "rejected_proposal", "tool": str(response.get("tool", ""))[:100],
                     "reason": str(exc),
                 }]
                 self._validate_action_history(action_history)
                 continue
+            if policy is not None:
+                try:
+                    policy.authorize_action(Path(context["workspace"]), tool, arguments)
+                except ContractError as exc:
+                    if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                        raise ContractError("Codex repeatedly proposed actions outside the host write policy.") from exc
+                    rejected_proposals += 1
+                    action_history = [*action_history, {
+                        "kind": "rejected_proposal", "tool": tool,
+                        "path": arguments.get("path", ""), "reason": str(exc),
+                    }]
+                    self._validate_action_history(action_history)
+                    continue
             digest = replay_action_digest(tool, arguments, Path(context["workspace"]))
             if digest in completed_digests:
-                if correction >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
+                if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
                     raise ContractError("Codex repeatedly proposed an already completed action.")
+                rejected_proposals += 1
                 action_history = [*action_history, {
                     "kind": "rejected_proposal", "tool": tool, "replay_sha256": digest,
                     "reason": "Exact action already completed; choose the next action or return final.",
@@ -554,11 +581,25 @@ class CodexBackend:
             if len(action_history) >= self.max_action_history:
                 raise ContractError("Codex approval action history is exhausted.")
             callback = context.get("request_approval")
-            if callback is None:
-                raise ContractError("Tool approval callback is unavailable.")
-            callback(tool, arguments, {"kind": "codex-action", "tool": tool,
-                                      "arguments": arguments, "action_history": action_history})
-            raise ApprovalRequired({"tool": tool, "arguments": arguments})
+            if context.get("require_approvals"):
+                if callback is None:
+                    raise ContractError("Tool approval callback is unavailable.")
+                callback(tool, arguments, {"kind": "codex-action", "tool": tool,
+                                          "arguments": arguments, "action_history": action_history})
+                raise ApprovalRequired({"tool": tool, "arguments": arguments})
+            if policy is None:
+                raise ContractError("Host-executed Codex proposals require a write policy.")
+            result = DeepSeekBackend._run_tool(self, tool, arguments, context, remaining())
+            entry = self._history_entry(
+                tool, arguments, result,
+                workspace_fingerprint(Path(context["workspace"])),
+                Path(context["workspace"]),
+            )
+            recorder = context.get("record_completed_action")
+            if recorder is not None:
+                recorder(entry)
+            action_history = [*action_history, entry]
+            self._validate_action_history(action_history)
         raise ContractError("Codex proposal correction budget exhausted.")
 
     def decide(self, context: dict, timeout: float) -> dict:
@@ -583,6 +624,8 @@ class CodexBackend:
         return self._call(prompt, "decision", context, timeout)
 
     def execute(self, decision: dict, context: dict, timeout: float) -> dict:
+        if context.get("write_policy") is not None and context.get("sandbox") == "workspace-write":
+            return self._execute_approval_gated(decision, context, timeout)
         if context.get("require_approvals") and context.get("sandbox") == "workspace-write":
             return self._execute_approval_gated(decision, context, timeout)
         prompt = (
@@ -604,7 +647,7 @@ class CodexBackend:
                     "assignment": decision,
                     "context": {key: value for key, value in context.items()
                                 if key not in {"request_approval", "record_completed_action",
-                                               "approval_resume", "mutation_writer"}},
+                                               "approval_resume", "mutation_writer", "write_policy"}},
                     "report_schema": schema("report"),
                 },
                 ensure_ascii=False,
@@ -732,6 +775,7 @@ class DeepSeekBackend:
     max_message_chars = 400_000
     max_continuation_chars = 450_000
     supported_tools = frozenset({"list_files", "read_file", "write_file", "edit_file", "run_pytest"})
+    supports_write_policy = True
 
     def __init__(
         self,
@@ -883,23 +927,32 @@ class DeepSeekBackend:
 
     @staticmethod
     def _write_mutation(context: dict, target: Path, data: bytes) -> None:
+        workspace = Path(context.get("workspace", "")).resolve()
+        policy = context.get("write_policy")
+        if policy is not None:
+            target = policy.authorize_target(workspace, target)
         writer = context.get("mutation_writer")
         if writer is None:
             target.parent.mkdir(parents=True, exist_ok=True)
-            workspace = Path(context.get("workspace", "")).resolve()
-            target = DeepSeekBackend._workspace_path(
-                context,
-                str(target.relative_to(workspace)).replace("\\", "/"),
-            )
+            relative = str(target.relative_to(workspace)).replace("\\", "/")
+            target = DeepSeekBackend._workspace_path(context, relative)
+            if policy is not None:
+                target = policy.authorize_target(workspace, target)
             _atomic_write_bytes(target, data)
             return
         if not callable(writer):
             raise ContractError("Workspace mutation writer is invalid.")
+        if policy is not None:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target = policy.authorize_target(workspace, target)
         writer(target, data)
 
     def _run_tool(self, name: str, arguments: dict, context: dict, timeout: float) -> str:
         if name not in getattr(self, "allowed_tools", DeepSeekBackend.supported_tools):
             raise ContractError("Tool is disabled by the execution policy.")
+        policy = context.get("write_policy")
+        if policy is not None and name in WRITE_TOOLS:
+            policy.authorize_action(Path(context["workspace"]), name, arguments)
         if timeout <= 0:
             raise ContractError("DeepSeek tool deadline exhausted.")
         if name in {"write_file", "edit_file", "run_pytest"} and context.get("sandbox") != "workspace-write":
@@ -1206,6 +1259,9 @@ class DeepSeekBackend:
                 sibling_args = self._parse_tool_arguments(function.get("arguments", "{}"))
                 sibling_id = sibling.get("id")
                 if sibling_name in WRITE_TOOLS and context.get("require_approvals"):
+                    policy = context.get("write_policy")
+                    if policy is not None:
+                        policy.authorize_action(Path(context["workspace"]), sibling_name, sibling_args)
                     if self._completed_in_current_workspace(sibling_name, sibling_args, context):
                         self._append_duplicate_observation(messages, sibling_id)
                         continue
@@ -1259,6 +1315,9 @@ class DeepSeekBackend:
                     except (TypeError, ValueError, json.JSONDecodeError, SyntaxError) as exc:
                         raise ContractError("DeepSeek returned non-JSON tool arguments.") from exc
                     if name in WRITE_TOOLS and context.get("require_approvals"):
+                        policy = context.get("write_policy")
+                        if policy is not None:
+                            policy.authorize_action(Path(context["workspace"]), name, arguments)
                         if self._completed_in_current_workspace(name, arguments, context):
                             self._append_duplicate_observation(messages, call_id)
                             continue
@@ -1379,7 +1438,7 @@ class DeepSeekBackend:
                     key: sanitize(item)
                     for key, item in value.items()
                     if key not in {"request_approval", "record_completed_action", "approval_resume",
-                                   "mutation_writer"}
+                                   "mutation_writer", "write_policy"}
                 }
             if isinstance(value, list):
                 return [sanitize(item) for item in value]
@@ -1433,6 +1492,7 @@ class DemoBackend:
 
     name = "demo"
     supports_action_approvals = True
+    supports_write_policy = True
 
     @staticmethod
     def _role(context: dict, review: bool) -> str:
@@ -1523,6 +1583,12 @@ class DemoBackend:
             for h in context["history"]
         )
         content = "# Demo deliverable\n\n" + ("ACCEPTED\n" if retry else "Draft awaiting acceptance marker.\n")
+        policy = context.get("write_policy")
+        if decision["role"] == writer and policy is not None:
+            policy.authorize_action(
+                Path(context["workspace"]), "write_file",
+                {"path": "demo-result.md", "content": content},
+            )
         if decision["role"] == writer and context.get("require_approvals") and not context.get("approval_resume"):
             callback = context.get("request_approval")
             if callback is None:

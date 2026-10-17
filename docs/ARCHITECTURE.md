@@ -239,3 +239,14 @@ diese Identität werden fail-closed verworfen und neu geplant.
 
 Bewusst noch nicht enthalten: verteilte Queue, Live-Paperclip-Synchronisierung, Token-/Euro-Abrechnung,
 automatisches Skill-Downloading, autorisierte Deploy-/Outreach-Tools oder autonome Selbstmodifikation.
+
+
+## Hostgebundene Schreibrechte
+
+Engine(write_policy=WritePolicy([...])) begrenzt Schreibaktionen auf genaue
+relative Dateipfade. Der Policy-Hash bleibt an Checkpoints und offene Freigaben
+gebunden; der Planer kann die Liste nicht erweitern. Strikte Codex-Worker liefern
+read-only Vorschlaege an den Host-Executor. DeepSeek prueft Dateiwerkzeuge an
+derselben Schreibgrenze. Projektausfuehrung bleibt dabei gesperrt und muss separat
+vom Host isoliert werden. CLI und Cockpit aktivieren diese optionale Policy noch
+nicht automatisch. [Grenzen und Verwendung](WRITE-POLICY.md).

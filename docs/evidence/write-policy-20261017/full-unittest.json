@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "source_before": {
+    "agentkit/approvals.py": "da97cacf991d5543dbac3c911208f7ea49474e5200bdb2dd04e1ab7c182e2073",
+    "agentkit/backends.py": "c4eba9f3d04e313b685854c66f6f0f9287efc385df37fbadb6909daa7bd548d0",
+    "agentkit/engine.py": "0c9882d50ce9033367d8809fd697d11c86e29d26438a82c531ea122adc89dfd9",
+    "agentkit/routing.py": "ccd6dc84c73eab4e20b0cd69581fbb30910ccaae16b06cc7ff0e47e7f6a1b8eb",
+    "agentkit/write_policy.py": "65bc013216dcbf6a16d0014dc7e74330a2bbe566de99a11fb9f524a895d9c9ad",
+    "tests/test_routing.py": "ff4a245f1ed0af54a25b012cd676d160a182c634db58491777f39bd4990b9196",
+    "tests/test_write_policy.py": "c1bfefae66c89b3a1fecbe2b25d5abaac647e152370a117897fe10d93a0b5f5d"
+  },
+  "source_after": {
+    "agentkit/approvals.py": "da97cacf991d5543dbac3c911208f7ea49474e5200bdb2dd04e1ab7c182e2073",
+    "agentkit/backends.py": "c4eba9f3d04e313b685854c66f6f0f9287efc385df37fbadb6909daa7bd548d0",
+    "agentkit/engine.py": "0c9882d50ce9033367d8809fd697d11c86e29d26438a82c531ea122adc89dfd9",
+    "agentkit/routing.py": "ccd6dc84c73eab4e20b0cd69581fbb30910ccaae16b06cc7ff0e47e7f6a1b8eb",
+    "agentkit/write_policy.py": "65bc013216dcbf6a16d0014dc7e74330a2bbe566de99a11fb9f524a895d9c9ad",
+    "tests/test_routing.py": "ff4a245f1ed0af54a25b012cd676d160a182c634db58491777f39bd4990b9196",
+    "tests/test_write_policy.py": "c1bfefae66c89b3a1fecbe2b25d5abaac647e152370a117897fe10d93a0b5f5d"
+  },
+  "source_unchanged": true,
+  "log_sha256": "a6a867193c04532b6f6a338706d718403db5b788b558fa54d2ab12f51ec2b541"
+}

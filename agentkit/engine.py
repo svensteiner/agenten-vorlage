@@ -11,6 +11,7 @@ from typing import Any, Callable, Protocol
 from .catalog import Catalog
 from .contracts import ContractError, read_json, validate
 from .storage import lock, save
+from .write_policy import WritePolicy
 from .approvals import (
     ApprovalRequired,
     action_digest,
@@ -78,6 +79,7 @@ class Engine:
         backend: Backend,
         *,
         require_approvals: bool = False,
+        write_policy: WritePolicy | None = None,
         core_snapshot: str | None = None,
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         state_writer: Callable[[Path, bytes], None] | None = None,
@@ -88,6 +90,11 @@ class Engine:
         self.backend = backend
         self.limits = self.catalog.config["limits"]
         self.require_approvals = require_approvals
+        if write_policy is not None and type(write_policy) is not WritePolicy:
+            raise ContractError("write_policy must be a host-created WritePolicy.")
+        if write_policy is not None and getattr(backend, "supports_write_policy", False) is not True:
+            raise ContractError("The selected backend cannot enforce a strict write policy.")
+        self.write_policy = write_policy
         self.mutation_writer = mutation_writer
         self.state_writer = state_writer
         self.coordination_reserver = coordination_reserver
@@ -187,6 +194,9 @@ class Engine:
                 raise ContractError(
                     "Cannot resume across agent, company, backend or workspace boundaries."
                 )
+            expected_policy = self.write_policy.sha256 if self.write_policy else ""
+            if state.get("write_policy_sha256", "") != expected_policy:
+                raise ContractError("Cannot resume with a changed or missing host write policy.")
             if state["status"] == "completed":
                 return state
             snapshot = state.get("core_snapshot")
@@ -213,7 +223,8 @@ class Engine:
                                           workspace=str(self.workspace), backend=self.backend.name,
                                           model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)),
                                           fingerprint=workspace_fingerprint(self.workspace) if approval_decision == "approve"
-                                          else pending.get("binding", {}).get("workspace_fingerprint", ""))
+                                          else pending.get("binding", {}).get("workspace_fingerprint", ""),
+                                          write_policy_sha256=self.write_policy.sha256 if self.write_policy else "")
                 validate_binding(pending, current_binding)
                 replay_sha256 = pending.get("replay_sha256")
                 if (not isinstance(replay_sha256, str)
@@ -225,6 +236,10 @@ class Engine:
                             pending.get("tool"), pending.get("arguments"), self.workspace
                         )):
                     raise ContractError("Approval canonical replay identity changed before execution.")
+                if approval_decision == "approve" and self.write_policy is not None:
+                    self.write_policy.authorize_action(
+                        self.workspace, pending.get("tool"), pending.get("arguments")
+                    )
                 state.setdefault("approvals", []).append({"id": approval_id, "tool": pending.get("tool"),
                     "arguments": pending.get("arguments"), "action_sha256": pending.get("action_sha256"),
                     "replay_sha256": replay_sha256,
@@ -291,6 +306,7 @@ class Engine:
                 "dirty": False,
                 "reviewed": False,
                 "require_approvals": self.require_approvals,
+                "write_policy_sha256": self.write_policy.sha256 if self.write_policy else "",
                 "pending_approval": None,
                 "approvals": [],
                 "completed_actions": [],
@@ -344,6 +360,13 @@ class Engine:
                 "require_approvals": bool(state.get("require_approvals", False)),
                 "completed_actions": state.get("completed_actions", []),
             }
+            if self.write_policy is not None:
+                # Trusted, JSON-safe guidance for planning. Enforcement still uses
+                # the host-created WritePolicy instance attached only to worker context.
+                result["write_policy_summary"] = {
+                    "sha256": self.write_policy.sha256,
+                    "allowed_files": list(self.write_policy.paths),
+                }
             if state.get("approval_resume"):
                 result["approval_resume"] = state["approval_resume"]
                 result["approved_action"] = state.get("approved_action")
@@ -425,7 +448,11 @@ class Engine:
                     raise ContractError("Selected skills exceed context budget.")
                 if self.mutation_writer is not None:
                     ctx["mutation_writer"] = self.mutation_writer
+                if self.write_policy is not None:
+                    ctx["write_policy"] = self.write_policy
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
+                    if self.write_policy is not None:
+                        self.write_policy.authorize_action(self.workspace, tool, arguments)
                     approval = {
                         "id": new_id(), "tool": tool, "arguments": arguments,
                         "action_sha256": action_digest(tool, arguments),
@@ -435,7 +462,9 @@ class Engine:
                         "continuation_sha256": continuation_digest(continuation),
                         "binding": binding(run_id=state["run_id"], agent=config["id"], company=config["company"],
                             workspace=str(self.workspace), backend=self.backend.name,
-                            model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)), fingerprint=workspace_fingerprint(self.workspace)),
+                            model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)),
+                            fingerprint=workspace_fingerprint(self.workspace),
+                            write_policy_sha256=self.write_policy.sha256 if self.write_policy else ""),
                         "continuation": continuation,
                     }
                     state["pending_approval"] = approval

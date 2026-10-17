@@ -36,3 +36,6 @@ docs/evidence/source-faithfulness-paired-screen-20261017/*.txt -text
 
 docs/evidence/source-faithfulness-protocol-trace-20261017/*.json -text
 docs/evidence/source-faithfulness-protocol-trace-20261017/*.txt -text
+
+docs/evidence/write-policy-20261017/*.json -text
+docs/evidence/write-policy-20261017/*.txt -text

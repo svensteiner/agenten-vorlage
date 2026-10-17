@@ -2,16 +2,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agentkit.backends import DemoBackend
+from agentkit.backends import DeepSeekBackend, DemoBackend
 from agentkit.contracts import ContractError
 from agentkit.engine import Engine
 from agentkit.routing import EscalatingBackend
 from agentkit.scaffold import create
+from agentkit.write_policy import WritePolicy
 
 
 class Stub:
     name = "stub"
     supports_action_approvals = True
+    supports_write_policy = True
 
     def __init__(self, model):
         self.model = model
@@ -95,6 +97,98 @@ class RoutingTests(unittest.TestCase):
         self.strong.model = "replacement"
         self.assertNotEqual(before, self.backend.approval_identity)
 
+    def test_routing_rejects_same_backend_name_with_different_endpoints(self):
+        primary = DeepSeekBackend(model="cheap", api_key="test", base_url="https://api.deepseek.com")
+        recovery = DeepSeekBackend(
+            model="strong", api_key="test", base_url="https://provider.example/v1"
+        )
+        with self.assertRaisesRegex(ContractError, "provider endpoint"):
+            EscalatingBackend(primary, recovery=recovery)
+
+    def test_claimed_identity_cannot_hide_different_transport_urls(self):
+        primary = DeepSeekBackend(model="cheap", api_key="test", base_url="https://api.deepseek.com")
+        recovery = DeepSeekBackend(
+            model="strong", api_key="test", base_url="https://provider.example/v1"
+        )
+        primary.endpoint_identity = recovery.endpoint_identity = "https://api.deepseek.com"
+        with self.assertRaisesRegex(ContractError, "does not match the transport"):
+            EscalatingBackend(primary, recovery=recovery)
+
+    def test_matching_normalized_endpoint_routes_models_and_binds_identity(self):
+        primary = DeepSeekBackend(
+            model="cheap", api_key="test", base_url="https://API.DeepSeek.com/"
+        )
+        recovery = DeepSeekBackend(
+            model="strong", api_key="test", base_url="https://api.deepseek.com"
+        )
+        primary.endpoint_identity = recovery.endpoint_identity = "https://api.deepseek.com"
+        routed = EscalatingBackend(primary, recovery=recovery)
+        before = routed.approval_identity
+        self.assertEqual("https://api.deepseek.com", routed._endpoint_identities[0])
+        self.assertEqual("cheap", routed.execution_route({"role": "developer"}, context())["model"])
+        recovery.base_url = "https://other.example"
+        with self.assertRaisesRegex(ContractError, "does not match the transport"):
+            _ = routed.approval_identity
+        with self.assertRaisesRegex(ContractError, "does not match the transport"):
+            routed.execute({"role": "developer"}, context(), 1)
+        self.assertNotEqual(before, "")
+
+    def test_write_policy_capability_requires_every_routed_backend(self):
+        self.assertTrue(self.backend.supports_write_policy)
+        self.review.supports_write_policy = False
+        with_reviewer = EscalatingBackend(
+            self.cheap, recovery=self.strong, reviewer=self.review
+        )
+        self.assertFalse(with_reviewer.supports_write_policy)
+        without_reviewer = EscalatingBackend(self.cheap, recovery=self.strong)
+        self.assertTrue(without_reviewer.supports_write_policy)
+        self.strong.supports_write_policy = False
+        with_recovery = EscalatingBackend(self.cheap, recovery=self.strong)
+        self.assertFalse(with_recovery.supports_write_policy)
+
+    def test_routed_backend_preserves_context_identity_for_selected_worker(self):
+        ctx = context(entry("needs_revision"), entry("needs_revision"))
+        observed = []
+        self.strong.execute = lambda decision, received, timeout: observed.append(
+            (received, received["write_policy"], received["request_approval"])
+        ) or {"status": "success"}
+        sentinel_policy = object()
+        def sentinel_callback(*args):
+            return None
+        ctx.update(write_policy=sentinel_policy, request_approval=sentinel_callback)
+        self.execute(ctx)
+        self.assertIs(ctx, observed[0][0])
+        self.assertIs(sentinel_policy, observed[0][1])
+        self.assertIs(sentinel_callback, observed[0][2])
+
+    def test_engine_rejects_routed_policy_if_any_backend_lacks_capability(self):
+        self.review.supports_write_policy = False
+        unsafe_backend = EscalatingBackend(
+            self.cheap, recovery=self.strong, reviewer=self.review
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            agent = create(Path(temp) / "agent", "developer", "agent", "company")
+            with self.assertRaisesRegex(ContractError, "strict write policy"):
+                Engine(
+                    agent, agent / "workspace", unsafe_backend,
+                    write_policy=WritePolicy(["allowed.txt"]),
+                )
+
+    def test_planner_gets_json_safe_policy_summary(self):
+        policy = WritePolicy(["content/post.md"])
+        seen = []
+        self.cheap.decide = lambda ctx, timeout: seen.append(ctx) or {
+            "action": "blocked", "role": "", "skills": [],
+            "task": "No work", "reason": "fixture",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            agent = create(Path(temp) / "agent", "developer", "agent", "company")
+            Engine(agent, agent / "workspace", self.backend, write_policy=policy).run("fixture")
+        summary = seen[0]["write_policy_summary"]
+        self.assertEqual(policy.sha256, summary["sha256"])
+        self.assertEqual(["content/post.md"], summary["allowed_files"])
+        self.assertNotIn("write_policy", seen[0])
+
     def test_engine_repairs_after_two_failures_then_reviews_without_resetting_budget(self):
         def report(status, artifacts=()):
             return {"status": status, "summary": "bounded fixture", "artifacts": list(artifacts),
@@ -149,3 +243,26 @@ class RoutingTests(unittest.TestCase):
             self.assertEqual("completed", state["status"])
             self.assertTrue(state["reviewed"])
             self.assertEqual("cheap", state["history"][0]["model_route"]["model"])
+
+    def test_endpoint_change_blocks_pending_approval_resume(self):
+        def routed():
+            primary, repair = DemoBackend(), DemoBackend()
+            primary.model, repair.model = "cheap", "strong"
+            primary.base_url = repair.base_url = "https://provider.example/v1"
+            primary.endpoint_identity = repair.endpoint_identity = "https://provider.example/v1"
+            return EscalatingBackend(primary, recovery=repair), primary, repair
+
+        with tempfile.TemporaryDirectory() as temp:
+            pack = create(Path(temp) / "agent", "developer", "agent", "company")
+            workspace = pack / "workspace"
+            backend, primary, repair = routed()
+            state = Engine(pack, workspace, backend, require_approvals=True).run("demo")
+            run_dir = pack / ".runs" / state["run_id"]
+            primary.base_url = repair.base_url = "https://other.example/v1"
+            with self.assertRaisesRegex(ContractError, "does not match the transport"):
+                Engine(pack, workspace, backend, require_approvals=True).run(
+                    "", run_dir=run_dir,
+                    approval_id=state["pending_approval"]["id"],
+                    approval_decision="approve",
+                )
+            self.assertFalse((workspace / "demo-result.md").exists())

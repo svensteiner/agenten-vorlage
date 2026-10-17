@@ -170,9 +170,13 @@ def continuation_digest(continuation: dict) -> str:
     return _json_digest(continuation, "continuation")
 
 
-def binding(*, run_id: str, agent: str, company: str, workspace: str, backend: str, model: str | None, fingerprint: str) -> dict:
-    return {"run_id": run_id, "agent": agent, "company": company, "workspace": workspace,
-            "backend": backend, "model": model or "", "workspace_fingerprint": fingerprint}
+def binding(*, run_id: str, agent: str, company: str, workspace: str, backend: str,
+            model: str | None, fingerprint: str, write_policy_sha256: str = "") -> dict:
+    result = {"run_id": run_id, "agent": agent, "company": company, "workspace": workspace,
+              "backend": backend, "model": model or "", "workspace_fingerprint": fingerprint}
+    if write_policy_sha256:
+        result["write_policy_sha256"] = write_policy_sha256
+    return result
 
 
 def validate_binding(request: dict, current: dict) -> None:
