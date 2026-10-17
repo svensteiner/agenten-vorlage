@@ -219,3 +219,18 @@ Dokumentationsreviews ohne Blocker. Der vollstaendige unittest-Lauf besteht
 541 Faelle (537 bestanden, vier Skips); alle 20 Offline-Releasepruefungen bestehen.
 Die Registry und ein projektspezifischer Testmanifest muessen weiterhin hostseitig
 vorliegen; der Launcher richtet sie nicht automatisch ein.
+
+## Alle zwoelf Inhaltsfaelle erfasst; fachliche Abnahme gescheitert
+
+Die separat gepruefte Fortsetzung fuehrte nur die zehn zuvor ungeprueften Faelle
+aus und uebernahm die ersten beiden samt Verbrauch unveraendert. Insgesamt:
+28 abgeschlossene Provideraufrufe, 0,044417 US-Dollar gemeldete Kosten, keine
+unbekannten Ausgaenge. Vier Texte akzeptiert, vier abgelehnt, vier Protokollfehler.
+Eine unabhaengige Blindpruefung beurteilt zwei der vier akzeptierten Texte als
+nicht ausreichend quellentreu; sie beanstandet fehlende Freigabekontrollen und
+eine abgeschwaechte Bedingung fuer Freigabe. Einer der zwei als gestuetzt
+bewerteten Texte bleibt in der Attribution mehrdeutig. Ein Grader und synthetische
+Faelle sind kein breiter Zuverlaessigkeitsnachweis. Richtige Ablehnung eines
+unbelegten Entwurfs wird getrennt von erfolgloser Reparatur bewertet.
+Keine fachliche Freigabe und keine Promotion in den laufenden Marketingbot.
+[Abrechnung, Blindpruefung und Grenzen](docs/evidence/host-observations-20261017/semantic-v7-complete-accounting.json).

@@ -1,0 +1,46 @@
+{
+  "scope": "complete accounting for12 sealed synthetic cases; semantic acceptance FAILED",
+  "status": "coverage_complete_unqualified",
+  "case_count": 12,
+  "case_status_counts": {
+    "rejected": 4,
+    "error": 4,
+    "accepted": 4
+  },
+  "physical_requests": 28,
+  "original_requests_carried": 4,
+  "new_requests": 24,
+  "purpose_calls": {
+    "review": 19,
+    "repair": 9
+  },
+  "known_provider_cost_usd": "0.044417",
+  "reserved_usd": "1.16666648",
+  "unknown_outcomes": 0,
+  "unknown_costs": 0,
+  "candidate_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+  "reviewed_helper_sha256": "85896a839497d1ccc130de2e9080daca09086f5b2d0038245b1e5eae7cc14d51",
+  "continuation_policy": "local-invalid-response-terminal-error-v1; local errors retained without retry; unknown/provider/redaction/limits stop globally",
+  "original_run_unchanged": true,
+  "first_two_cases_replayed": false,
+  "independent_accounting_audit_sha256": "e09bc7f846f09f252121e330b0a983fcfaf69444e9daaee6128b629759c7c325",
+  "private_result_sha256": "e39323aa8fbc43aac35ceee86b2ab28e06634086f7d342be047e96e967313150",
+  "blind_judgments_sha256": "de1527e296ead9d188705bc6bd7ca7e9bc11ca05b4e0c7a2ccb1a11ff274a02b",
+  "blind_judgments": {
+    "accepted_texts_judged": 4,
+    "supported": 2,
+    "unsupported": 2,
+    "ambiguous_among_supported": 1,
+    "findings": [
+      "omitted material approval/procedure-change controls",
+      "required matching-count condition weakened to reconciliation"
+    ]
+  },
+  "measurement_limits": [
+    "Rejection of an unsupported initial draft is a correct safety decision, distinct from unsuccessful repair utility.",
+    "One independent text judge; four accepted synthetic outputs, no engagement or broad reliability measurement.",
+    "Complete accounting does not mean all cases accepted or correct."
+  ],
+  "production_qualified": false,
+  "promoted": false
+}
