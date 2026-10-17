@@ -35,11 +35,15 @@ Quelldateien, Paket und eingefrorene Tests unveraendert. Host bestaetigt 79 Test
 Sieben zusaetzliche Regressionen zu Unicode-Zeilentrennern und Persona scheitern.
 **Nicht qualifiziert, nicht in den Marketingbot uebernommen.**
 
-Getrennter Folgeauftrag in `mr-20261017`, gestartet mit
-`.runs/qualification/coding_source_draft_hardening_job.py`: 888 geschuetzte
-Dateien, zwei eingefrorene Testsammlungen. Vor Umsetzung 19 Fehler und eine
-bestandene Grenzpruefung. Dieser Lauf verwendet Host-Gegenbeispiele; das erste
-Ergebnis gilt dadurch nicht rueckwirkend als unbeaufsichtigt bestanden.
+Der getrennte Folgeauftrag `4599afdcf2154f9b94302d4d922b3b62` hat ebenfalls
+fuenf Schritte, eine eigene Nachbesserung und bestandene separate Review.
+888 Quelldateien und zwei eingefrorene Testsammlungen unveraendert. Vor Umsetzung
+19 neue Fehler und eine bestandene Grenzpruefung; danach bestaetigt der Host
+99 Tests in 13,32 Sekunden. Python-/Security-Reviews ohne technische Blocker.
+Der volle Kandidatenlauf ist noch aktiv; Textqualitaet wurde noch nicht gemessen.
+Der Folgeauftrag verwendet Host-Gegenbeispiele und macht den ersten Lauf nicht
+rueckwirkend bestanden. Beide Kandidaten bleiben isoliert und unpromoviert.
+[Nachpruefbare Rohbelege](docs/evidence/source-draft-coding-20261017/README.md).
 Live-Handles: privater `.runs/qualification/agentic-qualification-checkpoint-20261017.json`.
 
 ## Offene Abnahme

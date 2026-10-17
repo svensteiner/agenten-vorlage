@@ -1,0 +1,56 @@
+{
+  "run_id": "4599afdcf2154f9b94302d4d922b3b62",
+  "status": "completed",
+  "reviewed": true,
+  "steps": 5,
+  "failures": 1,
+  "protected_source_unchanged": true,
+  "pack_unchanged": true,
+  "protected_source_files": 888,
+  "frozen": {
+    "tests/unit/test_source_draft_contract.py": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    "tests/unit/test_source_draft_security.py": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d"
+  },
+  "allowed_initial": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "cd176645792d70c14d61fa90dc28aed023eb2385053fb06d50d292633d016f66"
+  },
+  "allowed_final": {
+    "content/source_draft_contract.py": null,
+    "content/tension_generator.py": "3273766164fba9bed101a3eef5252057fd18a0fb18ae0612df33b3d0dc64c941"
+  },
+  "allowed_changes": [
+    "content/source_draft_contract.py",
+    "content/tension_generator.py"
+  ],
+  "routes": [
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 0
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6-luna",
+      "reason": "primary",
+      "revisions": 1
+    },
+    {
+      "backend": "codex",
+      "model": "gpt-6.1-sol",
+      "reason": "independent_review",
+      "revisions": 1
+    }
+  ],
+  "operator_assisted": true,
+  "require_approvals": false,
+  "passed": false,
+  "qualification": "host_counterexample_followup_pending_host_tests_and_scope_review"
+}

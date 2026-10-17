@@ -1,0 +1,49 @@
+{
+  "baseline_marketingbot_commit": "db358c51e3fe81237c0d026b83492e093853688a",
+  "first_run": {
+    "status": "completed",
+    "reviewed": true,
+    "steps": 5,
+    "failures": 1,
+    "protected_source_files": 887,
+    "host_tests_passed": 79,
+    "additional_host_regressions_failed": 7,
+    "qualified": false
+  },
+  "hardening_followup": {
+    "status": "completed",
+    "reviewed": true,
+    "steps": 5,
+    "failures": 1,
+    "protected_source_files": 888,
+    "host_tests_passed": 99,
+    "host_test_seconds": 13.32,
+    "preimplementation_new_tests": {
+      "failed": 19,
+      "passed": 1
+    },
+    "used_host_counterexamples": true,
+    "host_code_repairs_within_run": false,
+    "independent_reviews": "no remaining high/critical blocker",
+    "documentation_cleanup_pending": "Pre-existing verified-observation module docstring is misleading."
+  },
+  "current_candidate_full_regression": "running",
+  "current_candidate_actual_text_quality": "not_run",
+  "production_ready": false,
+  "goal_complete": false,
+  "promoted_to_marketingbot_master": false,
+  "files_sha256": {
+    "first-execution.json": "8f0241780bf09f28f1c482800ddaf318ebfbf423b1aa444ee50f62daa4d9493b",
+    "hardening-execution.json": "e0fd791f50ed6c1e586934f3159fa7addab52633de0328682331d112ee140432",
+    "first-candidate.py.txt": "cd176645792d70c14d61fa90dc28aed023eb2385053fb06d50d292633d016f66",
+    "hardened-candidate.py.txt": "3273766164fba9bed101a3eef5252057fd18a0fb18ae0612df33b3d0dc64c941",
+    "frozen-integration-tests.py.txt": "21bc3dba260cf5668e726dd88a873045ab83787dc8b3077d54ad69fbd35104c4",
+    "frozen-hardening-tests.py.txt": "6d0599dd9a4a5ff804f36bec4170c76ffcb138468c0c5e41508a857bdb2e995d"
+  },
+  "limits": [
+    "Mocks verify composition, budgets and gates, not actual model truth or prompt-injection resistance.",
+    "Source-only protected hashes exclude declared caches/runtime directories; not a general OS-isolation proof.",
+    "Second task uses host counterexamples; first failed host qualification remains failed.",
+    "No X reach measured; native Codex costs not reported."
+  ]
+}

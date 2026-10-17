@@ -22,6 +22,17 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+### Prompt-/Persona-Integration: native Reparatur belegt, Ergebnisqualitaet offen
+
+`fa3edbfab7b94739b8c5c94d9d58b497` endete nach eigener Nachbesserung mit Review,
+aber sieben spaetere Host-Gegenproben widerlegten die technische Abnahme.
+Ein getrennter Folgeauftrag nutzte diese Gegenbeispiele; nach eigener Unicode-
+Nachbesserung und frischer Review bestaetigte der Host 99 gezielte Tests.
+Der ganze Kandidat ist noch nicht vollstaendig regressions- oder qualitaetsgeprueft
+und nicht in den Marketingbot uebernommen. Keine Host-Codehilfe innerhalb der
+Laeufe; der Folgeauftrag ist wegen seiner Host-Gegenbeispiele assistiert markiert.
+[Rohbelege und eingefrorene Quell-/Testsnapshots](evidence/source-draft-coding-20261017/README.md).
+
 ### Reale Quellenbindung: integriert, autonomer Coding-Auftrag nicht bestanden
 
 Marketingbot-Commit `3ccb2e7e` auf `master` erhaelt den ausgewaehlten
