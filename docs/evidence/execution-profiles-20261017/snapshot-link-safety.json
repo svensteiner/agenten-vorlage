@@ -1,6 +1,6 @@
 {
   "schema": "agentkit-technical-qualification/v1",
-  "status": "offline_checks_passed_new_ci_pending",
+  "status": "offline_and_ci_checks_passed",
   "scope": "Windows snapshot alias safety and host-independent Codex phase test fixtures",
   "source_sha256": {
     "agentkit/test_execution.py": "f822231b3a3e6ba1b307584ad8b69c77e5d248e83cb80f5536788dca6bc127cc",
@@ -88,11 +88,48 @@
   },
   "limitations": [
     "Local symlink creation needs unavailable privileges; seven suite skips remain counted. Real local directory-junction evidence is separate from file symlink evidence.",
-    "The corrected Windows CI has not yet completed.",
     "No actual model task or marketing-quality acceptance occurred in this technical qualification."
   ],
   "model_calls": 0,
   "live_marketingbot_changed": false,
   "autonomous_qualification": false,
-  "production_qualification": false
+  "production_qualification": false,
+  "corrected_ci": {
+    "run_id": 39038388607,
+    "head_sha": "bacc5295af4251a209511e6adbeccb4e61e86539",
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39038388607",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "test (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (ubuntu-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "package",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "browser-e2e",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (windows-latest, 3.11)",
+        "conclusion": "success"
+      },
+      {
+        "name": "public-deployment",
+        "conclusion": "success"
+      }
+    ],
+    "windows_311_and_312_link_regressions_executed_and_passed": true,
+    "log_sha256": "29e197350aaa549a741631c21eccfa009d998ae5c977f9df01ce4b72779a42b0"
+  }
 }

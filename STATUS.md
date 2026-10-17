@@ -28,7 +28,9 @@ blieben unveraendert, der Container wurde entfernt. Fruehere unbekannte
 Diagnoselaeufe und fehlgeschlagene CI-Laeufe bleiben erhalten. Die Windows-CI
 deckte einen echten Symlink-Fehler im gemeinsamen Datei-Leser sowie weitere
 hostabhaengige Fixtures auf. Die Korrekturen sind unabhaengig und lokal
-geprueft; die neue CI steht aus. Ein echter autonomer Modelllauf und die
+geprueft; alle sieben Jobs der CI 39038388607 sind gruen, einschliesslich
+der ausgefuehrten Link-Regressionen unter Windows 3.11 und 3.12.
+Ein echter autonomer Modelllauf und die
 Marketingqualitaet bleiben offen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)

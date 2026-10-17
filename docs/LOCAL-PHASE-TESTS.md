@@ -101,6 +101,6 @@ dadurch nicht vor der Reparse-Pruefung verschwinden. Ein echter lokaler
 Junction-Vergleich bestaetigt Ablehnung statt Dateilesen; Datei-Symlinks
 bleiben lokal wegen fehlender Erstellungsrechte ungeprueft. Der neue Stand
 besteht 656 Tests mit sieben Skips, ohne Fehler und mit 80,37 % kombinierter
-Coverage (83,15 % Statements, 73,45 % Branches). Die korrigierte Windows-CI
-steht noch aus. Ein echter autonomer Coding-Auftrag und die Marketingqualitaet
+Coverage (83,15 % Statements, 73,45 % Branches). Alle sieben Jobs der korrigierten CI 39038388607 sind gruen. Die drei
+Link-Regressionen wurden unter Windows 3.11 und 3.12 ausgefuehrt und bestanden. Ein echter autonomer Coding-Auftrag und die Marketingqualitaet
 sind weiterhin nicht abgenommen.
