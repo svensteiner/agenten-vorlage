@@ -1,0 +1,34 @@
+{
+  "scope": "real local browser-to-host test/review pipeline; no new source edit",
+  "job_id": "13b6e1d331a444128fcd802ca95133a5",
+  "run_id": "9aeeeb679c5247998cf90e58d357d2d3",
+  "native_status": "completed",
+  "steps": 3,
+  "failures": 0,
+  "reviewed": true,
+  "requested_model": "gpt-6-sol",
+  "host_profile_id": "coding-cockpit-ready-20261017",
+  "completed_write_actions": 0,
+  "completed_test_actions": 1,
+  "test_outcomes": {
+    "passed": 79,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "xfailed": 0,
+    "xpassed": 0,
+    "deselected": 0
+  },
+  "source_initial_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+  "source_final_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+  "independent_audit_sha256": "6fe9d48854a9968fd79c5440d0228b27f2ab61acd3f81837d3d3ca35b3f74cf7",
+  "checkpoint_sha256": "45e6eb8d2ff81e4d6d3686b4d85ebbd80f287fcf25f6b861c90e84ab055badfc",
+  "findings": [
+    "Native worker and final summary misattribute preexisting source changes to this run; no new implementation credit.",
+    "Host-created workspace lock is untracked and sensitive-filtered; Git observation correctly remains partial.",
+    "Fresh host tests and separate review ran through the real UI; no fixture backend."
+  ],
+  "production_qualified": false,
+  "semantic_acceptance": false,
+  "server_state_after_audit": "Root stopped its own loopback server after completed job for provenance fix; original Marketingbot untouched"
+}

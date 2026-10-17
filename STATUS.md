@@ -234,3 +234,17 @@ Faelle sind kein breiter Zuverlaessigkeitsnachweis. Richtige Ablehnung eines
 unbelegten Entwurfs wird getrennt von erfolgloser Reparatur bewertet.
 Keine fachliche Freigabe und keine Promotion in den laufenden Marketingbot.
 [Abrechnung, Blindpruefung und Grenzen](docs/evidence/host-observations-20261017/semantic-v7-complete-accounting.json).
+
+## Echter Cockpit-Profillauf: Tests/Review belegt, Aenderungszuschreibung falsch
+
+Der echte Browserauftrag 13b6e1d331a444128fcd802ca95133a5 mit angefordertem
+gpt-6-sol und dem engen Hostprofil schliesst in drei Schritten ab: 79 Tests
+bestanden, separates Review, keine neuen Quellaenderungen. Der erlaubte
+Quellhash war vor und nach dem Lauf eaa2829; die einzige abgeschlossene
+Hostaktion war der Testlauf. Die Modellberichte schreiben den vorhandenen Diff
+faelschlich diesem Auftrag zu. Daher ausschliesslich UI-/Test-/Review-Nachweis,
+kein neuer Implementierungserfolg. Die hosteigene Sperrdatei fuehrt ausserdem
+korrekt zu einer teilweise gefilterten Git-Beobachtung. Nach unabhaengiger
+Nachpruefung wurde der eigens gestartete lokale Server fuer die getrennte
+Korrektur der Herkunftsnachweise beendet. Original-Marketingbot unveraendert.
+[Nachweise und Grenzen](docs/evidence/execution-profiles-20261017/real-ui-profile-trial.json).
