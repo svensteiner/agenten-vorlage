@@ -1,0 +1,133 @@
+"""Offline tests for trace capture and fail-closed persistence; no credentials/network."""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+
+HELPER = Path(__file__).with_name("source_faithfulness_protocol_trace_v2_job.py")
+SPEC = importlib.util.spec_from_file_location("protocol_trace_v2_test_target", HELPER)
+TARGET = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = TARGET
+SPEC.loader.exec_module(TARGET)
+
+
+class FakeTransport:
+    def __init__(self, responses=(), raises=False):
+        self.responses = list(responses)
+        self.raises = raises
+        self.calls = 0
+        self.halted = False
+        self.active_case = "synthetic-case"
+        self.state = {"requests": []}
+
+    def generate_freeform(self, *, user_prompt, system_prompt, context):
+        self.calls += 1
+        if self.halted:
+            raise RuntimeError("halted")
+        if self.raises:
+            self.state["requests"].append({"number": self.calls, "status": "response_rejected"})
+            raise RuntimeError("provider detail must not be copied")
+        self.state["requests"].append({"number": self.calls, "status": "completed"})
+        return self.responses.pop(0)
+
+
+def trace_state():
+    return {"requests": [], "callback_trace": []}
+
+
+class ProtocolTraceOfflineTests(unittest.TestCase):
+    def test_is_post_wirefix_synthetic_diagnostic_with_frozen_caps(self):
+        self.assertEqual(TARGET.SOURCE_FAITHFULNESS_SHA256,
+                         "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe")
+        self.assertEqual(TARGET.MAX_CALLS, 4)
+        self.assertEqual(str(TARGET.MAX_USD), "0.20")
+        self.assertEqual(str(TARGET.RESERVE_PER_CALL), "0.05")
+        self.assertEqual(len(TARGET.CANDIDATES), 2)
+        self.assertTrue(all(item["case_id"].startswith("synthetic-") for item in TARGET.CANDIDATES))
+
+    def test_component_source_override_is_process_local_and_pinned(self):
+        parent = TARGET.load_parent()
+        self.assertEqual(parent.SOURCES["source_faithfulness"],
+                         parent.WORKSPACE / "content/source_faithfulness.py")
+        self.assertEqual(parent.EXPECTED_SOURCE_SHA256["source_faithfulness"],
+                         TARGET.SOURCE_FAITHFULNESS_SHA256)
+        self.assertEqual(TARGET.digest(parent.SOURCES["source_faithfulness"]),
+                         TARGET.SOURCE_FAITHFULNESS_SHA256)
+        self.assertEqual(TARGET.digest(TARGET.PARENT_JOB), TARGET.PARENT_SHA256)
+
+    def test_actual_pinned_wirefix_manifest_and_log_validate_offline(self):
+        parent = TARGET.load_parent()
+        validation = TARGET.validate_full_gate(parent)
+        self.assertEqual(validation["passed"], 4602)
+        self.assertEqual(validation["exit_code"], 0)
+        self.assertEqual(validation["manifest_sha256"], TARGET.FULL_GATE_SHA256)
+        self.assertEqual(validation["log_sha256"], TARGET.FULL_LOG_SHA256)
+
+    def test_self_consistent_replacement_gate_and_log_are_rejected_by_literal_pins(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "gate.json"
+            log = root / "gate.log"
+            log.write_text("replacement full-suite log", encoding="utf-8")
+            manifest.write_text('{"exit_code":0,"passed":4602,"full_suite":true}', encoding="utf-8")
+            parent = Mock()
+            with patch.object(TARGET, "FULL_GATE", manifest), patch.object(TARGET, "FULL_LOG", log):
+                with self.assertRaisesRegex(ValueError, "externally pinned manifest/log"):
+                    TARGET.validate_full_gate(parent)
+            parent.validate_full_suite_gate.assert_not_called()
+
+    def test_captures_exact_validated_review_and_repair_before_forwarding(self):
+        review = '{"verdict":"reject","issues":["unsupported_fact"],"claims":[],"human_controls_preserved":false,"uncertainty_preserved":false}'
+        repair = "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar."
+        delegate = FakeTransport([review, repair])
+        state = trace_state()
+        responder = TARGET.TraceResponder(delegate, state, lambda: None)
+        review_context = {"temperature": 0, "max_tokens": 1200,
+                          "task_type": "source_faithfulness_review"}
+        repair_context = {"temperature": 0.85, "max_tokens": 150,
+                          "task_type": "source_faithfulness_repair"}
+        self.assertEqual(responder.generate_freeform("review user", "review system", review_context), review)
+        self.assertEqual(responder.generate_freeform("repair user", "repair system", repair_context), repair)
+        self.assertEqual([item["raw_text"] for item in state["callback_trace"]], [review, repair])
+        self.assertEqual([item["context_type"] for item in state["callback_trace"]],
+                         ["source_faithfulness_review", "source_faithfulness_repair"])
+        self.assertEqual(state["callback_trace"][0]["returned_sha256"],
+                         hashlib.sha256(review.encode()).hexdigest())
+        self.assertEqual(state["callback_trace"][0]["user_prompt_sha256"],
+                         hashlib.sha256(b"review user").hexdigest())
+        self.assertNotIn("review user", repr(state))
+        self.assertNotIn("review system", repr(state))
+
+    def test_trace_persistence_failure_halts_and_blocks_replay(self):
+        delegate = FakeTransport(["first response", "must never be requested"])
+        responder = TARGET.TraceResponder(delegate, trace_state(),
+                                          lambda: (_ for _ in ()).throw(OSError("disk unavailable")))
+        with self.assertRaisesRegex(RuntimeError, "persistence failed"):
+            responder.generate_freeform("u", "s", {"task_type": "source_faithfulness_review"})
+        self.assertTrue(delegate.halted)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            responder.generate_freeform("u2", "s2", {"task_type": "source_faithfulness_repair"})
+        self.assertEqual(delegate.calls, 1)
+
+    def test_parent_rejection_cause_is_recorded_as_unknown_without_raw_error(self):
+        delegate = FakeTransport(raises=True)
+        state = trace_state()
+        delegate.state = state
+        responder = TARGET.TraceResponder(delegate, state, lambda: None)
+        with self.assertRaisesRegex(RuntimeError, "provider detail"):
+            responder.generate_freeform("u", "s", {"task_type": "source_faithfulness_review"})
+        event = state["callback_trace"][0]
+        self.assertEqual(event["failure_cause"], "unknown")
+        self.assertEqual(event["transport_status"], "response_rejected")
+        self.assertIsNone(event["raw_text"])
+        self.assertNotIn("provider detail", repr(state))
+
+
+if __name__ == "__main__":
+    unittest.main()

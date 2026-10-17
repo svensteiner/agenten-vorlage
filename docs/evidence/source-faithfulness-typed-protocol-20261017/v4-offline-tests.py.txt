@@ -1,0 +1,332 @@
+"""Offline tests for trace capture and fail-closed persistence; no credentials/network."""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import copy
+import json
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+
+HELPER = Path(__file__).with_name("source_faithfulness_protocol_trace_v4_job.py")
+SPEC = importlib.util.spec_from_file_location("protocol_trace_v4_test_target", HELPER)
+TARGET = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = TARGET
+SPEC.loader.exec_module(TARGET)
+
+
+class FakeTransport:
+    def __init__(self, responses=(), raises=False):
+        self.responses = list(responses)
+        self.raises = raises
+        self.calls = 0
+        self.halted = False
+        self.active_case = "synthetic-case"
+        self.state = {"requests": []}
+
+    def generate_freeform(self, *, user_prompt, system_prompt, context):
+        self.calls += 1
+        if self.halted:
+            raise RuntimeError("halted")
+        if self.raises:
+            self.state["requests"].append({"number": self.calls, "status": "response_rejected"})
+            raise RuntimeError("provider detail must not be copied")
+        self.state["requests"].append({"number": self.calls, "status": "completed"})
+        return self.responses.pop(0)
+
+
+class PostCapture:
+    def __init__(self, *, error=None):
+        self.calls = []
+        self.error = error
+
+    def __call__(self, url, **kwargs):
+        self.calls.append((url, kwargs))
+        if self.error:
+            raise self.error
+        return "response"
+
+
+def trace_state():
+    return {"requests": [], "callback_trace": []}
+
+
+class ProtocolTraceOfflineTests(unittest.TestCase):
+    def test_is_post_wirefix_synthetic_diagnostic_with_frozen_caps(self):
+        self.assertEqual(TARGET.SOURCE_FAITHFULNESS_SHA256,
+                         "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe")
+        self.assertEqual(TARGET.MAX_CALLS, 4)
+        self.assertEqual(str(TARGET.MAX_USD), "0.20")
+        self.assertEqual(str(TARGET.RESERVE_PER_CALL), "0.05")
+        self.assertEqual(len(TARGET.CANDIDATES), 2)
+        self.assertTrue(all(item["case_id"].startswith("synthetic-") for item in TARGET.CANDIDATES))
+
+    def test_component_source_override_is_process_local_and_pinned(self):
+        parent = TARGET.load_parent()
+        self.assertEqual(parent.SOURCES["source_faithfulness"],
+                         parent.WORKSPACE / "content/source_faithfulness.py")
+        self.assertEqual(parent.EXPECTED_SOURCE_SHA256["source_faithfulness"],
+                         TARGET.SOURCE_FAITHFULNESS_SHA256)
+        self.assertEqual(TARGET.digest(parent.SOURCES["source_faithfulness"]),
+                         TARGET.SOURCE_FAITHFULNESS_SHA256)
+        self.assertEqual(TARGET.digest(TARGET.PARENT_JOB), TARGET.PARENT_SHA256)
+        self.assertEqual(TARGET.digest(TARGET.V2_JOB), TARGET.V2_SHA256)
+        self.assertEqual(TARGET.digest(TARGET.V3_JOB), TARGET.V3_SHA256)
+        prepared = TARGET.build_prepared(parent, TARGET.validate_full_gate(parent))
+        self.assertEqual(prepared["structured_output"]["repair"], TARGET.REPAIR_OUTPUT_CONTRACT)
+        self.assertEqual(prepared["repair_decoder"]["max_chars"], 190)
+
+    def test_actual_pinned_wirefix_manifest_and_log_validate_offline(self):
+        parent = TARGET.load_parent()
+        validation = TARGET.validate_full_gate(parent)
+        self.assertEqual(validation["passed"], 4602)
+        self.assertEqual(validation["exit_code"], 0)
+        self.assertEqual(validation["manifest_sha256"], TARGET.FULL_GATE_SHA256)
+        self.assertEqual(validation["log_sha256"], TARGET.FULL_LOG_SHA256)
+
+    def test_self_consistent_replacement_gate_and_log_are_rejected_by_literal_pins(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "gate.json"
+            log = root / "gate.log"
+            log.write_text("replacement full-suite log", encoding="utf-8")
+            manifest.write_text('{"exit_code":0,"passed":4602,"full_suite":true}', encoding="utf-8")
+            parent = Mock()
+            with patch.object(TARGET, "FULL_GATE", manifest), patch.object(TARGET, "FULL_LOG", log):
+                with self.assertRaisesRegex(ValueError, "externally pinned manifest/log"):
+                    TARGET.validate_full_gate(parent)
+            parent.validate_full_suite_gate.assert_not_called()
+
+    def test_captures_exact_validated_review_and_repair_before_forwarding(self):
+        review = '{"verdict":"reject","issues":["unsupported_fact"],"claims":[],"human_controls_preserved":false,"uncertainty_preserved":false}'
+        repair = "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar."
+        delegate = FakeTransport([review, repair])
+        state = trace_state()
+        responder = TARGET.TraceResponder(delegate, state, lambda: None)
+        review_context = {"temperature": 0, "max_tokens": 1200,
+                          "task_type": "source_faithfulness_review"}
+        repair_context = {"temperature": 0.85, "max_tokens": 150,
+                          "task_type": "source_faithfulness_repair"}
+        self.assertEqual(responder.generate_freeform("review user", "review system", review_context), review)
+        self.assertEqual(responder.generate_freeform("repair user", "repair system", repair_context), repair)
+        self.assertEqual([item["raw_text"] for item in state["callback_trace"]], [review, repair])
+        self.assertEqual([item["context_type"] for item in state["callback_trace"]],
+                         ["source_faithfulness_review", "source_faithfulness_repair"])
+        self.assertEqual(state["callback_trace"][0]["returned_sha256"],
+                         hashlib.sha256(review.encode()).hexdigest())
+        self.assertEqual(state["callback_trace"][0]["user_prompt_sha256"],
+                         hashlib.sha256(b"review user").hexdigest())
+        self.assertNotIn("review user", repr(state))
+        self.assertNotIn("review system", repr(state))
+
+    def test_trace_persistence_failure_halts_and_blocks_replay(self):
+        delegate = FakeTransport(["first response", "must never be requested"])
+        responder = TARGET.TraceResponder(delegate, trace_state(),
+                                          lambda: (_ for _ in ()).throw(OSError("disk unavailable")))
+        with self.assertRaisesRegex(RuntimeError, "persistence failed"):
+            responder.generate_freeform("u", "s", {"task_type": "source_faithfulness_review"})
+        self.assertTrue(delegate.halted)
+        with self.assertRaisesRegex(RuntimeError, "halted"):
+            responder.generate_freeform("u2", "s2", {"task_type": "source_faithfulness_repair"})
+        self.assertEqual(delegate.calls, 1)
+
+    def test_parent_rejection_cause_is_recorded_as_unknown_without_raw_error(self):
+        delegate = FakeTransport(raises=True)
+        state = trace_state()
+        delegate.state = state
+        responder = TARGET.TraceResponder(delegate, state, lambda: None)
+        with self.assertRaisesRegex(RuntimeError, "provider detail"):
+            responder.generate_freeform("u", "s", {"task_type": "source_faithfulness_review"})
+        event = state["callback_trace"][0]
+        self.assertEqual(event["failure_cause"], "unknown")
+        self.assertEqual(event["transport_status"], "response_rejected")
+        self.assertIsNone(event["raw_text"])
+        self.assertNotIn("provider detail", repr(state))
+
+    def test_review_payload_has_exact_strict_schema_and_provider_requirements(self):
+        transport = FakeTransport()
+        state = {"requests": [{"number": 1, "purpose": "review", "status": "started"}],
+                 "payload_receipts": []}
+        sent = PostCapture()
+        adapter = TARGET.PayloadReceiptSession(transport, state, lambda: None, sent)
+        original_payload = {"model": TARGET.MODEL, "messages": [], "temperature": 0, "max_tokens": 1200,
+                            "provider": {"allow_fallbacks": False}}
+        self.assertEqual(adapter("https://unit.invalid", json=original_payload, headers={"Authorization": "secret"}),
+                         "response")
+        sent_payload = sent.calls[0][1]["json"]
+        self.assertEqual(sent_payload["response_format"], TARGET.RESPONSE_FORMAT)
+        self.assertEqual(sent_payload["response_format"]["type"], "json_schema")
+        self.assertEqual(sent_payload["response_format"]["json_schema"]["name"], "source_faithfulness")
+        self.assertIs(sent_payload["response_format"]["json_schema"]["strict"], True)
+        self.assertEqual(set(sent_payload["response_format"]["json_schema"]["schema"]["required"]),
+                         {"verdict", "issues", "claims", "human_controls_preserved", "uncertainty_preserved"})
+        self.assertIs(sent_payload["response_format"]["json_schema"]["schema"]["additionalProperties"], False)
+        self.assertEqual(sent_payload["provider"], {"require_parameters": True, "allow_fallbacks": False})
+        self.assertNotIn("response_format", original_payload)
+        receipt = state["payload_receipts"][0]
+        self.assertEqual(receipt["response_format"], TARGET.RESPONSE_FORMAT)
+        self.assertEqual(receipt["provider"], sent_payload["provider"])
+        expected_hash = hashlib.sha256(json.dumps(sent_payload, ensure_ascii=False, sort_keys=True,
+                                                  separators=(",", ":")).encode()).hexdigest()
+        self.assertEqual(receipt["payload_sha256"], expected_hash)
+        self.assertNotIn("Authorization", repr(receipt))
+
+    def test_repair_payload_uses_exact_closed_text_envelope_schema(self):
+        transport = FakeTransport()
+        state = {"requests": [{"number": 2, "purpose": "repair", "status": "started"}],
+                 "payload_receipts": []}
+        sent = PostCapture()
+        adapter = TARGET.PayloadReceiptSession(transport, state, lambda: None, sent)
+        payload = {"model": TARGET.MODEL, "messages": [], "temperature": 0.85, "max_tokens": 150,
+                   "provider": {"allow_fallbacks": False}}
+        adapter("https://unit.invalid", json=payload)
+        transmitted = sent.calls[0][1]["json"]
+        self.assertEqual(transmitted["response_format"], TARGET.REPAIR_RESPONSE_FORMAT)
+        schema = transmitted["response_format"]["json_schema"]["schema"]
+        self.assertEqual(schema["type"], "object")
+        self.assertIs(schema["additionalProperties"], False)
+        self.assertEqual(schema["required"], ["text"])
+        self.assertEqual(schema["properties"], {"text": {"type": "string"}})
+        self.assertEqual(transmitted["provider"], {"require_parameters": True, "allow_fallbacks": False})
+        self.assertEqual(state["payload_receipts"][0]["response_format"], TARGET.REPAIR_RESPONSE_FORMAT)
+        self.assertEqual(state["payload_receipts"][0]["provider"], transmitted["provider"])
+
+    def test_payload_receipt_persistence_failure_halts_before_http(self):
+        transport = FakeTransport()
+        state = {"requests": [{"number": 1, "purpose": "review", "status": "started"}],
+                 "payload_receipts": []}
+        sent = PostCapture()
+        adapter = TARGET.PayloadReceiptSession(
+            transport, state, lambda: (_ for _ in ()).throw(OSError("disk full")), sent)
+        with self.assertRaisesRegex(RuntimeError, "halted before HTTP"):
+            adapter("https://unit.invalid", json={"provider": {"allow_fallbacks": False}})
+        self.assertTrue(transport.halted)
+        self.assertEqual(sent.calls, [])
+
+    def test_review_transport_rejection_has_no_schema_free_fallback(self):
+        transport = FakeTransport()
+        state = {"requests": [{"number": 1, "purpose": "review", "status": "started"}],
+                 "payload_receipts": []}
+        sent = PostCapture(error=RuntimeError("provider rejects structured output"))
+        adapter = TARGET.PayloadReceiptSession(transport, state, lambda: None, sent)
+        with self.assertRaisesRegex(RuntimeError, "rejects structured output"):
+            adapter("https://unit.invalid", json={"provider": {"allow_fallbacks": False}})
+        self.assertEqual(len(sent.calls), 1)
+        self.assertIn("response_format", sent.calls[0][1]["json"])
+
+    def test_repair_wire_envelope_is_decoded_exactly_and_both_forms_are_retained(self):
+        text = "Sieben Rechnungen wurden abgeglichen. Zahlungsstatus unklar. Freigabe nur durch den Controller."
+        wire = json.dumps({"text": text}, ensure_ascii=False, separators=(",", ":"))
+        delegate = FakeTransport([wire])
+        state = trace_state()
+        state["repair_decodes"] = []
+        traced = TARGET.TraceResponder(delegate, state, lambda: None)
+        decoder = TARGET.RepairEnvelopeResponder(traced, delegate, state, lambda: None, max_chars=190)
+        result = decoder.generate_freeform("repair", "system", {
+            "temperature": 0.85, "max_tokens": 150, "task_type": "source_faithfulness_repair"})
+        self.assertEqual(result, text)
+        self.assertEqual(state["callback_trace"][0]["raw_text"], wire)
+        record = state["repair_decodes"][0]
+        self.assertEqual(record["wire_body"], wire)
+        self.assertEqual(record["wire_body_sha256"], hashlib.sha256(wire.encode("utf-8")).hexdigest())
+        self.assertEqual(record["decoded_text"], text)
+        self.assertEqual(record["decoded_text_sha256"], hashlib.sha256(text.encode("utf-8")).hexdigest())
+        self.assertEqual(record["response_format"], TARGET.REPAIR_RESPONSE_FORMAT)
+
+    def test_repair_envelope_rejects_bad_forms_without_retries_or_extraction(self):
+        bad = [
+            '{"text":"x","text":"y"}',
+            '```json\n{"text":"Valid."}\n```',
+            '{"text":"Valid.","explanation":"extra"}',
+            '{"text":7}',
+            '{"text":"   "}',
+            json.dumps({"text": "A" * 191}),
+        ]
+        for wire in bad:
+            with self.subTest(wire=wire[:32]):
+                delegate = FakeTransport([wire, '{"text":"must not retry"}'])
+                state = trace_state()
+                state["repair_decodes"] = []
+                traced = TARGET.TraceResponder(delegate, state, lambda: None)
+                decoder = TARGET.RepairEnvelopeResponder(traced, delegate, state, lambda: None)
+                context = {"temperature": 0.85, "max_tokens": 150,
+                           "task_type": "source_faithfulness_repair"}
+                with self.assertRaisesRegex(RuntimeError, "declared JSON contract"):
+                    decoder.generate_freeform("repair", "system", context)
+                self.assertEqual(delegate.calls, 1)
+                self.assertTrue(delegate.halted)
+                self.assertEqual(state["repair_decodes"][0]["status"], "rejected")
+                with self.assertRaisesRegex(RuntimeError, "halted"):
+                    decoder.generate_freeform("again", "system", context)
+                self.assertEqual(delegate.calls, 1)
+
+    def test_repair_decode_receipt_persistence_failure_halts(self):
+        wire = json.dumps({"text": "Freigabe bleibt beim Controller."})
+        delegate = FakeTransport([wire])
+        state = trace_state()
+        traced = TARGET.TraceResponder(delegate, state, lambda: None)
+        decoder = TARGET.RepairEnvelopeResponder(
+            traced, delegate, state,
+            lambda: (_ for _ in ()).throw(OSError("disk full")))
+        with self.assertRaisesRegex(RuntimeError, "receipt persistence failed"):
+            decoder.generate_freeform("repair", "system", {
+                "temperature": 0.85, "max_tokens": 150,
+                "task_type": "source_faithfulness_repair"})
+        self.assertTrue(delegate.halted)
+        self.assertEqual(delegate.calls, 1)
+
+    def test_prepared_schema_and_case_tampering_reject_before_key_load(self):
+        parent = TARGET.load_parent()
+        gate = TARGET.validate_full_gate(parent)
+        original = TARGET.build_prepared(parent, gate)
+        for mutate in ("schema", "result", "case"):
+            prepared = copy.deepcopy(original)
+            if mutate == "schema":
+                prepared["structured_output"]["review"]["response_format"]["json_schema"]["strict"] = False
+            elif mutate == "result":
+                prepared["result_contract"]["filename"] = "some-other-result.json"
+            else:
+                prepared["candidates"][0]["draft"] += " altered"
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                prepared_path = root / "prepared.json"
+                prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
+                result_path = root / TARGET.RESULT.name
+                lock_path = root / TARGET.LOCK.name
+                key_loader = Mock(side_effect=AssertionError("credential loader must not run"))
+                parent._load_key_only = key_loader
+                with patch.object(TARGET, "PREPARED", prepared_path), \
+                     patch.object(TARGET, "RESULT", result_path), \
+                     patch.object(TARGET, "LOCK", lock_path), \
+                     patch.object(TARGET, "load_parent", return_value=parent):
+                    with self.assertRaisesRegex(ValueError, "refusing credential load"):
+                        TARGET.run()
+                key_loader.assert_not_called()
+                self.assertFalse(lock_path.exists())
+
+    def test_existing_result_blocks_replay_before_key_load(self):
+        parent = TARGET.load_parent()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prepared_path = root / "prepared.json"
+            prepared_path.write_text("{}", encoding="utf-8")
+            result_path = root / "result.json"
+            result_path.write_text('{"status":"tampered"}', encoding="utf-8")
+            lock_path = root / "attempt.lock"
+            key_loader = Mock(side_effect=AssertionError("credential loader must not run"))
+            parent._load_key_only = key_loader
+            with patch.object(TARGET, "PREPARED", prepared_path), \
+                 patch.object(TARGET, "RESULT", result_path), \
+                 patch.object(TARGET, "LOCK", lock_path), \
+                 patch.object(TARGET, "load_parent", return_value=parent):
+                with self.assertRaisesRegex(RuntimeError, "never replayed"):
+                    TARGET.run()
+            key_loader.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

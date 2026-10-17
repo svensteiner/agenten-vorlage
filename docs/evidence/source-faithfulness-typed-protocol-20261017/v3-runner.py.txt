@@ -1,0 +1,434 @@
+"""One-shot synthetic trace of source-review parsing and repair behavior.
+
+This is a bounded diagnostic, not a quality benchmark.  It never loads the
+held-out corpus, changes the paired-screen helper, or publishes output.  A
+parent-transport rejection has unknown cause here: the parent does not retain
+finish reason or raw response text when validation fails, so truncation cannot
+be concluded from a rejection status alone.
+"""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import os
+import copy
+from pathlib import Path
+import secrets
+import sys
+from decimal import Decimal
+
+BASE = Path(__file__).resolve().parent
+PARENT_JOB = BASE / "source_faithfulness_paired_screen_job.py"
+PREPARED = BASE / "source-faithfulness-protocol-trace-v3-prepared-20261017.json"
+RESULT = BASE / "source-faithfulness-protocol-trace-v3-result-20261017.json"
+LOCK = BASE / "source-faithfulness-protocol-trace-v3-attempt-20261017.lock"
+FULL_GATE = BASE / "source-faithfulness-wirefix-git-full-validation-20261017.json"
+FULL_LOG = BASE / "source-faithfulness-wirefix-git-full-validation-20261017.log"
+
+PARENT_SHA256 = "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771"
+SOURCE_FAITHFULNESS_SHA256 = "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe"
+V2_JOB = BASE / "source_faithfulness_protocol_trace_v2_job.py"
+V2_SHA256 = "1392160ec83896ebe10fda2991a6a15da8df715e96af02729d34b2a828ea94ef"
+FULL_GATE_SHA256 = "c0aae28e91ec58b590f4478e9e341371ba2296ef28f633abf786cebcc2f348da"
+FULL_LOG_SHA256 = "bf735816a4cf4f768879c2c717fdbac424a753a030c1f7f3d9bcd5de89f2cd08"
+MAX_CALLS = 4
+MAX_USD = Decimal("0.20")
+RESERVE_PER_CALL = Decimal("0.05")
+MODEL = "anthropic/claude-haiku-4.5"
+
+SYNTHETIC_SOURCE = (
+    "The sample ledger lists seven matched invoices. Payment status is unknown. "
+    "A controller must approve release."
+)
+CANDIDATES = (
+    {"case_id": "synthetic-valid", "draft":
+     "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Freigabe nur durch den Controller."},
+    {"case_id": "synthetic-invalid", "draft":
+     "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben."},
+)
+
+REVIEW_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["verdict", "issues", "claims", "human_controls_preserved", "uncertainty_preserved"],
+    "properties": {
+        "verdict": {"type": "string", "enum": ["accept", "reject"]},
+        "issues": {"type": "array", "items": {"type": "string", "enum": [
+            "format", "human_control_omitted", "overlength", "uncertainty_strengthened",
+            "unsupported_cause", "unsupported_fact", "unsupported_legal_or_necessity"]}},
+        "claims": {"type": "array", "items": {"type": "object", "additionalProperties": False,
+            "required": ["draft_span", "source_quote", "kind"],
+            "properties": {"draft_span": {"type": "string"}, "source_quote": {"type": "string"},
+                           "kind": {"type": "string", "enum": ["conditional_proposal", "fact", "inference"]}}}},
+        "human_controls_preserved": {"type": "boolean"},
+        "uncertainty_preserved": {"type": "boolean"},
+    },
+}
+RESPONSE_FORMAT = {"type": "json_schema", "json_schema": {
+    "name": "source_faithfulness", "strict": True, "schema": REVIEW_SCHEMA}}
+REVIEW_PROVIDER_POLICY = {"require_parameters": True, "allow_fallbacks": False}
+REVIEW_OUTPUT_CONTRACT = {"response_format": RESPONSE_FORMAT,
+                          "provider": REVIEW_PROVIDER_POLICY}
+
+
+def require(condition: bool, message: str = "Protocol trace precondition failed") -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def read_json(path: Path):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique)
+
+
+def write_once(path: Path, value) -> None:
+    payload = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def save_state(path: Path, value) -> None:
+    payload = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    temporary = path.with_name(path.name + ".tmp")
+    fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def load_parent():
+    require(digest(PARENT_JOB) == PARENT_SHA256, "Parent transport helper hash changed")
+    require(digest(V2_JOB) == V2_SHA256, "Pinned v2 synthetic diagnostic changed")
+    spec = importlib.util.spec_from_file_location("source_faithfulness_paired_parent", PARENT_JOB)
+    if spec is None or spec.loader is None:
+        raise ImportError("Pinned parent helper could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    # This is an explicit process-local override. The frozen paired helper is
+    # never edited; only this new diagnostic process points its loader at the
+    # post-wire-fix host component and matching source pin.
+    module.SOURCES["source_faithfulness"] = module.WORKSPACE / "content/source_faithfulness.py"
+    module.EXPECTED_SOURCE_SHA256["source_faithfulness"] = SOURCE_FAITHFULNESS_SHA256
+    module.VALIDATION = FULL_GATE
+    module.VALIDATION_LOG = FULL_LOG
+    require(digest(module.SOURCES["source_faithfulness"]) == SOURCE_FAITHFULNESS_SHA256,
+            "Post-wire-fix qualifier component hash changed")
+    return module
+
+
+def validate_full_gate(parent) -> dict:
+    require(FULL_GATE.is_file() and FULL_LOG.is_file(), "Post-wire-fix full-suite gate is required")
+    require(digest(FULL_GATE) == FULL_GATE_SHA256 and digest(FULL_LOG) == FULL_LOG_SHA256,
+            "Full-suite evidence does not match the externally pinned manifest/log")
+    manifest = read_json(FULL_GATE)
+    require(manifest.get("passed") == 4602 and manifest.get("exit_code") == 0
+            and manifest.get("full_suite") is True
+            and manifest.get("source_files_unchanged") is True,
+            "Post-wire-fix full-suite gate must report exactly 4,602 passing tests")
+    expected = {
+        "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+        "content/source_faithfulness.py": SOURCE_FAITHFULNESS_SHA256,
+        "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+        "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+        "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+        "tests/unit/test_source_faithfulness_wire_contract.py": "de5e40d128ac3a47ba1b5776a3134227a468fe5eb5f81ce98861b6030c46828b",
+    }
+    tested = manifest.get("tested_source_sha256")
+    require(isinstance(tested, dict) and all(tested.get(name) == value for name, value in expected.items()),
+            "Full-suite tested-source pins do not match post-wire-fix dependencies")
+    actual_paths = {
+        "bot.py": parent.WORKSPACE / "bot.py",
+        "content/source_faithfulness.py": parent.SOURCES["source_faithfulness"],
+        "content/tension_generator.py": parent.SOURCES["tension_generator"],
+        "core/llm_task_budget.py": parent.SOURCES["llm_task_budget"],
+        "tests/unit/test_news_perspective.py": parent.WORKSPACE / "tests/unit/test_news_perspective.py",
+        "tests/unit/test_source_faithfulness_wire_contract.py": parent.WORKSPACE / "tests/unit/test_source_faithfulness_wire_contract.py",
+    }
+    require(all(path.is_file() and digest(path) == expected[name]
+                for name, path in actual_paths.items()),
+            "Current host files do not match the full-suite tested-source pins")
+    require(manifest.get("promoted") is False and manifest.get("native_scope_qualification") is False,
+            "Full-suite gate makes an unexpected promotion/qualification claim")
+    return {"manifest_sha256": FULL_GATE_SHA256, "log_sha256": FULL_LOG_SHA256,
+            "passed": 4602, "exit_code": 0}
+
+
+def component_hashes(parent) -> dict:
+    keys = ("source_faithfulness", "tension_generator", "post_output_guard",
+            "kill_gate", "tweet_archetypes", "llm_task_budget", "credential_loader")
+    return {key: digest(parent.SOURCES[key]) for key in keys}
+
+
+def prepare() -> None:
+    if any(path.exists() for path in (PREPARED, RESULT, LOCK)):
+        raise RuntimeError("Refusing to overwrite or replay trace study")
+    parent = load_parent()
+    gate = validate_full_gate(parent)
+    value = build_prepared(parent, gate)
+    write_once(PREPARED, value)
+    print("Prepared two synthetic strict-schema protocol diagnostics offline; no credentials or requests.")
+
+
+def build_prepared(parent, gate: dict) -> dict:
+    hashes = component_hashes(parent)
+    require(hashes["source_faithfulness"] == SOURCE_FAITHFULNESS_SHA256)
+    return {
+        "study_id": "source-faithfulness-protocol-trace-v3-synthetic-20261017",
+        "scope": "Post-wire-fix strict-schema development retest of two known synthetic diagnostic drafts; not a benchmark, replacement, retry, or quality grade.",
+        "harness_sha256": digest(Path(__file__).resolve()),
+        "parent_helper_sha256": PARENT_SHA256,
+        "v2_helper_sha256": V2_SHA256,
+        "source_override": {"component": "source_faithfulness",
+                             "path": str(parent.SOURCES["source_faithfulness"]),
+                             "sha256": SOURCE_FAITHFULNESS_SHA256,
+                             "process_local_only": True},
+        "component_sha256": hashes,
+        "full_suite_gate": gate,
+        "model": MODEL,
+        "limits": {"max_physical_calls": MAX_CALLS, "max_reserved_usd": str(MAX_USD),
+                   "reservation_per_call_usd": str(RESERVE_PER_CALL),
+                   "transport_retries": 0, "outer_retries": 0,
+                   "qualifier_invocations": 2},
+        "transport_global_overrides": {"MAX_CALLS": MAX_CALLS,
+                                       "MAX_USD": str(MAX_USD),
+                                       "RESERVE_PER_CALL": str(RESERVE_PER_CALL),
+                                       "process_local_only": True},
+        "structured_output": {"review": copy.deepcopy(REVIEW_OUTPUT_CONTRACT),
+                              "repair": {"response_format": None,
+                                         "provider": {"allow_fallbacks": False}}},
+        "result_contract": {"filename": RESULT.name, "one_shot": True,
+                             "quality_result": "synthetic_protocol_diagnostic_not_quality_grade"},
+        "synthetic_source": SYNTHETIC_SOURCE,
+        "candidates": list(CANDIDATES),
+    }
+
+
+def validate_prepared(prepared: dict, parent, gate: dict) -> None:
+    require(isinstance(prepared, dict) and prepared == build_prepared(parent, gate),
+            "Prepared v3 inputs/schema/pins changed; refusing credential load")
+
+
+class PayloadReceiptSession:
+    """Inject strict schema for reviews and persist a credential-free payload receipt before HTTP."""
+
+    def __init__(self, transport, state: dict, persist, post):
+        self.transport = transport
+        self.state = state
+        self.persist = persist
+        self.post = post
+
+    def __call__(self, url, **kwargs):
+        if self.transport.halted:
+            raise RuntimeError("Transport halted; no schema-free retry")
+        payload = kwargs.get("json")
+        requests = self.state.get("requests")
+        item = requests[-1] if isinstance(requests, list) and requests else None
+        if (not isinstance(payload, dict) or not isinstance(item, dict)
+                or item.get("status") != "started" or item.get("purpose") not in {"review", "repair"}):
+            self.transport.halted = True
+            raise RuntimeError("Unexpected outbound payload; halted")
+        payload = copy.deepcopy(payload)
+        purpose = item["purpose"]
+        if purpose == "review":
+            if "response_format" in payload:
+                self.transport.halted = True
+                raise RuntimeError("Unexpected preexisting response format; halted")
+            payload["response_format"] = copy.deepcopy(RESPONSE_FORMAT)
+            payload["provider"] = copy.deepcopy(REVIEW_PROVIDER_POLICY)
+        else:
+            if "response_format" in payload or payload.get("provider") != {"allow_fallbacks": False}:
+                self.transport.halted = True
+                raise RuntimeError("Repair must remain plain text; halted")
+        payload_sha = hashlib.sha256(json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")).hexdigest()
+        receipt = {"request_number": item.get("number"), "purpose": purpose,
+                   "payload_sha256": payload_sha,
+                   "response_format": copy.deepcopy(RESPONSE_FORMAT) if purpose == "review" else None,
+                   "provider": copy.deepcopy(payload.get("provider"))}
+        self.state.setdefault("payload_receipts", []).append(receipt)
+        item["transmitted_payload_sha256"] = payload_sha
+        item["structured_output"] = purpose == "review"
+        try:
+            self.persist()
+        except Exception:
+            self.transport.halted = True
+            item["status"] = "payload_receipt_failed_before_request"
+            raise RuntimeError("Payload receipt persistence failed; halted before HTTP") from None
+        kwargs["json"] = payload
+        return self.post(url, **kwargs)
+
+
+class TraceResponder:
+    """Capture exact validated callback returns before forwarding to qualifier."""
+
+    def __init__(self, transport, state: dict, persist):
+        self.transport = transport
+        self.state = state
+        self.persist = persist
+
+    @staticmethod
+    def _sha(value: str) -> str:
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    def _append(self, event: dict) -> None:
+        self.state["callback_trace"].append(event)
+        try:
+            self.persist()
+        except Exception:
+            self.transport.halted = True
+            raise RuntimeError("Trace persistence failed; transport halted") from None
+
+    def generate_freeform(self, user_prompt, system_prompt=None, context=None):
+        if self.transport.halted:
+            raise RuntimeError("Trace transport halted; no retry")
+        context_type = (context.get("task_type") if isinstance(context, dict) else None) or "unspecified"
+        request_count_before = len(self.state["requests"])
+        metadata = {
+            "case_id": self.transport.active_case,
+            "context_type": context_type,
+            "context": {key: value for key, value in (context or {}).items()
+                        if key in {"temperature", "max_tokens", "task_type"}} if isinstance(context, dict) else None,
+            "system_chars": len(system_prompt) if isinstance(system_prompt, str) else None,
+            "user_chars": len(user_prompt) if isinstance(user_prompt, str) else None,
+            "system_prompt_sha256": self._sha(system_prompt) if isinstance(system_prompt, str) else None,
+            "user_prompt_sha256": self._sha(user_prompt) if isinstance(user_prompt, str) else None,
+        }
+        try:
+            returned = self.transport.generate_freeform(
+                user_prompt=user_prompt, system_prompt=system_prompt, context=context)
+        except Exception:
+            latest = self.state["requests"][-1] if len(self.state["requests"]) > request_count_before else None
+            self._append({**metadata, "status": "transport_error_or_blocked",
+                          "failure_cause": "unknown",
+                          "request_number": latest.get("number") if latest else None,
+                          "transport_status": latest.get("status") if latest else None,
+                          "response_id": latest.get("response_id") if latest else None,
+                          "raw_text": None})
+            raise
+        if not isinstance(returned, str) or len(returned) > 4000:
+            self.transport.halted = True
+            self._append({**metadata, "status": "invalid_return_type_or_length", "raw_text": None})
+            raise RuntimeError("Trace callback return invalid; transport halted")
+        latest = self.state["requests"][-1] if len(self.state["requests"]) > request_count_before else None
+        event = {**metadata, "status": "returned", "raw_text": returned,
+                 "returned_chars": len(returned), "returned_sha256": self._sha(returned),
+                 "request_number": latest.get("number") if latest else None,
+                 "transport_status": latest.get("status") if latest else None}
+        self._append(event)
+        return returned
+
+
+def run() -> None:
+    if any(path.exists() for path in (RESULT, LOCK)):
+        raise RuntimeError("Existing trace attempt must be inspected, never replayed")
+    prepared = read_json(PREPARED)
+    parent = load_parent()
+    gate = validate_full_gate(parent)
+    validate_prepared(prepared, parent, gate)
+
+    fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w", encoding="ascii") as handle:
+        handle.write(str(os.getpid()))
+        handle.flush()
+        os.fsync(handle.fileno())
+    state = {
+        "study_id": prepared["study_id"],
+        "scope": prepared["scope"],
+        "status": "starting",
+        "prepared_sha256": digest(PREPARED),
+        "parent_helper_sha256": PARENT_SHA256,
+        "v2_helper_sha256": V2_SHA256,
+        "structured_output": copy.deepcopy(prepared["structured_output"]),
+        "result_contract": copy.deepcopy(prepared["result_contract"]),
+        "component_sha256": prepared["component_sha256"],
+        "full_suite_gate": gate,
+        "physical_call_limit": MAX_CALLS,
+        "local_reservation_limit_usd": str(MAX_USD),
+        "records": [], "callback_trace": [], "requests": [], "payload_receipts": [],
+        "reserved_usd": "0", "known_provider_cost_usd": "0",
+        "unknown_outcome_requests": 0, "cost_cap_violated": False,
+        "purpose_costs": {purpose: {"reserved_usd": "0", "known_provider_cost_usd": "0",
+                                     "unknown_cost_calls": 0, "unknown_token_calls": 0}
+                          for purpose in ("generation", "review", "repair")},
+        "quality_result": "synthetic_protocol_diagnostic_not_quality_grade",
+    }
+    persist = lambda: save_state(RESULT, state)
+    persist()
+    key = None
+    transport = None
+    budget_module = None
+    budget = None
+    budget_token = None
+    try:
+        key = parent._load_key_only()
+        _, faithfulness, budget_module = parent.load_components()
+        parent.MAX_CALLS = MAX_CALLS
+        parent.MAX_USD = MAX_USD
+        parent.RESERVE_PER_CALL = RESERVE_PER_CALL
+        budget, budget_token = parent._install_budget(budget_module)
+        transport = parent.Transport(key, state, persist, budget_module, budget)
+        transport.session.post = PayloadReceiptSession(
+            transport, state, persist, transport.session.post)
+        del key
+        key = None
+        traced = TraceResponder(transport, state, persist)
+        state["status"] = "running"
+        persist()
+        for candidate in CANDIDATES:
+            transport.active_case = candidate["case_id"]
+            transport.phase = "qualification"
+            try:
+                qualified = faithfulness.qualify_source_draft(
+                    SYNTHETIC_SOURCE, candidate["draft"], reviewer=traced,
+                    repairer=traced, max_chars=190)
+                record = {"case_id": candidate["case_id"], "draft": candidate["draft"],
+                          "status": qualified.get("status") if isinstance(qualified, dict) else "invalid_result",
+                          "verification": qualified.get("verification") if isinstance(qualified, dict) else None,
+                          "review_calls": qualified.get("review_calls") if isinstance(qualified, dict) else None,
+                          "repair_calls": qualified.get("repair_calls") if isinstance(qualified, dict) else None,
+                          "reason_codes": qualified.get("reason_codes") if isinstance(qualified, dict) else None,
+                          "qualified_text": qualified.get("text") if isinstance(qualified, dict) else None}
+            except Exception:
+                record = {"case_id": candidate["case_id"], "draft": candidate["draft"],
+                          "status": "error_fail_closed"}
+            state["records"].append(record)
+            persist()
+        state["status"] = "transport_stopped" if transport.halted else "diagnostics_complete"
+    except Exception as error:
+        state.update(status="stopped", error_type=type(error).__name__)
+    finally:
+        if transport is not None:
+            transport.session.close()
+        if budget is not None:
+            state["task_budget"] = budget.summary()
+        if budget_module is not None and budget_token is not None:
+            budget_module._CURRENT_BUDGET.reset(budget_token)
+        key = None
+        persist()
+    print(json.dumps({"status": state["status"], "calls": len(state["requests"]),
+                      "known_provider_cost_usd": state["known_provider_cost_usd"],
+                      "reserved_usd": state["reserved_usd"],
+                      "quality_result": state["quality_result"]}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or sys.argv[1] not in {"prepare", "run"}:
+        raise SystemExit("Usage: python source_faithfulness_protocol_trace_v3_job.py prepare|run")
+    {"prepare": prepare, "run": run}[sys.argv[1]]()

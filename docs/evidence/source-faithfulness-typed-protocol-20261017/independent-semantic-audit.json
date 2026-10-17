@@ -1,0 +1,10 @@
+{
+  "scope": "Independent read-only review of two known synthetic diagnostics; not blind quality grading",
+  "source": "The sample ledger lists seven matched invoices. Payment status is unknown. A controller must approve release.",
+  "flawed_positive_control": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Freigabe nur durch den Controller.",
+  "finding": "The source requires controller approval but does not make the controller the exclusive release authority. The purported positive control is stronger. V3 and v4 accept it, so both contain a semantic false-accept counterexample. The raw case label synthetic-valid is preserved, not endorsed.",
+  "v4_invalid_draft_repair": "The raw one-key text envelope decodes exactly to the recorded repair, removes unsupported payment/automatic approval claims and retains unknown payment status and required controller approval. This supports the narrow typed repair path.",
+  "overall_qualification": "not_passed",
+  "production_promotion": false,
+  "earlier_failed_gates_remain_binding": true
+}

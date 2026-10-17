@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "passed": 4602,
+  "suite_scope": "complete tests/unit regression after prompt-only wirefix,real detached Git worktree",
+  "full_suite": true,
+  "source_files_unchanged": true,
+  "tested_source_sha256": {
+    "bot.py": "16dfcc6bd2341653a0f3d66219600b0922ee96969c644e1129cea70e7f6e5499",
+    "content/source_faithfulness.py": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+    "content/tension_generator.py": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "core/llm_task_budget.py": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "tests/unit/test_news_perspective.py": "277e8524fdb7291e8ab0f53befbbf8aea1d1d7b653f6d18314a98488245b6118",
+    "tests/unit/test_source_faithfulness_wire_contract.py": "de5e40d128ac3a47ba1b5776a3134227a468fe5eb5f81ce98861b6030c46828b"
+  },
+  "log_sha256": "bf735816a4cf4f768879c2c717fdbac424a753a030c1f7f3d9bcd5de89f2cd08",
+  "promoted": false,
+  "native_scope_qualification": false,
+  "earlier_failed_study_unchanged": true
+}

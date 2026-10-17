@@ -14,6 +14,26 @@ planen, ausfuehren, pruefen und nacharbeiten. Tests, kritische Abnahme, guenstig
 Modelle und GitHub-Pushes sind verbindlich. Die Mietplattform ist zurueckgestellt.
 **Gesamtziel noch nicht nachgewiesen; keine Produktionsfreigabe.**
 
+## Quellenpruefung: API-Protokoll und semantischer Gegenbeweis
+
+Die getrennten v3/v4-Diagnosen mit echtem Haiku verbessern das API-Format.
+V4 repariert die falsche Zahlungs-/Automatikbehauptung ueber ein explizites,
+streng dekodiertes JSON-Textfeld. Trotzdem keine Abnahme: Das als gueltig
+bezeichnete Kontrollbeispiel behauptet exklusive Controller-Zustaendigkeit,
+obwohl die Quelle nur dessen Zustimmung verlangt. V3 undv4 akzeptieren diese
+Verstaerkung. Die separate kritische Pruefung wertet das als False-Accept.
+Vier Aufrufe je Studie kosten gemeldet0,006434 und0,006625USD; keine unbekannten
+Ausgaenge. Parser und fruehere fehlgeschlagene Abnahmen bleiben unveraendert.
+[Rohantworten, Dekodierung und semantischer Audit](docs/evidence/source-faithfulness-typed-protocol-20261017/README.md).
+
+Zusaetzlicher echter Integrationsfehler gefunden: Der zentrale Responder haengt
+an Quellenpruefung/Reparatur einen widersprechenden Nur-Tweet-Zusatz an. Zwei
+neue Regressionen waren rot; die enge Ausnahme fuer diese expliziten Tasktypen
+besteht134gezielte Tests und den Kandidaten-Vollauf mit4605Tests,11Skips,
+fuenf erwarteten Fehlern,273,93Sekunden. Eine saubere Uebernahme nur dieses
+kleinen Adapterfixes wird separat auf unveraendertem master vorbereitet;
+der unqualifizierte Quellenchecker wird dabei nicht uebernommen.
+
 ## CLI-Dateifreigabe
 
 `run` und `resume` bieten jetzt wiederholtes `--allow-write DATEI` und explizites

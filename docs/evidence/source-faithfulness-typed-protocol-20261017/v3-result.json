@@ -1,0 +1,658 @@
+{
+  "study_id": "source-faithfulness-protocol-trace-v3-synthetic-20261017",
+  "scope": "Post-wire-fix strict-schema development retest of two known synthetic diagnostic drafts; not a benchmark, replacement, retry, or quality grade.",
+  "status": "diagnostics_complete",
+  "prepared_sha256": "e0ab295bed326d46f1fdbc3f38d5e2e7e3e2130ce55ed6c665009b2ec30680c4",
+  "parent_helper_sha256": "73e164c94548f640b9470fe31bbb8ce6498d701297c44c2d40292b51eb913771",
+  "v2_helper_sha256": "1392160ec83896ebe10fda2991a6a15da8df715e96af02729d34b2a828ea94ef",
+  "structured_output": {
+    "review": {
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "source_faithfulness",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "verdict",
+              "issues",
+              "claims",
+              "human_controls_preserved",
+              "uncertainty_preserved"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "reject"
+                ]
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "format",
+                    "human_control_omitted",
+                    "overlength",
+                    "uncertainty_strengthened",
+                    "unsupported_cause",
+                    "unsupported_fact",
+                    "unsupported_legal_or_necessity"
+                  ]
+                }
+              },
+              "claims": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "draft_span",
+                    "source_quote",
+                    "kind"
+                  ],
+                  "properties": {
+                    "draft_span": {
+                      "type": "string"
+                    },
+                    "source_quote": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "conditional_proposal",
+                        "fact",
+                        "inference"
+                      ]
+                    }
+                  }
+                }
+              },
+              "human_controls_preserved": {
+                "type": "boolean"
+              },
+              "uncertainty_preserved": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "provider": {
+        "require_parameters": true,
+        "allow_fallbacks": false
+      }
+    },
+    "repair": {
+      "response_format": null,
+      "provider": {
+        "allow_fallbacks": false
+      }
+    }
+  },
+  "result_contract": {
+    "filename": "source-faithfulness-protocol-trace-v3-result-20261017.json",
+    "one_shot": true,
+    "quality_result": "synthetic_protocol_diagnostic_not_quality_grade"
+  },
+  "component_sha256": {
+    "source_faithfulness": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+    "tension_generator": "64c7a882d88186c12f7a648a6de70e87603c601af9af9ef46c216587b92bef51",
+    "post_output_guard": "ee7c091aa839ff84a27853118625d25e300c1f0612d015bf695314459457086c",
+    "kill_gate": "c022401cd926c21786174dd022b7df5a0feb87514ff9078d140df29976783e9d",
+    "tweet_archetypes": "42b8bec5299733a1f767534c214667e6be37082af80660033299c5b66841483c",
+    "llm_task_budget": "8872dc12de570d99fbfec61ce088302991a06756f3cff7f67433d6300adb3fcf",
+    "credential_loader": "0d60b49d59433e5659310dfb695a663de568cf3b2d11fbbfde2c058ae2cc1252"
+  },
+  "full_suite_gate": {
+    "manifest_sha256": "c0aae28e91ec58b590f4478e9e341371ba2296ef28f633abf786cebcc2f348da",
+    "log_sha256": "bf735816a4cf4f768879c2c717fdbac424a753a030c1f7f3d9bcd5de89f2cd08",
+    "passed": 4602,
+    "exit_code": 0
+  },
+  "physical_call_limit": 4,
+  "local_reservation_limit_usd": "0.20",
+  "records": [
+    {
+      "case_id": "synthetic-valid",
+      "draft": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Freigabe nur durch den Controller.",
+      "status": "accepted",
+      "verification": "unverified",
+      "review_calls": 1,
+      "repair_calls": 0,
+      "reason_codes": [],
+      "qualified_text": "Sieben Rechnungen sind zugeordnet; Zahlungsstatus unklar. Freigabe nur durch den Controller."
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "draft": "Alle sieben Rechnungen sind bezahlt und automatisch freigegeben.",
+      "status": "error",
+      "verification": "unverified",
+      "review_calls": 2,
+      "repair_calls": 1,
+      "reason_codes": [
+        "invalid_response"
+      ],
+      "qualified_text": null
+    }
+  ],
+  "callback_trace": [
+    {
+      "case_id": "synthetic-valid",
+      "context_type": "source_faithfulness_review",
+      "context": {
+        "temperature": 0,
+        "max_tokens": 1200,
+        "task_type": "source_faithfulness_review"
+      },
+      "system_chars": 2698,
+      "user_chars": 284,
+      "system_prompt_sha256": "7d41269b43939fea4f6a65ff84b857c3d0474d46f8f2b77a211507f38228408b",
+      "user_prompt_sha256": "3ee23e746612c123a764c62cb318c806f8d300051681faacbb6afdc411600f48",
+      "status": "returned",
+      "raw_text": "{\"verdict\":\"accept\",\"issues\":[],\"claims\":[{\"draft_span\":\"Sieben Rechnungen sind zugeordnet;\",\"source_quote\":\"The sample ledger lists seven matched invoices.\",\"kind\":\"fact\"},{\"draft_span\":\" Zahlungsstatus unklar.\",\"source_quote\":\"Payment status is unknown.\",\"kind\":\"fact\"},{\"draft_span\":\" Freigabe nur durch den Controller.\",\"source_quote\":\"A controller must approve release.\",\"kind\":\"conditional_proposal\"}],\"human_controls_preserved\":true,\"uncertainty_preserved\":true}",
+      "returned_chars": 469,
+      "returned_sha256": "92e4800a88e65ef8db8c74498c747c3329feab1e42970b4031fef7cf0d6ab856",
+      "request_number": 1,
+      "transport_status": "completed"
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "context_type": "source_faithfulness_review",
+      "context": {
+        "temperature": 0,
+        "max_tokens": 1200,
+        "task_type": "source_faithfulness_review"
+      },
+      "system_chars": 2698,
+      "user_chars": 256,
+      "system_prompt_sha256": "7d41269b43939fea4f6a65ff84b857c3d0474d46f8f2b77a211507f38228408b",
+      "user_prompt_sha256": "b6ea27c365aa941cc13f08f21891039df2eb2dedbda70996ea80d5c29718a6e5",
+      "status": "returned",
+      "raw_text": "{\"verdict\":\"reject\",\"issues\":[\"unsupported_fact\",\"unsupported_fact\",\"human_control_omitted\"],\"claims\":[],\"human_controls_preserved\":false,\"uncertainty_preserved\":false}",
+      "returned_chars": 168,
+      "returned_sha256": "6d47212be7d9985589f082a4cf011a9476729cd2c7cf2affa8a520a7c15a45c3",
+      "request_number": 2,
+      "transport_status": "completed"
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "context_type": "source_faithfulness_repair",
+      "context": {
+        "temperature": 0.85,
+        "max_tokens": 150,
+        "task_type": "source_faithfulness_repair"
+      },
+      "system_chars": 702,
+      "user_chars": 333,
+      "system_prompt_sha256": "bd21c062155b9c1f2ad836d388aecf8018a21f64b51b6d2d94356392781943be",
+      "user_prompt_sha256": "b5632fcf9fd9b690c97a860a36620d63abef7c0aee3f8e6f3f90c9505c36b788",
+      "status": "returned",
+      "raw_text": "{\"text\":\"Sieben Rechnungen wurden abgeglichen. Zahlungsstatus unklar. Freigabe erfordert Genehmigung durch Controller.\"}",
+      "returned_chars": 120,
+      "returned_sha256": "52fb9a8f1f8c3a1869a5b6b95df239c6d43f7765528879f3b2f8d8ce458c424b",
+      "request_number": 3,
+      "transport_status": "completed"
+    },
+    {
+      "case_id": "synthetic-invalid",
+      "context_type": "source_faithfulness_review",
+      "context": {
+        "temperature": 0,
+        "max_tokens": 1200,
+        "task_type": "source_faithfulness_review"
+      },
+      "system_chars": 2698,
+      "user_chars": 316,
+      "system_prompt_sha256": "7d41269b43939fea4f6a65ff84b857c3d0474d46f8f2b77a211507f38228408b",
+      "user_prompt_sha256": "54dc9d2831a2553d724732cd11693a2bd95d838b2a197f05178eb1225c539ff6",
+      "status": "returned",
+      "raw_text": "{\"verdict\":\"accept\",\"issues\":[],\"claims\":[{\"draft_span\":\"Sieben Rechnungen wurden abgeglichen.\",\"source_quote\":\"The sample ledger lists seven matched invoices.\",\"kind\":\"fact\"},{\"draft_span\":\"Zahlungsstatus unklar.\",\"source_quote\":\"Payment status is unknown.\",\"kind\":\"fact\"},{\"draft_span\":\"Freigabe erfordert Genehmigung durch Controller.\",\"source_quote\":\"A controller must approve release.\",\"kind\":\"fact\"}],\"human_controls_preserved\":true,\"uncertainty_preserved\":true}",
+      "returned_chars": 468,
+      "returned_sha256": "d15390f2a486371c7d856d5e8d60c291c23312f3675c4ba8f61dcafcb3c062ff",
+      "request_number": 4,
+      "transport_status": "completed"
+    }
+  ],
+  "requests": [
+    {
+      "number": 1,
+      "case_id": "synthetic-valid",
+      "purpose": "review",
+      "task_attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:1",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "7926f39439d5547e4f157141ef0d84f46eebb9f622a7d8026dbc955e521b822e",
+      "transmitted_payload_sha256": "d7257cd6e78902aa1b8fda3d513370365322de40381e51ccd771756a731a2135",
+      "structured_output": true,
+      "reported_cost_usd": "0.002091",
+      "token_usage": {
+        "prompt_tokens": 1426,
+        "completion_tokens": 133,
+        "total_tokens": 1559
+      },
+      "response_id": "gen-1792205167-38LLfzI6e4lhGwKBd1T8"
+    },
+    {
+      "number": 2,
+      "case_id": "synthetic-invalid",
+      "purpose": "review",
+      "task_attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:2",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "3cfc69b7db84b28fc6e1a4aac53edf3b4cad507346f35b4b3bae2d0356a17c7a",
+      "transmitted_payload_sha256": "611e39fd221bcfc5a6aaa10960a2a4030e90fdfbb7efab43e2b8619db9cd412e",
+      "structured_output": true,
+      "reported_cost_usd": "0.001659",
+      "token_usage": {
+        "prompt_tokens": 1414,
+        "completion_tokens": 49,
+        "total_tokens": 1463
+      },
+      "response_id": "gen-1792205171-u42eOvuX1CwNiSf0pRDA"
+    },
+    {
+      "number": 3,
+      "case_id": "synthetic-invalid",
+      "purpose": "repair",
+      "task_attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:3",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "8dfbb4249591c517be41de58ace452030ceab7145501239f0fb6ac1229e89f9a",
+      "transmitted_payload_sha256": "5a40209d3f019d0893fb5e5d2a55730aa546886af979bb4e353e71ee4f59d85f",
+      "structured_output": false,
+      "reported_cost_usd": "0.000571",
+      "token_usage": {
+        "prompt_tokens": 346,
+        "completion_tokens": 45,
+        "total_tokens": 391
+      },
+      "response_id": "gen-1792205173-NGqgWFZCzWLT09k5gXsI"
+    },
+    {
+      "number": 4,
+      "case_id": "synthetic-invalid",
+      "purpose": "review",
+      "task_attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:4",
+      "status": "completed",
+      "reserved_usd": "0.05",
+      "request_sha256": "2bdfd92bfecb2e39e0c4724ad54d97c7db73bcfbbfd766dab4b26b2d1f795182",
+      "transmitted_payload_sha256": "4abf412a6fb45a63b2fcaeb85d26bca8452d26b955ae1375687abbb36dbe3ce5",
+      "structured_output": true,
+      "reported_cost_usd": "0.002113",
+      "token_usage": {
+        "prompt_tokens": 1438,
+        "completion_tokens": 135,
+        "total_tokens": 1573
+      },
+      "response_id": "gen-1792205174-l3rxSfEeeZ3uHAgiGa5S"
+    }
+  ],
+  "payload_receipts": [
+    {
+      "request_number": 1,
+      "purpose": "review",
+      "payload_sha256": "d7257cd6e78902aa1b8fda3d513370365322de40381e51ccd771756a731a2135",
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "source_faithfulness",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "verdict",
+              "issues",
+              "claims",
+              "human_controls_preserved",
+              "uncertainty_preserved"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "reject"
+                ]
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "format",
+                    "human_control_omitted",
+                    "overlength",
+                    "uncertainty_strengthened",
+                    "unsupported_cause",
+                    "unsupported_fact",
+                    "unsupported_legal_or_necessity"
+                  ]
+                }
+              },
+              "claims": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "draft_span",
+                    "source_quote",
+                    "kind"
+                  ],
+                  "properties": {
+                    "draft_span": {
+                      "type": "string"
+                    },
+                    "source_quote": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "conditional_proposal",
+                        "fact",
+                        "inference"
+                      ]
+                    }
+                  }
+                }
+              },
+              "human_controls_preserved": {
+                "type": "boolean"
+              },
+              "uncertainty_preserved": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "provider": {
+        "require_parameters": true,
+        "allow_fallbacks": false
+      }
+    },
+    {
+      "request_number": 2,
+      "purpose": "review",
+      "payload_sha256": "611e39fd221bcfc5a6aaa10960a2a4030e90fdfbb7efab43e2b8619db9cd412e",
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "source_faithfulness",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "verdict",
+              "issues",
+              "claims",
+              "human_controls_preserved",
+              "uncertainty_preserved"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "reject"
+                ]
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "format",
+                    "human_control_omitted",
+                    "overlength",
+                    "uncertainty_strengthened",
+                    "unsupported_cause",
+                    "unsupported_fact",
+                    "unsupported_legal_or_necessity"
+                  ]
+                }
+              },
+              "claims": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "draft_span",
+                    "source_quote",
+                    "kind"
+                  ],
+                  "properties": {
+                    "draft_span": {
+                      "type": "string"
+                    },
+                    "source_quote": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "conditional_proposal",
+                        "fact",
+                        "inference"
+                      ]
+                    }
+                  }
+                }
+              },
+              "human_controls_preserved": {
+                "type": "boolean"
+              },
+              "uncertainty_preserved": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "provider": {
+        "require_parameters": true,
+        "allow_fallbacks": false
+      }
+    },
+    {
+      "request_number": 3,
+      "purpose": "repair",
+      "payload_sha256": "5a40209d3f019d0893fb5e5d2a55730aa546886af979bb4e353e71ee4f59d85f",
+      "response_format": null,
+      "provider": {
+        "allow_fallbacks": false
+      }
+    },
+    {
+      "request_number": 4,
+      "purpose": "review",
+      "payload_sha256": "4abf412a6fb45a63b2fcaeb85d26bca8452d26b955ae1375687abbb36dbe3ce5",
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "source_faithfulness",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "verdict",
+              "issues",
+              "claims",
+              "human_controls_preserved",
+              "uncertainty_preserved"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "reject"
+                ]
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "format",
+                    "human_control_omitted",
+                    "overlength",
+                    "uncertainty_strengthened",
+                    "unsupported_cause",
+                    "unsupported_fact",
+                    "unsupported_legal_or_necessity"
+                  ]
+                }
+              },
+              "claims": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "draft_span",
+                    "source_quote",
+                    "kind"
+                  ],
+                  "properties": {
+                    "draft_span": {
+                      "type": "string"
+                    },
+                    "source_quote": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "conditional_proposal",
+                        "fact",
+                        "inference"
+                      ]
+                    }
+                  }
+                }
+              },
+              "human_controls_preserved": {
+                "type": "boolean"
+              },
+              "uncertainty_preserved": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "provider": {
+        "require_parameters": true,
+        "allow_fallbacks": false
+      }
+    }
+  ],
+  "reserved_usd": "0.20",
+  "known_provider_cost_usd": "0.006434",
+  "unknown_outcome_requests": 0,
+  "cost_cap_violated": false,
+  "purpose_costs": {
+    "generation": {
+      "reserved_usd": "0",
+      "known_provider_cost_usd": "0",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "review": {
+      "reserved_usd": "0.15",
+      "known_provider_cost_usd": "0.005863",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    },
+    "repair": {
+      "reserved_usd": "0.05",
+      "known_provider_cost_usd": "0.000571",
+      "unknown_cost_calls": 0,
+      "unknown_token_calls": 0
+    }
+  },
+  "quality_result": "synthetic_protocol_diagnostic_not_quality_grade",
+  "task_budget": {
+    "task_id": "9bfab8a16fd74cfc98b59e5a72d15912",
+    "label": "source_faithfulness_paired_screen",
+    "max_calls": 4,
+    "max_inference_calls": 4,
+    "inference_count": 4,
+    "exhausted": false,
+    "attempts": [
+      {
+        "attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:1",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1426,
+          "completion_tokens": 133,
+          "total_tokens": 1559
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:2",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1414,
+          "completion_tokens": 49,
+          "total_tokens": 1463
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:3",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 346,
+          "completion_tokens": 45,
+          "total_tokens": 391
+        },
+        "inference": true
+      },
+      {
+        "attempt_id": "9bfab8a16fd74cfc98b59e5a72d15912:4",
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "status": "ok",
+        "usage": {
+          "prompt_tokens": 1438,
+          "completion_tokens": 135,
+          "total_tokens": 1573
+        },
+        "inference": true
+      }
+    ],
+    "attempt_count": 4,
+    "tokens_known": {
+      "input_tokens": 4624,
+      "output_tokens": 362,
+      "total_tokens": 4986
+    },
+    "tokens": {
+      "input_tokens": 4624,
+      "output_tokens": 362,
+      "total_tokens": 4986
+    },
+    "unknown_usage_count": 0,
+    "unknown_count": 0
+  }
+}
