@@ -115,6 +115,12 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
     def policy(self):
         return TestExecutionPolicy.from_file(self.manifest)
 
+    @staticmethod
+    def codex_backend():
+        # Only command discovery is a fixture; proposal/approval execution stays real.
+        with patch("agentkit.backends.codex_command", return_value=["codex"]):
+            return CodexBackend()
+
     def test_engine_exposes_only_json_safe_policy_summary_to_planner(self):
         backend = WorkflowBackend()
         policy = self.policy()
@@ -288,7 +294,7 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
 
     def test_codex_proposal_is_host_approved_and_callbacks_stay_out_of_prompt(self):
         policy = self.policy()
-        backend = CodexBackend()
+        backend = self.codex_backend()
         args = {"path": "", "content": "", "old_text": "", "new_text": ""}
         backend._call = Mock(return_value={
             "kind": "proposal", "tool": "run_isolated_tests", "arguments": args,
@@ -321,7 +327,7 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
         self.assertFalse(runner.called)
 
     def test_codex_legacy_report_serializes_without_any_test_policy_callbacks(self):
-        backend = CodexBackend()
+        backend = self.codex_backend()
         report = {"status": "success", "summary": "legacy path", "artifacts": [],
                   "evidence": ["serialized"], "next_actions": []}
         backend._call = Mock(return_value=report)
@@ -340,7 +346,7 @@ class IsolatedTestIntegrationTests(unittest.TestCase):
 
     def test_codex_approved_resume_runs_one_host_suite_and_records_receipt(self):
         policy = self.policy()
-        backend = CodexBackend()
+        backend = self.codex_backend()
         report = {"status": "success", "summary": "verified", "artifacts": [],
                   "evidence": ["reviewed"], "next_actions": []}
         backend._call = Mock(return_value={

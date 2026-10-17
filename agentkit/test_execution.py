@@ -463,7 +463,8 @@ def _valid_container_inspect(output: str, policy: TestExecutionPolicy, snapshot:
         and host.get("MemorySwap") == _LIMITS["memory_swap_bytes"]
         and host.get("NanoCpus") == _LIMITS["nano_cpus"]
         and host.get("PidsLimit") == _LIMITS["pids"]
-        and host.get("Tmpfs") == {"/tmp": expected_tmpfs}
+        # This is the pinned container tmpfs mount, not a host /tmp write.
+        and host.get("Tmpfs") == {"/tmp": expected_tmpfs}  # nosec B108
         and host.get("Binds") in (None, []) and nofile_ok and mount_ok
     )
 
