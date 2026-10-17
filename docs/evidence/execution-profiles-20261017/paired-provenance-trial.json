@@ -1,0 +1,130 @@
+{
+  "schema": "agentkit-evidence/v1",
+  "runtime_commit": "859d80dadf35b8435422375fd7938d90fb90c087",
+  "ci": {
+    "id": 39010098175,
+    "url": "https://github.com/svensteiner/agenten-vorlage/actions/runs/39010098175",
+    "jobs_successful": 7
+  },
+  "execution": "Real local Cockpit UI; Codex backend; requested gpt-6-sol; separate roles",
+  "preparation_sha256": "4179d18d0b276fc23e13c2b91165cbbaf5d7a71b88e6989308230526ac10944e",
+  "baseline_commit": "15a39b01aa1cae9bbc36fa32da9bec00da2dd527",
+  "arm_a": {
+    "job_id": "2996e7eb2a3e436baeecb18430031f19",
+    "run_id": "dc7e51e1bc55405aa787ecd77b752fe9",
+    "state_sha256": "ee7644e1d1fdbb489ecc536e90b8c08870a86e8705f1079abc82e22acaf643c0",
+    "status": "completed",
+    "steps": 3,
+    "failures_recorded": 0,
+    "reviewed": true,
+    "source_final_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+    "provenance": {
+      "status": "complete",
+      "baseline_status": "captured",
+      "changed_by_run": [],
+      "changed_without_matching_receipt": [],
+      "unknown_paths": [],
+      "unknown_path_count": 0,
+      "write_receipt_count": 0
+    },
+    "test_attempts": [
+      {
+        "status": "passed",
+        "test_outcomes": {
+          "passed": 79,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "xfailed": 0,
+          "xpassed": 0,
+          "deselected": 0
+        },
+        "workspace_fingerprint": "6f2ad8f5d01e54c928fddec2f7f4069b749bc720f8891186a950504307f6c01d",
+        "cleanup_confirmed": true
+      }
+    ],
+    "independent_audit_sha256": "6c873c2ce6cd957c26a06d417f66252683c5479687d40a77d785302b01650235"
+  },
+  "arm_b": {
+    "job_id": "30c585d0d1e4499eb0bb9e67e3bbc136",
+    "run_id": "6dd55f9f1c274602a63bc5cd4847011e",
+    "state_sha256": "f7a468b1af65cc495787169188129daf9ae1c5470018ef9b08849f84baca42e1",
+    "status": "completed",
+    "steps": 7,
+    "failures_recorded": 1,
+    "reviewed": true,
+    "source_final_sha256": "d6fa054baa61522584e005bc0ce31f8b07898c17bc1bb3e199688cbfad162694",
+    "provenance": {
+      "status": "complete",
+      "baseline_status": "captured",
+      "changed_by_run": [
+        "content/source_faithfulness.py"
+      ],
+      "changed_without_matching_receipt": [],
+      "unknown_paths": [],
+      "unknown_path_count": 0,
+      "write_receipt_count": 3
+    },
+    "test_attempts": [
+      {
+        "status": "failed",
+        "test_outcomes": {
+          "passed": 77,
+          "failed": 2,
+          "errors": 0,
+          "skipped": 0,
+          "xfailed": 0,
+          "xpassed": 0,
+          "deselected": 0
+        },
+        "workspace_fingerprint": "4470f3dfe6a3889011b7d3edcb8028ab27f180e606fb2b952ea199dd365d418f",
+        "cleanup_confirmed": true
+      },
+      {
+        "status": "passed",
+        "test_outcomes": {
+          "passed": 79,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "xfailed": 0,
+          "xpassed": 0,
+          "deselected": 0
+        },
+        "workspace_fingerprint": "b19ebf478ea9c9b1c298873b0cbc79321281676396e2f664ea9db293f0b632a0",
+        "cleanup_confirmed": true
+      }
+    ],
+    "independent_audit_sha256": "c2ec32dd34f062af81935177aa26db3a3cf9c595ea3a91dcfb536887ab948419"
+  },
+  "arm_b_initial_attempt": {
+    "outcome": "timeout_incomplete",
+    "writes": 1,
+    "tests": 0,
+    "reviewed": false,
+    "preserved_state_sha256": "fa81dfc994f3e857b196ee4e23fee4b72b4c55337693e8099a84256e538d5522",
+    "independent_audit_sha256": "26a86345581f5b8989b377667fcd1f9b6e4ca1096d29962929871b41ffbf21d8"
+  },
+  "operator_assistance": {
+    "arm_b": true,
+    "description": "Independent effect reconciliation, explicit interruption acknowledgment and feedback to split remaining implementation/testing/review. No host code edits within the run. Failed initial attempt retained."
+  },
+  "independent_integrity_checks": {
+    "protected_files_per_arm": 6,
+    "unchanged": true,
+    "runtime_source_pins_checked": 144,
+    "unchanged_at_final_audit": true,
+    "only_allowed_source_changed_in_b": true,
+    "a_source_unchanged": true
+  },
+  "limits": [
+    "Two nonblind narrow tasks, not general reliability or production approval.",
+    "A no-edit objective is behavioral; same narrow host write capability as B.",
+    "B initial unassisted attempt failed; assisted completion is not unassisted success.",
+    "Final B prose omits operator assistance; host evidence here preserves it.",
+    "No replayable host read/reviewer observation transcript retained; mutation and test receipts retained.",
+    "Requested model identity is not independent served-model or cost measurement.",
+    "No marketing semantic acceptance, complete bot integration, publication or X reach claim.",
+    "Original live marketingbot untouched."
+  ]
+}

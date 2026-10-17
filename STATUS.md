@@ -22,8 +22,8 @@ Cockpit auf Port 8766 ist fuer die Korrektur der Aenderungsnachweise gestoppt.
 | Echter Cockpit-Lauf | [UI-Profillauf](docs/evidence/execution-profiles-20261017/real-ui-profile-trial.json): 79 Tests und Review, aber keine eigene Quellaenderung. Modellberichte schreiben einen vorhandenen Diff falsch dem neuen Lauf zu. |
 | Inhaltspruefung Haiku | [v7, alle zwoelf Faelle](docs/evidence/host-observations-20261017/semantic-v7-complete-accounting.json): vier akzeptiert, vier abgelehnt, vier Protokollfehler. Blindpruefung beanstandet zwei der vier akzeptierten Texte; ein weiterer bleibt mehrdeutig. Keine Freigabe. |
 | Modell-Gegenprobe Sonnet | [v8, unvollstaendig](docs/evidence/host-observations-20261017/semantic-v8-model-partial.json): vier akzeptiert, ein Fehler, sieben ungeprueft. Zwei akzeptierte Texte nicht vollstaendig gestuetzt; drei Mehrdeutigkeitsbefunde ueberlappen diese Bewertungen. Kein frischer Holdout oder Qualitaetsgewinn belegt. |
-| Letzter freigegebener Technikstand | Commit `80667ce`: 537 Tests bestanden, vier Skips, 20 Offline-Releasepruefungen bestanden; GitHub-Lauf `39007748612` erfolgreich. Deckt die aktuellen uncommitted Aenderungen nicht ab. |
-| Aktuelle Korrektur | Host erfasst Ausgangshashes und abgeschlossene Schreibaktionen getrennt. Nicht zuordenbare Aenderungen und fehlende Nachweise bleiben explizit unbekannt; separate Anzeige in Auftrag und Dialog. Unabhaengige Reviews abgeschlossen; kombinierte technische Pruefung: 554 bestanden, vier Skips, 81 % Coverage mit Branch-Messung und 21 Offline-Releasepruefungen. [Quellhashes und Grenzen](docs/evidence/host-observations-20261017/provenance-technical-qualification.json). Echte Modell-Gegenproben stehen aus. |
+| Letzter gepruefter Technikstand | Commit `859d80d`: 554 Tests bestanden, vier Skips, 21 Offline-Releasepruefungen, 81 % Coverage mit Branch-Messung; alle sieben CI-Jobs im Lauf `39010098175` erfolgreich. Gilt nicht automatisch fuer spaetere Aenderungen. |
+| Aktuelle Korrektur | Host erfasst Ausgangshashes und abgeschlossene Schreibaktionen getrennt. Nicht zuordenbare Aenderungen und fehlende Nachweise bleiben explizit unbekannt; separate Anzeige in Auftrag und Dialog. Unabhaengige Reviews abgeschlossen; kombinierte technische Pruefung: 554 bestanden, vier Skips, 81 % Coverage mit Branch-Messung und 21 Offline-Releasepruefungen. [Quellhashes und Grenzen](docs/evidence/host-observations-20261017/provenance-technical-qualification.json). [Echte Gegenproben](docs/evidence/execution-profiles-20261017/paired-provenance-trial.json): A meldet korrekt null eigene Schreibaktionen; B hat drei eigene Schreibbelege, frische 79 Tests und Review. B benoetigte nach Zeitabbruch eine operatorgestuetzte Wiederaufnahme; kein unbeaufsichtigter Gesamterfolg. |
 
 Richtige Ablehnung eines unbelegten Entwurfs ist von erfolgloser Reparatur zu
 trennen. Fehler und ungepruefte Faelle bleiben im Nenner. Kleine synthetische
@@ -48,7 +48,7 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 
 ## Naechste verbindliche Abnahme
 
-1. Technische Pruefung bestanden; geprueften Stand sichern und GitHub-CI bestaetigen.
-2. Herkunftsnachweise mit echtem Modell an vorhandenen und neuen Aenderungen pruefen.
+1. Beobachtete Zeitgrenzen fuer die dynamische Aufgabenzerlegung sichtbar machen und frisch pruefen.
+2. Ohne Operatorhilfe zeigen, dass die neue Zerlegung reale Aenderung, Tests und Review abschliesst.
 3. Nutzbare, interessante und quellentreue Marketingausgaben unabhaengig nachweisen.
 4. Vollstaendige isolierte Marketingbot-Integration testen; erst danach begrenzt uebernehmen.
