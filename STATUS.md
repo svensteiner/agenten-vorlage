@@ -19,6 +19,7 @@ verwenden Port 8766; die Laufprotokolle belegen ihren jeweiligen Betriebsstand.
 | Bereich | Nachweis und Grenze |
 |---|---|
 | Reale Coding-Aufgabe | [Nativer Sol-Lauf](docs/evidence/host-observations-20261017/native-task-sol-attempt.json): erlaubte Quelle geaendert, zwei 79-Test-Laeufe, separates Review, unabhaengige Nachpruefung. Gilt fuer einen extrahierten Marketingbot-Baustein. |
+| Vollstaendiger Coding-Auftrag | [Isolierter Fullprojekt-Lauf](docs/evidence/execution-profiles-20261017/native-full-project-assisted-trial.json): acht Schritte, eigene Implementierung und Review-Nacharbeit; 172 gezielte und 4.645 vollstaendige Tests. Separater Host-Gesamttest und unabhaengiger Hash-Audit bestaetigt. Wegen Teststarter-Reparatur und expliziter Wiederaufnahme insgesamt unterstuetzt; keine unbeaufsichtigte Gesamtabnahme. |
 | Echter Cockpit-Lauf | [UI-Profillauf](docs/evidence/execution-profiles-20261017/real-ui-profile-trial.json): 79 Tests und Review, aber keine eigene Quellaenderung. Modellberichte schreiben einen vorhandenen Diff falsch dem neuen Lauf zu. |
 | Inhaltspruefung Haiku | [v7, alle zwoelf Faelle](docs/evidence/host-observations-20261017/semantic-v7-complete-accounting.json): vier akzeptiert, vier abgelehnt, vier Protokollfehler. Blindpruefung beanstandet zwei der vier akzeptierten Texte; ein weiterer bleibt mehrdeutig. Keine Freigabe. |
 | Modell-Gegenprobe Sonnet | [v8, unvollstaendig](docs/evidence/host-observations-20261017/semantic-v8-model-partial.json): vier akzeptiert, ein Fehler, sieben ungeprueft. Zwei akzeptierte Texte nicht vollstaendig gestuetzt; drei Mehrdeutigkeitsbefunde ueberlappen diese Bewertungen. Kein frischer Holdout oder Qualitaetsgewinn belegt. |
@@ -49,7 +50,7 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 
 ## Naechste verbindliche Abnahme
 
-1. Frische Marketing-Baseline liegt vor: 4.641 bestanden, elf Skips, fuenf erwartete Fehlschlaege; 321 Unit-Testdateien. [Nachweis und Browsergrenzen](docs/evidence/execution-profiles-20261017/marketing-full-baseline.json). Native Fullprojekt-Testumgebung separat abnehmen.
-2. Zeichenlimit im echten Generierungspfad angleichen und neue Regressionen pruefen.
+1. Frische Marketing-Baseline liegt vor: 4.641 bestanden, elf Skips, fuenf erwartete Fehlschlaege; 321 Unit-Testdateien. [Nachweis und Browsergrenzen](docs/evidence/execution-profiles-20261017/marketing-full-baseline.json). Native Fullprojekt-Testumgebung ebenfalls abgenommen; synthetische Konfiguration und Browseradapter bleiben Einschraenkungen.
+2. Zeichenlimit im isolierten echten Generierungspfad abgenommen: 4.645 Tests und separates Review; Uebernahme in aktuellen Upstream noch offen.
 3. Nutzbare, interessante und quellentreue Marketingausgaben unabhaengig nachweisen.
 4. Vollstaendige isolierte Marketingbot-Integration testen; erst danach begrenzt uebernehmen.

@@ -1,0 +1,83 @@
+{
+  "schema": "agentkit-evidence/v1",
+  "scope": "One bounded real coding task in a complete isolated marketingbot candidate snapshot, with host-assisted recovery; no production approval",
+  "runtime_commit": "2321d7b5d6d7befe5c88bf31b0704d3a6730ea71",
+  "run_id": "f379d0b6c9f74f5cad7de78b3f1a0aa4",
+  "requested_model": "gpt-6-sol",
+  "served_model_and_cost": "not independently recorded",
+  "candidate_baseline_commit": "40508c68f544b9f074ab78a35b9a0c440aca5b88",
+  "task": "Opt-in190-character limit on real news-generation path; reject before truncating guard, preserve defaults, retries, shared budget and qualifier/gate order",
+  "mode": {
+    "native_engine": true,
+    "strict_write_policy": false,
+    "strict_test_execution_policy": false,
+    "file_scope": "Instruction plus independent posthoc snapshot audit; not an exact-file OS boundary",
+    "receipt_type": "Native workspace observations and independent host rerun, not strict host attestation"
+  },
+  "result": {
+    "status": "completed",
+    "steps": 8,
+    "review_revisions": 1,
+    "engine_failure_count": 1,
+    "reviewed": true,
+    "feedback_entries": 1,
+    "host_product_source_edits": 0,
+    "host_assistance": "Test-helper Git environment repair and explicit inspected interruption acknowledgment",
+    "unassisted_overall": false
+  },
+  "history": {
+    "preparation_failure": "Missing pytest temp parent:134passed31setup errors; fixed before dispatch",
+    "tdd_red": "3failed165passed on unchanged product sources, intentional regression proof",
+    "initial_targeted": "168passed",
+    "first_full": "3Git configuration failures4641passed11skipped5xfailed; helper removed Git KEY while retaining COUNT",
+    "backend_interruption": "CLI exited1 without worker report; in-flight action reconciled before explicit acknowledgment",
+    "first_assisted_full": "4644passed before final added integration test",
+    "review": "Reviewer requested exact190-news integration and explicit legacy-trim assertion; coordinator dispatched test-only repair",
+    "final_targeted": "172passed",
+    "final_native_full": "4645passed11skipped5xfailed",
+    "final_review": "Separate read-only success after repair; no later source changes"
+  },
+  "external_final_full": {
+    "passed": 4645,
+    "skipped": 11,
+    "xfailed": 5,
+    "warnings": 42,
+    "pytest_seconds": 266.57,
+    "exit_code": 0,
+    "interruption": null,
+    "unit_test_python_files": 321,
+    "receipt_sha256": "8d6e23c34afaceccd553d065e234ba99cb7b6b5526cfcc9e54ef2732dfb95131",
+    "log_sha256": "a9959e805569cc25dc40a2f25f98856b4013b60b0a304894736f6bab66667094",
+    "gate_sha256": "1b8afcf99f999feb995592e3fb597a0ce1986e316b619cc10e195bef12cf6b54",
+    "python_files_unchanged_during_run": 555
+  },
+  "integrity": {
+    "snapshot_files_checked": 696,
+    "changed_snapshot_files": {
+      "bot.py": "417f3eebf021dc0b17c0cd2a6a96fbf1390d30ab929baebb9b1560fa9ae6e220",
+      "content/tension_generator.py": "5a355f61a79cbb7a06987c6e92ec3bb099c306a164e7e43e3c080136c3f878d2",
+      "tests/unit/test_source_faithfulness_news.py": "47fc3b210e028ed3b482987d5aa2ad41d7ac136105f3cd9fe3eaf6f5ff4495c1",
+      "tests/unit/test_tension_generator.py": "425bb66ffe20f38d6e31cbd3ef9a5d5e6924bf6b9034ad5051854e5f7f8cff53"
+    },
+    "other_snapshot_files_unchanged": 692,
+    "runtime_pins_unchanged": 144,
+    "pack_pins_unchanged": 22,
+    "explicit_helper_overrides": [
+      "run_tests.py",
+      "pins.json"
+    ],
+    "initial_helper_sha256": "dc69f04f6859675835f53e77ca49d8b7abd56a5f66cae494289440a5049eda18",
+    "recovery_helper_sha256": "6a6684a21c6b440973a49f29f05ffe390071297fb71a8cdbe528518db06922e7",
+    "completed_state_sha256": "756ae9212ed60ce12e43d88e14a6e681f664ac4b57ae59d97397d4d194306f81",
+    "independent_audit_sha256": "cc05e83f19ddb3495dcf3b86fa0d33a5bd9086610bd16ec61c61841f90f63d79",
+    "preparation_sha256": "26125b7247a0ef00945faa8a1542b3a91b8148cbb808fe0553019084f95b6213"
+  },
+  "limits": [
+    "Synthetic test configuration; original live installation was not modified or restarted.",
+    "Bundled Chromium1223 through pinned test adapter; installed Chrome compatibility remains unresolved.",
+    "Snapshot includes earlier unpromoted marketing work; integration against current upstream remains separate.",
+    "No live X actions or measured reach; new semantic output quality remains unproven.",
+    "Four changed snapshot files do not imply a complete inventory of generated test/temp artifacts.",
+    "The earlier failed attempt remains failed; later supported completion is not an unassisted success."
+  ]
+}

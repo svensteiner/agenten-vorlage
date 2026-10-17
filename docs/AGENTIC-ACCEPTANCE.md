@@ -396,3 +396,12 @@ Schema-Probe bestaetigt die nullable Antwortform; sie fuehrt keine Aktionen aus.
 Der blockierte fruehere Coding-Lauf wird dadurch nicht nachtraeglich erfolgreich.
 Ein neuer echter Auftrag mit Hostbeobachtungen, gepinnten Tests und separatem
 Review ist weiterhin erforderlich. [Quellen und Grenzen](evidence/host-observations-20261017/README.md).
+
+
+## Vollstaendiger isolierter Coding-Auftrag, 2026-10-17
+
+Der [unterstuetzte Fullprojekt-Lauf](evidence/execution-profiles-20261017/native-full-project-assisted-trial.json) implementierte den 190-Zeichen-Vertrag im News-Pfad und ergaenzte auf Reviewer-Befund selbststaendig fehlende Tests. Der abschliessende unabhaengige Gesamttest bestand mit 4.645 Tests, elf Skips und fuenf erwarteten Fehlschlaegen. Alle vier finalen Dateihashes stimmen vor und nach den Tests; die anderen 692 Ausgangsdateien blieben unveraendert.
+
+Der erste Gesamttest scheiterte an drei Git-Konfigurationsfehlern des Teststarters; anschliessend endete der native Backend-Aufruf ohne Workerbericht. Erst nach Prozess-/Dateipruefung, gesicherter Fehlhistorie, Host-Reparatur des Teststarters und expliziter Unterbrechungsbestaetigung wurde derselbe Checkpoint fortgesetzt. Dies ist insgesamt ein unterstuetzter Coding-Erfolg, keine unbeaufsichtigte Abnahme.
+
+Die native Ausfuehrung verwendete keine strikte Host-Schreib-/Testpolicy. Der Nachweis gilt fuer den isolierten Kandidatensnapshot, mit synthetischer Konfiguration und Chromium-Testadapter. Er belegt weder Marketingtextqualitaet noch X-Reichweite oder Produktionsreife; Originalinstallation und Live-X blieben unangetastet.
