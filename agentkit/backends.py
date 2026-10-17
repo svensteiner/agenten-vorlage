@@ -196,9 +196,14 @@ def _terminate_process_tree(process: subprocess.Popen) -> None:
     process.wait()
 
 
-def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, env: dict | None = None) -> tuple[int, str, str]:
+def _process_result(
+    args: list[str], prompt: str, cwd: Path, timeout: float, *,
+    env: dict | None = None, capture_console_output: bool = True,
+) -> tuple[int, str, str]:
     if timeout <= 0:
         raise subprocess.TimeoutExpired(args, timeout)
+    if type(capture_console_output) is not bool:
+        raise ContractError("Console output capture policy must be boolean.")
     options = (
         {
             "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP
@@ -207,13 +212,19 @@ def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, 
         if os.name == "nt"
         else {"start_new_session": True}
     )
-    # Temporary files avoid unbounded memory from CLI progress and reasoning output.
-    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+    # Generic subprocesses retain bounded capture. Codex structured calls use
+    # the separate, size-checked --output-last-message file and discard progress.
+    stdout = None
+    stderr = None
+    try:
+        if capture_console_output:
+            stdout = tempfile.TemporaryFile()
+            stderr = tempfile.TemporaryFile()
         process = subprocess.Popen(
             args,
             stdin=subprocess.PIPE,
-            stdout=stdout,
-            stderr=stderr,
+            stdout=stdout if capture_console_output else subprocess.DEVNULL,
+            stderr=stderr if capture_console_output else subprocess.DEVNULL,
             cwd=cwd,
             env=env if env is not None else subprocess_environment(),
             **options,
@@ -230,11 +241,15 @@ def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, 
         deadline = time.monotonic() + timeout
         try:
             while worker.is_alive():
-                output_size = os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size
-                if output_size > MAX_SUBPROCESS_OUTPUT_BYTES:
-                    _terminate_process_tree(process)
-                    worker.join(5)
-                    raise ContractError("Subprocess output exceeded its bounded capture limit.")
+                if capture_console_output:
+                    output_size = (
+                        os.fstat(stdout.fileno()).st_size
+                        + os.fstat(stderr.fileno()).st_size
+                    )
+                    if output_size > MAX_SUBPROCESS_OUTPUT_BYTES:
+                        _terminate_process_tree(process)
+                        worker.join(5)
+                        raise ContractError("Subprocess output exceeded its bounded capture limit.")
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     _terminate_process_tree(process)
@@ -247,15 +262,33 @@ def _process_result(args: list[str], prompt: str, cwd: Path, timeout: float, *, 
             raise
         if communication_error:
             raise communication_error[0]
-        if os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size > MAX_SUBPROCESS_OUTPUT_BYTES:
-            raise ContractError("Subprocess output exceeded its bounded capture limit.")
-        stdout.seek(0)
-        stderr.seek(0)
-        return (process.returncode, stdout.read(1_000_000).decode("utf-8", errors="replace"), stderr.read(1_000_000).decode("utf-8", errors="replace"))
+        if capture_console_output:
+            if os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size > MAX_SUBPROCESS_OUTPUT_BYTES:
+                raise ContractError("Subprocess output exceeded its bounded capture limit.")
+            stdout.seek(0)
+            stderr.seek(0)
+            stdout_text = stdout.read(1_000_000).decode("utf-8", errors="replace")
+            stderr_text = stderr.read(1_000_000).decode("utf-8", errors="replace")
+        else:
+            stdout_text = ""
+            stderr_text = ""
+        return process.returncode, stdout_text, stderr_text
+    finally:
+        if stdout is not None:
+            stdout.close()
+        if stderr is not None:
+            stderr.close()
 
 
-def run_process(args: list[str], prompt: str, cwd: Path, timeout: float) -> str:
-    returncode, stdout, _ = _process_result(args, prompt, cwd, timeout, env=subprocess_environment("CODEX_HOME", "OPENAI_API_KEY"))
+def run_process(
+    args: list[str], prompt: str, cwd: Path, timeout: float, *,
+    capture_console_output: bool = True,
+) -> str:
+    returncode, stdout, _ = _process_result(
+        args, prompt, cwd, timeout,
+        env=subprocess_environment("CODEX_HOME", "OPENAI_API_KEY"),
+        capture_console_output=capture_console_output,
+    )
     if returncode:
         # Do not persist raw CLI stderr: it can contain private model/tool context.
         raise RuntimeError(
@@ -397,7 +430,10 @@ class CodexBackend:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError("Codex model call timed out during request preparation.")
-            run_process(args, prompt, Path(context["workspace"]), remaining)
+            run_process(
+                args, prompt, Path(context["workspace"]), remaining,
+                capture_console_output=False,
+            )
             if not output.is_file() or output.stat().st_size > 200_000:
                 raise ContractError("Missing or oversized structured backend response.")
             return json.loads(output.read_text(encoding="utf-8"))

@@ -15,6 +15,7 @@ from agentkit.backends import (
     DeepSeekBackend,
     DemoBackend,
     _NoProviderRedirect,
+    _process_result,
     run_process,
 )
 from agentkit.approvals import action_digest, replay_action_digest
@@ -840,10 +841,11 @@ class AgentKitTests(unittest.TestCase):
             backend = CodexBackend()
         ctx = {"workspace": str(self.workspace), "sandbox": "read-only"}
 
-        def fake_run(args, prompt, cwd, timeout):
+        def fake_run(args, prompt, cwd, timeout, *, capture_console_output=True):
             self.assertEqual("-", args[-1])
             self.assertEqual("read-only", args[args.index("--sandbox") + 1])
             self.assertIn("--output-schema", args)
+            self.assertFalse(capture_console_output)
             Path(args[args.index("--output-last-message") + 1]).write_text(
                 json.dumps(report()), encoding="utf-8"
             )
@@ -885,8 +887,9 @@ class AgentKitTests(unittest.TestCase):
         ):
             backend = CodexBackend()
         captured = []
-        def fake_run(args, prompt, cwd, timeout):
+        def fake_run(args, prompt, cwd, timeout, *, capture_console_output=True):
             captured.append(args)
+            self.assertFalse(capture_console_output)
             value = decision() if prompt == "plan" else report()
             Path(args[args.index("--output-last-message") + 1]).write_text(json.dumps(value), encoding="utf-8")
             return ""
@@ -909,6 +912,85 @@ class AgentKitTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ContractError, "capture limit"):
             run_process([sys.executable, "-c", command], "", self.workspace, 5)
+
+    def test_process_closes_first_capture_file_if_second_allocation_fails(self):
+        class CaptureFile:
+            closed = False
+
+            def close(self):
+                self.closed = True
+
+        first = CaptureFile()
+        with patch("agentkit.backends.tempfile.TemporaryFile", side_effect=[first, OSError("allocation failed")]):
+            with self.assertRaisesRegex(OSError, "allocation failed"):
+                _process_result([sys.executable, "-c", "pass"], "", self.workspace, 5)
+        self.assertTrue(first.closed)
+
+    def _codex_cli_fixture(self, code):
+        backend = CodexBackend.__new__(CodexBackend)
+        backend.command = [sys.executable, "-c", code]
+        backend.model = None
+        backend.windows_sandbox = None
+        return backend
+
+    def test_codex_discards_large_console_progress_and_reads_bounded_result_file(self):
+        payload = json.dumps(decision()).replace("\\", "\\\\").replace("'", "\\'")
+        code = (
+            "import pathlib,sys; "
+            f"pathlib.Path(sys.argv[sys.argv.index('--output-last-message')+1]).write_text('{payload}'); "
+            "sys.stdout.write('progress-' * 300000); sys.stdout.flush()"
+        )
+        backend = self._codex_cli_fixture(code)
+        result = backend._call("Task", "decision", {"workspace": str(self.workspace)}, 5)
+        self.assertEqual(decision(), result)
+        self.assertNotIn("progress", json.dumps(result))
+
+    def test_codex_missing_or_oversized_result_file_fails_closed_after_discarding_console(self):
+        codes = (
+            "import sys; sys.stdout.write('progress-' * 300000); sys.stdout.flush()",
+            "import pathlib,sys; pathlib.Path(sys.argv[sys.argv.index('--output-last-message')+1]).write_text('x' * 200001); sys.stdout.write('progress-' * 300000)",
+        )
+        for code in codes:
+            with self.subTest(code=code[:20]), self.assertRaisesRegex(
+                ContractError, "Missing or oversized structured backend response"
+            ):
+                self._codex_cli_fixture(code)._call(
+                    "Task", "decision", {"workspace": str(self.workspace)}, 5
+                )
+
+    def test_codex_nonzero_exit_discards_chatty_output_and_keeps_generic_private_error(self):
+        code = (
+            "import sys; sys.stdout.write('PUBLIC-PROGRESS-' * 150000); "
+            "sys.stderr.write('PRIVATE-ERROR-SENTINEL'); sys.exit(7)"
+        )
+        with self.assertRaises(RuntimeError) as raised:
+            self._codex_cli_fixture(code)._call(
+                "Task", "decision", {"workspace": str(self.workspace)}, 5
+            )
+        self.assertIn("Raw output is not logged", str(raised.exception))
+        self.assertNotIn("PRIVATE-ERROR-SENTINEL", str(raised.exception))
+        self.assertNotIn("PUBLIC-PROGRESS", str(raised.exception))
+
+    def test_codex_discarded_console_path_preserves_timeout_and_process_tree_kill(self):
+        code = (
+            "import sys,time; sys.stdout.write('progress-' * 300000); "
+            "sys.stdout.flush(); time.sleep(30)"
+        )
+        real_popen = subprocess.Popen
+        processes = []
+
+        def capture_popen(*args, **kwargs):
+            process = real_popen(*args, **kwargs)
+            processes.append(process)
+            return process
+
+        with patch("agentkit.backends.subprocess.Popen", side_effect=capture_popen):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                self._codex_cli_fixture(code)._call(
+                    "Task", "decision", {"workspace": str(self.workspace)}, 0.2
+                )
+        self.assertGreaterEqual(len(processes), 1)
+        self.assertIsNotNone(processes[0].poll())
 
     def test_readonly_deepseek_tools_cannot_modify_or_execute_workspace(self):
         backend = DeepSeekBackend(api_key="test-only-key")

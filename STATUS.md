@@ -31,8 +31,11 @@ Erfolge, einen Fehler, elf Skips und fuenf erwartete Fehlschlaege. Eine danach
 geaenderte Test-Fixture ist noch ungeprueft. Unabhaengig bestaetigt sind zwei
 Codeblocker: nicht fortlaufende Beleg-IDs bei Quellen ueber 512 Zeichen und
 von Anthropic nicht unterstuetzte Array-Grenzen im rohen Transportschema.
-Der separate AgentKit-Fix fuer verworfene Codex-Fortschrittsausgaben wird
-noch technisch geprueft; strukturierte Ergebnisdateien bleiben begrenzt.
+Der separate [AgentKit-Fix fuer Codex-Fortschrittsausgaben](docs/evidence/execution-profiles-20261017/codex-console-capture-technical.json)
+ist offline und unabhaengig geprueft: 570 Gesamttests ausgefuehrt, vier
+uebersprungen, keine Fehler; 31 Releasepruefungen bestanden. Strukturierte
+Ergebnisdateien und allgemeine Prozessausgaben bleiben begrenzt. Das
+qualifiziert weder den gestoppten Worker nachtraeglich noch echte Modelllaeufe.
 Numerische Beleg-IDs ersetzen kopierte Zitate, beweisen aber keine semantisch
 richtige Belegwahl. Keine Implementierungs-, Inhalts- oder Produktionsfreigabe.
 

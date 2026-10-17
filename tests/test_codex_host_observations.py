@@ -127,8 +127,9 @@ class CodexHostObservationTests(unittest.TestCase):
     def test_native_action_step_disables_shell_with_and_without_strict_policy(self):
         captured = []
 
-        def fake_run(args, prompt, cwd, timeout):
+        def fake_run(args, prompt, cwd, timeout, *, capture_console_output=True):
             captured.append((args, prompt))
+            self.assertFalse(capture_console_output)
             Path(args[args.index("--output-last-message") + 1]).write_text("{}", encoding="utf-8")
             return ""
 

@@ -1,0 +1,47 @@
+{
+  "schema": "codex-console-capture-technical-qualification/v1",
+  "status": "offline_checks_and_independent_review_passed",
+  "behavior": "Codex structured calls discard console progress via DEVNULL and retain bounded final-result file; generic subprocess capture stays bounded.",
+  "source_sha256": {
+    "C:\\Users\\botrunner\\Documents\\ChatGPT\\AGenten vorlage\\agentkit\\backends.py": "c22a584a53f41b21790d5ebdb124baf234c2806bec3d1125b9249237fcd14753",
+    "C:\\Users\\botrunner\\Documents\\ChatGPT\\AGenten vorlage\\tests\\test_agentkit.py": "f96bc1f8996c5958a10ae742df6edfb5ef4062d6c83cbab2979d7cbc9a3a2bd5",
+    "C:\\Users\\botrunner\\Documents\\ChatGPT\\AGenten vorlage\\tests\\test_backend_readiness.py": "c5c872b584cf6f28b6192ab8b70db4c5671dd8c1444fdf536b2fa6db4e47ac1b",
+    "C:\\Users\\botrunner\\Documents\\ChatGPT\\AGenten vorlage\\tests\\test_codex_host_observations.py": "31cf8f4c393e8e1c32521bf4af09729876ffa82f2ff94f657b40471181a1402b"
+  },
+  "checks": {
+    "focused": {
+      "passed": 102,
+      "subtests_passed": 52,
+      "exit_code": 0
+    },
+    "unittest": {
+      "run": 570,
+      "skipped": 4,
+      "failed": 0,
+      "seconds": 301.375,
+      "exit_code": 0
+    },
+    "release": {
+      "passed": 31,
+      "failed": 0,
+      "exit_code": 0
+    }
+  },
+  "artifacts_sha256": {
+    "focused-final.log": "0a02efd6ae576746eb5f0c5cc91a0c5d46a78fe861faa193d45f7a90ccfc9248",
+    "unittest-discover-final.log": "9459c62ebd50dbb4a0f4a9ecb103c1e982e6da5ccbeaeb4fab55abd74db9c0c7",
+    "verify-release-final.log": "2a0d1e89d07ebd77ce426b8c5fd910499d94ea7506fafd5f5606597ae537e462"
+  },
+  "independent_review_sha256": "994ce17cc6459474c85bdbb4266f79c1296f0736032d551bc7469b475bddbe14",
+  "limits": {
+    "structured_result_bytes": 200000,
+    "generic_console_capture_bytes": 2000000
+  },
+  "limitations": [
+    "Offline subprocess fixtures only; no real model or provider qualification.",
+    "Previous blocked worker remains unknown; no replay or retroactive qualification.",
+    "Cleanup regression RED was observed in terminal but no separate durable RED log was saved.",
+    "Ruff executable unavailable; no Ruff check claimed.",
+    "Marketing usefulness and protocol defects remain separate open requirements."
+  ]
+}

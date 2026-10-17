@@ -33,7 +33,8 @@ class BackendReadinessTests(unittest.TestCase):
                 run.return_value = ""
                 backend = CodexBackend()
                 context = {"workspace": folder, "sandbox": "read-only"}
-                def fake_process(args, prompt, cwd, timeout):
+                def fake_process(args, prompt, cwd, timeout, *, capture_console_output=True):
+                    self.assertFalse(capture_console_output)
                     Path(args[args.index("--output-last-message") + 1]).write_text(
                         json.dumps(
                             {
@@ -81,7 +82,8 @@ class BackendReadinessTests(unittest.TestCase):
                 original = f'[windows]\nsandbox = "{value}"\n'
                 config.write_text(original, encoding="utf-8")
                 with patch("agentkit.backends.sys.platform", "win32"), patch.dict(os.environ, {"CODEX_HOME": str(home)}), patch("agentkit.backends.codex_command", return_value=["codex"]), patch("agentkit.backends.run_process") as run:
-                    def process(args, prompt, cwd, timeout):
+                    def process(args, prompt, cwd, timeout, *, capture_console_output=True):
+                        self.assertFalse(capture_console_output)
                         Path(args[args.index("--output-last-message") + 1]).write_text(json.dumps({"action": "blocked", "role": "", "skills": [], "task": "x", "reason": "x"}), encoding="utf-8")
                         self.assertIn(f'windows.sandbox="{value}"', args)
                         self.assertIn("--ignore-user-config", args)
@@ -112,7 +114,8 @@ class BackendReadinessTests(unittest.TestCase):
         for platform in ("linux", "darwin"):
             with tempfile.TemporaryDirectory() as folder:
                 with patch("agentkit.backends.sys.platform", platform), patch.dict(os.environ, {"CODEX_HOME": folder}), patch("agentkit.backends.codex_command", return_value=["codex"]), patch("agentkit.backends.run_process") as run:
-                    def process(args, prompt, cwd, timeout):
+                    def process(args, prompt, cwd, timeout, *, capture_console_output=True):
+                        self.assertFalse(capture_console_output)
                         Path(args[args.index("--output-last-message") + 1]).write_text(json.dumps({"action": "blocked", "role": "", "skills": [], "task": "x", "reason": "x"}), encoding="utf-8")
                         self.assertIn("--ignore-user-config", args)
                         self.assertIn("sandbox_workspace_write.network_access=false", args)

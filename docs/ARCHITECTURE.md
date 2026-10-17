@@ -55,6 +55,12 @@ Sie ist ueber CLI/Python verfuegbar; das Cockpit setzt weiterhin ein festes Mode
   deaktiviert. Native Unteragenten sind deaktiviert; die AgentKit-Laufzeit
   dispatcht die registrierten Rollen selbst. Worker behalten ihre rollengebundene
   Shell-Ausführung und Sandbox. Das ist keine allgemeine Isolation beliebiger Tools.
+- Codex liefert strukturierte Ergebnisse ueber `--output-last-message`; die
+  Ergebnisdatei bleibt auf 200.000 Bytes begrenzt. Fortschrittsausgaben auf
+  stdout/stderr werden fuer diesen Aufruf verworfen, damit lange Testprotokolle
+  den Bericht nicht verhindern. Andere Prozessaufrufe behalten die gemeinsame
+  Ausgabelimitierung von 2.000.000 Bytes. Zeitlimits, Prozessbereinigung und
+  unbekannte Worker-Ausgaenge behalten ihre bisherigen Regeln.
 - JSON-Schemas prüfen Form und Größen. Die Engine prüft zusätzlich Rollen-/Skill-Zuordnung,
   Artefaktpfade, Abschluss-Evidenz und den Review-Stand.
 - Skill-Metadaten werden zuerst angeboten; nur ausgewählte Skill-Bodies gehen in den Worker-Kontext.
