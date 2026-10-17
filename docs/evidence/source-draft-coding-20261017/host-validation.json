@@ -25,9 +25,18 @@
     "used_host_counterexamples": true,
     "host_code_repairs_within_run": false,
     "independent_reviews": "no remaining high/critical blocker",
-    "documentation_cleanup_pending": "Pre-existing verified-observation module docstring is misleading."
+    "documentation_cleanup": "Host candidate module docstring now identifies the source as unverified; AST excluding module docstring matches frozen raw candidate."
   },
-  "current_candidate_full_regression": "running",
+  "current_candidate_full_regression": {
+    "exit_code": 0,
+    "passed": 4485,
+    "skipped": 11,
+    "xfailed": 5,
+    "seconds": 272.68,
+    "log_sha256": "d37f8038a940dbf4a7ea74c76efc5686d8bf5a6676f637d60e4a3ad1394bb530",
+    "candidate_sha256": "36037c099fb78c82311a9990df54e670194b6ba6bc79b6b31e6ee21799748b79",
+    "context": "real detached Marketingbot Git worktree; no live bot changed"
+  },
   "current_candidate_actual_text_quality": "not_run",
   "production_ready": false,
   "goal_complete": false,
@@ -45,5 +54,6 @@
     "Source-only protected hashes exclude declared caches/runtime directories; not a general OS-isolation proof.",
     "Second task uses host counterexamples; first failed host qualification remains failed.",
     "No X reach measured; native Codex costs not reported."
-  ]
+  ],
+  "source_copy_full_run_limit": "Earlier Git-free copy: 4484 passed, 1 failed because repository ignore test inherited enclosing .runs ignore. Same Git-rule tests and complete suite pass in actual detached Marketingbot Git worktree."
 }

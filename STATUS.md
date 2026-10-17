@@ -40,7 +40,10 @@ fuenf Schritte, eine eigene Nachbesserung und bestandene separate Review.
 888 Quelldateien und zwei eingefrorene Testsammlungen unveraendert. Vor Umsetzung
 19 neue Fehler und eine bestandene Grenzpruefung; danach bestaetigt der Host
 99 Tests in 13,32 Sekunden. Python-/Security-Reviews ohne technische Blocker.
-Der volle Kandidatenlauf ist noch aktiv; Textqualitaet wurde noch nicht gemessen.
+Der volle Kandidatenlauf im echten Git-Worktree besteht: 4.485 Tests, elf Skips,
+fuenf erwartete Fehler, 272,68 Sekunden, Exit 0. Ein vorheriger Lauf in einer
+Git-freien Kopie scheiterte am geerbten .runs-Ignore; dieser Kontextfehler bleibt
+dokumentiert. Textqualitaet wurde noch nicht gemessen.
 Der Folgeauftrag verwendet Host-Gegenbeispiele und macht den ersten Lauf nicht
 rueckwirkend bestanden. Beide Kandidaten bleiben isoliert und unpromoviert.
 [Nachpruefbare Rohbelege](docs/evidence/source-draft-coding-20261017/README.md).
@@ -48,7 +51,8 @@ Live-Handles: privater `.runs/qualification/agentic-qualification-checkpoint-202
 
 ## Offene Abnahme
 
-1. Reparatur unabhaengig pruefen; volle Regression vor Uebernahme.
+1. Technische Reparatur und volle Regression bestanden; Uebernahme bleibt von
+   Textqualitaet und Betriebsabnahme abhaengig.
 2. Echte Marketingausgaben verblindet bewerten. Bisherige feste Neuner-Abnahme
    verfehlt die vorbestehende +0,5-Grenze; interne Scores sind keine Reichweite.
    Sechs frische synthetische Quellen sind vor Ausgaben eingefroren; sie ersetzen
