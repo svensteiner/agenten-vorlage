@@ -1,0 +1,29 @@
+{
+  "schema": "marketing-evidence-native-stopped/v1",
+  "run_id": "ed82115e0ce44cd0b0b635d8c6d95347",
+  "engine_status": "blocked",
+  "steps": 1,
+  "failures": 0,
+  "worker_dispatched": false,
+  "source_changes": [],
+  "baseline_files_verified": 697,
+  "test_results_created": false,
+  "technical_outcome": "Preparation failed before implementation.",
+  "causes": [
+    "Planner received pre-dispatch waiting status without the completed independent-review/Root authorization context.",
+    "Post-run integrity monitor wrongly counted expected Engine .runs checkpoints as immutable pack changes."
+  ],
+  "actual_execution_pin_changes": [],
+  "preflight_guard_tests_passed": 10,
+  "post_integrity_tests_passed_before_dispatch": 2,
+  "test_limit": "The two integrity fixtures did not cover normal Engine checkpoint creation. Passing preflight did not prove launch correctness.",
+  "evidence_sha256": {
+    "terminal-result.json": "2d2cde0a515e0517fdcc5e703b9b3d8704adbc1c752938024caab31a453c4e44",
+    "post-engine-integrity.json": "1c0d8b193a979335e2890d3f323eacf32753485e8153d94b8675174f7ce6d939",
+    "root-blocked-trial-audit.json": "f0efa9a907265a289590ec60cdd7fef2bb5a44aab2bdc44ead3d48566ff80e46",
+    "independent-preflight.json": "0fccf35b22854f21b8d2ee721be984f605f496c86caeb2af41007b87b1914b8e",
+    "root-authorization.json": "0056799a9a57e71827222bf3f131ce0af3bfd28d2eb90a7218bc75ca3c376503"
+  },
+  "next": "Separate corrected launch fixture and new isolated trial; retain this stopped run.",
+  "production_promotion": false
+}
