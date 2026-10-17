@@ -71,6 +71,8 @@ class EscalatingBackend:
             getattr(backend, "supports_write_policy", False) is True for backend in backends)
         self.supports_isolated_tests = all(
             getattr(backend, "supports_isolated_tests", False) is True for backend in backends)
+        self.supports_local_phase_tests = all(
+            getattr(backend, "supports_local_phase_tests", False) is True for backend in backends)
 
     @property
     def approval_identity(self) -> str:

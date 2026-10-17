@@ -1,0 +1,105 @@
+{
+  "schema": "agentkit-technical-qualification/v1",
+  "status": "technical_checks_passed_not_production_or_autonomous_acceptance",
+  "feature": "private operator-bound Codex local Docker test phases",
+  "source_sha256": {
+    "agentkit/approvals.py": "f8f16644cadbe4510f3d86a6b73d8aea5f1ee8cd23d8ffa87b316122e0f24bb3",
+    "agentkit/backends.py": "75d19e2aa1401c9744b9228cd1ea58404c758bd7d1f68510b0be6353e0875d1e",
+    "agentkit/engine.py": "24db5732ebbf037e14783a5b572b75f1eb663d3fca69dbfb821f66a05bef070f",
+    "agentkit/routing.py": "0cc38a050279d4542c57fc7d0df3c2c35a9cbfdd77da4c333b45bc82c064826e",
+    "agentkit/phase_test_execution.py": "019fbb7c4d14ff270336fe6554dbbe7444f6b1b5fbd0fe79bc2b53c3d766b793",
+    "agentkit/phase_test_runtime.py": "edf93932d874e5bafd50d4604f6f8ac89e10b1ee77b6015f371368455fb1001d",
+    "agentkit/phase_test_runner.py": "fed88d0dbe86abcb87c9fb6c50c01e7d6ab22a9e2be73d56777c6dea2c8d6d37",
+    "agentkit/schemas/codex_local_action_step.json": "d6ce9424079ad18937cf7ad13ef8d67f026a50d861f17693af5fddd98d68e34f",
+    "agentkit/test_execution.py": "9599ae726c9044105df9ded583ee8bfd94655e6614f2123c275d533f76a2ebc2",
+    "agentkit/schemas/codex_action_step.json": "d22492e3607b530cf3ec9135ad8c4e9870f0171018fd8f1bcf8228afa3cc26ba",
+    "tests/test_agentkit.py": "38989240874292a0460768c341e552854544ddad833e0edf3e1ee5e5e520c2b3",
+    "tests/test_codex_local_phases.py": "398fe81e5934d945afda57e57f03c6f046055ff633c92a106eeaab021ec172e8",
+    "tests/test_engine_codex_local_phases.py": "bdaa47a4d9750c6d153640f369b1d627fff19beaa69c09c516f3974c2ffe8161",
+    "tests/test_engine_local_phase_policy.py": "2117d9ad34dca70bf472b217e9a5c368ff00cf043dd2239ab54bb71e4934fb4f",
+    "tests/test_local_phase_bindings.py": "dde2fb78cd11b7778fe5b87543c9bf63c5b9759cddffee1027230ebb2a8bcd17",
+    "tests/test_local_phase_runtime.py": "f2d21c9dd93ba120914c2e6aba2e1f5cc7e46f742534f5e129dc70c003c6a29d",
+    "tests/test_phase_test_execution.py": "244c991abf86f0650fd897d22ba9605c26cda911441da6d7ceaafaa62037b31d",
+    "tests/test_phase_test_runner.py": "e8b17887623be25a6c1fbd693c7ffb8bbf45baed8b4a4d3faa2c8a53623e92e9"
+  },
+  "agentkit_tests": {
+    "run": 643,
+    "skipped": 5,
+    "failed": 0,
+    "duration_seconds": 326.35,
+    "input_changes": [],
+    "log_sha256": "690809436a17302661885c67e37db2b0481bbb53ac3e543397182a4818560496"
+  },
+  "offline_release_checks": {
+    "passed": 34,
+    "failed": 0,
+    "log_sha256": "053a06f074a786bf56bf8a6ebeec73803ba6d02c07827b32eb318793af62baf9",
+    "count_note": "Includes generated packs present during this check, including the new V4 pack."
+  },
+  "static_checks": {
+    "ruff_agentkit_tests": "passed",
+    "capture_review_sha256": "7486d6d93224520ecf0c790124a01233acc7a637cf84ff5fdfcdc5682355b849",
+    "workflow_trace_scenarios_passed": 13,
+    "ruff_scope": "entire repository",
+    "independent_feature_and_docker_review_sha256": "8c7d89b0610ec3bfc281882b1ff649e17b1537b004dfa1e61387a27290dc2683",
+    "independent_feature_and_docker_review": "clear for technical qualification only; no autonomous or production acceptance"
+  },
+  "actual_full_docker_phase": {
+    "run_id": "ba67917d1149458383845f5ccfd3c69b",
+    "receipt_sha256": "ba75918857ca2ce4e19376e4ee64193ddddb5be8acd381a2a3ecac90791fc3d8",
+    "policy_sha256": "1d043abfaf0e95c47c2eaaf01521813fec8db470c010801d25f8b4dbb39b25f3",
+    "host_runner_sha256": "fed88d0dbe86abcb87c9fb6c50c01e7d6ab22a9e2be73d56777c6dea2c8d6d37",
+    "image_id": "sha256:1f497c2d1f09e37a506ac87b5c815b4b2b43a050b8d2f076a70733a609fb99a7",
+    "dependency_lock_sha256": "4aa246ec7b7602d76d99e98ac49876b895188c626bf665260255938e436d08a6",
+    "collection": {
+      "nodeids_sha256": "7f1db0948cb82752527aeb2a9c4b35f1bc6db3d1226fa10cd45f66de5d0ebeb3",
+      "count": 4729,
+      "files_sha256": "15c14eb33b684fa538dca650d2d3470e6eb7ec36533e1d72b5fc2f5dddbe6af0",
+      "files_count": 321
+    },
+    "duration_seconds": 198.438,
+    "outcomes": {
+      "passed": 4714,
+      "skipped": 10,
+      "xfailed": 5
+    },
+    "module_collection_skips": 2,
+    "input_files": 698,
+    "host_and_scratch_unchanged": true,
+    "cleanup_confirmed": true,
+    "independent_container_absence_check": true,
+    "real_spawn_tests_passed": [
+      "tests/unit/test_action_attempts.py::test_process_concurrency_has_one_winner",
+      "tests/unit/test_action_history_union.py::test_processes_share_last_slot_with_legacy_history",
+      "tests/unit/test_reply_attempts.py::test_concurrent_process_reservation_has_exactly_one_winner"
+    ],
+    "baseline_collection_file_sha256": "25d4b7ad8c305ef9be46bd113d173b9953d4fc0d321e9c31f6582bccf58a3354"
+  },
+  "retained_failed_attempts": [
+    {
+      "run_id": "dbe8a0e986e445c9852f3a697bdab92a",
+      "status": "unknown",
+      "cause": "operator stopped after recursive multiprocessing pytest reimports",
+      "replayed": false,
+      "cleanup_confirmed": true
+    },
+    {
+      "run_id": "84bbbbe5f0d04c3a92848b0a36496745",
+      "status": "unknown",
+      "reason": "phase_result_unavailable",
+      "diagnosis": "generic capture silently truncated each stream at 1000000 bytes within the 2000000 byte combined allowance",
+      "replayed": false,
+      "cleanup_confirmed": true
+    }
+  ],
+  "model_calls": 0,
+  "live_marketingbot_changed": false,
+  "limitations": [
+    "No actual model solved the task in this qualification.",
+    "Pytest outcomes are observational; independent test-diff and task acceptance review remain necessary.",
+    "Known pre-effect policy denials still block instead of becoming corrective observations.",
+    "No public API/cockpit policy loader or production release.",
+    "Marketing source protocol corrections and real output quality remain unproven."
+  ],
+  "source_hash_basis": "Raw bytes of the qualified host worktree. Git checkout line-ending conversion can change byte hashes."
+}

@@ -913,6 +913,36 @@ class AgentKitTests(unittest.TestCase):
         with self.assertRaisesRegex(ContractError, "capture limit"):
             run_process([sys.executable, "-c", command], "", self.workspace, 5)
 
+        combined_command = (
+            "import sys; "
+            "sys.stdout.buffer.write(b'x' * 1100000); "
+            "sys.stderr.buffer.write(b'y' * 950000); "
+            "sys.stdout.flush(); sys.stderr.flush()"
+        )
+        with self.assertRaisesRegex(ContractError, "capture limit"):
+            run_process(
+                [sys.executable, "-c", combined_command], "", self.workspace, 5
+            )
+
+    def test_process_capture_returns_complete_single_stream_under_combined_limit(self):
+        size = 1_100_000
+        cases = (
+            ("stdout", "sys.stdout.buffer.write(b'x' * 1100000)"),
+            ("stderr", "sys.stderr.buffer.write(b'y' * 1100000)"),
+        )
+        for expected_stream, write_statement in cases:
+            with self.subTest(stream=expected_stream):
+                command = f"import sys; {write_statement}; sys.stdout.flush(); sys.stderr.flush()"
+                returncode, stdout, stderr = _process_result(
+                    [sys.executable, "-c", command], "", self.workspace, 5
+                )
+                self.assertEqual(0, returncode)
+                captured = stdout if expected_stream == "stdout" else stderr
+                other = stderr if expected_stream == "stdout" else stdout
+                self.assertEqual(size, len(captured))
+                self.assertTrue(captured.endswith("x" if expected_stream == "stdout" else "y"))
+                self.assertEqual("", other)
+
     def test_process_closes_first_capture_file_if_second_allocation_fails(self):
         class CaptureFile:
             closed = False

@@ -14,6 +14,8 @@ from .contracts import CompletedReportRejected, ContractError, read_json, valida
 from .storage import lock, save
 from .write_policy import WritePolicy
 from .test_execution import TestExecutionPolicy, validate_test_receipt
+from .phase_test_execution import LocalPhaseTestPolicy
+from .phase_test_runtime import LocalPhaseRuntime
 from .write_provenance import (
     capture_baseline as capture_write_baseline,
     make_write_receipt,
@@ -91,6 +93,7 @@ class Engine:
         require_approvals: bool = False,
         write_policy: WritePolicy | None = None,
         test_execution_policy: TestExecutionPolicy | None = None,
+        local_phase_policy: LocalPhaseTestPolicy | None = None,
         core_snapshot: str | None = None,
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         state_writer: Callable[[Path, bytes], None] | None = None,
@@ -118,6 +121,20 @@ class Engine:
             else:
                 raise ContractError("Test manifest must live outside the project workspace.")
         self.test_execution_policy = test_execution_policy
+        if local_phase_policy is not None:
+            if type(local_phase_policy) is not LocalPhaseTestPolicy:
+                raise ContractError("local_phase_policy must be a host-loaded LocalPhaseTestPolicy.")
+            if (backend.name != "codex"
+                    or getattr(backend, "supports_local_phase_tests", False) is not True):
+                raise ContractError("This backend cannot enforce private local test phases.")
+            if (write_policy is None
+                    or write_policy.paths != local_phase_policy.allowed_write_paths):
+                raise ContractError("Private test phases require the exact paired host write scope.")
+            if require_approvals or test_execution_policy is not None:
+                raise ContractError("Private test phases require a separate autonomous local profile.")
+            if local_phase_policy.workspace_path != self.workspace:
+                raise ContractError("Private test policy is bound to another workspace.")
+        self.local_phase_policy = local_phase_policy
         self.mutation_writer = mutation_writer
         self.state_writer = state_writer
         self.coordination_reserver = coordination_reserver
@@ -223,6 +240,9 @@ class Engine:
             expected_test_policy = self.test_execution_policy.sha256 if self.test_execution_policy else ""
             if state.get("test_execution_policy_sha256", "") != expected_test_policy:
                 raise ContractError("Cannot resume with a changed or missing host test execution policy.")
+            expected_local_policy = self.local_phase_policy.sha256 if self.local_phase_policy else ""
+            if state.get("local_phase_policy_sha256", "") != expected_local_policy:
+                raise ContractError("Cannot resume with a changed or missing private local phase policy.")
             if self.write_policy is not None:
                 baseline = state.get("write_provenance_baseline")
                 if baseline is None:
@@ -249,6 +269,11 @@ class Engine:
                 if type(count) is not int or not 0 <= count <= self.test_execution_policy.limits["max_runs_per_run"]:
                     raise ContractError("Persisted isolated test execution count is invalid.")
             if state["status"] == "completed":
+                if self.local_phase_policy is not None:
+                    LocalPhaseRuntime(self.local_phase_policy, self.workspace, state["run_id"],
+                                      state.get("local_phase_execution"), lambda: None).require_completion()
+                    if state.get("reviewed") is not True:
+                        raise ContractError("Private phase completion lacks independent review.")
                 return state
             snapshot = state.get("core_snapshot")
             if "core_snapshot" in state and (not isinstance(snapshot, str) or len(snapshot) > self.limits["max_context_chars"]):
@@ -359,6 +384,9 @@ class Engine:
                 "write_policy_sha256": self.write_policy.sha256 if self.write_policy else "",
                 "test_execution_policy_sha256": self.test_execution_policy.sha256 if self.test_execution_policy else "",
                 "test_execution_runs": 0,
+                "local_phase_policy_sha256": self.local_phase_policy.sha256 if self.local_phase_policy else "",
+                "local_phase_execution": LocalPhaseRuntime.initial_state(self.local_phase_policy)
+                if self.local_phase_policy else None,
                 "latest_test_execution_receipt": None,
                 "pending_approval": None,
                 "approvals": [],
@@ -378,6 +406,8 @@ class Engine:
             state["require_approvals"] = True
         if self.require_approvals and not getattr(self.backend, "supports_action_approvals", False):
             raise ContractError("This backend cannot enforce the persisted approval policy.")
+        if self.require_approvals and self.local_phase_policy is not None:
+            raise ContractError("Private phase execution cannot resume an approval-gated profile.")
         started = time.monotonic()
         elapsed_before = state["elapsed_seconds"]
 
@@ -408,6 +438,11 @@ class Engine:
                     "Wall-time budget exhausted. Raise the limit deliberately before resuming."
                 )
             return min(self.limits["call_timeout"], remaining)
+
+        local_phases = LocalPhaseRuntime(
+            self.local_phase_policy, self.workspace, state["run_id"],
+            state["local_phase_execution"], checkpoint,
+        ) if self.local_phase_policy else None
 
         def context() -> dict:
             wall_seconds_remaining = self.limits["max_seconds"] - (
@@ -455,6 +490,8 @@ class Engine:
                 }
             if self.test_execution_policy is not None:
                 result["test_execution_policy_summary"] = self.test_execution_policy.summary()
+            if local_phases is not None:
+                result["local_phase_policy_summary"] = local_phases.summary()
             if state.get("approval_resume"):
                 result["approval_resume"] = state["approval_resume"]
                 result["approved_action"] = state.get("approved_action")
@@ -531,6 +568,13 @@ class Engine:
                                         or validated["workspace_fingerprint"] != current_fingerprint
                                         or validated["cleanup_confirmed"] is not True):
                                     completion_error = "Completion refused: the latest isolated test receipt is failed or stale."
+                    if completion_error is None and local_phases is not None:
+                        try:
+                            local_phases.require_completion()
+                            if state.get("reviewed") is not True:
+                                raise ContractError("Private test phases require independent review.")
+                        except ContractError as exc:
+                            completion_error = f"Completion refused: {exc}"
                     if completion_error is not None:
                         # A rejected finish has no external effects. Let the planner
                         # repair the evidence gap, within the existing failure budget.
@@ -566,6 +610,10 @@ class Engine:
                     ctx["write_policy"] = self.write_policy
                 if self.test_execution_policy is not None:
                     ctx["test_execution_policy"] = self.test_execution_policy
+                if local_phases is not None:
+                    ctx["local_phase_policy"] = self.local_phase_policy
+                    ctx["run_local_phase"] = local_phases.execute
+                    ctx["authorize_local_mutation"] = local_phases.authorize_mutation
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
                     self._authorize_action(tool, arguments)
                     approval = {

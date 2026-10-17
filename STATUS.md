@@ -14,6 +14,17 @@ pruefen und nacharbeiten. Die Mietplattform ist zurueckgestellt.
 Der Original-Marketingbot bleibt unveraendert. Isolierte Cockpit-Abnahmen
 verwenden Port 8766; die Laufprotokolle belegen ihren jeweiligen Betriebsstand.
 
+Die neuen [privaten lokalen Docker-Testphasen](docs/LOCAL-PHASE-TESTS.md)
+haben einen technischen Nachweis: 643 AgentKit-Gesamttests mit fuenf Skips,
+keine Fehler, 34 Offline-Releasepruefungen und ein vollstaendiger Containerlauf
+mit 4.729 erfassten Testfaellen in 321 Dateien. Alle 698 Eingaben blieben
+unveraendert; der Host validierte den Bericht und die Containerbereinigung.
+Zwei zuvor unbekannt beendete Diagnoselaeufe bleiben getrennt erhalten.
+[Quellhashes und Grenzen](docs/evidence/execution-profiles-20261017/private-local-phase-technical.json).
+Das Profil ist nur operatorseitig ueber Python verfuegbar. Noch offen sind
+Korrekturbeobachtungen fuer bekannte verfruehte Vorschlaege und ein echter
+autonomer Modelllauf; die Marketingqualitaet ist damit nicht nachgewiesen.
+
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und
 4.702 vollstaendige Tests bestanden. Die unabhaengige Nachpruefung findet

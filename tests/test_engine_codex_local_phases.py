@@ -1,0 +1,234 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from agentkit.backends import CodexBackend
+from agentkit.engine import Engine
+from agentkit.phase_test_execution import LocalPhaseTestPolicy, authorize_phase, verify_phase_freshness
+from agentkit.scaffold import create
+from agentkit.write_policy import WritePolicy
+
+
+def _digest(value: object) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+class EngineCodexLocalPhaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.agent = create(self.root / "agent", "developer", "phase-test", "Example")
+        self.workspace = self.agent / "workspace"
+        self.source = self.workspace / "agentkit" / "worker.py"
+        self.source.parent.mkdir(parents=True, exist_ok=True)
+        self.source.write_text("def work(): return 1\n", encoding="utf-8")
+        tests = self.workspace / "tests"
+        tests.mkdir(exist_ok=True)
+        self.test_file = tests / "test_worker.py"
+        self.test_file.write_text("def test_worker(): assert True\n", encoding="utf-8")
+        manifest = {
+            "version": 1,
+            "image_ref": "registry.example/agentkit@sha256:" + "a" * 64,
+            "image_id": "sha256:" + "a" * 64,
+            "dependency_lock_sha256": "b" * 64,
+            "host_runner_sha256": "c" * 64,
+            "production_files": [{
+                "path": "agentkit/worker.py",
+                "sha256": hashlib.sha256(self.source.read_bytes()).hexdigest(),
+            }],
+            "snapshot_paths": ["agentkit/worker.py", "tests/test_worker.py"],
+            "allowed_write_paths": ["agentkit/worker.py", "tests/test_worker.py"],
+            "phases": {
+                "red": {
+                    "nodeids": ["tests/test_worker.py::test_worker"],
+                    "expected_failure_nodeids": ["tests/test_worker.py::test_worker"],
+                },
+                "targeted": {"nodeids": ["tests/test_worker.py::test_worker"]},
+                "full": {"test_files": ["tests/test_worker.py"]},
+            },
+            "full_test_roots": ["tests"],
+            "full_minimum_test_count": 1,
+            "limits": {
+                "timeout_seconds": 720, "memory_bytes": 2 * 1024**3,
+                "memory_swap_bytes": 2 * 1024**3, "nano_cpus": 2_000_000_000,
+                "pids": 256, "output_bytes": 2_000_000, "nofile": 1024,
+                "tmpfs_bytes": 256 * 1024**2, "max_file_bytes": 8 * 1024**2,
+                "max_snapshot_bytes": 512 * 1024**2,
+            },
+        }
+        self.policy_path = self.root / "local-phase-policy.json"
+        self.policy_path.write_text(json.dumps(manifest), encoding="utf-8")
+        self.phase_policy = LocalPhaseTestPolicy.from_file(self.policy_path, self.workspace)
+        self.write_policy = WritePolicy(["agentkit/worker.py", "tests/test_worker.py"])
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    @staticmethod
+    def decision(action="delegate", role="developer"):
+        return {
+            "action": action, "role": role, "skills": [],
+            "task": "Verify the bounded local phase workflow.",
+            "reason": "The phase receipt must be current.",
+        }
+
+    @staticmethod
+    def report():
+        return {
+            "status": "success", "summary": "The assigned work is complete.",
+            "artifacts": [], "evidence": ["Completed the requested checks."],
+            "next_actions": [],
+        }
+
+    @staticmethod
+    def _step_arguments(*, path="", content="", phase=None):
+        return {
+            "path": path, "content": content, "old_text": "", "new_text": "",
+            "start_line": None, "max_lines": None, "phase": phase,
+        }
+
+    def proposal(self, tool, *, path="", content="", phase=None):
+        return {
+            "kind": "proposal", "tool": tool,
+            "arguments": self._step_arguments(path=path, content=content, phase=phase),
+            "rationale": "Use the host-authorized action.",
+            "report": {
+                "status": "blocked", "summary": "Action requested.",
+                "artifacts": [], "evidence": [], "next_actions": [],
+            },
+        }
+
+    def final_action(self):
+        return {
+            "kind": "final", "tool": "none",
+            "arguments": self._step_arguments(),
+            "rationale": "The assigned phase sequence is complete.",
+            "report": self.report(),
+        }
+
+    def phase_receipt(self, phase, run_id):
+        freshness = verify_phase_freshness(self.phase_policy, self.workspace, phase)
+        plan = authorize_phase(self.phase_policy, phase)
+        nodeids = list(plan.nodeids or ("tests/test_worker.py::test_worker",))
+        files = sorted({node.split("::", 1)[0] for node in nodeids})
+        if phase == "red":
+            reason, exit_code = "expected_red_reproduced", 1
+            outcome = {"outcome": "failed", "exception_type": "AssertionError", "when": "call"}
+        else:
+            reason, exit_code = "ok", 0
+            outcome = {"outcome": "passed", "exception_type": None, "when": "call"}
+        value = {
+            "schema": "agentkit/local-phase-receipt-v1", "status": "passed",
+            "run_id": run_id, "phase": phase, "reason": reason,
+            "outcome_source": "pytest_child_report",
+            "exit_code": exit_code, "policy_sha256": self.phase_policy.sha256,
+            "host_runner_sha256": self.phase_policy.host_runner_sha256,
+            "image_ref": self.phase_policy.image_ref, "image_id": self.phase_policy.image_id,
+            "dependency_lock_sha256": self.phase_policy.dependency_lock_sha256,
+            "snapshot_sha256": freshness["snapshot_sha256"],
+            "workspace_post_snapshot_sha256": freshness["snapshot_sha256"],
+            "input_hashes": freshness["input_hashes"],
+            "collection": {
+                "nodeids_sha256": _digest(nodeids), "count": len(nodeids),
+                "files_sha256": _digest(files), "files_count": len(files),
+            },
+            "outcomes": {node: outcome for node in nodeids},
+            "scratch_post_hashes": freshness["input_hashes"],
+            "cleanup_confirmed": True, "duration_seconds": 0.01, "output": "",
+        }
+        value["receipt_sha256"] = _digest(value)
+        return value
+
+    def run_engine(self, *, include_full=True):
+        backend = CodexBackend()
+        decisions = iter([
+            self.decision(), self.decision(role="reviewer"),
+            self.decision("finish", ""),
+            *([] if include_full else [self.decision("blocked", "")]),
+        ])
+        phase_actions = [
+            self.proposal("run_local_tests", phase="red"),
+            self.proposal("write_file", path="agentkit/worker.py", content="def work(): return 2\n"),
+            self.proposal("run_local_tests", phase="targeted"),
+        ]
+        if include_full:
+            phase_actions.append(self.proposal("run_local_tests", phase="full"))
+        phase_actions.append(self.final_action())
+        actions = iter(phase_actions)
+        prompts = []
+
+        def fake_call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            if contract == "decision":
+                return next(decisions)
+            if contract == "codex_action_step":
+                return next(actions)
+            if contract == "report":
+                return self.report()
+            raise AssertionError(f"Unexpected Codex contract: {contract}")
+
+        def fake_phase(policy, workspace, phase, *, run_id, timeout, runner=None, results_dir):
+            self.assertEqual(self.phase_policy.sha256, policy.sha256)
+            self.assertEqual(self.workspace.resolve(), workspace.resolve())
+            return self.phase_receipt(phase, run_id)
+
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch.object(CodexBackend, "_call", side_effect=fake_call), \
+                patch("agentkit.phase_test_runtime.run_phase", side_effect=fake_phase):
+            state = Engine(
+                self.agent, self.workspace, backend,
+                write_policy=self.write_policy,
+                local_phase_policy=self.phase_policy,
+            ).run("Complete the verified local phase workflow")
+        return state, prompts
+
+    def test_engine_denies_production_write_before_red_without_dispatch(self):
+        self.source.write_text("def work(): return 1\n", encoding="utf-8")
+        backend = CodexBackend()
+        decisions = iter([self.decision()])
+        action = self.proposal("write_file", path="agentkit/worker.py", content="def work(): return 9\n")
+
+        def fake_call(prompt, contract, context, timeout):
+            return next(decisions) if contract == "decision" else action
+
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
+                patch.object(CodexBackend, "_call", side_effect=fake_call), \
+                patch("agentkit.phase_test_runtime.run_phase") as run_phase:
+            state = Engine(
+                self.agent, self.workspace, backend,
+                write_policy=self.write_policy, local_phase_policy=self.phase_policy,
+            ).run("Try to edit before reproducing the regression")
+
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual("def work(): return 1\n", self.source.read_text(encoding="utf-8"))
+        run_phase.assert_not_called()
+
+    def test_real_engine_phase_write_review_finish_flow_uses_private_callbacks(self):
+        state, prompts = self.run_engine(include_full=True)
+        self.assertEqual("completed", state["status"], state.get("summary"))
+        self.assertEqual("def work(): return 2\n", self.source.read_text(encoding="utf-8"))
+        attempts = state["local_phase_execution"]["attempts"]
+        self.assertEqual(["red", "targeted", "full"], [item["phase"] for item in attempts])
+        self.assertTrue(state["reviewed"])
+        self.assertTrue(all("authorize_local_mutation" not in prompt for prompt, _ in prompts))
+        self.assertTrue(all('"run_local_phase"' not in prompt for prompt, _ in prompts))
+        self.assertTrue(all('"local_phase_policy"' not in prompt for prompt, _ in prompts))
+
+    def test_missing_fresh_full_phase_cannot_finish(self):
+        state, _ = self.run_engine(include_full=False)
+        self.assertEqual("blocked", state["status"])
+        self.assertNotEqual("completed", state["status"])
+        self.assertEqual(["red", "targeted"], [item["phase"] for item in state["local_phase_execution"]["attempts"]])
+        rejected = [entry for entry in state["history"] if entry.get("completion_rejected")]
+        self.assertTrue(rejected)
+        self.assertIn("full", rejected[-1]["completion_rejected"])
+
+
+if __name__ == "__main__":
+    unittest.main()
