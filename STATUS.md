@@ -49,7 +49,8 @@ Es ist weder eine vollstaendige Marketingbot-Integration noch eine X-Freigabe.
 
 ## Naechste verbindliche Abnahme
 
-1. Vollstaendige frische Marketing-Baseline und deren Testumgebung abnehmen.
+1. Frische Marketing-Baseline liegt vor: 4.641 bestanden, elf Skips, fuenf erwartete Fehlschlaege; 321 Unit-Testdateien. [Nachweis und Browsergrenzen](docs/evidence/execution-profiles-20261017/marketing-full-baseline.json). Native Fullprojekt-Testumgebung separat abnehmen.
 2. Zeichenlimit im echten Generierungspfad angleichen und neue Regressionen pruefen.
 3. Nutzbare, interessante und quellentreue Marketingausgaben unabhaengig nachweisen.
 4. Vollstaendige isolierte Marketingbot-Integration testen; erst danach begrenzt uebernehmen.
+

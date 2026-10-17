@@ -1,0 +1,41 @@
+{
+  "schema": "agentkit-evidence/v1",
+  "scope": "Fresh complete isolated marketingbot unit baseline; no production or semantic-quality approval",
+  "baseline_commit": "40508c68f544b9f074ab78a35b9a0c440aca5b88",
+  "copied_files": 696,
+  "unit_test_files": 321,
+  "result": {
+    "exit_code": 0,
+    "passed": 4641,
+    "skipped": 11,
+    "xfailed": 5,
+    "pytest_seconds": 286.87,
+    "footer": [
+      "============================= test session starts =============================",
+      "collected 4655 items / 2 skipped",
+      "============================== warnings summary ===============================",
+      "==== 4641 passed, 11 skipped, 5 xfailed, 42 warnings in 286.87s (0:04:46) ====="
+    ]
+  },
+  "log_sha256": "ab37b0cfaf37dfe90a5fa3d1914a5f18153d879584ceef92f1854292fb7de70b",
+  "manifest_sha256": "01ed3a08204a96e51f471a19c1fb840ad59233a3366d4b8cc0ed9e98c02f6fb7",
+  "reconciled_receipt_sha256": "54ccd2fdb1e82f800817deb5f1fab8646c9506bf2a82709c73c33c5eddcebb67",
+  "integrity": {
+    "copied_files_missing": [],
+    "copied_files_changed": [],
+    "unit_py_count": 321,
+    "workspace_unit_py_count": 321,
+    "unit_py_set_equal": true,
+    "local_git_status": "",
+    "git_remote": "",
+    "local_git_head": "40508c68f544b9f074ab78a35b9a0c440aca5b88"
+  },
+  "limitations": [
+    "Installed Chrome compatibility remains unresolved; tests used pinned bundled Chromium 1223 through a test-only channel adapter.",
+    "Synthetic test configuration excludes original credentials and runtime state.",
+    "Unit baseline does not prove autonomous full-project completion, output quality, live X integration, or production readiness."
+  ],
+  "browser_executable_sha256": "290fa7018fda22c52ada5eddb0113baf3ebc41fd0fde6085eddb19793606c635",
+  "browser_adapter_sha256": "a9aa26008b674c2205ed08222ed74e9223cf5de94a059f9db6d3c034ed90f38a",
+  "reconciliation": "Execution and test logs are unchanged. The first v4 receipt pinned copy-manifest-v3, whose omitted_files retained one stale entry for test_provider_credentials_ignore.py even though the file had been copied and tested. This reconciled receipt pins copy-manifest-v4, which removes only that stale omission after verifying the copied bytes against its source hash."
+}
