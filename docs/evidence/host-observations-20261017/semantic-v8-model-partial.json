@@ -1,0 +1,33 @@
+{
+  "scope": "partial model-only comparison on previously used v7 corpus; no fresh holdout or qualification",
+  "requested_model": "anthropic/claude-sonnet-4.5",
+  "result_status": "transport_stopped",
+  "case_count": 12,
+  "case_status_counts": {
+    "accepted": 4,
+    "error": 1,
+    "not_run_after_transport_stop": 7
+  },
+  "physical_requests": 13,
+  "known_provider_cost_usd": "0.068172",
+  "reserved_usd": "1.08333329",
+  "local_cap_usd": "3.00",
+  "provider_cap_enforced": false,
+  "unknown_outcomes": 0,
+  "unknown_costs": 0,
+  "candidate_sha256": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9",
+  "reviewed_helper_sha256": "9568a38f20f406ff1fe65b753014e4194439be7bbe361a286d1c6147f7cd648b",
+  "private_result_sha256": "27acb26abaa2c490e6e0336d4411cb409c74e2c3bdcea951c6dc2f8f803b872f",
+  "accounting_audit_sha256": "b3c290d93547479fa4dbd9fb03e5d363cb129ba9834242737eb6dbfd4b2d582e",
+  "blind_judgments_sha256": "3c4d6411dde9e40f1afe66bf1bc6047ab3a8af794c9b2404162cf46d158d010e",
+  "blind_judgments": {
+    "accepted_texts_judged": 4,
+    "supported": 2,
+    "not_fully_supported": 2,
+    "ambiguous": 3,
+    "limitations": "One judge, four accepted synthetic texts; different judges between Haiku and Sonnet studies, no relative quality-rate claim."
+  },
+  "artifact_metadata_discrepancy": "Prepared record binds v8 comparison and helper; later state writes retain inherited study label v7 and lose added wrapper annotations. Raw result left unchanged; model, prepared SHA, wrapper, and independent audit identify the v8 comparison.",
+  "production_qualified": false,
+  "promoted": false
+}

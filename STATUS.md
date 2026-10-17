@@ -248,3 +248,17 @@ korrekt zu einer teilweise gefilterten Git-Beobachtung. Nach unabhaengiger
 Nachpruefung wurde der eigens gestartete lokale Server fuer die getrennte
 Korrektur der Herkunftsnachweise beendet. Original-Marketingbot unveraendert.
 [Nachweise und Grenzen](docs/evidence/execution-profiles-20261017/real-ui-profile-trial.json).
+
+## Begrenzter Modellvergleich: ebenfalls keine Qualitaetsfreigabe
+
+Eine neue Gegenprobe verwendet denselben eingefrorenen Baustein und die bekannten
+zwoelf Faelle mit angefordertem Claude Sonnet 4.5. Die unveraenderte Stopregel
+beendet sie nach 13 abgeschlossenen Aufrufen: vier akzeptierte Texte, ein
+invalid_response, sieben ungepruefte Faelle. Gemeldete Kosten 0,068172 US-Dollar,
+keine unbekannten Ausgaenge. Eine getrennte Blindpruefung bewertet zwei der vier
+Texte als nicht vollstaendig gestuetzt und drei als mehrdeutig. Verschiedene
+Grader und unvollstaendige Stichproben erlauben keinen Modellqualitaetsvergleich.
+Der finale Rohstatus traegt einen geerbten Studiennamen; Vorbereitungsbindung,
+Modell und separate Nachpruefung identifizieren die neue Gegenprobe eindeutig.
+Das Rohartefakt wird nicht nachtraeglich korrigiert. Keine Promotion.
+[Nachweise und Metadatenluecke](docs/evidence/host-observations-20261017/semantic-v8-model-partial.json).
