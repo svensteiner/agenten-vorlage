@@ -22,12 +22,22 @@ Wiederanlaufabnahme bleibt unvollstaendig: Vor dem zweiten Gesamttest ist
 keine Prozessbereinigungspruefung fuer den zuvor unbekannten Timeout belegt.
 Der spaetere erfolgreiche Test ersetzt diesen unbekannten Ausgang nicht.
 
-Als naechster Coding-Auftrag wird der [versionierte Quellenbeleg-Adapter](docs/SOURCE-EVIDENCE-V2.md)
-isoliert vorbereitet. Numerische Beleg-IDs sollen fehlerhaft abgeschriebene
+Der [versionierte Quellenbeleg-Adapter](docs/SOURCE-EVIDENCE-V2.md) wird jetzt
+im [neuen isolierten Coding-Lauf](docs/evidence/execution-profiles-20261017/marketing-evidence-native-v2-running.json)
+implementiert. Der erste Start stoppte ohne Codeaenderung an
+[fehlerhafter Startvorbereitung](docs/evidence/execution-profiles-20261017/marketing-evidence-native-stopped.json).
+Sieben Runner- und zehn Wiederholungssperren-Tests pruefen die Korrektur;
+der neue Planer hat den Entwickler tatsaechlich delegiert. Numerische Beleg-IDs sollen fehlerhaft abgeschriebene
 Quellenzitate vermeiden; semantisch falsche Belegwahl bleibt moeglich.
 Eine frische Abnahme mit tatsaechlich extrahierten RSS-Kurzquellen muss
 anschliessend brauchbare Endtexte belegen. Noch keine Implementierungs-
 oder Inhaltsfreigabe fuer diesen Entwurf.
+
+Die [frische RSS-Abnahme](docs/evidence/execution-profiles-20261017/marketing-rss-v16-prospective.json)
+ist unabhaengig auf Quellen und sichtbare Goldlabels geprueft, aber noch ohne
+Modelllauf. Die [Reparaturdiagnose](docs/evidence/execution-profiles-20261017/marketing-v16-diagnostic-tooling.json)
+besteht 67 Offline-Tests; ihre Integration mit dem neuen v2-Kandidaten ist
+noch offen. Die Diagnose veraendert keine Modellantwort oder Freigabe.
 
 ## Belegt und offen
 

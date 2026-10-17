@@ -1,0 +1,38 @@
+{
+  "schema": "marketing-evidence-native-running/v1",
+  "run_id": "515805cdc7634a8b854c2c3e1afa05e8",
+  "status": "running; developer delegated",
+  "execution_session": 74962,
+  "requested_routing": {
+    "primary": "gpt-6-luna",
+    "reviewer": "gpt-6-sol",
+    "recovery": "gpt-6-sol"
+  },
+  "baseline_files": 697,
+  "pack_files": 21,
+  "immutable_runtime_inputs_root_audited": 60,
+  "runner_tests_passed": 7,
+  "no_replay_guard_tests_passed": 10,
+  "limits": {
+    "call_timeout": 1200,
+    "max_failures": 4,
+    "max_seconds": 3600,
+    "max_steps": 16
+  },
+  "test_timeout_seconds": 720,
+  "authorized_task_sha256": "39b78c537f45e43cfa7a7a367d480d9c57035f64b3547edeba05e66c3ef01104",
+  "artifacts_sha256": {
+    "preparation.json": "599345d78c814c4c58ddd7287c7cecf3d8e5c0fb2c3430c413b30239490ca70b",
+    "independent-preflight.json": "0c513b4a7bbc90de9f5ca144932b5d0a3566247e2535a5f26996a915ecb29f73",
+    "root-authorization.json": "94bc911525e68048eda691b39567887c7774f58bd3dd6e5516a0b564b58249b8",
+    "root-runtime-before.json": "86dde31eafb804a0103e386e83960f95c5f2f9610c94a44cae85164de540046b",
+    "dispatch.json": "05a5025c6ef2e49f35d8b682b362a03f1276c4735c2fc2709999ecf73b914c69"
+  },
+  "prior_attempt": "marketing-evidence-native-stopped.json",
+  "limitations": [
+    "Live in isolated clone; no original Marketingbot changes.",
+    "No implementation, final test, content quality or production pass yet.",
+    "Worker-writable helper and pins require external pre/post audit.",
+    "Requested model routing does not attest served model or cost."
+  ]
+}

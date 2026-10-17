@@ -1,0 +1,10 @@
+{
+  "schema": "marketing-v16-diagnostic-tooling/v1",
+  "offline_passed": 67,
+  "independent_review_sha256": "41d846b50a4678b7ff7a8453e523d312dd820d14a81c76c936f81f7b2e6eaa03",
+  "helper_sha256": "fd03aab52246948e87186b5e2aa0b67f0004f0618c9bc2dcd8e4d596f841fc96",
+  "test_sha256": "ea8284bfc2af0c52599099c84455ceeadb842a6826afe84b8642bfbf3fbff677",
+  "scope": "Non-authorizing repair decoder diagnostics: fixed categories, request indices and counts; original result/exception preserved and wrappers restored.",
+  "limitation": "Integration fixture is pre-v2. Actual v2 candidate/wire adaptation, full source qualification and paid dispatch are not ready.",
+  "withdrawn_claim": "Premature 54-test frozen handoff preceded final repair instrumentation; Root caught changed hashes. Only final67 and recorded final hashes qualify this tooling."
+}
