@@ -1,0 +1,41 @@
+{
+  "schema": "marketing-evidence-native-terminal/v1",
+  "run_id": "515805cdc7634a8b854c2c3e1afa05e8",
+  "status": "blocked",
+  "steps": 2,
+  "failures": 1,
+  "reviewed": false,
+  "stop_reason": "ContractError: Subprocess output exceeded its bounded capture limit.",
+  "worker_outcome": "unknown; in_flight checkpoint preserved; no resume or replay authorized by this evidence",
+  "full_test": {
+    "receipt_id": "6e792f4b1be14b19bc0f9e9895830a97",
+    "receipt_sha256": "f04c53c96a1f662ba632b9df02e47491e19c5444aee113d4cdbb28893bfb0845",
+    "outcome": "completed",
+    "exit_code": 1,
+    "passed": 4714,
+    "failed": 1,
+    "skipped": 11,
+    "xfailed": 5,
+    "failing_test": "tests/unit/test_source_draft_contract.py::test_normal_news_retries_and_gate_share_one_budget",
+    "post_test_fixture_edit": "not retested"
+  },
+  "independent_blockers": [
+    "Sources longer than 512 characters produce offset IDs [1,513] instead of ordinal fragment IDs; schema rejects them.",
+    "Raw Anthropic schema contains unsupported maxItems constraints; static compatibility finding, no live provider failure claimed."
+  ],
+  "artifact_sha256": {
+    "terminal-result.json": "1ee8cf94a5a074bece4ce54087ed92a7253546485c436080f550b0882a59d7b7",
+    "post-engine-integrity.json": "7efd66a82f6aa0a59809f91780c5c44e8cc21cc671204fef9370bbf42f47f761",
+    "root-post-blocked-audit.json": "671facd682ddf476a5e4823fcdd47f1156f653351d70ac4b1a60e26c06cdb963",
+    "candidate-independent-review-v2.json": "ecefd003264ca25ef55b32f0aff322820ab168b277217963bcb6ea25cc8bad76",
+    "root-long-source-probe.json": "a546c07b174cd2e252d651ba2c224953c45acbae21ae4c73096fb53ae34fcace"
+  },
+  "limitations": [
+    "No implementation or production acceptance.",
+    "No content quality study on this candidate.",
+    "Original Marketingbot unchanged.",
+    "All four production hashes match completed full-test receipt; one test fixture was edited afterward.",
+    "Runtime inputs unchanged at stop, before subsequent separate harness correction.",
+    "CLI console capture stopped report collection; completed test result does not prove worker process-tree cleanup."
+  ]
+}
