@@ -1,0 +1,78 @@
+{
+  "scope": "real native extracted Marketingbot component task; not full project or production acceptance",
+  "native_outcome": {
+    "cost_usd": null,
+    "failures": 0,
+    "independent_review_required": true,
+    "integrity": {
+      "allowed_source_sha256": {
+        "content/source_faithfulness.py": "eaa2829dd393d12e9c4b22b29ef392c1a6a3a3c974b572139052cf53e859b6a9"
+      },
+      "diff_paths": [
+        "content/source_faithfulness.py"
+      ],
+      "git_controls_unchanged": true,
+      "host_lock_unchanged": true,
+      "immutable_pack_unchanged": true,
+      "only_allowed_source_changed": true,
+      "protected_unchanged": true,
+      "runtime_unchanged": true
+    },
+    "models": {
+      "primary": "gpt-6-sol",
+      "reviewer": "gpt-6-sol"
+    },
+    "native_status": "completed",
+    "passed": false,
+    "physical_provider_requests": null,
+    "reviewed": true,
+    "run_id": "35183febdb0b4bf7a0de5f20709c5a52",
+    "status": "complete",
+    "steps": 3,
+    "test_execution_runs": 2
+  },
+  "latest_host_test_receipt": {
+    "status": "passed",
+    "run_id": "35183febdb0b4bf7a0de5f20709c5a52",
+    "reason": "ok",
+    "exit_code": 0,
+    "policy_sha256": "138d6b99be5edd5a34b23e5200690d17f778acbfb1189f9a85dfa41896c9cbf7",
+    "test_manifest_sha256": "138d6b99be5edd5a34b23e5200690d17f778acbfb1189f9a85dfa41896c9cbf7",
+    "test_paths": [
+      "tests/unit/test_source_faithfulness_contract.py",
+      "tests/unit/test_source_faithfulness_protocol.py",
+      "tests/unit/test_source_faithfulness_wire_contract.py"
+    ],
+    "expected_test_count": 79,
+    "test_outcomes": {
+      "passed": 79,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0,
+      "deselected": 0
+    },
+    "image_ref": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+    "image_id": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+    "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+    "snapshot_sha256": "2c5fa2cce21e2d94671e3cfa7b77f5ef405c1af112383f3873de53d2faba1842",
+    "workspace_fingerprint": "edd161ae78b6f98ce4fe6397c96201767b1280d83d3ec91cede9c57834981771",
+    "duration_seconds": 9.188,
+    "cleanup_confirmed": true
+  },
+  "private_outcome_sha256": "916488aea7314a0f7b506b399a3ddac42de8381dff7d61d483b40d12862a6a57",
+  "private_checkpoint_sha256": "6ab16f42446a362f47ed7c6c95c19fcdc11a80e6d1ec219a6555e6b5d3f0acd4",
+  "native_completed_actions": 5,
+  "external_independent_audit": {
+    "status": "reviewed: extracted task satisfied; all integrity pins verified",
+    "private_audit_sha256": "c4d86e6203938ab325e0ad253fddd70dd2968d6b2d5c507b288d99071612d8c1",
+    "scope": "final diff, baseline, six protected files, 27 runtime files, 21 immutable pack files, host controls and fresh final 79-test receipt"
+  },
+  "semantic_acceptance": false,
+  "marketing_integration_acceptance": false,
+  "production_acceptance": false,
+  "comparison_limits": "One fresh gpt-6-sol requested-model trial completed where earlier gpt-6-luna trials blocked. Served model and provider costs are not independently measured; no reliability rate or sole causal attribution follows.",
+  "observation_evidence_limit": "Host observation outputs/call records are not persisted in checkpoint; their use is reported by the worker and reviewer, not independently proven by retained call telemetry.",
+  "test_freshness": "Two host test runs recorded; latest run is after final edit and matches final workspace fingerprint. Earlier run predates final prompt edit."
+}

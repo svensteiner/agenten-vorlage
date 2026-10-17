@@ -12,6 +12,19 @@ planen, ausfuehren, pruefen und nacharbeiten. Tests, kritische Abnahme, guenstig
 Modelle und GitHub-Pushes sind verbindlich. Die Mietplattform ist zurueckgestellt.
 **Gesamtziel noch nicht nachgewiesen; keine Produktionsfreigabe.**
 
+
+Aktueller Nachweis: Ein neuer echter Coding-Lauf mit angefordertem gpt-6-sol
+schliesst den extrahierten Marketingbot-Auftrag in drei Schritten ohne Fehler ab.
+Er berichtet Hostbeobachtungen, aendert nur die freigegebene Quelldatei, besteht die
+vollstaendige gepinnte Suite zweimal mit je 79 Tests und erhaelt ein separates
+read-only Review. Alle Schutzdateien und die Runtime bleiben unveraendert.
+Die unabhaengige Nachpruefung bestaetigt den finalen Diff, alle Schutzbindungen
+und den frischen 79-Test-Nachweis nach dem letzten Edit. Persistierte Telemetrie
+fuer die berichteten Leseaufrufe fehlt. Die neue semantische Pruefung,
+Marketing-Vollintegration und Produktionsabnahme bleiben offen.
+[Originalnachweise und Grenzen](docs/evidence/host-observations-20261017/native-task-sol-attempt.json).
+Auch GitHub-Lauf 39006656908 auf main 11fabf9 ist vollstaendig erfolgreich.
+
 ## Jetzt implementiert
 
 Die CLI/Python-API hat eine unveraenderliche genaue Schreibdateiliste:
