@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import tempfile
 import threading
@@ -364,3 +366,366 @@ class BrowserReleaseTests(unittest.TestCase):
             state="visible", timeout=5_000
         )
         self.assertEqual([], console_errors)
+
+
+@unittest.skipUnless(sync_playwright is not None, "install the e2e extra and Playwright Chromium")
+class ExecutionProfileBrowserJourneyTests(unittest.TestCase):
+    """UI/HTTP contract fixture; the scripted backend is not an agent-quality pass."""
+
+    @classmethod
+    def setUpClass(cls):
+        from cockpit.server import JobManager, ThreadingHTTPServer, make_handler
+
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temp.name)
+        cls.agents_root = cls.root / "agents"
+        cls.agent = create(cls.agents_root / "profile-agent", "developer", "profile-agent", "E2E")
+        cls.other_agent = create(cls.agents_root / "other-agent", "developer", "other-agent", "E2E")
+        cls.workspace = cls.root / "project"
+        cls.workspace.mkdir()
+        cls.other_workspace = cls.root / "other-project"
+        cls.other_workspace.mkdir()
+
+        path_manager = JobManager(
+            template_root=cls.root,
+            state_dir=cls.root / "path-state",
+            agent_roots=(cls.agents_root,),
+            generated_root=cls.agents_root,
+        )
+        cls.agent_ref = path_manager._agent_reference(path_manager._agent_path(str(cls.agent)))
+        cls.other_agent_ref = path_manager._agent_reference(
+            path_manager._agent_path(str(cls.other_agent))
+        )
+        cls.workspace_ref = path_manager._workspace_reference(
+            path_manager._workspace_path(str(cls.workspace))
+        )
+        cls.other_workspace_ref = path_manager._workspace_reference(
+            path_manager._workspace_path(str(cls.other_workspace))
+        )
+
+        test_bytes = b"def test_smoke():\n    assert True\n"
+        test_file = cls.workspace / "tests" / "test_smoke.py"
+        test_file.parent.mkdir()
+        test_file.write_bytes(test_bytes)
+        cls.test_manifest = cls.root / "operator-tests.json"
+        cls.test_manifest.write_text(json.dumps({
+            "version": 1,
+            "image_ref": "python@sha256:" + "a" * 64,
+            "image_id": "sha256:" + "b" * 64,
+            "dependency_lock_sha256": "c" * 64,
+            "docker_transport": "native",
+            "test_files": [{
+                "path": "tests/test_smoke.py",
+                "sha256": hashlib.sha256(test_bytes).hexdigest(),
+            }],
+            "support_files": [],
+            "expected_test_count": 1,
+            "snapshot_paths": ["tests/test_smoke.py"],
+        }), encoding="utf-8")
+        cls.profile_path = cls.root / "execution-profiles.json"
+        cls.profile_path.write_text(json.dumps({
+            "version": 1,
+            "profiles": [{
+                "id": "profile-agent-safe",
+                "label": "Profile Agent · bounded test profile",
+                "agent": cls.agent_ref,
+                "workspace": cls.workspace_ref,
+                "backend": "codex",
+                "write_paths": ["notes.md"],
+                "test_manifest": str(cls.test_manifest),
+                "host_autonomous": True,
+            }],
+        }), encoding="utf-8")
+
+        cls.manager = JobManager(
+            template_root=cls.root,
+            state_dir=cls.root / "state",
+            agent_roots=(cls.agents_root,),
+            generated_root=cls.agents_root,
+            execution_profiles_path=cls.profile_path,
+        )
+        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(cls.manager))
+        cls.server_thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.server_thread.start()
+        cls.base_url = f"http://127.0.0.1:{cls.server.server_port}"
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch(headless=True)
+        cls.artifact_dir = Path(__file__).resolve().parents[1] / ".diagnostics" / "execution-profile-browser"
+        cls.artifact_dir.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.server_thread.join(timeout=5)
+        for job in cls.manager.recent(1000):
+            if job.thread:
+                job.thread.join(timeout=5)
+        cls.browser.close()
+        cls.playwright.stop()
+        cls.temp.cleanup()
+
+    def setUp(self):
+        self.context = self.browser.new_context(viewport={"width": 1280, "height": 900})
+        self.context.tracing.start(screenshots=True, snapshots=True, sources=True)
+        self.page = self.context.new_page()
+        self.console_errors = []
+        self.page.on("console", lambda message: self.console_errors.append(message.text)
+                     if message.type == "error" else None)
+        self.page.on("pageerror", lambda error: self.console_errors.append(f"pageerror: {error}"))
+        self.addCleanup(self._close_page)
+
+    def _close_page(self):
+        try:
+            self.page.screenshot(
+                path=str(self.artifact_dir / "execution-profile-final.png"), full_page=True
+            )
+        finally:
+            self.context.tracing.stop(
+                path=str(self.artifact_dir / "execution-profile-journey.zip")
+            )
+            self.context.close()
+
+    def _select_profile(self, path: str, *, assert_chips: bool = False):
+        page = self.page
+        page.locator("#agent").select_option(path)
+        page.locator("#backend").select_option("codex")
+        page.locator("#workspace").fill(self.workspace_ref)
+        option = page.locator('#executionProfile option[value="profile-agent-safe"]')
+        option.wait_for(state="attached", timeout=5_000)
+        page.locator("#executionProfile").select_option("profile-agent-safe")
+        self.assertIn("notes.md", page.locator("#executionProfile option:checked").inner_text())
+        self.assertIn("Tests: 1", page.locator("#executionProfile option:checked").inner_text())
+        self.assertIn("Gebunden an profile-agent", page.locator("#executionProfileHint").inner_text())
+        self.assertIn("Hostprofil", page.locator("#executionProfileHint").inner_text())
+        self.assertEqual(path, page.locator("#agent").input_value())
+        self.assertEqual("codex", page.locator("#backend").input_value())
+        self.assertEqual(self.workspace_ref, page.locator("#workspace").input_value())
+        if assert_chips:
+            self._assert_profile_chips()
+
+    def _assert_profile_chips(self):
+        chips = self.page.locator("#conversationChips .chip")
+        self.assertEqual("profile-agent", chips.nth(0).inner_text())
+        self.assertEqual("Codex CLI", chips.nth(1).inner_text())
+        self.assertEqual(self.workspace_ref, chips.nth(2).inner_text())
+        self.assertIn("Profile Agent", chips.nth(3).inner_text())
+
+    def test_curated_profile_journey_and_recovery_payload_binding(self):
+        from unittest.mock import patch
+
+        class ScriptedBackend:
+            """Deterministic fixture that blocks, then blocks again after resume."""
+            name = "codex"
+            supports_action_approvals = True
+            supports_write_policy = True
+            supports_isolated_tests = True
+            approval_identity = "scripted-ui-contract-fixture"
+
+            def __init__(self, model=None):
+                self.model = model
+
+            @staticmethod
+            def decide(context, timeout):
+                history = context["history"]
+                if not history or (history[-1].get("report", {}).get("status") == "blocked"
+                                   and context.get("feedback")):
+                    return {"action": "delegate", "role": "developer", "skills": [],
+                            "task": "scripted contract step", "reason": "browser fixture"}
+                if history[-1].get("decision", {}).get("role") == "developer":
+                    return {"action": "delegate", "role": "reviewer", "skills": [],
+                            "task": "scripted contract review", "reason": "browser fixture"}
+                return {"action": "blocked", "role": "", "skills": [],
+                        "task": "Fixture intentionally blocks; no agent result is claimed.",
+                        "reason": "browser fixture"}
+
+            @staticmethod
+            def execute(decision, context, timeout):
+                return {"status": "blocked", "summary": "Fixture intentionally blocks for recovery testing.",
+                        "artifacts": [], "evidence": ["scripted fixture only"],
+                        "next_actions": ["Resume the same bound job in this test."]}
+
+        page = self.page
+        with patch("cockpit.server.CodexBackend", ScriptedBackend), patch(
+            "cockpit.server.codex_readiness",
+            return_value={"installed": True, "credentials_present": True,
+                          "sandbox_configured": True},
+        ):
+            page.goto(self.base_url + "/", wait_until="domcontentloaded")
+            page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+            page.locator("#executionProfileField").wait_for(state="visible")
+
+            self._select_profile(self.agent_ref)
+            page.screenshot(path=str(self.artifact_dir / "execution-profile-index-selected.png"),
+                            full_page=True)
+
+            # The profile is offered only for its exact host-bound triple.
+            page.locator("#workspace").fill(self.other_workspace_ref)
+            self.assertEqual(0, page.locator('#executionProfile option[value="profile-agent-safe"]').count())
+            page.locator("#workspace").fill(self.workspace_ref)
+            page.locator("#backend").select_option("demo")
+            self.assertEqual(0, page.locator('#executionProfile option[value="profile-agent-safe"]').count())
+            page.locator("#backend").select_option("codex")
+            page.locator("#agent").select_option(self.other_agent_ref)
+            self.assertEqual(0, page.locator('#executionProfile option[value="profile-agent-safe"]').count())
+            self._select_profile(self.agent_ref)
+
+            forged = page.request.post(self.base_url + "/api/jobs", data={
+                "agent": self.agent_ref, "workspace": self.workspace_ref, "backend": "codex",
+                "task": "must be rejected", "request_id": "d" * 32,
+                "execution_profile_id": "profile-agent-safe", "write_paths": ["outside.py"],
+                "test_manifest": str(self.test_manifest), "host_autonomous": False,
+            })
+            self.assertEqual(400, forged.status)
+            self.assertIsNone(self.manager.get("d" * 32))
+
+            page.locator("#task").fill("Exercise curated-profile request and resume binding.")
+            with page.expect_response(
+                lambda response: response.url == self.base_url + "/api/jobs"
+                and response.request.method == "POST", timeout=10_000,
+            ) as started:
+                page.locator("#run").click()
+            start_response = started.value
+            self.assertEqual(202, start_response.status)
+            job = start_response.json()
+            job_id = job["job_id"]
+            start_payload = json.loads(start_response.request.post_data)
+            self.assertEqual("profile-agent-safe", start_payload["execution_profile_id"])
+            self.assertNotIn("require_approvals", start_payload)
+            self.assertFalse(set(start_payload) & {
+                "execution_profile_sha256", "write_policy", "test_execution_policy",
+                "write_paths", "test_manifest", "host_autonomous",
+            })
+            self.assertEqual(self.agent_ref, start_payload["agent"])
+            self.assertEqual(self.workspace_ref, start_payload["workspace"])
+            self.assertEqual("codex", start_payload["backend"])
+
+            page.wait_for_function(
+                "id => fetch(`/api/jobs/${id}`).then(r => r.json()).then(j => j.status === 'blocked')",
+                arg=job_id, timeout=10_000,
+            )
+            page.locator("#resumeForm").wait_for(state="visible", timeout=5_000)
+            self.assertEqual("profile-agent-safe", self.manager.get(job_id).payload["execution_profile_id"])
+            page.locator("#feedback").fill("Resume the same profile-bound run.")
+            with page.expect_response(
+                lambda response: response.url.endswith(f"/api/jobs/{job_id}/resume")
+                and response.request.method == "POST", timeout=10_000,
+            ) as resumed:
+                page.locator("#resume").click()
+            resume_response = resumed.value
+            self.assertEqual(202, resume_response.status)
+            resume_payload = json.loads(resume_response.request.post_data)
+            self.assertEqual({"feedback", "acknowledge_interruption"}, set(resume_payload))
+            self.assertNotIn("execution_profile_id", resume_payload)
+            page.wait_for_function(
+                "id => fetch(`/api/jobs/${id}`).then(r => r.json()).then(j => j.status === 'blocked')",
+                arg=job_id, timeout=10_000,
+            )
+            self.assertEqual("profile-agent-safe", self.manager.get(job_id).payload["execution_profile_id"])
+            self.assertTrue(self.manager.get(job_id).payload["execution_profile_sha256"])
+
+            # Conversation creation sends just the profile ID; persisted metadata
+            # survives a page reload, while the worker remains a blocking fixture.
+            page.goto(self.base_url + "/chat", wait_until="domcontentloaded")
+            page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+            page.locator("#settingsCard").wait_for(state="visible", timeout=5_000)
+            self._select_profile(self.agent_ref, assert_chips=True)
+            page.locator("#title").fill("Profile persistence fixture")
+            page.locator("#message").fill("Create a conversation with the selected host profile.")
+            page.screenshot(path=str(self.artifact_dir / "execution-profile-chat-selected.png"),
+                            full_page=True)
+            with page.expect_response(
+                lambda response: response.url == self.base_url + "/api/conversations"
+                and response.request.method == "POST", timeout=10_000,
+            ) as created:
+                page.locator("#send").click()
+            create_response = created.value
+            self.assertEqual(201, create_response.status)
+            conversation = create_response.json()
+            conversation_id = conversation["id"]
+            create_payload = json.loads(create_response.request.post_data)
+            self.assertEqual("profile-agent-safe", create_payload["execution_profile_id"])
+            self.assertFalse(set(create_payload) & {
+                "execution_profile_sha256", "write_policy", "test_execution_policy",
+                "write_paths", "test_manifest", "host_autonomous",
+            })
+            self.assertEqual("profile-agent-safe", conversation["execution_profile"]["id"])
+            self.assertEqual(["notes.md"], conversation["execution_profile"]["write_paths"])
+            self.assertEqual(1, conversation["execution_profile"]["tests"]["expected_test_count"])
+
+            page.wait_for_function(
+                "() => document.querySelector('#transcript')?.textContent.includes('Klärung erforderlich')",
+                timeout=10_000,
+            )
+            page.reload(wait_until="domcontentloaded")
+            page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+            page.wait_for_function(
+                "() => !document.querySelector('#conversationView')?.hidden "
+                "&& document.querySelector('#conversationTitle')?.textContent === 'Profile persistence fixture'",
+                timeout=10_000,
+            )
+            page.wait_for_function(
+                "id => fetch(`/api/conversations/${id}`).then(r => r.json()).then(c => "
+                "c.execution_profile?.id === 'profile-agent-safe')",
+                arg=conversation_id, timeout=10_000,
+            )
+            persisted = page.request.get(self.base_url + f"/api/conversations/{conversation_id}").json()
+            self.assertEqual("profile-agent-safe", persisted["execution_profile"]["id"])
+            self._assert_profile_chips()
+            page.screenshot(path=str(self.artifact_dir / "execution-profile-chat-reloaded.png"),
+                            full_page=True)
+
+            page.evaluate("pending => sessionStorage.setItem('ai-studio-chat-pending', JSON.stringify(pending))", {
+                "kind": "conversation", "request_id": "f" * 32, "signature": "fixture",
+                "payload": {
+                    "agent": self.agent_ref, "workspace": self.workspace_ref,
+                    "backend": "codex", "model": "", "title": "Recovered profile draft",
+                    "execution_profile_id": "profile-agent-safe", "content": "Recovered draft",
+                    "attachments": [],
+                },
+            })
+            page.reload(wait_until="domcontentloaded")
+            page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+            page.wait_for_function(
+                "() => !document.querySelector('#conversationView')?.hidden "
+                "&& document.querySelector('#title')?.value === 'Recovered profile draft'",
+                timeout=10_000,
+            )
+            self.assertEqual(self.agent_ref, page.locator("#agent").input_value())
+            self.assertEqual("codex", page.locator("#backend").input_value())
+            self.assertEqual(self.workspace_ref, page.locator("#workspace").input_value())
+            self.assertEqual("profile-agent-safe", page.locator("#executionProfile").input_value())
+            self._assert_profile_chips()
+
+            conversation_posts = []
+            page.on("request", lambda request: conversation_posts.append(request.url)
+                    if request.method == "POST" and request.url.endswith("/api/conversations") else None)
+            page.evaluate("pending => sessionStorage.setItem('ai-studio-chat-pending', JSON.stringify(pending))", {
+                "kind": "conversation", "request_id": "1" * 32, "signature": "missing-profile-fixture",
+                "payload": {
+                    "agent": self.agent_ref, "workspace": self.workspace_ref,
+                    "backend": "codex", "model": "", "title": "Unavailable profile draft",
+                    "execution_profile_id": "profile-no-longer-registered", "content": "Do not auto-send",
+                    "attachments": [],
+                },
+            })
+            page.reload(wait_until="domcontentloaded")
+            page.get_by_text("Lokal verbunden", exact=True).wait_for(timeout=10_000)
+            page.wait_for_function(
+                "() => !document.querySelector('#conversationView')?.hidden "
+                "&& document.querySelector('#title')?.value === 'Unavailable profile draft'",
+                timeout=10_000,
+            )
+            self.assertEqual("", page.locator("#executionProfile").input_value())
+            self.assertNotIn("Profile Agent", page.locator("#conversationChips").inner_text())
+            self.assertIn("nicht mehr verfügbar", page.locator("#notice").inner_text())
+            self.assertIn("nicht bestätigte Dialogerstellung", page.locator("#notice").inner_text())
+            self.assertEqual([], conversation_posts)
+
+            forged_conversation = page.request.post(self.base_url + "/api/conversations", data={
+                "request_id": "e" * 32, "agent": self.agent_ref, "workspace": self.workspace_ref,
+                "backend": "codex", "title": "forgery", "execution_profile_id": "profile-agent-safe",
+                "write_paths": ["outside.py"],
+            })
+            self.assertEqual(400, forged_conversation.status)
+            self.assertEqual([], self.console_errors)

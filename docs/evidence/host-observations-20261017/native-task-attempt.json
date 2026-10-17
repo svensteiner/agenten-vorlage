@@ -1,0 +1,26 @@
+{
+  "run_id": "947156d972c94e88b188c477c60de28d",
+  "scope": "real native extracted Marketingbot component task; no fullproject or semantic acceptance",
+  "engine_status": "blocked",
+  "recorded_runner_native_status": "completed_but_integrity_failed",
+  "steps": 4,
+  "failures": 4,
+  "test_execution_runs": 0,
+  "reviewed": false,
+  "source_changed": false,
+  "protected_workspace_files_unchanged": 6,
+  "source_sha256_after": "65e6268aaede7b0e2caa9054b7138787961ddf647562f1707207db33319395fe",
+  "failure": "worker reports host schema observation actions absent from native CLI tool list; no action executed",
+  "integrity_report_explanation": "original runner flags untracked .agentkit.lock as outside permitted source; independent audit identifies Engine workspace lock; original failure record not overwritten or reclassified successful",
+  "post_terminal_runtime_change": "root explicitly assigned prompt-only correction after native session24710 terminal; current backend hash differs from run pin intentionally after run",
+  "automatic_replay": false,
+  "adapter_or_provider_request_count": null,
+  "reported_usd": null,
+  "production_ready": false,
+  "private_artifact_sha256": {
+    "outcome": "51ad3f8e45d944fd31124a0b29bb2fb7cf89fc787861b010132dda1836a6356c",
+    "checkpoint": "d13c58da12aa8022ae570d89e92d093d28883dddec7e71b41ba516078e4f0e64",
+    "audit": "6ab9bcc87bd3a37e32997225ec333d171cd15292efd574690783e74d9f5d835b",
+    "runtime_followup_audit": "519336f1b0748a3e20f750756aa528079076b73be945402a719af643c0a72fc1"
+  }
+}

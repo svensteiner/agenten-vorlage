@@ -50,6 +50,7 @@ from cockpit.assistant_instructions import (  # noqa: E402
     validate_text,
 )
 from cockpit.github_connector import preview_file  # noqa: E402
+from cockpit.execution_profiles import ExecutionProfileRegistry  # noqa: E402
 
 
 @dataclass
@@ -78,6 +79,7 @@ class Job:
             "parent_job_id": self.payload.get("parent_job_id"),
             "conversation_id": self.payload.get("conversation_id"),
             "require_approvals": self.payload.get("require_approvals", False),
+            "execution_profile_id": self.payload.get("execution_profile_id", ""),
             "assistant_revision": self.payload.get("core_sha256", ""),
         }
 
@@ -103,6 +105,7 @@ class JobManager:
         preferred_agent: str = "",
         preferred_backend: str = "",
         starter_task: str = "",
+        execution_profiles_path: Path | None = None,
     ):
         self.template_root = template_root.resolve()
         self.agent_roots = tuple(
@@ -151,6 +154,12 @@ class JobManager:
         self._mutation_writer = mutation_writer
         self._storage_writer = storage_writer
         self._coordination_reserver = coordination_reserver
+        if self.public_mode and execution_profiles_path is not None:
+            raise ContractError("Host execution profiles are unavailable in public mode.")
+        self.execution_profile_registry = (
+            ExecutionProfileRegistry(self, execution_profiles_path)
+            if execution_profiles_path is not None else None
+        )
         self.state_dir = (state_dir or self.template_root / "cockpit" / ".runs").resolve()
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.providers = ProviderSettings(self.state_dir)
@@ -254,6 +263,32 @@ class JobManager:
         if not (candidate / "agent.json").is_file():
             raise ContractError("Agent pack is missing agent.json.")
         return candidate
+
+    def resolve_execution_profile(self, profile_id: str, agent: str, workspace: str,
+                                  backend: str, *, expected_digest: str | None = None):
+        if not profile_id:
+            if expected_digest:
+                raise ContractError("A profile digest cannot be used without a profile ID.")
+            return None
+        if self.execution_profile_registry is None:
+            raise ContractError("No host execution profiles are configured.")
+        return self.execution_profile_registry.resolve(
+            profile_id, agent, workspace, backend, expected_digest=expected_digest
+        )
+
+    def _bound_execution_profile(self, payload: dict[str, Any]):
+        profile_id = payload.get("execution_profile_id", "")
+        digest = payload.get("execution_profile_sha256", "")
+        if not isinstance(profile_id, str) or not isinstance(digest, str):
+            raise ContractError("Invalid stored execution-profile binding.")
+        if not profile_id:
+            if digest:
+                raise ContractError("A profile digest cannot be used without a profile ID.")
+            return None
+        return self.resolve_execution_profile(
+            profile_id, payload.get("agent", ""), payload.get("workspace", ""),
+            payload.get("backend", ""), expected_digest=digest,
+        )
 
     def _agent_reference(self, path: Path) -> str:
         return Catalog(path).config["id"] if self.public_mode else str(path)
@@ -523,6 +558,7 @@ class JobManager:
             agent_path = self._agent_path(job.payload["agent"])
             workspace = self._workspace_path(job.payload["workspace"])
             backend_name = job.payload.get("backend", "demo")
+            profile = self._bound_execution_profile(job.payload)
             if backend_name not in self.allowed_backends:
                 raise ContractError("Backend is disabled by the execution isolation policy.")
             model = job.payload.get("model") or None
@@ -560,12 +596,19 @@ class JobManager:
                 raise ContractError("Invalid run identity.")
             checkpoint = agent_path / ".runs" / run_id
             run_dir = checkpoint if (checkpoint / "state.json").is_file() else None
-            result = Engine(agent_path, workspace, backend,
-                            require_approvals=backend_name in {"codex", "deepseek", "api", "anthropic", "ollama"} or job.payload.get("require_approvals", False),
-                            core_snapshot=job.payload.get("core_snapshot"),
-                            mutation_writer=self._mutation_writer,
-                            state_writer=self._storage_writer,
-                            coordination_reserver=self._coordination_reserver).run(
+            engine_options: dict[str, Any] = {
+                "require_approvals": (not profile.host_autonomous if profile else
+                    backend_name in {"codex", "deepseek", "api", "anthropic", "ollama"}
+                    or job.payload.get("require_approvals", False)),
+                "core_snapshot": job.payload.get("core_snapshot"),
+                "mutation_writer": self._mutation_writer,
+                "state_writer": self._storage_writer,
+                "coordination_reserver": self._coordination_reserver,
+            }
+            if profile is not None:
+                engine_options["write_policy"] = profile.write_policy
+                engine_options["test_execution_policy"] = profile.test_execution_policy
+            result = Engine(agent_path, workspace, backend, **engine_options).run(
                 job.payload.get("execution_task", job.payload["task"]),
                 run_dir=run_dir,
                 new_run_id=run_id if run_dir is None else None,
@@ -584,14 +627,24 @@ class JobManager:
             self._set_status(job, "error", error=f"{type(exc).__name__}: {exc}")
 
     def start(self, payload: dict[str, Any], *, conversation_id: str = "", execution_task: str = "",
-              core_snapshot: str | None = None) -> Job:
+              core_snapshot: str | None = None,
+              execution_profile_sha256: str | None = None) -> Job:
         if "core_snapshot" in payload:
             raise ContractError("core_snapshot is internal and cannot be supplied in a client payload.")
+        if any(key in payload for key in ("execution_profile_sha256", "write_policy", "test_execution_policy",
+                                          "write_paths", "test_manifest", "host_autonomous", "policy_file")):
+            raise ContractError("Execution rights are host-owned; select only an execution_profile_id.")
         if core_snapshot is not None and not isinstance(core_snapshot, str):
             raise ContractError("core_snapshot must be text.")
+        if execution_profile_sha256 is not None and (
+            not isinstance(execution_profile_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", execution_profile_sha256)
+        ):
+            raise ContractError("Invalid internal execution-profile digest.")
         if not isinstance(payload.get("require_approvals", False), bool):
             raise ContractError("require_approvals must be boolean.")
-        for key in ("agent", "workspace", "task", "backend", "model", "parent_job_id", "request_id"):
+        for key in ("agent", "workspace", "task", "backend", "model", "parent_job_id", "request_id",
+                    "execution_profile_id"):
             if key in payload and not isinstance(payload[key], str):
                 raise ContractError(f"{key} must be text.")
         backend_name = payload.get("backend", "demo")
@@ -613,6 +666,15 @@ class JobManager:
         workspace_path = self._workspace_path(str(payload.get("workspace", "")))
         agent_reference = self._agent_reference(agent_path)
         workspace_reference = self._workspace_reference(workspace_path)
+        profile_id = payload.get("execution_profile_id", "")
+        if profile_id and "require_approvals" in payload:
+            raise ContractError("A selected execution profile owns its approval mode.")
+        profile = self.resolve_execution_profile(
+            profile_id, agent_reference, workspace_reference, backend_name,
+            expected_digest=execution_profile_sha256,
+        )
+        if profile is not None:
+            require_approvals = not profile.host_autonomous
         request_id = payload.get("request_id", "")
         if request_id and not re.fullmatch(r"[0-9a-f]{32}", request_id):
             raise ContractError("request_id must be 32 lowercase hexadecimal characters.")
@@ -624,12 +686,15 @@ class JobManager:
                     raise ContractError("request_id was already used with a different assistant instruction snapshot.")
                 # Retries return the durable original snapshot; they never
                 # reread SOUL.md after the first reservation.
-                fields = ("agent", "workspace", "backend", "model", "task", "parent_job_id", "conversation_id")
+                fields = ("agent", "workspace", "backend", "model", "task", "parent_job_id",
+                          "conversation_id", "execution_profile_id", "execution_profile_sha256")
                 proposed = {
                     "agent": agent_reference, "workspace": workspace_reference,
                     "backend": str(payload.get("backend", "demo")), "model": str(payload.get("model", "")),
                     "task": task.strip(), "parent_job_id": payload.get("parent_job_id", ""),
                     "conversation_id": conversation_id,
+                    "execution_profile_id": profile.id if profile else "",
+                    "execution_profile_sha256": profile.sha256 if profile else "",
                 }
                 mismatch = any(existing.payload.get(key, "") != proposed.get(key, "") for key in fields)
                 mismatch = mismatch or existing.payload.get("require_approvals", False) != require_approvals
@@ -653,9 +718,7 @@ class JobManager:
                     raise ContractError("Assistant instruction snapshot must be valid UTF-8.") from exc
                 if len(snapshot) > 80_000:
                     raise ContractError("Assistant instruction snapshot is too large.")
-                job = Job(
-                    job_id,
-                    {
+                job_payload = {
                         "agent": agent_reference,
                         "run_id": uuid.uuid4().hex,
                         "backend": str(payload.get("backend", "demo")),
@@ -667,7 +730,13 @@ class JobManager:
                         "require_approvals": require_approvals,
                         "core_snapshot": snapshot,
                         "core_sha256": hashlib.sha256(snapshot_bytes).hexdigest(),
-                    },
+                    }
+                if profile is not None:
+                    job_payload["execution_profile_id"] = profile.id
+                    job_payload["execution_profile_sha256"] = profile.sha256
+                job = Job(
+                    job_id,
+                    job_payload,
                 )
                 if execution_task:
                     job.payload["execution_task"] = execution_task
@@ -916,6 +985,8 @@ class JobManager:
             "preferred_backend": "" if self.public_mode else self.preferred_backend,
             "starter_task": "" if self.public_mode else self.starter_task,
             "backends": backends,
+            "execution_profiles": (self.execution_profile_registry.all_metadata()
+                                   if self.execution_profile_registry is not None else []),
         }
 
     def provider_status(self) -> dict[str, Any]:
@@ -973,6 +1044,9 @@ class JobManager:
                 raise ContractError("Job is already running.")
             if job.status not in {"blocked", "error"}:
                 raise ContractError("Only blocked or failed jobs can be resumed.")
+            profile = self._bound_execution_profile(job.payload)
+            if profile is not None and job.payload.get("require_approvals") is not (not profile.host_autonomous):
+                raise ContractError("Stored approval mode does not match its host execution profile.")
             self._check_capacity()
             if not job.payload.get("run_id"):
                 raise ContractError("Legacy job has no recovery checkpoint identity; inspect its workspace before starting a new task.")
@@ -1352,6 +1426,8 @@ def main() -> int:
     parser.add_argument("--preferred-agent", default="")
     parser.add_argument("--preferred-backend", choices=("demo", "codex", "deepseek", "api", "anthropic", "ollama"), default="")
     parser.add_argument("--starter-task", default="")
+    parser.add_argument("--execution-profiles", type=Path,
+                        help="Operator-owned local execution-profile JSON; browser can select IDs only")
     parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()
     if args.host not in {"127.0.0.1", "localhost"}:
@@ -1364,6 +1440,7 @@ def main() -> int:
             preferred_agent=args.preferred_agent,
             preferred_backend=args.preferred_backend,
             starter_task=args.starter_task,
+            execution_profiles_path=args.execution_profiles,
         )
         server = ThreadingHTTPServer((args.host, args.port), make_handler(manager))
         url = f"http://{args.host}:{args.port}"

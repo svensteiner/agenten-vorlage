@@ -225,6 +225,7 @@
                 <div><label for="backend">Backend</label><select id="backend" required></select><p id="backendHint" class="field-note"></p></div>
                 <div><label id="workspaceLabel" for="workspace">Workspace</label><input id="workspace" type="text" required placeholder="C:\\Pfad\\zum\\Workspace" /></div>
                 <div><label for="model">Modell · optional</label><input id="model" type="text" placeholder="Backend-Standard" /></div>
+                <div id="executionProfileField" hidden><label for="executionProfile">Host-Ausführungsprofil · optional</label><select id="executionProfile"><option value="">Legacy · bestehende Freigaben</option></select><p id="executionProfileHint" class="field-note">Ohne Profil gelten die bisherigen Freigaberegeln.</p></div>
                 <div class="wide"><label for="title">Titel · optional</label><input id="title" type="text" maxlength="200" placeholder="Worum geht es in diesem Dialog?" /></div>
               </div>
               <p class="field-note">Offline-Demo: deterministische Fixture ohne Sprachmodell. Modell-Backends verwenden das oben gewählte Modell.</p>
@@ -274,7 +275,7 @@
       const ATTACHMENT_MAX_COUNT = 5;
       const labels = { queued: "Wartet", running: "In Arbeit", awaiting_approval: "Freigabe erforderlich", completed: "Abgeschlossen", blocked: "Klärung erforderlich", error: "Fehler", interrupted: "Unterbrochen" };
       const state = {
-        agents: [], backends: [], conversations: [], current: null, currentId: null,
+        agents: [], backends: [], executionProfiles: [], conversations: [], current: null, currentId: null,
         online: false, ready: false, newMode: false, saving: false, loading: false,
         pollTimer: null, epoch: 0, pending: null, defaultWorkspace: "", configuredWorkspace: "",
         preferredAgent: "", preferredBackend: "", starterTask: "", workspaceAuto: true,
@@ -294,6 +295,7 @@
         $("retryConnection").hidden = ok;
       }
       function applyPublicUi() {
+        $("executionProfileField").hidden = true;
         if (!state.publicMode) return;
         document.title = "AI Studio · Öffentliche Dialoge";
         $("workspaceTopbar").textContent = "Öffentlicher Arbeitsbereich · Dialog";
@@ -634,11 +636,41 @@
         const backend = state.backends.find((item) => item.id === $("backend").value);
         $("backendHint").textContent = backend?.id === "demo" ? backend.detail || "Deterministische Demo: Beispielablauf ohne KI-Modell." : [backend?.detail, backend?.approval_detail].filter(Boolean).join(" ") || "Backend auswählen.";
         $("model").disabled = backend?.id === "demo";
+        updateExecutionProfiles();
+      }
+      function updateExecutionProfiles() {
+        const select = $("executionProfile"), hint = $("executionProfileHint");
+        if (!select || state.publicMode) return;
+        const selected = select.value, workspace = $("workspace").value.trim();
+        const agent = state.agents.find((item) => item.path === $("agent").value);
+        const matches = state.executionProfiles.filter((item) =>
+          item.agent === $("agent").value && item.workspace === workspace && item.backend === $("backend").value
+        );
+        select.replaceChildren(el("option", "Legacy · bestehende Freigaben")); select.options[0].value = "";
+        for (const item of matches) {
+          const tests = item.tests ? ` · Tests: ${item.tests.expected_test_count}` : "";
+          const option = el("option", `${item.label} · Schreiben: ${item.write_paths.join(", ") || "keine"}${tests}`);
+          option.value = item.id; select.append(option);
+        }
+        if (matches.some((item) => item.id === selected)) select.value = selected;
+        const current = matches.find((item) => item.id === select.value);
+        hint.textContent = current
+          ? `Gebunden an ${agent?.id || current.agent} · ${current.workspace} · ${current.backend}. ${current.host_autonomous ? "Begrenzte automatische Ausführung durch das Hostprofil." : "Hostrichtlinien mit manuellen Freigaben."}`
+          : "Ohne Profil gelten die bisherigen Freigaberegeln. Profile erscheinen nur für den exakt gebundenen Assistenten, Workspace und Backend.";
       }
       function renderChips(metadata) {
         const chips = $("conversationChips"); chips.replaceChildren();
         if (!metadata) return;
-        chips.append(el("span", agentLabel(metadata.agent), "chip"), el("span", backendLabel(metadata.backend), "chip"), el("span", metadata.workspace || "Workspace", "chip"));
+        const profile = state.newMode
+          ? state.executionProfiles.find((item) => item.id === $("executionProfile").value)
+          : metadata.execution_profile;
+        const displayed = state.newMode ? {
+          agent: $("agent").value,
+          backend: $("backend").value,
+          workspace: $("workspace").value.trim(),
+        } : metadata;
+        chips.append(el("span", agentLabel(displayed.agent), "chip"), el("span", backendLabel(displayed.backend), "chip"), el("span", displayed.workspace || "Workspace", "chip"));
+        if (profile) chips.append(el("span", `Profil · ${profile.label || profile.id}`, "chip"));
         const latestMessage = (state.current?.messages || []).slice().reverse().find((item) => item.status === "awaiting_approval");
         const latest = metadata.status || (state.current?.active_job_id ? "running" : latestMessage?.status || "");
         if (latest) chips.append(el("span", labels[latest] || latest, "chip status"));
@@ -763,6 +795,7 @@
         state.defaultWorkspace = workspaceDefault($("agent").value); state.workspaceAuto = true;
         $("workspace").value = state.defaultWorkspace;
         $("title").value = ""; $("model").value = "";
+        $("executionProfile").value = ""; updateExecutionProfiles();
         $("message").value = state.starterTask || "";
         state.current = { metadata: { title: "Neuer Dialog", agent: $("agent").value, backend: $("backend").value, workspace: $("workspace").value }, messages: [], active_job_id: null };
         renderList(); renderCurrent(); $("message").focus();
@@ -780,10 +813,21 @@
           state.workspaceAuto = $("workspace").value.trim() === state.defaultWorkspace;
           $("model").value = payload.model || "";
           $("title").value = payload.title || "";
+          // Build only profiles matching the restored binding before assigning an ID;
+          // setting a select value before its option exists silently clears it.
+          updateBackendHint();
+          const requestedProfile = payload.execution_profile_id || "";
+          const profileAvailable = [...$("executionProfile").options]
+            .some((option) => option.value === requestedProfile);
+          $("executionProfile").value = profileAvailable ? requestedProfile : "";
+          updateExecutionProfiles();
+          const profileWarning = requestedProfile && !profileAvailable
+            ? "Das im Entwurf gespeicherte Hostprofil ist für diese Bindung nicht mehr verfügbar. Der Entwurf wurde nicht gesendet; prüfe das Profil vor dem Fortfahren. "
+            : "";
           $("message").value = payload.content || "";
           restoreAttachmentDraft(payload.attachments || []);
-          updateBackendHint(); lockUi();
-          showNotice("Eine nicht bestätigte Dialogerstellung wartet. Prüfe die Dialogliste und sende sie erst nach deiner ausdrücklichen Aktion erneut.");
+          renderCurrent(); lockUi();
+          showNotice(profileWarning + "Eine nicht bestätigte Dialogerstellung wartet. Prüfe die Dialogliste und sende sie erst nach deiner ausdrücklichen Aktion erneut.");
           return true;
         }
         return false;
@@ -861,6 +905,7 @@
       }
       async function createConversation(content) {
         const payload = { agent: $("agent").value, workspace: $("workspace").value.trim(), backend: $("backend").value, model: $("model").disabled ? "" : $("model").value.trim(), title: $("title").value.trim().slice(0, 200) || "Neuer Dialog", require_approvals: ["codex", "deepseek", "demo"].includes($("backend").value) };
+        if ($("executionProfile").value) { payload.execution_profile_id = $("executionProfile").value; delete payload.require_approvals; }
         if (!payload.agent || !payload.workspace || !payload.backend) throw new Error("Assistent, Backend und Workspace sind erforderlich.");
         const attachmentDraft = state.attachments.map(attachmentDescriptor);
         const record = mutation("conversation", { ...payload, content, attachments: attachmentDraft }); state.pending = record;
@@ -911,6 +956,7 @@
         try {
           const [config, agents] = await Promise.all([api("/api/config"), api("/api/agents")]);
           state.backends = config.backends || []; state.agents = agents.agents || [];
+          state.executionProfiles = Array.isArray(config.execution_profiles) ? config.execution_profiles : [];
           state.publicMode = Boolean(config.public_multiuser);
           state.configuredWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
           state.defaultWorkspace = state.configuredWorkspace;
@@ -918,6 +964,7 @@
           state.preferredBackend = typeof config.preferred_backend === "string" ? config.preferred_backend : "";
           state.starterTask = typeof config.starter_task === "string" ? config.starter_task : "";
           applyPublicUi();
+          $("executionProfileField").hidden = state.publicMode || !state.executionProfiles.length;
           populateOptions(); await loadConversations(); state.ready = true;
           const pending = pendingRead();
           let saved = null; try { saved = sessionStorage.getItem("ai-studio-chat-current"); } catch {}
@@ -939,7 +986,8 @@
       $("newConversation").onclick = newConversation;
       $("reloadConversation").onclick = () => state.currentId && openConversation(state.currentId);
       $("retryConnection").onclick = () => { showNotice(""); initialize(); };
-      $("backend").onchange = updateBackendHint;
+      $("backend").onchange = () => { updateBackendHint(); if (state.newMode) renderCurrent(); };
+      $("executionProfile").onchange = () => { updateExecutionProfiles(); if (state.newMode) renderCurrent(); };
       $("agent").onchange = () => {
         if (!state.newMode) return;
         const currentWorkspace = $("workspace").value.trim();
@@ -948,8 +996,10 @@
           state.workspaceAuto = true;
           $("workspace").value = state.defaultWorkspace;
         } else state.workspaceAuto = false;
+        updateExecutionProfiles();
+        renderCurrent();
       };
-      $("workspace").oninput = () => { state.workspaceAuto = $("workspace").value.trim() === state.defaultWorkspace; };
+      $("workspace").oninput = () => { state.workspaceAuto = $("workspace").value.trim() === state.defaultWorkspace; updateExecutionProfiles(); if (state.newMode) renderCurrent(); };
       $("message").oninput = lockUi;
       $("attachmentInput").addEventListener("change", readAttachmentFiles);
       $("githubPreviewButton").onclick = loadGitHubPreview;

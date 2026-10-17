@@ -67,15 +67,19 @@ Codex CLI wird nicht behauptet. [Ablauf und Grenzen](docs/ACTION-APPROVALS.md).
 Die CLI begrenzt Schreibaktionen mit wiederholtem `--allow-write DATEI` auf eine
 vom Host festgelegte Dateiliste. `--autonomous-writes` erlaubt diese Aktionen ohne
 einzelne Zustimmung und verlangt eine solche Liste. Projektausfuehrung bleibt
-dabei gesperrt. Die Python-API bietet dieselbe Policy; das Cockpit bietet sie noch
-nicht an. [Strikte Schreibrechte](docs/WRITE-POLICY.md).
+dabei gesperrt. Die Python-API bietet dieselbe Policy; das lokale Cockpit kann
+optionale hostseitige Profile mit exakten Schreiblisten verwenden. Ohne Profil bleiben
+die bisherigen Freigaben aktiv; oeffentliches Hosting akzeptiert keine Hostprofile.
+[Strikte Schreibrechte](docs/WRITE-POLICY.md).
 
 Ein Host kann ausserdem mit `--test-policy DATEI` eine feste vollstaendige Testsuite,
 Container-Image, Abhaengigkeitssperre und Snapshot-Dateiliste pinnen. Der Agent kann
 nur diese Suite ohne Pfad- oder Kommandoargumente anfordern; `run_pytest` bleibt in
 diesem Modus gesperrt. Ein erfolgreicher Host-Testbeleg und ein separates Review
-sind beide Voraussetzung fuer den Abschluss. Das Cockpit und oeffentliches Hosting
-stellen diese lokale Hostausfuehrung nicht bereit. [Isolierte Hosttests](docs/ISOLATED-TEST-EXECUTION.md).
+sind beide Voraussetzung fuer den Abschluss. Ein lokales Cockpit-Profil kann ein
+hostseitig gepinntes Manifest binden; der Browser waehlt nur die passende Profil-ID.
+Oeffentliches Hosting exponiert diese Hostausfuehrung nicht.
+[Isolierte Hosttests](docs/ISOLATED-TEST-EXECUTION.md).
 
 Arbeitsdialoge unterstützen UTF-8-Textanhänge bis 32 KiB sowie PDF-, DOCX-, XLSX-
 und PPTX-Dokumente bis 2 MiB. Extrahierter Text dient als Referenz; die Originaldateien

@@ -25,7 +25,7 @@ Snapshot/Root, nichtprivilegiert, mit Ressourcen-/Zeit-/Ausgabelimits. Jeder
 Versuch wird vor Start checkpointed; ein unbekannter Lauf wird nicht automatisch
 wiederholt. Weitere Aenderungen entwerten den Passnachweis; aktueller Hostpass
 und unabhaengiges Review sind fuer Abschluss erforderlich. Legacy run_pytest
-bleibt unter strikter Policy gesperrt. Das Cockpit bietet diese Policy noch nicht.
+bleibt unter strikter Policy gesperrt. Das lokale Cockpit kann diese Policies ueber feste Host-Ausfuehrungsprofile binden.
 [Verwendung](docs/ISOLATED-TEST-EXECUTION.md).
 
 ## Aktuelle technische Abnahme
@@ -132,3 +132,28 @@ Vollabnahme widerlegt diese CI-Luecke nicht. Der eng gepruefte Testfix mockt nur
 CLI-/Windows-Konfigurationssuche beim Konstruktor; Runtime und Assertions bleiben
 unveraendert. Alle 21 Faelle bestehen auf Windows sowie Linux ohne Codex im PATH.
 Der neue GitHub-Lauf muss die plattformuebergreifende Abnahme noch bestaetigen.
+
+## Echter Hostbeobachtungs-Auftrag: Protokolluebergabe weiter offen
+
+Lauf 947156d972c94e88b188c477c60de28d endete blocked: vier Schritte, vier
+Fehlberichte, keine Quellaenderung und keine Tests. Das Modell behandelte die
+Host-Aktionsnamen als fehlende native CLI-Werkzeuge. Die geplanten Hostaktionen
+wurden nicht angefordert. Die Nachpruefung bestaetigt sechs geschuetzte Dateien
+und die Quelle unveraendert; der Runner meldet ausserdem die vom Engine-Host
+erzeugte .agentkit.lock als unerlaubte Workspace-Aenderung. Sein originaler
+Fehlerstatus bleibt erhalten. Der anschliessend korrigierte Protokollprompt
+muss einen echten Lese-/Folgeantworttest und danach einen neuen Gesamtauftrag
+bestehen. Kein Replay des ausgeschöpften Laufs und keine Produktionsfreigabe.
+[Pruefsummen und Grenzen](docs/evidence/host-observations-20261017/native-task-attempt.json).
+
+## Gemeinsame Abnahme: lokale Profile und Protokollkorrektur
+
+Der neue Vollauf besteht 540 Faelle (536 bestanden, vier Skips), darunter acht
+Browser-Tests. Alle 104 ueberwachten Quellen bleiben unveraendert; kombinierte
+Abdeckung 80.6094 Prozent. Ruff, Bandit und 16 Release-Gates bestehen.
+Eine echte native Leseprobe liefert mit zwei Adapteraufrufen und einer Hostaktion
+die zufaellige Testmarkierung korrekt zurueck; Datei und Runtime unveraendert.
+Damit ist die Lese-/Folgeantwortuebergabe nach der Protokollkorrektur belegt.
+Der blockierte Coding-Gesamtauftrag bleibt gescheitert; ein neuer vollstaendiger
+Auftrag und die fachliche Marketing-Abnahme sind weiterhin erforderlich.
+[Gemeinsame Nachweise und Grenzen](docs/evidence/execution-profiles-20261017/README.md).

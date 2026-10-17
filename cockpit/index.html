@@ -728,6 +728,11 @@
                   autocomplete="off"
                 />
               </div>
+              <div id="executionProfileField" hidden>
+                <label for="executionProfile">Host-Ausführungsprofil · optional</label>
+                <select id="executionProfile"><option value="">Legacy · bestehende Freigaben</option></select>
+                <p id="executionProfileHint" class="hint">Ohne Profil gelten die bisherigen Freigaberegeln.</p>
+              </div>
             </div>
             <div class="composer-bottom">
               <p id="backendHint" class="hint">Verfügbarkeit wird geprüft …</p>
@@ -781,6 +786,7 @@
       const state = {
         agents: [],
         backends: [],
+        executionProfiles: [],
         jobs: [],
         job: null,
         view: null,
@@ -931,6 +937,7 @@
         controls();
       }
       function applyPublicUi() {
+        $("executionProfileField").hidden = true;
         if (!state.publicMode) return;
         document.title = "AI Studio · Öffentlicher Arbeitsbereich";
         $("workspaceRail").textContent = "Dein Arbeitsbereich. Deine Kontrolle.";
@@ -1026,6 +1033,7 @@
         $("selectedAgent").textContent = item?.id || "AI Studio";
         for (const b of $("agents").children)
           b.classList.toggle("active", b.dataset.path === path);
+        updateExecutionProfiles();
       }
       function backendHint() {
         const b = state.backends.find((x) => x.id === $("backend").value);
@@ -1034,7 +1042,31 @@
             ? b.detail || "Deterministische Demo: Beispielablauf ohne KI-Modell."
             : [b?.detail, b?.approval_detail].filter(Boolean).join(" ") || "Backend auswählen.";
         $("model").disabled = b?.id === "demo";
+        updateExecutionProfiles();
         controls();
+      }
+      function updateExecutionProfiles() {
+        const select = $("executionProfile"), hint = $("executionProfileHint");
+        if (!select || state.publicMode) return;
+        const selected = select.value;
+        const agent = state.agents.find((item) => item.path === $("agent").value);
+        const workspace = $("workspace").value.trim();
+        const matches = state.executionProfiles.filter((item) =>
+          item.agent === $("agent").value && item.workspace === workspace && item.backend === $("backend").value
+        );
+        select.replaceChildren(el("option", "Legacy · bestehende Freigaben"));
+        select.options[0].value = "";
+        for (const item of matches) {
+          const tests = item.tests ? ` · Tests: ${item.tests.expected_test_count}` : "";
+          const option = el("option", `${item.label} · Schreiben: ${item.write_paths.join(", ") || "keine"}${tests}`);
+          option.value = item.id;
+          select.append(option);
+        }
+        if (matches.some((item) => item.id === selected)) select.value = selected;
+        const current = matches.find((item) => item.id === select.value);
+        hint.textContent = current
+          ? `Gebunden an ${agent?.id || current.agent} · ${current.workspace} · ${current.backend}. ${current.host_autonomous ? "Hostprofil mit begrenzter automatischer Ausführung." : "Hostrichtlinien mit manuellen Freigaben."}`
+          : "Ohne Profil gelten die bisherigen Freigaberegeln. Profile erscheinen nur für den exakt gebundenen Assistenten, Workspace und Backend.";
       }
       function renderAgents() {
         $("agents").replaceChildren();
@@ -1243,6 +1275,15 @@
             : job.model || "Backend-Standard",
         );
         fact("Workspace", job.workspace);
+        const selectedExecutionProfile = state.executionProfiles.find((item) => item.id === job.execution_profile_id);
+        fact("Hostprofil", job.execution_profile_id
+          ? (selectedExecutionProfile?.label || `${job.execution_profile_id} · nicht mehr verfügbar`)
+          : "Legacy · kein Hostprofil");
+        fact("Freigabemodus", job.execution_profile_id
+          ? (selectedExecutionProfile?.host_autonomous && !job.require_approvals
+              ? "Hostprofil: autonome, begrenzte Ausführung"
+              : "Hostprofil: einzelne Freigaben erforderlich")
+          : (job.require_approvals ? "Legacy: einzelne Freigaben erforderlich" : "Legacy: bisheriger Freigabemodus"));
         fact("Job-ID", job.job_id);
         fact("Run-ID", job.result?.run_id);
         $("timeline").replaceChildren();
@@ -1331,12 +1372,14 @@
           ]);
           state.agents = agents.agents || [];
           state.backends = config.backends || [];
+          state.executionProfiles = Array.isArray(config.execution_profiles) ? config.execution_profiles : [];
            state.publicMode = Boolean(config.public_multiuser);
            state.configuredWorkspace = config.default_workspace || (state.publicMode ? "default" : "");
            state.defaultWorkspace = state.configuredWorkspace;
            state.preferredAgent = typeof config.preferred_agent === "string" ? config.preferred_agent : "";
            state.preferredBackend = typeof config.preferred_backend === "string" ? config.preferred_backend : "";
            applyPublicUi();
+          $("executionProfileField").hidden = state.publicMode || !state.executionProfiles.length;
           state.profileCatalog = Array.isArray(config.profile_catalog)
             ? config.profile_catalog
             : (config.profiles || []).map((id) => ({ id, description: "", roles: [] }));
@@ -1377,6 +1420,8 @@
       }
       $("agent").onchange = () => selectAgent($("agent").value);
       $("backend").onchange = backendHint;
+      $("executionProfile").onchange = updateExecutionProfiles;
+      $("workspace").oninput = updateExecutionProfiles;
       $("newTask").onclick = newTask;
       $("retry").onclick = async () => {
         if (state.approvalPosting) return;
@@ -1410,6 +1455,10 @@
           model: $("model").disabled ? "" : $("model").value.trim(),
           require_approvals: ["codex", "deepseek", "demo"].includes($("backend").value),
         };
+        if ($("executionProfile").value) {
+          payload.execution_profile_id = $("executionProfile").value;
+          delete payload.require_approvals;
+        }
         if (state.parentJobId) payload.parent_job_id = state.parentJobId;
         const signature = JSON.stringify(payload);
         if (

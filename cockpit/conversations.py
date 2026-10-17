@@ -89,15 +89,34 @@ class Conversations:
             raise ContractError("Invalid conversation state.")
         return value
 
-    @staticmethod
-    def _metadata(value: dict) -> dict:
+    def _metadata(self, value: dict) -> dict:
         result = {key: value[key] for key in (
             "id", "title", "agent", "company", "workspace", "backend", "model", "created_at", "updated_at"
         )}
         result["require_approvals"] = value.get(
             "require_approvals", value["backend"] in {"codex", "deepseek", "api", "anthropic", "ollama"}
         )
+        if "execution_profile" in value:
+            result["execution_profile"] = copy.deepcopy(value["execution_profile"])
         return result
+
+    @staticmethod
+    def _reject_client_policy_fields(payload: dict) -> None:
+        if any(key in payload for key in ("execution_profile_sha256", "write_policy",
+                                          "test_execution_policy", "write_paths",
+                                          "test_manifest", "host_autonomous", "policy_file")):
+            raise ContractError("Execution rights are host-owned; select only an execution_profile_id.")
+
+    def _bound_profile(self, value: dict):
+        profile_id = value.get("execution_profile_id", "")
+        digest = value.get("execution_profile_sha256", "")
+        if not profile_id:
+            if digest:
+                raise ContractError("A profile digest cannot be used without a profile ID.")
+            return None
+        return self.manager.resolve_execution_profile(
+            profile_id, value["agent"], value["workspace"], value["backend"], expected_digest=digest
+        )
 
     def recent(self) -> list[dict]:
         with self._lock:
@@ -110,8 +129,9 @@ class Conversations:
             return sorted(values, key=lambda item: item["updated_at"], reverse=True)
 
     def create(self, payload: dict) -> dict:
+        self._reject_client_policy_fields(payload)
         conversation_id = identifier(payload.get("request_id"))
-        for field in ("agent", "workspace", "backend", "model", "title"):
+        for field in ("agent", "workspace", "backend", "model", "title", "execution_profile_id"):
             if field in payload and not isinstance(payload[field], str):
                 raise ContractError(f"{field} must be text.")
         agent = self.manager._agent_path(payload.get("agent", ""))
@@ -119,6 +139,9 @@ class Conversations:
         backend = payload.get("backend", "demo")
         if not isinstance(payload.get("require_approvals", False), bool):
             raise ContractError("require_approvals must be boolean.")
+        profile_id = payload.get("execution_profile_id", "")
+        if profile_id and "require_approvals" in payload:
+            raise ContractError("A selected execution profile owns its approval mode.")
         # Codex and DeepSeek are approval-enabled backends. The policy is
         # backend-owned and cannot be disabled by a client retry; Demo keeps
         # its existing opt-in behavior for fixture runs.
@@ -132,17 +155,29 @@ class Conversations:
         if not title or len(title) > 200:
             raise ContractError("Title must contain 1–200 characters.")
         catalog = Catalog(agent)
+        profile = self.manager.resolve_execution_profile(
+            profile_id, self.manager._agent_reference(agent), self.manager._workspace_reference(workspace), backend
+        )
+        if profile is not None:
+            require_approvals = not profile.host_autonomous
         value = {"id": conversation_id, "title": title,
                  "agent": self.manager._agent_reference(agent),
                  "workspace": self.manager._workspace_reference(workspace),
                  "backend": backend, "model": model,
                  "company": catalog.config["company"], "created_at": now(), "updated_at": now(), "turns": [],
                  "require_approvals": require_approvals}
+        if profile is not None:
+            value.update(execution_profile_id=profile.id,
+                         execution_profile_sha256=profile.sha256,
+                         execution_profile=profile.metadata())
         with self._lock:
             if self._path(conversation_id).exists():
                 previous = self._read(conversation_id)
                 if any(previous[key] != value[key] for key in ("title", "agent", "workspace", "backend", "model", "company")):
                     raise ContractError("request_id already identifies another conversation.")
+                if (previous.get("execution_profile_id", "") != value.get("execution_profile_id", "")
+                        or previous.get("execution_profile_sha256", "") != value.get("execution_profile_sha256", "")):
+                    raise ContractError("request_id already identifies another execution profile.")
                 if previous.get("require_approvals", backend in {"codex", "deepseek", "api", "anthropic", "ollama"}) != require_approvals:
                     raise ContractError("request_id already identifies another approval policy.")
                 return self._metadata(previous)
@@ -180,6 +215,7 @@ class Conversations:
             return result
 
     def send(self, conversation_id: str, payload: dict) -> dict:
+        self._reject_client_policy_fields(payload)
         request_id = identifier(payload.get("request_id"))
         attachment_ids = self._attachment_ids(payload)
         content = payload.get("content")
@@ -190,6 +226,7 @@ class Conversations:
             value = self._read(conversation_id)
             if Catalog(self.manager._agent_path(value["agent"])).config["company"] != value["company"]:
                 raise ContractError("Conversation cannot cross company boundaries.")
+            profile = self._bound_profile(value)
             existing = next((turn for turn in value["turns"] if turn["id"] == request_id), None)
             if existing:
                 if existing["content"] != content or existing.get("attachment_ids", []) != attachment_ids:
@@ -247,7 +284,11 @@ class Conversations:
             job_payload["require_approvals"] = value.get(
                 "require_approvals", value["backend"] in {"codex", "deepseek", "api", "anthropic", "ollama"}
             )
+            if profile is not None:
+                job_payload.pop("require_approvals", None)
+                job_payload["execution_profile_id"] = profile.id
             job_payload.update(task=content, request_id=request_id)
             self.manager.start(job_payload, conversation_id=conversation_id, execution_task=task,
-                               core_snapshot=core_snapshot)
+                               core_snapshot=core_snapshot,
+                               execution_profile_sha256=profile.sha256 if profile else None)
             return copy.deepcopy(self.get(conversation_id))

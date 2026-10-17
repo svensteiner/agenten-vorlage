@@ -20,3 +20,13 @@ Filterluecken und Austausch-Races wurden mit eigenen Regressionen korrigiert.
 Der vorzeitig unterbrochene erste Vollauf zaehlt nicht als bestanden; ebenso
 bleiben die rote POSIX-Testfixture und die fehlgeschlagene erste Schema-Probe
 getrennte historische Befunde. Der laufende Original-Marketingbot bleibt unberuehrt.
+
+## Echte Host-Leseprobe nach Protokollkorrektur
+
+Die [neue native Probe](native-read-probe.json) liest mit gpt-6-luna eine
+zufaellige synthetische Markierung, die nicht im Auftrag steht: zwei
+Adapteraufrufe, eine echte Host-Leseaktion und die exakte Markierung in der
+Abschlussantwort. Testdatei und gepinnte Runtime bleiben unveraendert; keine
+Schreib- oder Testaktionen. Dies belegt die Host-Lese-/Folgeantwortuebergabe,
+keinen autonomen Coding-Abschluss. Anbieteranfragen und Kosten bleiben unbekannt.
+Der zuvor blockierte Gesamtauftrag bleibt als Fehlversuch erhalten.

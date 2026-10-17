@@ -250,8 +250,9 @@ read-only Vorschlaege an den Host-Executor. DeepSeek prueft Dateiwerkzeuge an
 derselben Schreibgrenze. Projektausfuehrung bleibt dabei gesperrt und muss separat
 vom Host isoliert werden. Die CLI setzt sie mit wiederholtem `--allow-write`;
 erst `--autonomous-writes` deaktiviert einzelne Freigaben fuer neue Auftraege.
-Gespeicherte Freigabepflichten bleiben bei Wiederaufnahme bestehen. Das Cockpit
-bietet die Policy noch nicht an. [Grenzen und Verwendung](WRITE-POLICY.md).
+Gespeicherte Freigabepflichten bleiben bei Wiederaufnahme bestehen. Das lokale Cockpit
+kann optionale hostseitige Profile mit exakter Schreibdateiliste anbieten; nur ein
+explizit autonomes Profil deaktiviert Einzelfreigaben fuer neue Auftraege. [Grenzen und Verwendung](WRITE-POLICY.md).
 
 ## Hostgebundene isolierte Tests
 
@@ -266,5 +267,6 @@ Versuch vor dem Dispatch, sodass ein unbekanntes Ergebnis nicht automatisch
 wiederholt wird. Schreibschritte verwerfen den letzten Testbeleg. Abschluss
 erfordert einen aktuellen erfolgreichen Hostbeleg sowie das bestehende erfolgreiche
 Review. Diese Grenze ist Defense in Depth und keine Garantie gegen Docker- oder
-Kernel-Schwachstellen. Die CLI bietet `--test-policy`; Cockpit und oeffentliches
-Hosting exponieren keine Host-Testausfuehrung. [Manifest und Grenzen](ISOLATED-TEST-EXECUTION.md).
+Kernel-Schwachstellen. Die CLI bietet `--test-policy`; lokale Cockpit-Profile koennen
+eine feste Hosttestsuite binden. Der Browser kann weder Manifest noch Befehle festlegen.
+Oeffentliches Hosting exponiert keine Host-Testausfuehrung. [Manifest und Grenzen](ISOLATED-TEST-EXECUTION.md).

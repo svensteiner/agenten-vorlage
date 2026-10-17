@@ -7,6 +7,7 @@ param(
     [ValidateSet("", "demo", "codex", "deepseek", "api", "anthropic", "ollama")]
     [string]$PreferredBackend = "",
     [string]$StarterTask = "",
+    [string]$ExecutionProfiles = "",
     [switch]$OpenBrowser
 )
 
@@ -55,6 +56,13 @@ if ($PreferredBackend) {
 }
 if ($StarterTask) {
     $serverArguments += @("--starter-task", $StarterTask)
+}
+if ($ExecutionProfiles) {
+    if (-not (Test-Path -LiteralPath $ExecutionProfiles -PathType Leaf)) {
+        Write-Error "Execution profile registry does not exist: $ExecutionProfiles"
+        exit 1
+    }
+    $serverArguments += @("--execution-profiles", $ExecutionProfiles)
 }
 if ($OpenBrowser) {
     $serverArguments += "--open-browser"
