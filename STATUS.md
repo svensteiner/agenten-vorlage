@@ -36,7 +36,9 @@ und eine eng begruendete Bandit-Markierung fuer die Container-Tmpfs-Pruefung sin
 auf main 2786d99. Linux, Browser, Paket und Deployment bestehen dort; Windows
 3.11 scheiterte an der fehlenden lokalen Sandbox-Konfiguration im Testaufbau.
 Der separat gepruefte Folgefix ist auf main 2c71d7e: 18 Integrationstests bestehen
-auch mit absichtlich fehlender Konfiguration. GitHub-Abnahme dieses Stands offen.
+auch mit absichtlich fehlender Konfiguration. GitHub-Lauf 39001481693 besteht
+vollstaendig: Linux und Windows jeweils Python 3.11/3.12, Browser, Paket und
+Deployment. Dies ist eine technische CI-Abnahme, keine fachliche Freigabe.
 
 Der echte Coding-Lauf 5e0b73e35b284bada8f4cc44884a637c aenderte nur die erlaubte
 Quelldatei des extrahierten Marketingbot-Bausteins. Alle sechs geschuetzten

@@ -3,8 +3,8 @@ schema: agent-status/v1
 agent_id: programming-agent
 company: AI_Studioxyz
 profile: developer
-status: production
-last_updated: "2026-10-12"
+status: active
+last_updated: "2026-10-17"
 ---
 
 # Programming Agent — aktueller Status
@@ -17,6 +17,15 @@ in einem separat übergebenen Git-Workspace.
 
 ## Letzter bestätigter Stand
 
+- Gesamtauftrag und Produktionsfreigabe sind offen; historische kleine erfolgreiche
+  Laeufe belegen keine allgemeine Projektzuverlaessigkeit. Aktuelle Abnahme und
+  Gegenbeweise: `STATUS.md` und `docs/AGENTIC-ACCEPTANCE.md` im Vorlagen-Root.
+- Der reale Lauf `5e0b73e35b284bada8f4cc44884a637c` bearbeitete einen isolierten
+  Marketingbot-Baustein, testete zweimal 79 geschuetzte Vertragstests erfolgreich
+  und besserte nach einem separaten Review nach. Er endete dennoch blockiert:
+  wiederholt unsichtbare native Shell-Inhalte verhinderten das finale Review.
+  Kein bestandener autonomer Gesamtlauf, keine fachliche Marketing-Abnahme.
+
 - Rollen und Skills sind unter `roles/` und `.agents/skills/` registriert.
 - Der Demo-Lauf demonstriert Nacharbeit nach einem fehlgeschlagenen Review.
 - Der DeepSeek-Adapter unterstützt robuste JSON-/Python-Literal-Toolargumente, CP1252-Fallback,
@@ -24,7 +33,7 @@ in einem separat übergebenen Git-Workspace.
   verweigert blindes Überschreiben großer Dateien. Das produktive Tool-Budget beträgt 48 Aufrufe.
 - Das Cockpit persistiert Aufträge lokal, listet die Run-Historie und kann blockierte Läufe mit
   Feedback und Interruption-Bestätigung fortsetzen.
-- Letzte vollständige Runtime-Verifikation: 379 Tests bestanden, drei erwartete
+- Historische Runtime-Verifikation vom 12.10.: 379 Tests bestanden, drei erwartete
   Windows-Symlink-Skips; kombinierte Line-/Branch-Coverage 80 %. Ruff, Bandit und
   `agentkit validate` bestanden. Coverage ist keine Produktreifequote.
 - Reale Luna-Abnahme `7f459565f22340b3abb71860087feacb`: gezielter Python-Bugfix,
