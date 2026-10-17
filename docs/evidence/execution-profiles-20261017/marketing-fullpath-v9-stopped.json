@@ -1,0 +1,41 @@
+{
+  "schema": "marketing-fullpath-qualification/v1",
+  "study": "source-fullpath-v9-20261017",
+  "status": "stopped",
+  "composite_pass": false,
+  "case_count": 4,
+  "accepted_fullpath": 0,
+  "not_run": 2,
+  "completed_physical_requests": 7,
+  "known_provider_cost_usd": "0.011399",
+  "unknown_outcome_requests": 0,
+  "unknown_cost_requests": 0,
+  "requested_model": "anthropic/claude-haiku-4.5",
+  "routing_scope": "Evaluator-only same-Haiku generation, source review, audit and gatekeeping; not default production reviewer routing.",
+  "case_observations": [
+    "First case: three generated drafts of 297, 360 and 225 characters; no qualifier result. The raw source_rejected_or_unavailable label does not establish an actual source rejection.",
+    "Second case: generation, source review, repair and second review completed. Qualification accepted as unverified; the audit stage attempted but stopped before a completed physical request. No final output.",
+    "Remaining two cases were not run after transport stopped. All four remain in the utility denominator."
+  ],
+  "technical_stop_cause": "Pre-HTTP ValueError during ContentAuditor path; diagnosis pending. No replay of this attempt.",
+  "offline_evaluator_tests_passed": 18,
+  "independent_code_review": true,
+  "independent_terminal_accounting_review": true,
+  "source_files_unchanged": 195,
+  "test_files_unchanged": 321,
+  "hashes": {
+    "helper": "cc74b9d9cb09976e1c89c7594f337bed21f8e8985c1561ea50cf1247661003bb",
+    "evaluator_tests": "49f63941b7c67da1f291a4014ae27c5323d73e601428ee838617430372b166b5",
+    "pins": "547cb3294b8f292774ff59857a92790c529dde08fbac8d36016b143226e44165",
+    "result": "b11ea515960d4de1ce50698b7c946d8c5ea305111bf66d93b70ff58b92764736",
+    "blind_packet": "bee3e7355b527d9fb7d9f5f82de109455d1cf57e0d742c26eb04d2c6cc0234cd",
+    "terminal_accounting": "bc517a7c740371e403125128a73b437a8c026555eadfcbd083e91d52cb12344b"
+  },
+  "limits": [
+    "Four synthetic observation-only cases; no semantic grading of absent final outputs.",
+    "Seven completed transport records versus nine inference attempts in task budget; attempted callbacks are not physical requests.",
+    "No baseline comparison, general reliability, real X reach or production readiness established."
+  ],
+  "production_qualified": false,
+  "promoted": false
+}
