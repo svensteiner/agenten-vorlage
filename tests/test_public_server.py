@@ -10,6 +10,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -133,8 +134,9 @@ class WorkspaceQuotaTests(unittest.TestCase):
                     raise PermissionError("synthetic sharing violation")
                 return original_replace(source, destination)
 
-            with mock.patch("agentkit.storage.os.name", "nt"), mock.patch(
-                "agentkit.storage.os.replace", side_effect=flaky_replace
+            with mock.patch(
+                "agentkit.storage.os",
+                SimpleNamespace(name="nt", replace=flaky_replace),
             ):
                 quota.write_user(target, b"new")
 
@@ -156,8 +158,9 @@ class WorkspaceQuotaTests(unittest.TestCase):
                 calls["count"] += 1
                 raise PermissionError("synthetic sharing violation")
 
-            with mock.patch("agentkit.storage.os.name", "nt"), mock.patch(
-                "agentkit.storage.os.replace", side_effect=denied_replace
+            with mock.patch(
+                "agentkit.storage.os",
+                SimpleNamespace(name="nt", replace=denied_replace),
             ):
                 with self.assertRaises(PermissionError):
                     quota.write_user(target, b"new")
