@@ -35,6 +35,10 @@ zweiten Bot-Prozess und fuehrt selbst keine Live-X-Aktion aus. AI Studio ist im 
 ein Single-Owner-Server. Vor dem Wechsel zwischen den beiden Launchern den laufenden Server
 beenden; Startpraeferenzen und der kuratierte Workspace werden beim Start geladen.
 
+Der Agentic-Gesamtauftrag ist noch nicht abgenommen; offene Nachweise stehen in
+[STATUS.md](STATUS.md) und der [Agentic-Abnahme](docs/AGENTIC-ACCEPTANCE.md). Die
+historische MVP-Quote ist keine Produktionsfreigabe oder allgemeine Zuverlaessigkeitsquote.
+
 Der aktuelle Stand enthält zwei klar getrennte Betriebsarten. Der lokale
 Single-Owner-MVP ist mit 11 von 11 verbindlichen Bereichen abgenommen. Zusätzlich
 gibt es einen **öffentlichen Single-Tenant-Mehrbenutzer-Release-Candidate** hinter
