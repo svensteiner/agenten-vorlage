@@ -1,0 +1,40 @@
+{
+  "scope": "real native extracted-component task, failed; wrapper completion is not task completion",
+  "native_outcome": {
+    "cost_usd": null,
+    "failures": 4,
+    "independent_review_required": true,
+    "integrity": {
+      "allowed_source_sha256": {
+        "content/source_faithfulness.py": "2b5b6310174c1ae306e9efd401fbb982d71db3f52b64d70f1e76f35a6fa60920"
+      },
+      "diff_paths": [
+        "content/source_faithfulness.py"
+      ],
+      "git_controls_unchanged": true,
+      "host_lock_unchanged": true,
+      "immutable_pack_unchanged": true,
+      "only_allowed_source_changed": true,
+      "protected_unchanged": true,
+      "runtime_unchanged": true
+    },
+    "models": {
+      "primary": "gpt-6-luna",
+      "reviewer": "gpt-6-luna"
+    },
+    "native_status": "blocked",
+    "passed": false,
+    "physical_provider_requests": null,
+    "reviewed": false,
+    "run_id": "7a9f864b25d84ac684e4e84ef7683154",
+    "status": "complete",
+    "steps": 4,
+    "test_execution_runs": 0
+  },
+  "source_change_quarantined": true,
+  "whole_task_acceptance": false,
+  "semantic_acceptance": false,
+  "private_outcome_sha256": "df32d56a1cf04a68665890f4d182efb208990b759da5a7e23d8f2c776783050f",
+  "private_checkpoint_sha256": "98ef27b4f71fc9702d147a4e5b2b7c064b1344e018b1a3774d7ac04d60560093",
+  "next": "separate bounded stronger-model trial; no replay or widened permissions"
+}

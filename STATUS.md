@@ -167,3 +167,19 @@ Assertions oder Sicherheitsfaelle entfallen, die Runtime bleibt unveraendert.
 Alle 21 Faelle bestehen auf Windows Python 3.12 mit entfernter is_junction-API
 und echten Junctions. Dies ist eine Kompatibilitaetssimulation; Python 3.11 ist
 lokal nicht installiert. Der neue GitHub-Lauf muss die native Abnahme liefern.
+
+## GitHub bestaetigt; voller Agentenauftrag bleibt offen
+
+GitHub-Lauf 39006087460 auf 8911bdb besteht alle sieben Jobs einschliesslich
+Windows und Linux mit Python 3.11/3.12, Browser, Paket und Deployment.
+Damit ist auch die native Python-3.11-Testkorrektur bestaetigt.
+
+Der neue echte Coding-Lauf 7a9f864b25d84ac684e4e84ef7683154 endet dennoch
+blocked: vier Schritte, vier Fehlberichte, keine Tests und kein Review.
+Eine Host-edit_file-Aktion aenderte ausschliesslich die erlaubte Quelle;
+alle sechs geschuetzten Dateien, Runtime, Agentenpaket und Host-Kontrolldateien
+bleiben unveraendert. Die Teilimplementierung bleibt isoliert und wird nicht
+promoviert. Weitere Worker meldeten weiter faelschlich fehlende Hostaktionen.
+Die erfolgreiche kleine Leseprobe belegt deshalb keinen stabilen Gesamtworkflow.
+[Originalstatus und Pruefsummen](docs/evidence/host-observations-20261017/native-task-protocol-attempt.json).
+Eine getrennte begrenzte Modellgegenprobe ist der naechste Schritt.

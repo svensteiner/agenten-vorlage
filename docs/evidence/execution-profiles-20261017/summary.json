@@ -149,5 +149,14 @@
     "log_sha256": "39e9de46a6ba941dd9cc49648e1ca62d514f66bfabb1630f383227a3fe91576c",
     "independent_review": "no blocker",
     "github_new_revision": "pending"
+  },
+  "github_qualification": {
+    "commit": "8911bdba59eaf65fc02198ceeebcc8270300296c",
+    "run": 39006087460,
+    "conclusion": "success",
+    "jobs_passed": 7,
+    "jobs_failed": 0,
+    "platforms": "Windows/Linux Python3.11/3.12; browser; package; public deployment",
+    "scope": "technical CI qualification; not autonomous task or semantic acceptance"
   }
 }
