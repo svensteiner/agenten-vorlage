@@ -21,7 +21,11 @@ und ohne Fehler; alle erfassten Quell-/Schemaeingaben blieben unveraendert.
 38 Offline-Releasepruefungen, separates Review und Windows-Cache-/Legacy-
 Resume-Gegenproben bestehen. Alle sieben Jobs der CI 39047216916 sind am
 Runtime-Commit 902b809 gruen. Der [frische Coding-Auftrag V8](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v8-started.json)
-ist nach abschliessender Vorpruefung gestartet; sein Ergebnis steht noch aus.
+ist beendet und nicht abgenommen: vier Schritte, zwei Fehler. RED bestand;
+ein gezielter Testlauf hatte 242 bestandene und einen fehlgeschlagenen Test.
+Nach Testnacharbeit war RED ungueltig. Der Planner stoppte, statt den
+vorhandenen Ruecksetzungsweg und einen frischen RED-Lauf zu nutzen.
+Volltest und separates Review fehlen. [Terminalnachweis](docs/evidence/execution-profiles-20261017/marketing-evidence-correction-v8-terminal.json).
 Keine Produktionsfreigabe.
 
 ## Vorheriger gepruefter Runtime-Stand

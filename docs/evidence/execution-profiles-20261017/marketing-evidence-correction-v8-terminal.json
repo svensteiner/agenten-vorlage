@@ -1,0 +1,45 @@
+{
+  "schema": "marketing-evidence-correction-v8-terminal/v1",
+  "recorded_at_utc": "2026-10-17T16:09:20.211715+00:00",
+  "run_id": "e0d39e12bc874e75ade2009b175087cb",
+  "engine_status": "blocked",
+  "qualification_status": "not_qualified",
+  "steps": 4,
+  "failures": 2,
+  "session_exit_code": 1,
+  "phase_attempts": [
+    {
+      "phase": "red",
+      "status": "passed",
+      "reason": "expected_red_reproduced",
+      "exit_code": 1,
+      "receipt_sha256": "353eee96166427aa2531503f609aa6e8a5f5cd2bd9f9338c0f213096900e2753"
+    },
+    {
+      "phase": "targeted",
+      "status": "failed",
+      "reason": "tests_failed",
+      "exit_code": 1,
+      "receipt_sha256": "34f60e449fece1e14ded4b2552ee1a00e446c613ac0c01125ce6dd99bea4bd64"
+    }
+  ],
+  "failure": "Test assertion correction invalidated RED; targeted rejected; planner stopped without using retained-baseline restoration and fresh RED recovery.",
+  "full_suite_ran": false,
+  "separate_reviewed": false,
+  "collection_preservation": "not established: no final full receipt; false audit gates do not prove tests were deleted",
+  "changed_workspace_paths": [
+    "content/source_qualification_protocol.py",
+    "tests/unit/test_source_faithfulness_evidence_v2.py",
+    "tests/unit/test_source_qualification_transport.py"
+  ],
+  "outside_allowlist": [],
+  "runtime_files_changed": [],
+  "agent_pack_files_changed": [],
+  "production_write_proven": true,
+  "parser_ast_unchanged": true,
+  "state_sha256": "01923d371c29df989802f75c2a6cd5ac852f1e4b784acda3f03870751ab393a1",
+  "post_engine_integrity_sha256": "f7e09b6414a14ad4630644720b2225daff824cc822f89c01a3af5eb6c0abc635",
+  "replay_permitted": false,
+  "production_ready": false,
+  "marketing_quality_qualified": false
+}
