@@ -22,6 +22,43 @@ Fähigkeiten nicht. Der Gesamtabschluss ist noch nicht nachgewiesen.
 
 ## Nachweise vom 17.10.2026
 
+### Reale Quellenbindung: integriert, autonomer Coding-Auftrag nicht bestanden
+
+Marketingbot-Commit `3ccb2e7e` auf `master` erhaelt den ausgewaehlten
+ObservationBank-Datensatz bis zu Publikations- und Lernmetadaten. Die Quelle
+bleibt ausdruecklich unverifiziert; Hashes pruefen Konsistenz und Textbindung,
+nicht Wahrheit oder Freigabe. Keine zusaetzlichen Modellaufrufe und keine
+Aenderungen an Kontosperren, Versand, Budgets oder Ergebnisberechtigung.
+
+Der echte Coding-Lauf `b666a676170b4ff9acca97334f589bc3` endete nach drei
+Revisionen ohne finales Review. Der Reviewer fand eine flache Kopie; das
+staerkere Reparaturmodell behob sie. Danach blieb ein Windows-Langpfadfehler
+im Testlauf. Unabhaengige Hostpruefungen fanden drei weitere Regressionen:
+fehlende Scrape-Rueckgabe, zweiten Draw nach Record-API-Fehler und fehlenden
+Typimport. Drei neue Tests scheiterten vor den getrennten Hostkorrekturen;
+danach bestanden 99 gezielte Tests und separate Python-/Security-Reviews.
+879 geschuetzte Quelldateien und eingefrorene Tests blieben unveraendert.
+Der autonome Auftrag gilt weiterhin als nicht bestanden.
+
+Der folgende volle Marketingbot-Testlauf meldete 4.451 bestanden und neun
+Fehler: acht schon in der Baseline plus einen intermittierenden
+Mehrprozess-Kontosperrentest. Fuer die acht Baselinefehler wurden veraltete
+Gatekeeper-/DOM-Testobjekte, eine alte Source-Assertion und eine durch Commit
+`a72fb508` ueberholte Mengenpolicy nachgewiesen. Nur Tests wurden angepasst;
+67 gezielte Tests bestanden. Der folgende volle Vergleich bestand mit 4.460
+Tests, elf Skips und fuenf erwarteten Fehlern (279,07 Sekunden). Testkorrekturen
+sind unter `4e6125a4` auf Marketingbot/master. Der Mehrprozess-Test bestand zwar
+15/15 Wiederholungen, doch eine gezielte Windows-Gegenprobe belegte danach eine
+Race: Ein Initialisierungsschreiben vor dem Byte-Lock trifft die bereits gesperrte,
+temporaer leere Datei und erhaelt PermissionError. Der neue separate Prozess-
+Regressionstest war zuerst rot; nach minimalem Entfernen des ungeschuetzten
+Schreibens bestehen 119 gezielte Tests. Python-/Security-Review ohne Blocker;
+voller abschliessender Lauf und Push dieses Fixes noch offen. Keine Produktionsfreigabe.
+
+Die normale Entwurfsqualitaet und ein unbeaufsichtigt bestandener realer
+Projektauftrag bleiben erforderlich. Die laufende Originalinstallation wurde
+nicht umgestellt oder neu gestartet.
+
 ### Source-first: echter autonomer Review-/Reparaturablauf, Qualitaetsgate noch offen
 
 Der erste native Versuch `7e8c31a6315547d4a794589fcf88a8ce` stoppte nach einem

@@ -17,6 +17,16 @@ zurueckgestellt.
 
 ## Letzter bestätigter Stand
 
+- Marketingbot-Sicherheitspruefungen an aktuelle Vorbedingungen und die bereits
+  dokumentierte Quality-first-Policy angepasst; Produktionslogik/Config dabei
+  unveraendert. Voller Lauf: 4.460 bestanden, elf Skips, fuenf erwartete Fehler,
+  279,07 Sekunden. Testkorrekturen auf `marketingbot/master` unter `4e6125a4`.
+  Der zuvor intermittierende Kontosperrenfehler ist inzwischen gezielt reproduziert:
+  ein Initialisierungsschreiben VOR dem OS-Lock trifft auf Byte 0 einer durch
+  einen anderen Besitzer gesperrten, temporaer leeren Datei. Neuer unabhängiger
+  Mehrprozess-Test zuerst rot (PermissionError), nach Entfernen dieses Schreibens
+  119 gezielte Tests gruen. Python-/Security-Review ohne Blocker. Voller Lauf
+  mit dem Sperrenfix noch offen; Fix noch nicht gepusht oder live ausgerollt.
 - Reale Marketingbot-Integration in isolierter Kopie von `origin/master`:
   Coding-Lauf `b666a676170b4ff9acca97334f589bc3` endete nach drei Revisionen
   ohne Abnahme. Der separate Reviewer fand eine flache Record-Kopie, die das
