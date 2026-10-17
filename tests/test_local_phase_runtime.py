@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from agentkit.contracts import ContractError
 from agentkit.phase_test_execution import verify_phase_freshness
-from agentkit.phase_test_runtime import LocalPhaseRuntime
+from agentkit.phase_test_runtime import LocalPhaseProposalRejected, LocalPhaseRuntime
 from tests import test_phase_test_execution as fixtures
 
 
@@ -49,10 +49,19 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
 
     def test_targeted_and_production_writes_require_red(self):
         with patch("agentkit.phase_test_runtime.run_phase") as runner:
-            with self.assertRaises(ContractError):
+            checkpoints_before = len(self.checkpoints)
+            with self.assertRaises(ContractError) as targeted_denial:
                 self.runtime.execute("targeted", 10)
-            with self.assertRaises(ContractError):
+            self.assertEqual(
+                "LocalPhaseProposalRejected", type(targeted_denial.exception).__name__
+            )
+            self.assertEqual(checkpoints_before, len(self.checkpoints))
+            self.assertIsNone(self.state["in_flight"])
+            with self.assertRaises(ContractError) as write_denial:
                 self.runtime.authorize_mutation("edit_file", {"path": "agentkit/worker.py"})
+            self.assertEqual(
+                "LocalPhaseProposalRejected", type(write_denial.exception).__name__
+            )
             runner.assert_not_called()
         self.runtime.authorize_mutation("write_file", {"path": "tests/test_worker.py"})
 
@@ -61,8 +70,11 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
             self.runtime.execute("red", 10)
             self.runtime.authorize_mutation("edit_file", {"path": "agentkit/worker.py"})
             self.fixture.source.write_text("changed production", encoding="utf-8")
-            with self.assertRaises(ContractError):
+            with self.assertRaises(ContractError) as denied:
                 self.runtime.execute("full", 10)
+            self.assertEqual(
+                "LocalPhaseProposalRejected", type(denied.exception).__name__
+            )
             self.runtime.execute("targeted", 10)
             self.runtime.execute("full", 10)
             self.runtime.require_completion()
@@ -74,8 +86,11 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
         with patch("agentkit.phase_test_runtime.run_phase", side_effect=self.receipt):
             self.runtime.execute("red", 10)
         (self.fixture.workspace / "tests/test_worker.py").write_text("changed test", encoding="utf-8")
-        with self.assertRaises(ContractError):
+        with self.assertRaises(ContractError) as denied:
             self.runtime.execute("targeted", 10)
+        self.assertEqual(
+            "LocalPhaseProposalRejected", type(denied.exception).__name__
+        )
 
     def test_modified_conftest_invalidates_red(self):
         helper = self.fixture.workspace / "tests/conftest.py"
@@ -100,6 +115,21 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             LocalPhaseRuntime(self.policy, self.fixture.workspace, "a" * 32, self.state, lambda: None)
 
+    def test_typed_phase_callback_error_after_reservation_is_blocking(self):
+        with patch(
+            "agentkit.phase_test_runtime.run_phase",
+            side_effect=LocalPhaseProposalRejected("late denial"),
+        ):
+            with self.assertRaisesRegex(ContractError, "after reservation"):
+                self.runtime.execute("red", 10)
+        self.assertIsNotNone(self.state["in_flight"])
+        self.assertEqual(1, len(self.checkpoints))
+        with self.assertRaises(ContractError):
+            LocalPhaseRuntime(
+                self.policy, self.fixture.workspace, "a" * 32, self.state,
+                lambda: None,
+            )
+
     def test_completion_without_any_test_is_rejected(self):
         with self.assertRaises(ContractError):
             self.runtime.require_completion()
@@ -108,8 +138,11 @@ class LocalPhaseRuntimeTests(unittest.TestCase):
         with patch("agentkit.phase_test_runtime.run_phase", side_effect=self.receipt) as runner:
             self.runtime.execute("red", 10)
             before = len(self.checkpoints)
-            with self.assertRaises(ContractError):
+            with self.assertRaises(ContractError) as denied:
                 self.runtime.execute("red", 10)
+            self.assertEqual(
+                "LocalPhaseProposalRejected", type(denied.exception).__name__
+            )
             self.assertEqual(1, runner.call_count)
         self.assertIsNone(self.state["in_flight"])
         self.assertEqual(before, len(self.checkpoints))

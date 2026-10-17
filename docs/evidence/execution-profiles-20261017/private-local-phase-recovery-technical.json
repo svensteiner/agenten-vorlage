@@ -1,0 +1,85 @@
+{
+  "schema": "agentkit-technical-qualification/v1",
+  "status": "offline_qualification_passed_github_ci_pending",
+  "scope": "Known pre-effect phase proposal corrections, long exact node selectors, and CI fixture independence",
+  "source_hash_basis": "Raw qualified host worktree bytes; Git line-ending conversion can change byte hashes.",
+  "source_sha256": {
+    "agentkit/backends.py": "8b554bc440a91fdd453a63929c710445c0e514490b53ae075b75f19e78e1e3b8",
+    "agentkit/phase_test_execution.py": "fd6fa24abb5e43e5564c69cff7ff3cbbd474d9bf4c934eba0d10de5a87b594ec",
+    "agentkit/phase_test_runner.py": "3d18c5d7dba059eaac9a4710fed125b6bc865ad5bd2006eec5b7ddb598f429f1",
+    "agentkit/phase_test_runtime.py": "42cea9ad9f7969db83bb30972a91e95d5b47464100f118c7bad4e5faf38a5ad3",
+    "tests/test_codex_local_phases.py": "5e392b6709065d9f125eb5c3bfd2028cb7e445fdf0f6af56725964b0c8665475",
+    "tests/test_engine_codex_local_phases.py": "6719026ea2a6ee9ee1d67e60eefb6069528c658c94661ccf1884138b8cb57b20",
+    "tests/test_local_phase_runtime.py": "cbbfd3a2337ca137f5f5d3c53d6fe042d2181f81323398484bb5ce66702335fc",
+    "tests/test_phase_test_execution.py": "dbb0edd6fe399deb71aa4a41ba87a0ae19f5e1acc64252a8eed4bf0fc7e3733e"
+  },
+  "full_tests": {
+    "run": 651,
+    "skipped": 5,
+    "failed": 0,
+    "duration_seconds": 339.932,
+    "input_changes": [],
+    "log_sha256": "bb10ff0e19909a8d30de486fbbbaefa97d2fab8e895f75e107895f1d4568c5fc"
+  },
+  "coverage": {
+    "percent": 80,
+    "branch_measurement": true,
+    "minimum_percent": 75,
+    "log_sha256": "1718a2a7e18c9bc244f4a96717355e2b2e027e9a341cfc7e1dab0b602efaee56"
+  },
+  "offline_release": {
+    "passed": 34,
+    "failed": 0,
+    "log_sha256": "053a06f074a786bf56bf8a6ebeec73803ba6d02c07827b32eb318793af62baf9"
+  },
+  "static_and_workflow_checks": {
+    "ruff": {
+      "exit_code": 0,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "bandit": {
+      "exit_code": 0,
+      "log_sha256": "d306999580315b309b5f12a6dc2270bb19116418f2488548b7512bc6cbf1b158"
+    },
+    "workflow_trace": {
+      "exit_code": 0,
+      "log_sha256": "fc0f8b0cd2572f3f082033cf82a852be5bbc32fe461320e1c6fc37a4b4c954c8"
+    }
+  },
+  "independent_reviews": {
+    "typed-phase-denial-independent-review.json": "302a0aa80895979b91a55607b6c68afd39275fcf38d33a2a99203c16d7f34c39",
+    "independent-review.json": "0a3d1231880d52cd4a7e468ac3d0b8f3d3144d454dfaf143cb1b6b0721a937ab",
+    "ci-b108-comment-review.json": "58f8ee7482e2c9a044c5a0ebbbd93a335d85dff57d2f428e26a8026f9d943556"
+  },
+  "prior_ci": {
+    "run_id": 39036609806,
+    "head_sha": "f04a4293805d6cce990c16649245483399f57af2",
+    "conclusion": "failure",
+    "causes": [
+      "Three scripted Engine fixtures depended on installed Codex CLI and Windows user configuration.",
+      "Bandit flagged three inspect-only container metadata path comparisons."
+    ],
+    "repair": "Fixture constructor dependencies are mocked; precise B108 annotations document inside-container comparisons. Security thresholds unchanged."
+  },
+  "actual_docker_baseline": "private-local-phase-technical.json",
+  "docker_program_equivalence": "Runner follow-up changes comments only; wrapper, child, Docker argv and validation AST are independently verified equal to the qualified baseline.",
+  "recovery_contract": {
+    "corrective": "Only dedicated pre-effect phase-order, duplicate-snapshot, and production-write-before-RED denials; existing proposal/history budgets apply.",
+    "blocking": "Generic errors, freshness errors, unresolved outcomes, exhausted attempts, approval continuations, and errors after reservation."
+  },
+  "selector_limits": {
+    "max_nodeid_characters": 16384,
+    "manifest_bytes": 200000,
+    "per_phase_count": 10000,
+    "total_count": 20000,
+    "actual_targeted_count": 243,
+    "actual_longest_nodeid_characters": 8284,
+    "actual_manifest_bytes": 87724,
+    "source_test_first_evidence": "local-phase-long-selectors-20261017/red.log: two tests, one AssertionError failure; green: 18 tests, one platform skip."
+  },
+  "model_calls": 0,
+  "autonomous_qualification": false,
+  "production_qualification": false,
+  "marketing_quality_qualification": false,
+  "live_marketingbot_changed": false
+}

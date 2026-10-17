@@ -9,6 +9,10 @@ from .phase_test_execution import LocalPhaseTestPolicy, authorize_phase, verify_
 from .phase_test_runner import run_phase, validate_phase_receipt
 
 
+class LocalPhaseProposalRejected(ContractError):
+    """A known proposal guard rejected an action before any side effect."""
+
+
 class LocalPhaseRuntime:
     max_attempts = 32
 
@@ -68,24 +72,39 @@ class LocalPhaseRuntime:
         freshness = verify_phase_freshness(self.policy, self.workspace, phase)
         if any(receipt["phase"] == phase and receipt["snapshot_sha256"] == freshness["snapshot_sha256"]
                for receipt in self.state["attempts"]):
-            raise ContractError("This phase already has a terminal result for the identical snapshot.")
+            raise LocalPhaseProposalRejected(
+                "This phase already has a terminal result for the identical snapshot."
+            )
         if phase != "red" and not self._red_is_current(freshness["input_hashes"]):
-            raise ContractError("Regression phases require a reproduced RED with unchanged regression tests.")
+            raise LocalPhaseProposalRejected(
+                "Regression phases require a reproduced RED with unchanged regression tests."
+            )
         targeted = self._latest("targeted")
         if phase == "full" and not (
                 targeted and targeted["status"] == "passed"
                 and targeted["snapshot_sha256"] == freshness["snapshot_sha256"]):
-            raise ContractError("Full verification requires a passing targeted phase for the current snapshot.")
+            raise LocalPhaseProposalRejected(
+                "Full verification requires a passing targeted phase for the current snapshot."
+            )
         if len(self.state["attempts"]) >= self.max_attempts:
             raise ContractError("Local phase attempt budget exhausted.")
         self.state["in_flight"] = {"phase": phase, "snapshot_sha256": freshness["snapshot_sha256"]}
         self.checkpoint()
         # Keep the durable reservation on every exception. A returned receipt
         # alone permits clearing it only after complete host validation.
-        receipt = validate_phase_receipt(run_phase(
-            self.policy, self.workspace, phase, run_id=self.run_id, timeout=timeout,
-            results_dir=self.policy.source_path.parent / "phase-results",
-        ), self.policy, self.run_id)
+        try:
+            raw_receipt = run_phase(
+                self.policy, self.workspace, phase, run_id=self.run_id,
+                timeout=timeout,
+                results_dir=self.policy.source_path.parent / "phase-results",
+            )
+        except LocalPhaseProposalRejected as exc:
+            # Once reserved, even a specially typed exception is no longer a
+            # safe proposal correction: the external phase may have started.
+            raise ContractError(
+                "A phase proposal rejection occurred after reservation."
+            ) from exc
+        receipt = validate_phase_receipt(raw_receipt, self.policy, self.run_id)
         if receipt["phase"] != phase or receipt["snapshot_sha256"] != freshness["snapshot_sha256"]:
             raise ContractError("Phase receipt does not match the dispatched phase and snapshot.")
         self.state["attempts"].append(receipt)
@@ -103,7 +122,9 @@ class LocalPhaseRuntime:
         if relative in dict(self.policy.production_hashes):
             current = verify_phase_freshness(self.policy, self.workspace, "targeted")
             if not self._red_is_current(current["input_hashes"]):
-                raise ContractError("Production changes require a reproduced RED with unchanged regression tests.")
+                raise LocalPhaseProposalRejected(
+                    "Production changes require a reproduced RED with unchanged regression tests."
+                )
 
     def require_completion(self) -> None:
         if self.state["in_flight"] is not None:

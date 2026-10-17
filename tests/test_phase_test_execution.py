@@ -91,6 +91,23 @@ class LocalPhaseTestPolicyTests(unittest.TestCase):
     def load(self):
         return LocalPhaseTestPolicy.from_file(self.manifest_path, self.workspace)
 
+    def test_targeted_selection_preserves_long_source_parameter_nodeid(self):
+        nodeid = "tests/test_worker.py::test_full_source[" + "x" * 8192 + "]"
+        self.data["phases"]["targeted"]["nodeids"] = [nodeid]
+        self.write_manifest()
+        try:
+            policy = self.load()
+        except ContractError as exc:
+            self.fail(f"A full-source parametrized nodeid must remain selectable: {exc}")
+        self.assertEqual((nodeid,), authorize_phase(policy, "targeted").nodeids)
+
+    def test_targeted_nodeid_still_has_a_finite_character_limit(self):
+        nodeid = "tests/test_worker.py::test_full_source[" + "x" * 16384 + "]"
+        self.data["phases"]["targeted"]["nodeids"] = [nodeid]
+        self.write_manifest()
+        with self.assertRaises(ContractError):
+            self.load()
+
     def test_phase_selection_is_fixed_to_operator_nodeids_and_limits(self):
         policy = self.load()
         plan = authorize_phase(policy, "red")

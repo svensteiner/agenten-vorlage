@@ -367,7 +367,8 @@ def _valid_container(
         "PYTEST_ADDOPTS": "",
         "PYTEST_PLUGINS": "",
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
-        "HOME": "/tmp/agentkit-home",
+        # Expected paths inside the isolated container, not host file creation.
+        "HOME": "/tmp/agentkit-home",  # nosec B108
     }
     if env != expected_env:
         return False
@@ -377,7 +378,7 @@ def _valid_container(
         and config.get("Image") == policy.image_ref
         and config.get("User") == "65534:65534"
         and config.get("Entrypoint") == ["/usr/bin/timeout"]
-        and config.get("WorkingDir") == "/tmp"
+        and config.get("WorkingDir") == "/tmp"  # nosec B108
         and command[0:2] == ["--signal=TERM", "--kill-after=2"]
         and 1 <= command_timeout <= policy.limits["timeout_seconds"]
         and len(config.get("Cmd", [])) == 8
@@ -397,7 +398,7 @@ def _valid_container(
         and host.get("MemorySwap") == limit["memory_swap"]
         and host.get("NanoCpus") == policy.limits["nano_cpus"]
         and host.get("PidsLimit") == limit["pids"]
-        and host.get("Tmpfs") == {"/tmp": limit["tmpfs"]}
+        and host.get("Tmpfs") == {"/tmp": limit["tmpfs"]}  # nosec B108
         and not host.get("Binds")
         and labels.get("org.agentkit.phase-run") == name
         and len(mounts) == 1

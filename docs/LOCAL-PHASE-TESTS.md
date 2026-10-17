@@ -79,8 +79,16 @@ Fehler sowie 34 Offline-Releasepruefungen. Die Zahl der Releasepruefungen
 enthaelt die zu diesem Zeitpunkt vorhandenen generierten Pakete.
 [Quellbindungen, Ergebnisse und Grenzen](evidence/execution-profiles-20261017/private-local-phase-technical.json).
 
-Bekannte verfruehte Phasen- oder Produktionsschreibvorschlaege stoppen den
-Worker derzeit noch. Eng begrenzte Korrekturbeobachtungen sind als naechste
-Autonomieverbesserung offen; unbekannte oder bereits reservierte Ausgaenge
-duerfen dabei weiterhin nicht wiederholt werden. Ein echter autonomer
-Coding-Auftrag und die Marketingqualitaet sind weiterhin nicht abgenommen.
+Der [Folgestand](evidence/execution-profiles-20261017/private-local-phase-recovery-technical.json)
+besteht 651 Tests mit fuenf Skips, ohne Fehler und mit 80 % Branch-Coverage.
+Bekannte verfruehte Phasen- oder Produktionsschreibvorschlaege werden vor
+Seiteneffekten als begrenzte Korrekturbeobachtung an den Worker gegeben.
+Allgemeine Fehler, unbekannte Ausgaenge und Fehler nach einer Reservierung
+bleiben gesperrt. Vorhandene Korrektur- und Historienbudgets gelten weiter.
+
+Exakte, hostseitig gebundene Test-IDs duerfen bis zu 16.384 Zeichen enthalten;
+die Manifestgrenze von 200.000 Bytes und die Anzahlgrenzen bleiben erhalten.
+Damit ist auch ein bestehender parametrisierter Fall mit 8.284 Zeichen ohne
+Verkleinerung der gezielten Suite waehlbar. Das oeffentliche v1-Profil bleibt
+unveraendert. Ein echter autonomer Coding-Auftrag und die Marketingqualitaet
+sind weiterhin nicht abgenommen.

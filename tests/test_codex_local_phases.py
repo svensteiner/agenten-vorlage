@@ -11,6 +11,7 @@ from agentkit.approvals import ApprovalRequired, action_digest, replay_action_di
 from agentkit.backends import CodexBackend
 from agentkit.contracts import ContractError
 from agentkit.phase_test_execution import LocalPhaseTestPolicy
+from agentkit.phase_test_runtime import LocalPhaseProposalRejected
 from agentkit.write_policy import WritePolicy
 
 
@@ -120,6 +121,78 @@ class CodexLocalPhaseTests(unittest.TestCase):
             "output": "PRIVATE-RAW-OUTPUT-MUST-NOT-REACH-MODEL",
         }
 
+    def phase_proposal(self, phase):
+        return {**self.proposal, "arguments": {**self.step_args, "phase": phase}}
+
+    def test_known_phase_order_rejection_is_feedback_then_red_can_run(self):
+        callback = unittest.mock.Mock(side_effect=[
+            LocalPhaseProposalRejected("Regression phases require a reproduced RED."),
+            self.receipt("red"),
+        ])
+        responses = [self.proposal, self.phase_proposal("red"), self.final]
+        prompts = []
+
+        def call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            return responses[len(prompts) - 1]
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            report = CodexBackend()._execute_approval_gated(
+                {"role": "worker", "task": "run RED first"},
+                self.context(callback), 10,
+            )
+
+        self.assertEqual("success", report["status"])
+        self.assertEqual(["targeted", "red"], [
+            entry.args[0] for entry in callback.call_args_list
+        ])
+        self.assertIn("rejected_proposal", prompts[1][0])
+        self.assertIn("reproduced RED", prompts[1][0])
+        self.assertEqual("codex_action_step", prompts[2][1])
+
+    def test_post_reservation_contract_error_propagates_without_reprompt(self):
+        callback = unittest.mock.Mock(
+            side_effect=ContractError("Phase outcome is unknown after reservation.")
+        )
+        prompts = []
+
+        def call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            return self.proposal
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            with self.assertRaisesRegex(ContractError, "unknown after reservation"):
+                CodexBackend()._execute_approval_gated(
+                    {"role": "worker", "task": "run tests"},
+                    self.context(callback), 10,
+                )
+
+        callback.assert_called_once()
+        self.assertEqual(1, len(prompts))
+
+    def test_repeated_known_phase_rejections_use_existing_correction_limit(self):
+        callback = unittest.mock.Mock(
+            side_effect=LocalPhaseProposalRejected("Run RED before regression phases.")
+        )
+        prompts = []
+
+        def call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            return self.proposal
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call):
+            with self.assertRaisesRegex(ContractError, "repeatedly proposed a phase-ordering"):
+                CodexBackend()._execute_approval_gated(
+                    {"role": "worker", "task": "run tests"},
+                    self.context(callback), 10,
+                )
+
+        self.assertEqual(CodexBackend.max_proposal_corrections + 1, len(prompts))
+        self.assertEqual(CodexBackend.max_proposal_corrections + 1, callback.call_count)
+
     def test_phase_action_calls_only_host_callback_and_exposes_bounded_receipt(self):
         callback = unittest.mock.Mock(return_value=self.receipt())
         prompts = []
@@ -222,6 +295,63 @@ class CodexLocalPhaseTests(unittest.TestCase):
         )
         execute.assert_called_once()
 
+    def test_pre_red_production_write_is_rejected_then_test_edit_can_run(self):
+        original_source = (self.workspace / "agentkit/worker.py").read_text(encoding="utf-8")
+        original_test = (self.workspace / "tests/test_worker.py").read_text(encoding="utf-8")
+        production_write = {
+            **self.proposal,
+            "tool": "write_file",
+            "arguments": {
+                "path": "agentkit/worker.py", "content": "def work(): return 2\n",
+                "old_text": "", "new_text": "", "start_line": None,
+                "max_lines": None, "phase": None,
+            },
+        }
+        test_write = {
+            **self.proposal,
+            "tool": "write_file",
+            "arguments": {
+                "path": "tests/test_worker.py", "content": "def test_worker(): assert True\n# changed\n",
+                "old_text": "", "new_text": "", "start_line": None,
+                "max_lines": None, "phase": None,
+            },
+        }
+        responses = [production_write, test_write, self.final]
+        prompts = []
+
+        def call(prompt, contract, context, timeout):
+            prompts.append((prompt, contract))
+            return responses[len(prompts) - 1]
+
+        authorize = unittest.mock.Mock(side_effect=[
+            LocalPhaseProposalRejected(
+                "Production changes require a reproduced RED."
+            ),
+            None,
+        ])
+        context = self.context(unittest.mock.Mock(return_value=self.receipt()))
+        context["authorize_local_mutation"] = authorize
+
+        def write_file(backend, tool, arguments, _context, _timeout):
+            (self.workspace / arguments["path"]).write_text(
+                arguments["content"], encoding="utf-8"
+            )
+            return "written"
+
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", side_effect=call), \
+                patch("agentkit.backends.DeepSeekBackend._run_tool", side_effect=write_file) as execute:
+            report = CodexBackend()._execute_approval_gated(
+                {"role": "worker", "task": "make a test-only change"}, context, 10
+            )
+
+        self.assertEqual("success", report["status"])
+        self.assertEqual(original_source, (self.workspace / "agentkit/worker.py").read_text(encoding="utf-8"))
+        self.assertNotEqual(original_test, (self.workspace / "tests/test_worker.py").read_text(encoding="utf-8"))
+        self.assertEqual(1, execute.call_count)
+        self.assertEqual("tests/test_worker.py", execute.call_args.args[2]["path"])
+        self.assertIn("rejected_proposal", prompts[1][0])
+
     def test_unknown_phase_receipt_stops_without_retry(self):
         callback = unittest.mock.Mock(return_value=self.receipt(status="unknown"))
         with patch("agentkit.backends.codex_command", return_value=["codex"]), \
@@ -269,6 +399,38 @@ class CodexLocalPhaseTests(unittest.TestCase):
         self.assertEqual("success", report["status"])
         callback.assert_called_once()
         self.assertEqual("targeted", callback.call_args.args[0])
+
+    def test_approval_continuation_does_not_convert_phase_denial_to_retry(self):
+        callback = unittest.mock.Mock(
+            side_effect=LocalPhaseProposalRejected("Phase sequence changed after approval.")
+        )
+        approved_args = {"phase": "targeted"}
+        context = self.context(callback)
+        context.update(
+            approval_resume={
+                "kind": "codex-action", "tool": "run_local_tests",
+                "arguments": approved_args, "action_history": [],
+            },
+            approved_action={
+                "tool": "run_local_tests", "arguments": approved_args,
+                "action_sha256": action_digest("run_local_tests", approved_args),
+                "replay_sha256": replay_action_digest(
+                    "run_local_tests", approved_args, self.workspace
+                ),
+            },
+            completed_actions=[],
+        )
+        with patch("agentkit.backends.codex_command", return_value=["codex"]), \
+                patch.object(CodexBackend, "_call", return_value=self.final) as model_call:
+            with self.assertRaisesRegex(
+                LocalPhaseProposalRejected, "changed after approval"
+            ):
+                CodexBackend()._execute_approval_gated(
+                    {"role": "worker", "task": "resume approved phase"},
+                    context, 10,
+                )
+        callback.assert_called_once()
+        model_call.assert_not_called()
 
     def test_local_schema_disables_native_shell_and_preserves_standard_schema(self):
         captured = {}

@@ -35,6 +35,7 @@ from .approvals import (
 )
 from .test_execution import TestExecutionPolicy, run_isolated_tests, validate_test_receipt
 from .phase_test_execution import LocalPhaseTestPolicy
+from .phase_test_runtime import LocalPhaseProposalRejected
 from .write_policy import WritePolicy
 from .workspace_observation import OBSERVATION_TOOLS, run_workspace_observation
 
@@ -942,7 +943,21 @@ class CodexBackend:
                     self._validate_action_history(action_history)
                     continue
             if tool in WRITE_TOOLS:
-                self._authorize_local_mutation(context, tool, arguments)
+                try:
+                    self._authorize_local_mutation(context, tool, arguments)
+                except LocalPhaseProposalRejected as exc:
+                    if (rejected_proposals >= self.max_proposal_corrections
+                            or len(action_history) >= self.max_action_history):
+                        raise ContractError(
+                            "Codex repeatedly proposed a phase-unsafe write."
+                        ) from exc
+                    rejected_proposals += 1
+                    action_history = [*action_history, {
+                        "kind": "rejected_proposal", "tool": tool,
+                        "path": arguments.get("path", ""), "reason": str(exc),
+                    }]
+                    self._validate_action_history(action_history)
+                    continue
             digest = replay_action_digest(tool, arguments, Path(context["workspace"]))
             if digest in completed_digests:
                 if rejected_proposals >= self.max_proposal_corrections or len(action_history) >= self.max_action_history:
@@ -971,9 +986,28 @@ class CodexBackend:
                     raise ContractError("Private local phase tests are not available in this context.")
             elif policy is None:
                 raise ContractError("Host-executed Codex proposals require a write policy.")
-            result = (self._run_local_phase(context, arguments["phase"], remaining())
-                      if tool == "run_local_tests" else
-                      DeepSeekBackend._run_tool(self, tool, arguments, context, remaining()))
+            if tool == "run_local_tests":
+                try:
+                    result = self._run_local_phase(
+                        context, arguments["phase"], remaining()
+                    )
+                except LocalPhaseProposalRejected as exc:
+                    if (rejected_proposals >= self.max_proposal_corrections
+                            or len(action_history) >= self.max_action_history):
+                        raise ContractError(
+                            "Codex repeatedly proposed a phase-ordering violation."
+                        ) from exc
+                    rejected_proposals += 1
+                    action_history = [*action_history, {
+                        "kind": "rejected_proposal", "tool": tool,
+                        "reason": str(exc),
+                    }]
+                    self._validate_action_history(action_history)
+                    continue
+            else:
+                result = DeepSeekBackend._run_tool(
+                    self, tool, arguments, context, remaining()
+                )
             observations.clear()
             observation_chars = 0
             entry = self._history_entry(

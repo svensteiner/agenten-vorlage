@@ -25,6 +25,9 @@ _MAX_MANIFEST_BYTES = 200_000
 _MAX_PATHS = 4096
 _MAX_PHASE_NODEIDS = 10_000
 _MAX_TOTAL_NODEIDS = 20_000
+# Source-text parametrization can include the complete 8,192-character input.
+# Selection remains operator-owned and bounded by the total manifest size.
+_MAX_NODEID_CHARS = 16_384
 _HARD_LIMITS = MappingProxyType({
     "timeout_seconds": 720,
     "memory_bytes": 2 * 1024**3,
@@ -127,7 +130,7 @@ def _nodeids(value: object, snapshot_paths: set[str], phase: str) -> tuple[str, 
         raise ContractError(f"The {phase} phase requires a bounded nonempty nodeid list.")
     result: list[str] = []
     for nodeid in value:
-        if (type(nodeid) is not str or not nodeid or len(nodeid) > 1000
+        if (type(nodeid) is not str or not nodeid or len(nodeid) > _MAX_NODEID_CHARS
                 or any(ord(char) < 32 or ord(char) == 127 for char in nodeid)):
             raise ContractError(f"The {phase} phase contains an invalid test nodeid.")
         parts = nodeid.split("::")

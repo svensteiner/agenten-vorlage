@@ -93,6 +93,15 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
             "start_line": None, "max_lines": None, "phase": phase,
         }
 
+    @staticmethod
+    def codex_backend_fixture():
+        with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]) as command, \
+                patch("agentkit.backends._windows_sandbox_selection", return_value="unelevated") as sandbox:
+            backend = CodexBackend()
+        command.assert_called_once_with()
+        sandbox.assert_called_once_with()
+        return backend
+
     def proposal(self, tool, *, path="", content="", phase=None):
         return {
             "kind": "proposal", "tool": tool,
@@ -146,7 +155,7 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
         return value
 
     def run_engine(self, *, include_full=True):
-        backend = CodexBackend()
+        backend = self.codex_backend_fixture()
         decisions = iter([
             self.decision(), self.decision(role="reviewer"),
             self.decision("finish", ""),
@@ -188,14 +197,30 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
             ).run("Complete the verified local phase workflow")
         return state, prompts
 
-    def test_engine_denies_production_write_before_red_without_dispatch(self):
+    def test_engine_recovers_from_pre_red_write_denial_without_unauthorized_mutation(self):
         self.source.write_text("def work(): return 1\n", encoding="utf-8")
-        backend = CodexBackend()
-        decisions = iter([self.decision()])
-        action = self.proposal("write_file", path="agentkit/worker.py", content="def work(): return 9\n")
+        original_test = self.test_file.read_text(encoding="utf-8")
+        backend = self.codex_backend_fixture()
+        decisions = iter([
+            self.decision(), self.decision(role="reviewer"),
+            self.decision("finish", ""),
+        ])
+        actions = iter([
+            self.proposal("write_file", path="agentkit/worker.py", content="def work(): return 9\n"),
+            self.proposal("write_file", path="tests/test_worker.py", content="def test_worker(): assert True\n# updated\n"),
+            self.final_action(),
+        ])
+        prompts = []
 
         def fake_call(prompt, contract, context, timeout):
-            return next(decisions) if contract == "decision" else action
+            prompts.append((prompt, contract))
+            if contract == "decision":
+                return next(decisions)
+            if contract == "codex_action_step":
+                return next(actions)
+            if contract == "report":
+                return self.report()
+            raise AssertionError(f"Unexpected Codex contract: {contract}")
 
         with patch("agentkit.backends.codex_command", return_value=["codex-fixture"]), \
                 patch.object(CodexBackend, "_call", side_effect=fake_call), \
@@ -207,6 +232,11 @@ class EngineCodexLocalPhaseTests(unittest.TestCase):
 
         self.assertEqual("blocked", state["status"])
         self.assertEqual("def work(): return 1\n", self.source.read_text(encoding="utf-8"))
+        self.assertNotEqual(original_test, self.test_file.read_text(encoding="utf-8"))
+        action_prompts = [prompt for prompt, contract in prompts if contract == "codex_action_step"]
+        self.assertGreaterEqual(len(action_prompts), 2)
+        self.assertIn("rejected_proposal", action_prompts[1])
+        self.assertIn("Production changes require a reproduced RED", action_prompts[1])
         run_phase.assert_not_called()
 
     def test_real_engine_phase_write_review_finish_flow_uses_private_callbacks(self):

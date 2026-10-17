@@ -21,9 +21,13 @@ mit 4.729 erfassten Testfaellen in 321 Dateien. Alle 698 Eingaben blieben
 unveraendert; der Host validierte den Bericht und die Containerbereinigung.
 Zwei zuvor unbekannt beendete Diagnoselaeufe bleiben getrennt erhalten.
 [Quellhashes und Grenzen](docs/evidence/execution-profiles-20261017/private-local-phase-technical.json).
-Das Profil ist nur operatorseitig ueber Python verfuegbar. Noch offen sind
-Korrekturbeobachtungen fuer bekannte verfruehte Vorschlaege und ein echter
-autonomer Modelllauf; die Marketingqualitaet ist damit nicht nachgewiesen.
+Das Profil ist nur operatorseitig ueber Python verfuegbar. Der
+[Folgestand mit begrenzten Korrekturbeobachtungen](docs/evidence/execution-profiles-20261017/private-local-phase-recovery-technical.json)
+besteht 651 Gesamttests mit fuenf Skips, ohne Fehler und mit 80 % Branch-Coverage
+sowie 34 Offline-Releasepruefungen. Die vorherige GitHub-CI scheiterte an
+hostabhaengigen Test-Fixtures und drei Scannerbefunden an reinen Container-
+Metadatenvergleichen; die Korrekturen sind lokal geprueft, die neue CI steht aus.
+Ein echter autonomer Modelllauf und die Marketingqualitaet bleiben offen.
 
 Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
 ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und
