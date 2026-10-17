@@ -1,0 +1,507 @@
+{
+  "kind": "synthetic-local-docker-runner-diagnostics-only",
+  "claims": [
+    "bounded runner behavior only",
+    "not a project test receipt",
+    "not semantic proof"
+  ],
+  "image_id": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+  "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+  "source_before_after": {
+    "before": {
+      "source_sha256": "acb5eef58d8714ef2587362c56457924105f110b54f16edf9cb72b4a36caf866",
+      "unit_test_sha256": "b2a58592bebe3cd31fa081ae3063f046fa937b7b2783fa3f66498801fd89d2bb"
+    },
+    "after": {
+      "source_sha256": "acb5eef58d8714ef2587362c56457924105f110b54f16edf9cb72b4a36caf866",
+      "unit_test_sha256": "b2a58592bebe3cd31fa081ae3063f046fa937b7b2783fa3f66498801fd89d2bb"
+    }
+  },
+  "cases": {
+    "import_and_hostile_conftest": {
+      "policy_sha256": "452514daa12cf0ab7217cd01acf9aa65ed9308a465e5da38bb8784b78bf3bb27",
+      "test_sha256": {
+        "tests/test_workspace_import.py": "9faec3bceed67ff5bf05a66d41c04227d86534b9a1271d1b63c71bf190389511"
+      },
+      "support_sha256": {
+        "app.py": "09cbf5ae13a643a9b023da1035c60c5018731d5d9633a86d61b19b4e3f3aa7eb",
+        "tests/conftest.py": "ead2d7b2bacbde840887076623895cb421200a44c8c6c0980226bafdf9506534"
+      },
+      "receipt": {
+        "status": "passed",
+        "run_id": "44444444444444444444444444444444",
+        "reason": "ok",
+        "exit_code": 0,
+        "policy_sha256": "452514daa12cf0ab7217cd01acf9aa65ed9308a465e5da38bb8784b78bf3bb27",
+        "test_manifest_sha256": "452514daa12cf0ab7217cd01acf9aa65ed9308a465e5da38bb8784b78bf3bb27",
+        "test_paths": [
+          "tests/test_workspace_import.py"
+        ],
+        "expected_test_count": 1,
+        "test_outcomes": {
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "xfailed": 0,
+          "xpassed": 0,
+          "deselected": 0
+        },
+        "image_ref": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "image_id": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+        "snapshot_sha256": "e58e3aa57bb691264093738c817a56454d9611d2e270ee26c290314203e94267",
+        "workspace_fingerprint": "94b74aa0721e0b6b01622a76242f71de1a427da221447f6dc8d145fed6755b54",
+        "duration_seconds": 2.328,
+        "output": ".                                                                        [100%]\n1 passed in 0.05s\n\n",
+        "cleanup_confirmed": true
+      },
+      "assertions": [
+        "workspace import passed",
+        "network connect raised OSError",
+        "read-only workspace write raised OSError"
+      ]
+    },
+    "output_limit": {
+      "policy_sha256": "90ebc23fc8370fb0eb1c7a88bfb9f34ffd65915941599a4776a4e2dea6b5e0f4",
+      "test_sha256": {
+        "tests/test_output_flood.py": "38d4102a413311b4413ec0d3321c60542aecf475e19c1c53e45abb72bf69dad3"
+      },
+      "receipt": {
+        "status": "failed",
+        "run_id": "55555555555555555555555555555555",
+        "reason": "output_limit_exceeded",
+        "exit_code": null,
+        "policy_sha256": "90ebc23fc8370fb0eb1c7a88bfb9f34ffd65915941599a4776a4e2dea6b5e0f4",
+        "test_manifest_sha256": "90ebc23fc8370fb0eb1c7a88bfb9f34ffd65915941599a4776a4e2dea6b5e0f4",
+        "test_paths": [
+          "tests/test_output_flood.py"
+        ],
+        "expected_test_count": 1,
+        "test_outcomes": {
+          "passed": 0,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "xfailed": 0,
+          "xpassed": 0,
+          "deselected": 0
+        },
+        "image_ref": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "image_id": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "dependency_lock_sha256": "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f",
+        "snapshot_sha256": "8fd4b2f781eb99c0e11d50e86054e34063b6fc4eb59c3130442cdcdcbbe05c9e",
+        "workspace_fingerprint": "b2262674fc5ba0678e7c2dada14d91418d495c74285d042761c5fa81c5683643",
+        "duration_seconds": 3.375,
+        "output": "",
+        "cleanup_confirmed": true
+      }
+    },
+    "detached_pid1_deadline": {
+      "policy_sha256": "ca817f58aafbf6b71740c93c8f0f789ed27f6d393c5f1cbc49efd0422655190f",
+      "snapshot_sha256": "818ac36b2cc64972a2dc6f169519a403cc9a364edb0c1d018c02d7121b340561",
+      "test_sha256": {
+        "tests/test_long.py": "1e2e90e8c9ca6df77077541569e7c0654e8819c9aee9b9ebc9d57d93aeab9ae3"
+      },
+      "create_argv": [
+        "docker",
+        "create",
+        "--pull=never",
+        "--name",
+        "agentkit-pid1-deadline-diagnostic",
+        "--label",
+        "org.agentkit.run-tests=true",
+        "--network=none",
+        "--read-only",
+        "--user=65534:65534",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=128m",
+        "--memory-swap=128m",
+        "--cpus=1",
+        "--pids-limit=32",
+        "--ulimit=nofile=64:64",
+        "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777",
+        "--mount",
+        "type=bind,source=C:/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/deadline-stage/agentkit-tests-2_amqcjf,target=/workspace,readonly",
+        "--env=PYTEST_ADDOPTS=",
+        "--env=PYTEST_PLUGINS=",
+        "--env=PYTEST_DISABLE_PLUGIN_AUTOLOAD=1",
+        "--workdir=/workspace",
+        "--entrypoint=/usr/bin/timeout",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "--signal=TERM",
+        "--kill-after=2",
+        "2",
+        "/usr/local/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))",
+        "tests/test_long.py"
+      ],
+      "container_id_sha256": "b665e0f14e22ba6db07c3d52533d4cd8a5f8777f652bcea3efb3d422fb0f94cf",
+      "inspect": {
+        "Image": "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "Entrypoint": [
+          "/usr/bin/timeout"
+        ],
+        "Cmd": [
+          "--signal=TERM",
+          "--kill-after=2",
+          "2",
+          "/usr/local/bin/python",
+          "-I",
+          "-B",
+          "-c",
+          "import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))",
+          "tests/test_long.py"
+        ],
+        "WorkingDir": "/workspace",
+        "pytest_env": [
+          "PYTEST_ADDOPTS=",
+          "PYTEST_PLUGINS=",
+          "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1"
+        ],
+        "HostConfig": {
+          "NetworkMode": "none",
+          "ReadonlyRootfs": true,
+          "Privileged": false,
+          "CapDrop": [
+            "ALL"
+          ],
+          "CapAdd": null,
+          "SecurityOpt": [
+            "no-new-privileges"
+          ],
+          "Memory": 134217728,
+          "MemorySwap": 134217728,
+          "NanoCpus": 1000000000,
+          "PidsLimit": 32,
+          "Ulimits": [
+            {
+              "Name": "nofile",
+              "Hard": 64,
+              "Soft": 64
+            }
+          ],
+          "Tmpfs": {
+            "/tmp": "rw,noexec,nosuid,nodev,size=16m,mode=1777"
+          },
+          "Binds": null
+        },
+        "Mounts": [
+          {
+            "Type": "bind",
+            "Source": "/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/deadline-stage/agentkit-tests-2_amqcjf",
+            "Destination": "/workspace",
+            "RW": false
+          }
+        ]
+      },
+      "state_after_5_seconds_without_attach": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 124,
+        "Error": "",
+        "StartedAt": "2026-10-17T03:40:32.009763579Z",
+        "FinishedAt": "2026-10-17T03:40:34.17873505Z"
+      },
+      "cleanup_confirmed": true
+    }
+  },
+  "docker_calls": [
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab"
+      ],
+      "timeout_seconds": 59.922,
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"RepoTags\":[\"agentkit-trusted-tests:20261017\"],\"RepoDigests\":[\"agentkit-trusted-tests@sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-17T05:19:56.76650459+02:00\",\"Config\":{\"User\":\"65534:65534\",\"Env\":[\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"python3\"],\"Labels\":{\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":57486702,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:15f1c8eb1ab18eae260c7fb6296434cbe1ff0e1e30fd814ae92a80dd54005e62\",\"sha256:e1fa2746ad6d51e7de9171dfcbb1fe93d01d51c5d8d3623e0c3b223076dc5d23\",\"sha256:b361fa3b97940ee89a1aab8fde1027e47ab2c2e700ca2f8d5988ad2c64386e5c\",\"sha256:dca2a125b4903477bcb42084172cfc98865299810620ffd617bf6e12dd83d89f\",\"sha256:7ae04d49126aa3ef82863bb21274bfe7514e756b0e9ce840d7eb7640c880c46a\",\"sha256:eaa8f20f4e3cbc9b57159db06a0af0cef529f4ba467f7cc619c1ba0f95bfa513\",\"sha256:be45a68725f19a9e7e14071fe93346e2c3b31cf11ab6b59d14ffe80dc33f1084\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-17T03:19:58.665970606Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"l0v44f09vqs0cepb0ehb8b2du\",\"CreatedAt\":\"2026-10-17T05:19:59.683222984+02:00\"}]}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "create",
+        "--pull=never",
+        "--name",
+        "agentkit-tests-44444444444444444444444444444444-a79932d7e0734539b68c5b436521d7d0",
+        "--label",
+        "org.agentkit.run-tests=true",
+        "--network=none",
+        "--read-only",
+        "--user=65534:65534",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=128m",
+        "--memory-swap=128m",
+        "--cpus=1",
+        "--pids-limit=32",
+        "--ulimit=nofile=64:64",
+        "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777",
+        "--mount",
+        "type=bind,source=C:/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-ml4s57n2/agentkit-tests-k6genvxd,target=/workspace,readonly",
+        "--env=PYTEST_ADDOPTS=",
+        "--env=PYTEST_PLUGINS=",
+        "--env=PYTEST_DISABLE_PLUGIN_AUTOLOAD=1",
+        "--workdir=/workspace",
+        "--entrypoint=/usr/bin/timeout",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "--signal=TERM",
+        "--kill-after=2",
+        "59",
+        "/usr/local/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))",
+        "tests/test_workspace_import.py"
+      ],
+      "timeout_seconds": 59.531,
+      "exit_code": 0,
+      "stdout": "9c652b033fd376ca2ae749d41b22a1a1ef45866712a0968a28e90cd17a58ae5b\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "9c652b033fd376ca2ae749d41b22a1a1ef45866712a0968a28e90cd17a58ae5b"
+      ],
+      "timeout_seconds": 59.078,
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"9c652b033fd376ca2ae749d41b22a1a1ef45866712a0968a28e90cd17a58ae5b\",\"Created\":\"2026-10-17T03:40:25.877007843Z\",\"Path\":\"/usr/bin/timeout\",\"Args\":[\"--signal=TERM\",\"--kill-after=2\",\"59\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_workspace_import.py\"],\"State\":{\"Status\":\"created\",\"Running\":false,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":0,\"ExitCode\":0,\"Error\":\"\",\"StartedAt\":\"0001-01-01T00:00:00Z\",\"FinishedAt\":\"0001-01-01T00:00:00Z\"},\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"ResolvConfPath\":\"\",\"HostnamePath\":\"\",\"HostsPath\":\"\",\"LogPath\":\"\",\"Name\":\"/agentkit-tests-44444444444444444444444444444444-a79932d7e0734539b68c5b436521d7d0\",\"RestartCount\":0,\"Driver\":\"overlayfs\",\"Platform\":\"linux\",\"MountLabel\":\"\",\"ProcessLabel\":\"\",\"AppArmorProfile\":\"\",\"ExecIDs\":null,\"HostConfig\":{\"Binds\":null,\"ContainerIDFile\":\"\",\"LogConfig\":{\"Type\":\"json-file\",\"Config\":{}},\"NetworkMode\":\"none\",\"PortBindings\":{},\"RestartPolicy\":{\"Name\":\"no\",\"MaximumRetryCount\":0},\"AutoRemove\":false,\"VolumeDriver\":\"\",\"VolumesFrom\":null,\"ConsoleSize\":[0,0],\"CapAdd\":null,\"CapDrop\":[\"ALL\"],\"CgroupnsMode\":\"private\",\"Dns\":null,\"DnsOptions\":[],\"DnsSearch\":[],\"ExtraHosts\":null,\"GroupAdd\":null,\"IpcMode\":\"private\",\"Cgroup\":\"\",\"Links\":null,\"OomScoreAdj\":0,\"PidMode\":\"\",\"Privileged\":false,\"PublishAllPorts\":false,\"ReadonlyRootfs\":true,\"SecurityOpt\":[\"no-new-privileges\"],\"Tmpfs\":{\"/tmp\":\"rw,noexec,nosuid,nodev,size=16m,mode=1777\"},\"UTSMode\":\"\",\"UsernsMode\":\"\",\"ShmSize\":67108864,\"Runtime\":\"runc\",\"Isolation\":\"\",\"CpuShares\":0,\"Memory\":134217728,\"NanoCpus\":1000000000,\"CgroupParent\":\"\",\"BlkioWeight\":0,\"BlkioWeightDevice\":[],\"BlkioDeviceReadBps\":[],\"BlkioDeviceWriteBps\":[],\"BlkioDeviceReadIOps\":[],\"BlkioDeviceWriteIOps\":[],\"CpuPeriod\":0,\"CpuQuota\":0,\"CpuRealtimePeriod\":0,\"CpuRealtimeRuntime\":0,\"CpusetCpus\":\"\",\"CpusetMems\":\"\",\"Devices\":[],\"DeviceCgroupRules\":null,\"DeviceRequests\":null,\"MemoryReservation\":0,\"MemorySwap\":134217728,\"MemorySwappiness\":null,\"OomKillDisable\":false,\"PidsLimit\":32,\"Ulimits\":[{\"Name\":\"nofile\",\"Hard\":64,\"Soft\":64}],\"CpuCount\":0,\"CpuPercent\":0,\"IOMaximumIOps\":0,\"IOMaximumBandwidth\":0,\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-ml4s57n2/agentkit-tests-k6genvxd\",\"Target\":\"/workspace\",\"ReadOnly\":true}],\"MaskedPaths\":[\"/proc/acpi\",\"/proc/asound\",\"/proc/interrupts\",\"/proc/kcore\",\"/proc/keys\",\"/proc/latency_stats\",\"/proc/sched_debug\",\"/proc/scsi\",\"/proc/timer_list\",\"/proc/timer_stats\",\"/sys/devices/virtual/powercap\",\"/sys/firmware\"],\"ReadonlyPaths\":[\"/proc/bus\",\"/proc/fs\",\"/proc/irq\",\"/proc/sys\",\"/proc/sysrq-trigger\"]},\"Storage\":{\"RootFS\":{\"Snapshot\":{\"Name\":\"overlayfs\"}}},\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-ml4s57n2/agentkit-tests-k6genvxd\",\"Destination\":\"/workspace\",\"Mode\":\"\",\"RW\":false,\"Propagation\":\"rprivate\"}],\"Config\":{\"Hostname\":\"9c652b033fd3\",\"Domainname\":\"\",\"User\":\"65534:65534\",\"AttachStdin\":false,\"AttachStdout\":true,\"AttachStderr\":true,\"Tty\":false,\"OpenStdin\":false,\"StdinOnce\":false,\"Env\":[\"PYTEST_ADDOPTS=\",\"PYTEST_PLUGINS=\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"--signal=TERM\",\"--kill-after=2\",\"59\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_workspace_import.py\"],\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"Volumes\":null,\"WorkingDir\":\"/workspace\",\"Entrypoint\":[\"/usr/bin/timeout\"],\"Labels\":{\"org.agentkit.run-tests\":\"true\",\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"NetworkSettings\":{\"SandboxID\":\"\",\"SandboxKey\":\"\",\"Ports\":{},\"Networks\":{\"none\":{\"IPAMConfig\":null,\"Links\":null,\"Aliases\":null,\"DriverOpts\":null,\"GwPriority\":0,\"NetworkID\":\"\",\"EndpointID\":\"\",\"Gateway\":\"\",\"IPAddress\":\"\",\"MacAddress\":\"\",\"IPPrefixLen\":0,\"IPv6Gateway\":\"\",\"GlobalIPv6Address\":\"\",\"GlobalIPv6PrefixLen\":0,\"DNSNames\":null}}},\"ImageManifestDescriptor\":{\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"digest\":\"sha256:ff195fff3cd1eb6d047541555f302905b53c623651b50fcf4eb304206686874d\",\"size\":1628,\"platform\":{\"architecture\":\"amd64\",\"os\":\"linux\"}}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "start",
+        "--attach",
+        "9c652b033fd376ca2ae749d41b22a1a1ef45866712a0968a28e90cd17a58ae5b"
+      ],
+      "timeout_seconds": 58.86,
+      "exit_code": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.05s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "rm",
+        "--force",
+        "agentkit-tests-44444444444444444444444444444444-a79932d7e0734539b68c5b436521d7d0"
+      ],
+      "timeout_seconds": 5.0,
+      "exit_code": 0,
+      "stdout": "agentkit-tests-44444444444444444444444444444444-a79932d7e0734539b68c5b436521d7d0\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab"
+      ],
+      "timeout_seconds": 59.969,
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"RepoTags\":[\"agentkit-trusted-tests:20261017\"],\"RepoDigests\":[\"agentkit-trusted-tests@sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-17T05:19:56.76650459+02:00\",\"Config\":{\"User\":\"65534:65534\",\"Env\":[\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"python3\"],\"Labels\":{\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":57486702,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:15f1c8eb1ab18eae260c7fb6296434cbe1ff0e1e30fd814ae92a80dd54005e62\",\"sha256:e1fa2746ad6d51e7de9171dfcbb1fe93d01d51c5d8d3623e0c3b223076dc5d23\",\"sha256:b361fa3b97940ee89a1aab8fde1027e47ab2c2e700ca2f8d5988ad2c64386e5c\",\"sha256:dca2a125b4903477bcb42084172cfc98865299810620ffd617bf6e12dd83d89f\",\"sha256:7ae04d49126aa3ef82863bb21274bfe7514e756b0e9ce840d7eb7640c880c46a\",\"sha256:eaa8f20f4e3cbc9b57159db06a0af0cef529f4ba467f7cc619c1ba0f95bfa513\",\"sha256:be45a68725f19a9e7e14071fe93346e2c3b31cf11ab6b59d14ffe80dc33f1084\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-17T03:19:58.665970606Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"l0v44f09vqs0cepb0ehb8b2du\",\"CreatedAt\":\"2026-10-17T05:19:59.683222984+02:00\"}]}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "create",
+        "--pull=never",
+        "--name",
+        "agentkit-tests-55555555555555555555555555555555-f6f3f16886de4383a299fabddae2485a",
+        "--label",
+        "org.agentkit.run-tests=true",
+        "--network=none",
+        "--read-only",
+        "--user=65534:65534",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=128m",
+        "--memory-swap=128m",
+        "--cpus=1",
+        "--pids-limit=32",
+        "--ulimit=nofile=64:64",
+        "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777",
+        "--mount",
+        "type=bind,source=C:/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-2dk_ntz8/agentkit-tests-9un_mqty,target=/workspace,readonly",
+        "--env=PYTEST_ADDOPTS=",
+        "--env=PYTEST_PLUGINS=",
+        "--env=PYTEST_DISABLE_PLUGIN_AUTOLOAD=1",
+        "--workdir=/workspace",
+        "--entrypoint=/usr/bin/timeout",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "--signal=TERM",
+        "--kill-after=2",
+        "59",
+        "/usr/local/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))",
+        "tests/test_output_flood.py"
+      ],
+      "timeout_seconds": 59.657,
+      "exit_code": 0,
+      "stdout": "7955239800aaca38c800eb9354e9b28172c8e6362f7295297bf8bb65d1e10646\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "7955239800aaca38c800eb9354e9b28172c8e6362f7295297bf8bb65d1e10646"
+      ],
+      "timeout_seconds": 59.219,
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"7955239800aaca38c800eb9354e9b28172c8e6362f7295297bf8bb65d1e10646\",\"Created\":\"2026-10-17T03:40:28.081441781Z\",\"Path\":\"/usr/bin/timeout\",\"Args\":[\"--signal=TERM\",\"--kill-after=2\",\"59\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_output_flood.py\"],\"State\":{\"Status\":\"created\",\"Running\":false,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":0,\"ExitCode\":0,\"Error\":\"\",\"StartedAt\":\"0001-01-01T00:00:00Z\",\"FinishedAt\":\"0001-01-01T00:00:00Z\"},\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"ResolvConfPath\":\"\",\"HostnamePath\":\"\",\"HostsPath\":\"\",\"LogPath\":\"\",\"Name\":\"/agentkit-tests-55555555555555555555555555555555-f6f3f16886de4383a299fabddae2485a\",\"RestartCount\":0,\"Driver\":\"overlayfs\",\"Platform\":\"linux\",\"MountLabel\":\"\",\"ProcessLabel\":\"\",\"AppArmorProfile\":\"\",\"ExecIDs\":null,\"HostConfig\":{\"Binds\":null,\"ContainerIDFile\":\"\",\"LogConfig\":{\"Type\":\"json-file\",\"Config\":{}},\"NetworkMode\":\"none\",\"PortBindings\":{},\"RestartPolicy\":{\"Name\":\"no\",\"MaximumRetryCount\":0},\"AutoRemove\":false,\"VolumeDriver\":\"\",\"VolumesFrom\":null,\"ConsoleSize\":[0,0],\"CapAdd\":null,\"CapDrop\":[\"ALL\"],\"CgroupnsMode\":\"private\",\"Dns\":null,\"DnsOptions\":[],\"DnsSearch\":[],\"ExtraHosts\":null,\"GroupAdd\":null,\"IpcMode\":\"private\",\"Cgroup\":\"\",\"Links\":null,\"OomScoreAdj\":0,\"PidMode\":\"\",\"Privileged\":false,\"PublishAllPorts\":false,\"ReadonlyRootfs\":true,\"SecurityOpt\":[\"no-new-privileges\"],\"Tmpfs\":{\"/tmp\":\"rw,noexec,nosuid,nodev,size=16m,mode=1777\"},\"UTSMode\":\"\",\"UsernsMode\":\"\",\"ShmSize\":67108864,\"Runtime\":\"runc\",\"Isolation\":\"\",\"CpuShares\":0,\"Memory\":134217728,\"NanoCpus\":1000000000,\"CgroupParent\":\"\",\"BlkioWeight\":0,\"BlkioWeightDevice\":[],\"BlkioDeviceReadBps\":[],\"BlkioDeviceWriteBps\":[],\"BlkioDeviceReadIOps\":[],\"BlkioDeviceWriteIOps\":[],\"CpuPeriod\":0,\"CpuQuota\":0,\"CpuRealtimePeriod\":0,\"CpuRealtimeRuntime\":0,\"CpusetCpus\":\"\",\"CpusetMems\":\"\",\"Devices\":[],\"DeviceCgroupRules\":null,\"DeviceRequests\":null,\"MemoryReservation\":0,\"MemorySwap\":134217728,\"MemorySwappiness\":null,\"OomKillDisable\":false,\"PidsLimit\":32,\"Ulimits\":[{\"Name\":\"nofile\",\"Hard\":64,\"Soft\":64}],\"CpuCount\":0,\"CpuPercent\":0,\"IOMaximumIOps\":0,\"IOMaximumBandwidth\":0,\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-2dk_ntz8/agentkit-tests-9un_mqty\",\"Target\":\"/workspace\",\"ReadOnly\":true}],\"MaskedPaths\":[\"/proc/acpi\",\"/proc/asound\",\"/proc/interrupts\",\"/proc/kcore\",\"/proc/keys\",\"/proc/latency_stats\",\"/proc/sched_debug\",\"/proc/scsi\",\"/proc/timer_list\",\"/proc/timer_stats\",\"/sys/devices/virtual/powercap\",\"/sys/firmware\"],\"ReadonlyPaths\":[\"/proc/bus\",\"/proc/fs\",\"/proc/irq\",\"/proc/sys\",\"/proc/sysrq-trigger\"]},\"Storage\":{\"RootFS\":{\"Snapshot\":{\"Name\":\"overlayfs\"}}},\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/agentkit-test-stage-2dk_ntz8/agentkit-tests-9un_mqty\",\"Destination\":\"/workspace\",\"Mode\":\"\",\"RW\":false,\"Propagation\":\"rprivate\"}],\"Config\":{\"Hostname\":\"7955239800aa\",\"Domainname\":\"\",\"User\":\"65534:65534\",\"AttachStdin\":false,\"AttachStdout\":true,\"AttachStderr\":true,\"Tty\":false,\"OpenStdin\":false,\"StdinOnce\":false,\"Env\":[\"PYTEST_ADDOPTS=\",\"PYTEST_PLUGINS=\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"--signal=TERM\",\"--kill-after=2\",\"59\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_output_flood.py\"],\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"Volumes\":null,\"WorkingDir\":\"/workspace\",\"Entrypoint\":[\"/usr/bin/timeout\"],\"Labels\":{\"org.agentkit.run-tests\":\"true\",\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"NetworkSettings\":{\"SandboxID\":\"\",\"SandboxKey\":\"\",\"Ports\":{},\"Networks\":{\"none\":{\"IPAMConfig\":null,\"Links\":null,\"Aliases\":null,\"DriverOpts\":null,\"GwPriority\":0,\"NetworkID\":\"\",\"EndpointID\":\"\",\"Gateway\":\"\",\"IPAddress\":\"\",\"MacAddress\":\"\",\"IPPrefixLen\":0,\"IPv6Gateway\":\"\",\"GlobalIPv6Address\":\"\",\"GlobalIPv6PrefixLen\":0,\"DNSNames\":null}}},\"ImageManifestDescriptor\":{\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"digest\":\"sha256:ff195fff3cd1eb6d047541555f302905b53c623651b50fcf4eb304206686874d\",\"size\":1628,\"platform\":{\"architecture\":\"amd64\",\"os\":\"linux\"}}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "start",
+        "--attach",
+        "7955239800aaca38c800eb9354e9b28172c8e6362f7295297bf8bb65d1e10646"
+      ],
+      "timeout_seconds": 59.047,
+      "raised": "ContractError",
+      "message": "Subprocess output exceeded its bounded capture limit."
+    },
+    {
+      "argv": [
+        "docker",
+        "rm",
+        "--force",
+        "agentkit-tests-55555555555555555555555555555555-f6f3f16886de4383a299fabddae2485a"
+      ],
+      "timeout_seconds": 5.0,
+      "exit_code": 0,
+      "stdout": "agentkit-tests-55555555555555555555555555555555-f6f3f16886de4383a299fabddae2485a\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "image",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"RepoTags\":[\"agentkit-trusted-tests:20261017\"],\"RepoDigests\":[\"agentkit-trusted-tests@sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\"],\"Comment\":\"buildkit.dockerfile.v0\",\"Created\":\"2026-10-17T05:19:56.76650459+02:00\",\"Config\":{\"User\":\"65534:65534\",\"Env\":[\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"python3\"],\"Labels\":{\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"Architecture\":\"amd64\",\"Os\":\"linux\",\"Size\":57486702,\"RootFS\":{\"Type\":\"layers\",\"Layers\":[\"sha256:15f1c8eb1ab18eae260c7fb6296434cbe1ff0e1e30fd814ae92a80dd54005e62\",\"sha256:e1fa2746ad6d51e7de9171dfcbb1fe93d01d51c5d8d3623e0c3b223076dc5d23\",\"sha256:b361fa3b97940ee89a1aab8fde1027e47ab2c2e700ca2f8d5988ad2c64386e5c\",\"sha256:dca2a125b4903477bcb42084172cfc98865299810620ffd617bf6e12dd83d89f\",\"sha256:7ae04d49126aa3ef82863bb21274bfe7514e756b0e9ce840d7eb7640c880c46a\",\"sha256:eaa8f20f4e3cbc9b57159db06a0af0cef529f4ba467f7cc619c1ba0f95bfa513\",\"sha256:be45a68725f19a9e7e14071fe93346e2c3b31cf11ab6b59d14ffe80dc33f1084\"]},\"Metadata\":{\"LastTagTime\":\"2026-10-17T03:19:58.665970606Z\"},\"Descriptor\":{\"mediaType\":\"application/vnd.oci.image.index.v1+json\",\"digest\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"size\":856},\"Identity\":{\"Build\":[{\"Ref\":\"l0v44f09vqs0cepb0ehb8b2du\",\"CreatedAt\":\"2026-10-17T05:19:59.683222984+02:00\"}]}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "create",
+        "--pull=never",
+        "--name",
+        "agentkit-pid1-deadline-diagnostic",
+        "--label",
+        "org.agentkit.run-tests=true",
+        "--network=none",
+        "--read-only",
+        "--user=65534:65534",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=128m",
+        "--memory-swap=128m",
+        "--cpus=1",
+        "--pids-limit=32",
+        "--ulimit=nofile=64:64",
+        "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777",
+        "--mount",
+        "type=bind,source=C:/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/deadline-stage/agentkit-tests-2_amqcjf,target=/workspace,readonly",
+        "--env=PYTEST_ADDOPTS=",
+        "--env=PYTEST_PLUGINS=",
+        "--env=PYTEST_DISABLE_PLUGIN_AUTOLOAD=1",
+        "--workdir=/workspace",
+        "--entrypoint=/usr/bin/timeout",
+        "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab",
+        "--signal=TERM",
+        "--kill-after=2",
+        "2",
+        "/usr/local/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))",
+        "tests/test_long.py"
+      ],
+      "exit_code": 0,
+      "stdout": "6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .}}",
+        "6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"Id\":\"6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3\",\"Created\":\"2026-10-17T03:40:31.539534954Z\",\"Path\":\"/usr/bin/timeout\",\"Args\":[\"--signal=TERM\",\"--kill-after=2\",\"2\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_long.py\"],\"State\":{\"Status\":\"created\",\"Running\":false,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":0,\"ExitCode\":0,\"Error\":\"\",\"StartedAt\":\"0001-01-01T00:00:00Z\",\"FinishedAt\":\"0001-01-01T00:00:00Z\"},\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"ResolvConfPath\":\"\",\"HostnamePath\":\"\",\"HostsPath\":\"\",\"LogPath\":\"\",\"Name\":\"/agentkit-pid1-deadline-diagnostic\",\"RestartCount\":0,\"Driver\":\"overlayfs\",\"Platform\":\"linux\",\"MountLabel\":\"\",\"ProcessLabel\":\"\",\"AppArmorProfile\":\"\",\"ExecIDs\":null,\"HostConfig\":{\"Binds\":null,\"ContainerIDFile\":\"\",\"LogConfig\":{\"Type\":\"json-file\",\"Config\":{}},\"NetworkMode\":\"none\",\"PortBindings\":{},\"RestartPolicy\":{\"Name\":\"no\",\"MaximumRetryCount\":0},\"AutoRemove\":false,\"VolumeDriver\":\"\",\"VolumesFrom\":null,\"ConsoleSize\":[0,0],\"CapAdd\":null,\"CapDrop\":[\"ALL\"],\"CgroupnsMode\":\"private\",\"Dns\":null,\"DnsOptions\":[],\"DnsSearch\":[],\"ExtraHosts\":null,\"GroupAdd\":null,\"IpcMode\":\"private\",\"Cgroup\":\"\",\"Links\":null,\"OomScoreAdj\":0,\"PidMode\":\"\",\"Privileged\":false,\"PublishAllPorts\":false,\"ReadonlyRootfs\":true,\"SecurityOpt\":[\"no-new-privileges\"],\"Tmpfs\":{\"/tmp\":\"rw,noexec,nosuid,nodev,size=16m,mode=1777\"},\"UTSMode\":\"\",\"UsernsMode\":\"\",\"ShmSize\":67108864,\"Runtime\":\"runc\",\"Isolation\":\"\",\"CpuShares\":0,\"Memory\":134217728,\"NanoCpus\":1000000000,\"CgroupParent\":\"\",\"BlkioWeight\":0,\"BlkioWeightDevice\":[],\"BlkioDeviceReadBps\":[],\"BlkioDeviceWriteBps\":[],\"BlkioDeviceReadIOps\":[],\"BlkioDeviceWriteIOps\":[],\"CpuPeriod\":0,\"CpuQuota\":0,\"CpuRealtimePeriod\":0,\"CpuRealtimeRuntime\":0,\"CpusetCpus\":\"\",\"CpusetMems\":\"\",\"Devices\":[],\"DeviceCgroupRules\":null,\"DeviceRequests\":null,\"MemoryReservation\":0,\"MemorySwap\":134217728,\"MemorySwappiness\":null,\"OomKillDisable\":false,\"PidsLimit\":32,\"Ulimits\":[{\"Name\":\"nofile\",\"Hard\":64,\"Soft\":64}],\"CpuCount\":0,\"CpuPercent\":0,\"IOMaximumIOps\":0,\"IOMaximumBandwidth\":0,\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/deadline-stage/agentkit-tests-2_amqcjf\",\"Target\":\"/workspace\",\"ReadOnly\":true}],\"MaskedPaths\":[\"/proc/acpi\",\"/proc/asound\",\"/proc/interrupts\",\"/proc/kcore\",\"/proc/keys\",\"/proc/latency_stats\",\"/proc/sched_debug\",\"/proc/scsi\",\"/proc/timer_list\",\"/proc/timer_stats\",\"/sys/devices/virtual/powercap\",\"/sys/firmware\"],\"ReadonlyPaths\":[\"/proc/bus\",\"/proc/fs\",\"/proc/irq\",\"/proc/sys\",\"/proc/sysrq-trigger\"]},\"Storage\":{\"RootFS\":{\"Snapshot\":{\"Name\":\"overlayfs\"}}},\"Mounts\":[{\"Type\":\"bind\",\"Source\":\"/mnt/c/Users/botrunner/AppData/Local/Temp/agentkit-runner-live-proofs-36mcdr02/deadline-stage/agentkit-tests-2_amqcjf\",\"Destination\":\"/workspace\",\"Mode\":\"\",\"RW\":false,\"Propagation\":\"rprivate\"}],\"Config\":{\"Hostname\":\"6a36c7766812\",\"Domainname\":\"\",\"User\":\"65534:65534\",\"AttachStdin\":false,\"AttachStdout\":true,\"AttachStderr\":true,\"Tty\":false,\"OpenStdin\":false,\"StdinOnce\":false,\"Env\":[\"PYTEST_ADDOPTS=\",\"PYTEST_PLUGINS=\",\"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1\",\"PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"LANG=C.UTF-8\",\"GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305\",\"PYTHON_VERSION=3.12.15\",\"PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a\",\"PYTHONDONTWRITEBYTECODE=1\"],\"Cmd\":[\"--signal=TERM\",\"--kill-after=2\",\"2\",\"/usr/local/bin/python\",\"-I\",\"-B\",\"-c\",\"import sys; sys.path[:0] = ['/workspace', '/workspace/src']; import pytest; raise SystemExit(pytest.main(['-q', '-c', '/dev/null', '-p', 'no:cacheprovider', '--', *sys.argv[1:]]))\",\"tests/test_long.py\"],\"Image\":\"sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab\",\"Volumes\":null,\"WorkingDir\":\"/workspace\",\"Entrypoint\":[\"/usr/bin/timeout\"],\"Labels\":{\"org.agentkit.run-tests\":\"true\",\"org.agentkit.test-lock-sha256\":\"e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f\"}},\"NetworkSettings\":{\"SandboxID\":\"\",\"SandboxKey\":\"\",\"Ports\":{},\"Networks\":{\"none\":{\"IPAMConfig\":null,\"Links\":null,\"Aliases\":null,\"DriverOpts\":null,\"GwPriority\":0,\"NetworkID\":\"\",\"EndpointID\":\"\",\"Gateway\":\"\",\"IPAddress\":\"\",\"MacAddress\":\"\",\"IPPrefixLen\":0,\"IPv6Gateway\":\"\",\"GlobalIPv6Address\":\"\",\"GlobalIPv6PrefixLen\":0,\"DNSNames\":null}}},\"ImageManifestDescriptor\":{\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"digest\":\"sha256:ff195fff3cd1eb6d047541555f302905b53c623651b50fcf4eb304206686874d\",\"size\":1628,\"platform\":{\"architecture\":\"amd64\",\"os\":\"linux\"}}}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "start",
+        "6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3"
+      ],
+      "exit_code": 0,
+      "stdout": "6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .State}}",
+        "6a36c77668121e5a5be7990fb04110f4900e0923c9f022c5534d317249f81bd3"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"Status\":\"exited\",\"Running\":false,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":0,\"ExitCode\":124,\"Error\":\"\",\"StartedAt\":\"2026-10-17T03:40:32.009763579Z\",\"FinishedAt\":\"2026-10-17T03:40:34.17873505Z\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "docker",
+        "rm",
+        "--force",
+        "agentkit-pid1-deadline-diagnostic"
+      ],
+      "exit_code": 0,
+      "stdout": "agentkit-pid1-deadline-diagnostic\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -14,6 +14,7 @@ class Stub:
     name = "stub"
     supports_action_approvals = True
     supports_write_policy = True
+    supports_isolated_tests = True
 
     def __init__(self, model):
         self.model = model
@@ -145,6 +146,17 @@ class RoutingTests(unittest.TestCase):
         self.strong.supports_write_policy = False
         with_recovery = EscalatingBackend(self.cheap, recovery=self.strong)
         self.assertFalse(with_recovery.supports_write_policy)
+
+    def test_isolated_test_capability_requires_every_routed_backend(self):
+        self.assertTrue(self.backend.supports_isolated_tests)
+        self.review.supports_isolated_tests = False
+        routed = EscalatingBackend(
+            self.cheap, recovery=self.strong, reviewer=self.review
+        )
+        self.assertFalse(routed.supports_isolated_tests)
+        self.strong.supports_isolated_tests = False
+        routed = EscalatingBackend(self.cheap, recovery=self.strong)
+        self.assertFalse(routed.supports_isolated_tests)
 
     def test_routed_backend_preserves_context_identity_for_selected_worker(self):
         ctx = context(entry("needs_revision"), entry("needs_revision"))

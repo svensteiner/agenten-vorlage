@@ -5,7 +5,7 @@
   "required": ["kind", "tool", "arguments", "rationale", "report"],
   "properties": {
     "kind": {"type": "string", "enum": ["proposal", "final"]},
-    "tool": {"type": "string", "enum": ["none", "write_file", "edit_file", "run_pytest"]},
+    "tool": {"type": "string", "enum": ["none", "write_file", "edit_file", "run_pytest", "run_isolated_tests"]},
     "arguments": {
       "type": "object",
       "additionalProperties": false,

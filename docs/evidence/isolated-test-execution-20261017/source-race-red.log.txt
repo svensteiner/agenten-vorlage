@@ -1,0 +1,27 @@
+test_snapshot_read_rejects_final_component_symlink_swap (tests.test_test_execution.TestExecutionPolicyTests.test_snapshot_read_rejects_final_component_symlink_swap) ... FAIL
+test_snapshot_read_rejects_parent_component_symlink_swap (tests.test_test_execution.TestExecutionPolicyTests.test_snapshot_read_rejects_parent_component_symlink_swap) ... FAIL
+
+======================================================================
+FAIL: test_snapshot_read_rejects_final_component_symlink_swap (tests.test_test_execution.TestExecutionPolicyTests.test_snapshot_read_rejects_final_component_symlink_swap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\isolated-tests-20261017\tests\test_test_execution.py", line 248, in test_snapshot_read_rejects_final_component_symlink_swap
+    self._assert_source_symlink_swap_never_returns_outside_bytes(parent=False)
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\isolated-tests-20261017\tests\test_test_execution.py", line 245, in _assert_source_symlink_swap_never_returns_outside_bytes
+    self.fail("snapshot read returned bytes through a raced symlink")
+AssertionError: snapshot read returned bytes through a raced symlink
+
+======================================================================
+FAIL: test_snapshot_read_rejects_parent_component_symlink_swap (tests.test_test_execution.TestExecutionPolicyTests.test_snapshot_read_rejects_parent_component_symlink_swap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\isolated-tests-20261017\tests\test_test_execution.py", line 251, in test_snapshot_read_rejects_parent_component_symlink_swap
+    self._assert_source_symlink_swap_never_returns_outside_bytes(parent=True)
+  File "C:\Users\botrunner\Documents\ChatGPT\AGenten vorlage\.runs\qualification\isolated-tests-20261017\tests\test_test_execution.py", line 245, in _assert_source_symlink_swap_never_returns_outside_bytes
+    self.fail("snapshot read returned bytes through a raced symlink")
+AssertionError: snapshot read returned bytes through a raced symlink
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.067s
+
+FAILED (failures=2)

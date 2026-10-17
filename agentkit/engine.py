@@ -12,6 +12,7 @@ from .catalog import Catalog
 from .contracts import ContractError, read_json, validate
 from .storage import lock, save
 from .write_policy import WritePolicy
+from .test_execution import TestExecutionPolicy, validate_test_receipt
 from .approvals import (
     ApprovalRequired,
     action_digest,
@@ -80,6 +81,7 @@ class Engine:
         *,
         require_approvals: bool = False,
         write_policy: WritePolicy | None = None,
+        test_execution_policy: TestExecutionPolicy | None = None,
         core_snapshot: str | None = None,
         mutation_writer: Callable[[Path, bytes], None] | None = None,
         state_writer: Callable[[Path, bytes], None] | None = None,
@@ -95,6 +97,18 @@ class Engine:
         if write_policy is not None and getattr(backend, "supports_write_policy", False) is not True:
             raise ContractError("The selected backend cannot enforce a strict write policy.")
         self.write_policy = write_policy
+        if test_execution_policy is not None and type(test_execution_policy) is not TestExecutionPolicy:
+            raise ContractError("test_execution_policy must be a host-loaded TestExecutionPolicy.")
+        if test_execution_policy is not None:
+            if getattr(backend, "supports_isolated_tests", False) is not True:
+                raise ContractError("The selected backend cannot enforce isolated test execution.")
+            try:
+                test_execution_policy.source_path.relative_to(self.workspace)
+            except ValueError:
+                pass
+            else:
+                raise ContractError("Test manifest must live outside the project workspace.")
+        self.test_execution_policy = test_execution_policy
         self.mutation_writer = mutation_writer
         self.state_writer = state_writer
         self.coordination_reserver = coordination_reserver
@@ -197,6 +211,16 @@ class Engine:
             expected_policy = self.write_policy.sha256 if self.write_policy else ""
             if state.get("write_policy_sha256", "") != expected_policy:
                 raise ContractError("Cannot resume with a changed or missing host write policy.")
+            expected_test_policy = self.test_execution_policy.sha256 if self.test_execution_policy else ""
+            if state.get("test_execution_policy_sha256", "") != expected_test_policy:
+                raise ContractError("Cannot resume with a changed or missing host test execution policy.")
+            if expected_test_policy:
+                receipt = state.get("latest_test_execution_receipt")
+                if receipt is not None:
+                    validate_test_receipt(receipt, self.test_execution_policy, state["run_id"])
+                count = state.get("test_execution_runs", 0)
+                if type(count) is not int or not 0 <= count <= self.test_execution_policy.limits["max_runs_per_run"]:
+                    raise ContractError("Persisted isolated test execution count is invalid.")
             if state["status"] == "completed":
                 return state
             snapshot = state.get("core_snapshot")
@@ -224,7 +248,8 @@ class Engine:
                                           model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)),
                                           fingerprint=workspace_fingerprint(self.workspace) if approval_decision == "approve"
                                           else pending.get("binding", {}).get("workspace_fingerprint", ""),
-                                          write_policy_sha256=self.write_policy.sha256 if self.write_policy else "")
+                                          write_policy_sha256=self.write_policy.sha256 if self.write_policy else "",
+                                          test_execution_policy_sha256=self.test_execution_policy.sha256 if self.test_execution_policy else "")
                 validate_binding(pending, current_binding)
                 replay_sha256 = pending.get("replay_sha256")
                 if (not isinstance(replay_sha256, str)
@@ -236,10 +261,8 @@ class Engine:
                             pending.get("tool"), pending.get("arguments"), self.workspace
                         )):
                     raise ContractError("Approval canonical replay identity changed before execution.")
-                if approval_decision == "approve" and self.write_policy is not None:
-                    self.write_policy.authorize_action(
-                        self.workspace, pending.get("tool"), pending.get("arguments")
-                    )
+                if approval_decision == "approve":
+                    self._authorize_action(pending.get("tool"), pending.get("arguments"))
                 state.setdefault("approvals", []).append({"id": approval_id, "tool": pending.get("tool"),
                     "arguments": pending.get("arguments"), "action_sha256": pending.get("action_sha256"),
                     "replay_sha256": replay_sha256,
@@ -307,6 +330,9 @@ class Engine:
                 "reviewed": False,
                 "require_approvals": self.require_approvals,
                 "write_policy_sha256": self.write_policy.sha256 if self.write_policy else "",
+                "test_execution_policy_sha256": self.test_execution_policy.sha256 if self.test_execution_policy else "",
+                "test_execution_runs": 0,
+                "latest_test_execution_receipt": None,
                 "pending_approval": None,
                 "approvals": [],
                 "completed_actions": [],
@@ -359,6 +385,8 @@ class Engine:
                 "steps_remaining": self.limits["max_steps"] - state["steps"],
                 "require_approvals": bool(state.get("require_approvals", False)),
                 "completed_actions": state.get("completed_actions", []),
+                "run_id": state["run_id"],
+                "test_execution_runs": state.get("test_execution_runs", 0),
             }
             if self.write_policy is not None:
                 # Trusted, JSON-safe guidance for planning. Enforcement still uses
@@ -367,6 +395,8 @@ class Engine:
                     "sha256": self.write_policy.sha256,
                     "allowed_files": list(self.write_policy.paths),
                 }
+            if self.test_execution_policy is not None:
+                result["test_execution_policy_summary"] = self.test_execution_policy.summary()
             if state.get("approval_resume"):
                 result["approval_resume"] = state["approval_resume"]
                 result["approved_action"] = state.get("approved_action")
@@ -421,6 +451,23 @@ class Engine:
                         and not state["reviewed"]
                     ):
                         completion_error = "Completion refused: changes require a successful subsequent review."
+                    if completion_error is None and self.test_execution_policy is not None:
+                        if not state.get("reviewed"):
+                            completion_error = "Completion refused: isolated test execution requires a successful independent review."
+                        receipt = state.get("latest_test_execution_receipt")
+                        if completion_error is None:
+                            try:
+                                validated = validate_test_receipt(
+                                    receipt, self.test_execution_policy, state["run_id"]
+                                )
+                                current_fingerprint = workspace_fingerprint(self.workspace)
+                            except ContractError:
+                                completion_error = "Completion refused: the host has no valid isolated test receipt for this workspace."
+                            else:
+                                if (validated["status"] != "passed"
+                                        or validated["workspace_fingerprint"] != current_fingerprint
+                                        or validated["cleanup_confirmed"] is not True):
+                                    completion_error = "Completion refused: the latest isolated test receipt is failed or stale."
                     if completion_error is not None:
                         # A rejected finish has no external effects. Let the planner
                         # repair the evidence gap, within the existing failure budget.
@@ -436,6 +483,10 @@ class Engine:
                 role = self.catalog.roles[decision["role"]]
                 if role["sandbox"] == "workspace-write":
                     state.update(dirty=True, reviewed=False)
+                    if self.test_execution_policy is not None:
+                        # A write-capable step may invalidate tests even if it later
+                        # fails or writes identical bytes. The policy is conservative.
+                        state["latest_test_execution_receipt"] = None
                 state["in_flight"] = {"kind": "worker", "decision": decision}
                 checkpoint()
                 ctx = context()
@@ -450,9 +501,10 @@ class Engine:
                     ctx["mutation_writer"] = self.mutation_writer
                 if self.write_policy is not None:
                     ctx["write_policy"] = self.write_policy
+                if self.test_execution_policy is not None:
+                    ctx["test_execution_policy"] = self.test_execution_policy
                 def request_approval(tool: str, arguments: dict, continuation: dict) -> None:
-                    if self.write_policy is not None:
-                        self.write_policy.authorize_action(self.workspace, tool, arguments)
+                    self._authorize_action(tool, arguments)
                     approval = {
                         "id": new_id(), "tool": tool, "arguments": arguments,
                         "action_sha256": action_digest(tool, arguments),
@@ -464,7 +516,8 @@ class Engine:
                             workspace=str(self.workspace), backend=self.backend.name,
                             model=getattr(self.backend, "approval_identity", getattr(self.backend, "model", None)),
                             fingerprint=workspace_fingerprint(self.workspace),
-                            write_policy_sha256=self.write_policy.sha256 if self.write_policy else ""),
+                            write_policy_sha256=self.write_policy.sha256 if self.write_policy else "",
+                            test_execution_policy_sha256=self.test_execution_policy.sha256 if self.test_execution_policy else ""),
                         "continuation": continuation,
                     }
                     state["pending_approval"] = approval
@@ -479,9 +532,35 @@ class Engine:
                     if not _valid_completed_actions(candidate):
                         raise ContractError("Backend returned an invalid or exhausted completed action history.")
                     completed.append(entry)
+                    if entry.get("tool") in {"write_file", "edit_file"}:
+                        state["latest_test_execution_receipt"] = None
+                    checkpoint()
+                def begin_test_execution() -> None:
+                    if self.test_execution_policy is None:
+                        raise ContractError("No host test execution policy is active.")
+                    count = state.get("test_execution_runs", 0)
+                    if type(count) is not int or count >= self.test_execution_policy.limits["max_runs_per_run"]:
+                        raise ContractError("Host test execution count limit exhausted.")
+                    state["test_execution_runs"] = count + 1
+                    ctx["test_execution_runs"] = count + 1
+                    state["latest_test_execution_receipt"] = None
+                    checkpoint()
+                def record_test_execution(receipt: dict) -> None:
+                    if self.test_execution_policy is None:
+                        raise ContractError("No host test execution policy is active.")
+                    validated = validate_test_receipt(
+                        receipt, self.test_execution_policy, state["run_id"]
+                    )
+                    current_fingerprint = workspace_fingerprint(self.workspace)
+                    if validated["status"] == "passed" and validated["workspace_fingerprint"] != current_fingerprint:
+                        validated.update(status="failed", reason="workspace_changed_before_receipt", exit_code=None)
+                    state["latest_test_execution_receipt"] = validated
                     checkpoint()
                 ctx["request_approval"] = request_approval
                 ctx["record_completed_action"] = record_completed_action
+                if self.test_execution_policy is not None:
+                    ctx["begin_test_execution"] = begin_test_execution
+                    ctx["record_test_execution"] = record_test_execution
                 state.pop("approval_resume", None)
                 state.pop("approved_action", None)
                 checkpoint()
@@ -512,3 +591,12 @@ class Engine:
         finally:
             checkpoint()
         return state
+
+    def _authorize_action(self, tool: object, arguments: object) -> None:
+        if tool == "run_isolated_tests":
+            if self.test_execution_policy is None:
+                raise ContractError("No host test execution policy is active.")
+            self.test_execution_policy.authorize_action(tool, arguments)
+            return
+        if self.write_policy is not None:
+            self.write_policy.authorize_action(self.workspace, tool, arguments)

@@ -69,6 +69,8 @@ class EscalatingBackend:
         # strict enforcement only when every backend it can select enforces it.
         self.supports_write_policy = all(
             getattr(backend, "supports_write_policy", False) is True for backend in backends)
+        self.supports_isolated_tests = all(
+            getattr(backend, "supports_isolated_tests", False) is True for backend in backends)
 
     @property
     def approval_identity(self) -> str:

@@ -1,0 +1,132 @@
+{
+  "status": "passed",
+  "offline_only": true,
+  "model_tested": false,
+  "checks": [
+    {
+      "name": "profile:developer",
+      "ok": true,
+      "result": "developer"
+    },
+    {
+      "name": "profile:research",
+      "ok": true,
+      "result": "research"
+    },
+    {
+      "name": "profile:marketing",
+      "ok": true,
+      "result": "marketing"
+    },
+    {
+      "name": "profile:sales",
+      "ok": true,
+      "result": "sales"
+    },
+    {
+      "name": "profile:support",
+      "ok": true,
+      "result": "support"
+    },
+    {
+      "name": "profile:company",
+      "ok": true,
+      "result": "company"
+    },
+    {
+      "name": "profile:bmd-tax-advisor",
+      "ok": true,
+      "result": "bmd-tax-advisor"
+    },
+    {
+      "name": "offline-demo:developer",
+      "ok": true,
+      "result": {
+        "status": "completed"
+      }
+    },
+    {
+      "name": "offline-conversation:two-turn-recovery",
+      "ok": true,
+      "result": {
+        "messages": 4,
+        "restart_restored": true,
+        "backend": "demo"
+      }
+    },
+    {
+      "name": "offline-approvals:exact-action-recovery",
+      "ok": true,
+      "result": {
+        "approvals": 2,
+        "status": "completed",
+        "backend": "demo"
+      }
+    },
+    {
+      "name": "offline-assistants:edit-and-approval-recovery",
+      "ok": true,
+      "result": {
+        "original_revision_preserved": true,
+        "new_revision_used": true,
+        "approval_restart_verified": true,
+        "backend": "demo"
+      }
+    },
+    {
+      "name": "offline-attachments:context-and-download-recovery",
+      "ok": true,
+      "result": {
+        "context_verified": true,
+        "download_restored": true,
+        "backend": "demo"
+      }
+    },
+    {
+      "name": "offline-documents:extraction-and-download-recovery",
+      "ok": true,
+      "result": {
+        "context_verified": true,
+        "download_restored": true,
+        "backend": "demo"
+      }
+    },
+    {
+      "name": "pack:agents/bmd-tax-advisor",
+      "ok": true,
+      "result": "bmd-tax-advisor"
+    },
+    {
+      "name": "pack:agents/programming-agent",
+      "ok": true,
+      "result": "programming-agent"
+    },
+    {
+      "name": "pack:agents/x-growth-agent",
+      "ok": true,
+      "result": "x-growth-agent"
+    },
+    {
+      "name": "pack:generated/ai-studioxyz",
+      "ok": true,
+      "result": "ai-studioxyz"
+    },
+    {
+      "name": "pack:generated/mein-cto",
+      "ok": true,
+      "result": "mein-cto"
+    },
+    {
+      "name": "pack:generated/qwen-marketing-qualification",
+      "ok": true,
+      "result": "qwen-marketing-qualification"
+    },
+    {
+      "name": "pack:generated/studio-smoke",
+      "ok": true,
+      "result": "studio-smoke"
+    }
+  ],
+  "passed": 20,
+  "failed": 0
+}

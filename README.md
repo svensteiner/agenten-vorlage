@@ -70,6 +70,13 @@ einzelne Zustimmung und verlangt eine solche Liste. Projektausfuehrung bleibt
 dabei gesperrt. Die Python-API bietet dieselbe Policy; das Cockpit bietet sie noch
 nicht an. [Strikte Schreibrechte](docs/WRITE-POLICY.md).
 
+Ein Host kann ausserdem mit `--test-policy DATEI` eine feste vollstaendige Testsuite,
+Container-Image, Abhaengigkeitssperre und Snapshot-Dateiliste pinnen. Der Agent kann
+nur diese Suite ohne Pfad- oder Kommandoargumente anfordern; `run_pytest` bleibt in
+diesem Modus gesperrt. Ein erfolgreicher Host-Testbeleg und ein separates Review
+sind beide Voraussetzung fuer den Abschluss. Das Cockpit und oeffentliches Hosting
+stellen diese lokale Hostausfuehrung nicht bereit. [Isolierte Hosttests](docs/ISOLATED-TEST-EXECUTION.md).
+
 Arbeitsdialoge unterstützen UTF-8-Textanhänge bis 32 KiB sowie PDF-, DOCX-, XLSX-
 und PPTX-Dokumente bis 2 MiB. Extrahierter Text dient als Referenz; die Originaldateien
 bleiben im Verlauf und lassen sich unverändert herunterladen. PNG/JPEG-Bilder

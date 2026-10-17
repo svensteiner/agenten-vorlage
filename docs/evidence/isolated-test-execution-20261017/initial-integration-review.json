@@ -1,0 +1,14 @@
+{
+  "review": "isolated-test-integration",
+  "verdict": "no concrete blocker found",
+  "source_hash_manifest_matches_reviewed_files": true,
+  "focused_validation_reported_by_owner": "66 tests passed; Ruff pending separate owner",
+  "findings": [],
+  "non_blocking_notes": [
+    "The runner records an in-flight test attempt before Docker dispatch, validates pinned image/configuration, snapshots only explicit hash-pinned paths, enforces read-only/no-network/resource constraints, cleans up, and validates host-created receipts before engine persistence.",
+    "Test action is limited to empty arguments and the fixed manifest suite; direct run_pytest is rejected while policy is active. Engine binds policy on resume, invalidates the receipt on write-capable work, and requires a passing current-workspace receipt plus reviewer completion.",
+    "The separate API/backend reviewer should confirm capability inheritance across ApiBackend, AnthropicBackend, and OllamaBackend; they inherit DeepSeekBackend execution and host-policy checks.",
+    "The policy includes a 2 MB output cap matching the subprocess runner constant; this duplication could drift, but is not a current blocker."
+  ],
+  "scope": "Read-only code/test review; no execution or edits. This is not a full-suite or production qualification claim."
+}

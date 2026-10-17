@@ -1,0 +1,6 @@
+{
+  "command": "python -m ruff check .",
+  "exit_code": 0,
+  "stdout": "All checks passed!",
+  "scope": "canonical source after byte-identical promotion"
+}

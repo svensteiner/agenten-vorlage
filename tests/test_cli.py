@@ -12,12 +12,67 @@ from types import SimpleNamespace
 
 from agentkit import cli
 from agentkit.scaffold import create
+from agentkit.test_execution import TestExecutionPolicy
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentKitCliTests(unittest.TestCase):
+    def test_cli_loads_operator_test_policy_and_passes_it_to_engine(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            agent = create(root / "agent", "developer", "agent", "company")
+            manifest = root / "tests.json"
+            manifest.write_text(json.dumps({
+                "version": 1,
+                "image_ref": "python@sha256:" + "c" * 64,
+                "image_id": "sha256:" + "b" * 64,
+                "dependency_lock_sha256": "a" * 64,
+                "docker_transport": "native",
+                "test_files": [{"path": "tests/test_ok.py", "sha256": "d" * 64}],
+                "support_files": [],
+                "expected_test_count": 1,
+                "snapshot_paths": ["tests/test_ok.py"],
+            }), encoding="utf-8")
+            fixture_backend = SimpleNamespace(name="codex", model="test",
+                                              supports_action_approvals=True)
+            with patch.object(cli, "CodexBackend", return_value=fixture_backend), \
+                 patch.object(cli, "Engine") as engine, redirect_stdout(StringIO()):
+                engine.return_value.run.return_value = {"status": "blocked"}
+                result = cli.main([
+                    "run", "--agent", str(agent), "--backend", "codex", "--task", "fixture",
+                    "--test-policy", str(manifest),
+                ])
+            self.assertEqual(2, result)
+            policy = engine.call_args.kwargs["test_execution_policy"]
+            self.assertIs(type(policy), TestExecutionPolicy)
+            self.assertEqual(TestExecutionPolicy.from_file(manifest).sha256, policy.sha256)
+
+    def test_demo_backend_rejects_isolated_test_policy_before_run(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            agent = create(root / "agent", "developer", "agent", "company")
+            manifest = root / "tests.json"
+            manifest.write_text(json.dumps({
+                "version": 1,
+                "image_ref": "python@sha256:" + "c" * 64,
+                "image_id": "sha256:" + "b" * 64,
+                "dependency_lock_sha256": "a" * 64,
+                "docker_transport": "native",
+                "test_files": [{"path": "tests/test_ok.py", "sha256": "d" * 64}],
+                "support_files": [],
+                "expected_test_count": 1,
+                "snapshot_paths": ["tests/test_ok.py"],
+            }), encoding="utf-8")
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as error:
+                code = cli.main([
+                    "run", "--agent", str(agent), "--backend", "demo", "--task", "fixture",
+                    "--test-policy", str(manifest),
+                ])
+            self.assertEqual(1, code)
+            self.assertIn("isolated test execution", json.loads(error.getvalue())["summary"])
+
     def test_strict_autonomous_cli_completion_and_resume_bind_exact_file_list(self):
         with tempfile.TemporaryDirectory() as temp_name:
             agent = self.init_agent(Path(temp_name), "strict-agent")

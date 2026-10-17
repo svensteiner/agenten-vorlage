@@ -252,3 +252,19 @@ vom Host isoliert werden. Die CLI setzt sie mit wiederholtem `--allow-write`;
 erst `--autonomous-writes` deaktiviert einzelne Freigaben fuer neue Auftraege.
 Gespeicherte Freigabepflichten bleiben bei Wiederaufnahme bestehen. Das Cockpit
 bietet die Policy noch nicht an. [Grenzen und Verwendung](WRITE-POLICY.md).
+
+## Hostgebundene isolierte Tests
+
+`Engine(test_execution_policy=...)` kann eine vom Host geladene Manifestpolicy
+entgegennehmen. Das Modell sieht nur eine JSON-sichere Zusammenfassung und kann
+keine Suite, Dateien oder Befehle auswaehlen. Der neue Testaufruf hat keine
+Argumente; der Host kopiert nur explizit gehashte Snapshotdateien in einen
+read-only gemounteten Container mit festem Image, ohne Netzwerk und mit festen
+Ressourcenlimits. `run_pytest` wird bei aktiver Testpolicy abgewiesen. Laufzahl
+und Policyhash bleiben im Checkpoint; eine neue Ausfuehrung verbraucht ihren
+Versuch vor dem Dispatch, sodass ein unbekanntes Ergebnis nicht automatisch
+wiederholt wird. Schreibschritte verwerfen den letzten Testbeleg. Abschluss
+erfordert einen aktuellen erfolgreichen Hostbeleg sowie das bestehende erfolgreiche
+Review. Diese Grenze ist Defense in Depth und keine Garantie gegen Docker- oder
+Kernel-Schwachstellen. Die CLI bietet `--test-policy`; Cockpit und oeffentliches
+Hosting exponieren keine Host-Testausfuehrung. [Manifest und Grenzen](ISOLATED-TEST-EXECUTION.md).

@@ -12,6 +12,8 @@ from .contracts import ContractError, inside
 
 
 WRITE_TOOLS = {"write_file", "edit_file", "run_pytest"}
+TEST_TOOLS = {"run_isolated_tests"}
+ACTION_TOOLS = WRITE_TOOLS | TEST_TOOLS
 INTERNAL_WORKSPACE_SEGMENTS = frozenset({
     ".agentkit.lock", ".git", ".lock", ".mypy_cache", ".pytest_cache",
     ".ruff_cache", ".runs", "__pycache__",
@@ -150,6 +152,13 @@ def action_digest(tool: str, arguments: dict) -> str:
 
 def replay_action_digest(tool: str, arguments: dict, workspace: Path) -> str:
     """Hash a filesystem-canonical identity without changing the visible manifest."""
+    if tool == "run_isolated_tests":
+        if arguments != {}:
+            raise ContractError("Isolated test action accepts no agent-controlled arguments.")
+        return _json_digest(
+            {"tool": tool, "arguments": {}, "workspace_fingerprint": workspace_fingerprint(workspace)},
+            "replay",
+        )
     if not isinstance(arguments, dict) or not isinstance(arguments.get("path"), str):
         raise ContractError("Approval replay action has no valid workspace path.")
     canonical_root = _canonical_windows_path(workspace)
@@ -171,11 +180,14 @@ def continuation_digest(continuation: dict) -> str:
 
 
 def binding(*, run_id: str, agent: str, company: str, workspace: str, backend: str,
-            model: str | None, fingerprint: str, write_policy_sha256: str = "") -> dict:
+            model: str | None, fingerprint: str, write_policy_sha256: str = "",
+            test_execution_policy_sha256: str = "") -> dict:
     result = {"run_id": run_id, "agent": agent, "company": company, "workspace": workspace,
               "backend": backend, "model": model or "", "workspace_fingerprint": fingerprint}
     if write_policy_sha256:
         result["write_policy_sha256"] = write_policy_sha256
+    if test_execution_policy_sha256:
+        result["test_execution_policy_sha256"] = test_execution_policy_sha256
     return result
 
 

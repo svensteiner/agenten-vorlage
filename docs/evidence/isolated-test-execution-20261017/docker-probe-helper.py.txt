@@ -1,0 +1,214 @@
+"""Synthetic proof probes for the host-owned isolated test runner.
+
+This is diagnostic evidence only; it is not part of the application or suite.
+It uses a locally present, digest-pinned image and no provider/network calls.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from agentkit import test_execution as runner_module
+from agentkit.backends import _process_result
+from agentkit.test_execution import (
+    TestExecutionPolicy,
+    _docker_args,
+    _host_docker_runner,
+    _valid_container_inspect,
+    _valid_image_inspect,
+    prepare_snapshot,
+    run_isolated_tests,
+)
+
+
+SOURCE = ROOT / "agentkit" / "test_execution.py"
+TESTS = ROOT / "tests" / "test_test_execution.py"
+IMAGE = "sha256:00708e818bb6dddd93f2700886cb667fcf1892bc8fdd730751c546a5ba5311ab"
+LOCK = "e85cfda673291d07aa0c5d5d8b41bda76890ec8c312d2b59b453ded7aa7f989f"
+OUT = ROOT / ".diagnostics" / "isolated_runner_live_probe_20261017.json"
+
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def run_manifest(root: Path, test_files: dict[str, bytes], support_files: dict[str, bytes], expected: int):
+    root.mkdir(parents=True)
+    workspace = root / "workspace"
+    workspace.mkdir()
+    all_files: dict[str, bytes] = {**test_files, **support_files}
+    for relative, content in all_files.items():
+        target = workspace.joinpath(*relative.split("/"))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+    manifest = root / "operator-policy.json"
+    manifest.write_text(json.dumps({
+        "version": 1,
+        "image_ref": IMAGE,
+        "image_id": IMAGE,
+        "dependency_lock_sha256": LOCK,
+        "docker_transport": "wsl-ubuntu",
+        "test_files": [{"path": path, "sha256": hashlib.sha256(value).hexdigest()}
+                       for path, value in sorted(test_files.items())],
+        "support_files": [{"path": path, "sha256": hashlib.sha256(value).hexdigest()}
+                          for path, value in sorted(support_files.items())],
+        "expected_test_count": expected,
+        "snapshot_paths": sorted(all_files),
+    }), encoding="utf-8")
+    return workspace, TestExecutionPolicy.from_file(manifest)
+
+
+def main() -> dict:
+    before = {"source_sha256": sha(SOURCE), "unit_test_sha256": sha(TESTS)}
+    calls: list[dict] = []
+    original_factory = runner_module._host_docker_runner
+
+    def instrumented_factory(policy, config_dir, base_runner):
+        actual = original_factory(policy, config_dir, base_runner)
+
+        def record(args, prompt, cwd, timeout):
+            item = {"argv": list(args), "timeout_seconds": round(float(timeout), 3)}
+            try:
+                result = actual(args, prompt, cwd, timeout)
+            except Exception as exc:
+                item["raised"] = type(exc).__name__
+                item["message"] = str(exc)[:180]
+                calls.append(item)
+                raise
+            item.update({"exit_code": result[0], "stdout": result[1][:5000], "stderr": result[2][:1000]})
+            calls.append(item)
+            return result
+
+        record.snapshot_mount_path = getattr(actual, "snapshot_mount_path", None)
+        # The wrapper exposes the mount path after the create operation below.
+        def update_mount(*args, **kwargs):
+            result = record(*args, **kwargs)
+            update_mount.snapshot_mount_path = getattr(actual, "snapshot_mount_path", None)
+            return result
+        update_mount.snapshot_mount_path = None
+        return update_mount
+
+    runner_module._host_docker_runner = instrumented_factory
+    cases: dict[str, dict] = {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="agentkit-runner-live-proofs-") as temporary:
+            root = Path(temporary)
+            smoke = b"from app import VALUE\ndef test_workspace_import():\n    assert VALUE == 42\n"
+            conftest = (
+                b"import pathlib, socket, pytest\n"
+                b"@pytest.fixture(autouse=True)\n"
+                b"def hostile_actions():\n"
+                b"    with pytest.raises(OSError):\n"
+                b"        pathlib.Path('/workspace/agentkit-intrusion').write_text('x')\n"
+                b"    with pytest.raises(OSError):\n"
+                b"        socket.create_connection(('203.0.113.1', 9), timeout=1)\n"
+            )
+            workspace, policy = run_manifest(
+                root / "smoke", {"tests/test_workspace_import.py": smoke},
+                {"app.py": b"VALUE = 42\n", "tests/conftest.py": conftest}, 1,
+            )
+            receipt = run_isolated_tests(policy, workspace, run_id="4" * 32, timeout=60, temp_root=root)
+            cases["import_and_hostile_conftest"] = {
+                "policy_sha256": policy.sha256,
+                "test_sha256": dict(policy.test_hashes),
+                "support_sha256": dict(policy.support_hashes),
+                "receipt": receipt,
+                "assertions": ["workspace import passed", "network connect raised OSError",
+                               "read-only workspace write raised OSError"],
+            }
+
+            flood = b"def test_output_flood():\n    print('X' * 2_100_000)\n    assert False\n"
+            workspace, policy = run_manifest(root / "flood", {"tests/test_output_flood.py": flood}, {}, 1)
+            receipt = run_isolated_tests(policy, workspace, run_id="5" * 32, timeout=60, temp_root=root)
+            cases["output_limit"] = {"policy_sha256": policy.sha256,
+                                      "test_sha256": dict(policy.test_hashes), "receipt": receipt}
+
+            sleeper = b"import time\ndef test_long():\n    time.sleep(90)\n"
+            workspace, policy = run_manifest(root / "deadline", {"tests/test_long.py": sleeper}, {}, 1)
+            stage = root / "deadline-stage"
+            stage.mkdir()
+            config = stage / "docker-config"
+            config.mkdir()
+            (config / "config.json").write_text('{"auths":{}}', encoding="utf-8")
+            snapshot, snapshot_sha = prepare_snapshot(policy, workspace, stage)
+            docker = original_factory(policy, config, _process_result)
+            name = "agentkit-pid1-deadline-diagnostic"
+
+            def call(args, timeout=20):
+                code, stdout, stderr = docker(args, "", workspace, timeout)
+                item = {"argv": list(args), "exit_code": code, "stdout": stdout[:5000], "stderr": stderr[:1000]}
+                calls.append(item)
+                if code:
+                    raise RuntimeError(f"local docker diagnostic {args[1]} exited {code}")
+                return stdout
+
+            image_info = call(["docker", "image", "inspect", "--format", "{{json .}}", policy.image_ref])
+            assert _valid_image_inspect(image_info, policy)
+            create_argv = _docker_args(policy, snapshot, name, 2)
+            container_id = call(create_argv).strip()
+            inspect_text = call(["docker", "inspect", "--format", "{{json .}}", container_id])
+            assert _valid_container_inspect(
+                inspect_text, policy, snapshot, getattr(docker, "snapshot_mount_path", None), 2
+            )
+            inspected = json.loads(inspect_text)
+            selected_inspect = {
+                "Image": inspected.get("Image"),
+                "Entrypoint": (inspected.get("Config") or {}).get("Entrypoint"),
+                "Cmd": (inspected.get("Config") or {}).get("Cmd"),
+                "WorkingDir": (inspected.get("Config") or {}).get("WorkingDir"),
+                "pytest_env": [value for value in ((inspected.get("Config") or {}).get("Env") or [])
+                               if value.startswith("PYTEST_")],
+                "HostConfig": {key: (inspected.get("HostConfig") or {}).get(key) for key in (
+                    "NetworkMode", "ReadonlyRootfs", "Privileged", "CapDrop", "CapAdd", "SecurityOpt",
+                    "Memory", "MemorySwap", "NanoCpus", "PidsLimit", "Ulimits", "Tmpfs", "Binds")},
+                "Mounts": [{key: mount.get(key) for key in ("Type", "Source", "Destination", "RW")}
+                           for mount in (inspected.get("Mounts") or [])],
+            }
+            call(["docker", "start", container_id])  # detached: the host does not wait for test completion
+            time.sleep(5)
+            state_text = call(["docker", "inspect", "--format", "{{json .State}}", container_id])
+            state = json.loads(state_text)
+            cleanup_code, cleanup_out, cleanup_err = docker(["docker", "rm", "--force", name], "", workspace, 10)
+            calls.append({"argv": ["docker", "rm", "--force", name], "exit_code": cleanup_code,
+                          "stdout": cleanup_out[:500], "stderr": cleanup_err[:500]})
+            cases["detached_pid1_deadline"] = {
+                "policy_sha256": policy.sha256,
+                "snapshot_sha256": snapshot_sha,
+                "test_sha256": dict(policy.test_hashes),
+                "create_argv": create_argv,
+                "container_id_sha256": hashlib.sha256(container_id.encode()).hexdigest(),
+                "inspect": selected_inspect,
+                "state_after_5_seconds_without_attach": state,
+                "cleanup_confirmed": cleanup_code == 0,
+            }
+            assert state.get("Status") == "exited" and state.get("ExitCode") == 124
+            assert cleanup_code == 0
+    finally:
+        runner_module._host_docker_runner = original_factory
+
+    after = {"source_sha256": sha(SOURCE), "unit_test_sha256": sha(TESTS)}
+    assert before == after, "runner source or unit tests changed during the diagnostics"
+    evidence = {
+        "kind": "synthetic-local-docker-runner-diagnostics-only",
+        "claims": ["bounded runner behavior only", "not a project test receipt", "not semantic proof"],
+        "image_id": IMAGE,
+        "dependency_lock_sha256": LOCK,
+        "source_before_after": {"before": before, "after": after},
+        "cases": cases,
+        "docker_calls": calls,
+    }
+    OUT.write_text(json.dumps(evidence, ensure_ascii=False, indent=2), encoding="utf-8")
+    return evidence
+
+
+if __name__ == "__main__":
+    result = main()
+    print(json.dumps({"evidence_path": str(OUT), "case_names": list(result["cases"]),
+                      "source_sha256": result["source_before_after"]["after"]["source_sha256"]}, ensure_ascii=False))

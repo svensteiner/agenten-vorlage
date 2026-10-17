@@ -1,0 +1,35 @@
+Name                                Stmts   Miss Branch BrPart  Cover
+---------------------------------------------------------------------
+agentkit\__init__.py                    1      0      0      0   100%
+agentkit\__main__.py                    2      2      0      0     0%
+agentkit\anthropic_backend.py          93     12     40      8    85%
+agentkit\api_backend.py                73     11     26      8    81%
+agentkit\approvals.py                 139     19     56     10    85%
+agentkit\backends.py                 1018    187    424     96    79%
+agentkit\catalog.py                    62      7     30      7    85%
+agentkit\cli.py                       124     12     44      8    87%
+agentkit\codex_artifacts.py           180     94     60      4    43%
+agentkit\contracts.py                  29      2      8      2    89%
+agentkit\engine.py                    362     32    186     23    89%
+agentkit\integrations.py               24      4     12      4    78%
+agentkit\marketing_snapshot.py        129     24     36     11    79%
+agentkit\ollama_backend.py            127     14     46      7    88%
+agentkit\routing.py                    90      6     28      4    92%
+agentkit\scaffold.py                  136     13     78     13    88%
+agentkit\storage.py                    56      3     14      3    91%
+agentkit\test_execution.py            505    113    194     45    75%
+agentkit\write_policy.py               85     16     32      7    80%
+cockpit\assistant_instructions.py      85     18     26      8    77%
+cockpit\assistant_settings.py          46      3     10      3    89%
+cockpit\attachments.py                260     27     90     19    87%
+cockpit\conversations.py              190     13     74     12    91%
+cockpit\document_extract.py           221     32    108     23    83%
+cockpit\github_connector.py           103      7     42      6    91%
+cockpit\image_extract.py              107     30     48     11    71%
+cockpit\providers.py                  134     12     30      8    88%
+cockpit\public_security.py            153     19     50     15    83%
+cockpit\public_server.py              779    150    262     66    78%
+cockpit\server.py                    1049    169    402     75    82%
+cockpit\tenancy.py                    349     80    124     33    75%
+---------------------------------------------------------------------
+TOTAL                                6711   1131   2580    539    81%

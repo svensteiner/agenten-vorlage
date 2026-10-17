@@ -1,0 +1,44 @@
+{
+  "review_id": "isolated-runner-security-review-20261017",
+  "reviewed_path": ".runs/qualification/isolated-tests-20261017/agentkit/test_execution.py",
+  "source_sha256_at_start": "406657c2b9cb578d86641bb7530dfec2ec994d3c27353eddd0fe1d238479e964",
+  "source_sha256_at_end": "406657c2b9cb578d86641bb7530dfec2ec994d3c27353eddd0fe1d238479e964",
+  "source_line_count": 635,
+  "review_scope": "Read-only review of test_execution.py and its stated policy design. No runner execution, pytest, model/API calls, or edits.",
+  "blockers": [
+    {
+      "severity": "high",
+      "location": "agentkit/test_execution.py:247-271 (_safe_source_bytes)",
+      "finding": "The link check and before/after metadata checks do not make the file read atomic. After the lexical symlink/junction scan and before-stat, a concurrent workspace writer can replace a manifest-listed source path with a symlink to an outside file, allow target.open() to read that file, then restore the original path before the after-stat. The before/after device/inode/size/mtime/link-count then match the original file, while data contains the outside bytes. Test/support files are protected by content hashes, but ordinary snapshot source files are intentionally mutable and are not hash-pinned, so this can stage external secret bytes into the read-only container. A test may then print them into the returned bounded output. This defeats the stated outside-path/link rejection and source curation boundary under a concurrent workspace writer.",
+      "recommendation": "Open files through an OS-level no-follow/reparse-safe handle and validate the identity/type/size using fstat on that same handle before reading. Anchor each parent traversal to verified directory handles (or equivalent Windows handle checks) so a path component cannot be swapped between validation and open. Keep the existing post-read identity checks as an additional race detector. Add a deterministic race regression if feasible."
+    }
+  ],
+  "conditional_hardening": [
+    {
+      "location": "agentkit/test_execution.py:350-358 (_valid_container_inspect)",
+      "finding": "The inspect check requires exactly one value for each of three pytest environment variables but permits every other image-configured Env entry. Host environment is scrubbed and the Docker config is empty, so this is not a host-env pass-through. However, if an operator-pinned image accidentally contains a credential in its baked environment, tests can read and print it into the returned output. The runner currently relies on the operator image-provenance assumption that the image contains no secrets.",
+      "recommendation": "Consider enforcing a reviewed safe allowlist for image Config.Env, or at minimum reject credential-like environment names; document image-secret absence as a required policy condition."
+    }
+  ],
+  "reviewed_controls": [
+    "Manifest schema is exact and duplicate-key rejecting; manifest/image/test/support hashes and explicit paths are pinned.",
+    "Snapshot copying is bounded by per-file, file-count, and total-byte caps; hard links and detected links/junctions are rejected.",
+    "The Docker argv is host-generated, digest-pinned, network-disabled, read-only-root, non-root, capability-dropped, no-new-privileges, resource-limited, and mounts only the staged snapshot read-only.",
+    "Image and container inspect checks bind image ID, lock label, command, user, network, root filesystem, mounts, and resource limits before start.",
+    "The WSL path uses a mapped private temporary Docker config containing only empty auths, passes a minimal env via env -i, and invokes Docker with that explicit config; the suspected inherited default-context/config issue is not present in the reviewed source.",
+    "Host subprocess output is capped at 2 MB by the bounded process helper; persisted output is truncated to 12 KB; timeout/output failures remain non-success and cleanup is attempted with bounded forced removal.",
+    "Receipt validation checks exact schema, policy/run binding, bounded outcome counts, and stronger requirements for passed results."
+  ],
+  "documented_or_trusted_boundary_limitations": [
+    "Docker daemon, image provenance, and host kernel remain trusted infrastructure; container controls are defense in depth, not a kernel escape proof.",
+    "A pinned but malicious pytest suite can spoof textual summaries or otherwise lie about its own test semantics; the runner constrains execution and binds inputs but cannot prove arbitrary Python test honesty.",
+    "No full integration/runtime qualification is asserted by this source-only review."
+  ],
+  "owner_reported_evidence_not_independently_rerun": {
+    "tests": "21 unit tests, 83% branch coverage",
+    "live_hostile_probe_sha256": "a8bb8666aefc3ea7f7f387047cbd157b061d9615dc0b2451f3c6433caf8e14e9",
+    "ruff": "Owner reported one remaining E731 at line 515; not assessed as a security finding in this review."
+  },
+  "overall_verdict": "not_ready_until_snapshot_open_race_is_closed",
+  "production_qualified": false
+}

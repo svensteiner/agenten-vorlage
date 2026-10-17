@@ -1,0 +1,43 @@
+{
+  "review_id": "isolated-runner-security-rereview-20261017",
+  "reviewed_path": "agentkit/test_execution.py",
+  "candidate_root": ".runs/qualification/isolated-tests-20261017",
+  "source_sha256_at_start": "acb5eef58d8714ef2587362c56457924105f110b54f16edf9cb72b4a36caf866",
+  "source_sha256_at_end": "acb5eef58d8714ef2587362c56457924105f110b54f16edf9cb72b4a36caf866",
+  "test_path": "tests/test_test_execution.py",
+  "test_sha256": "b2a58592bebe3cd31fa081ae3063f046fa937b7b2783fa3f66498801fd89d2bb",
+  "live_probe_path": ".diagnostics/isolated_runner_racefix_live_probe_20261017.json",
+  "live_probe_sha256": "a10f5d2251ed52b95e81678aa59247fe2788f7eb53c603099e599fb246fd2d83",
+  "review_scope": "Read-only review of the current same-handle snapshot fix, regression tests, and supplied diagnostic receipt. No tests, runner, Docker commands, API calls, or edits were performed by this reviewer.",
+  "previous_review_finding": {
+    "status": "closed_in_reviewed_source",
+    "finding": "Path-based open could follow a raced symlink between link checks and the read.",
+    "closure": "Windows opens with CreateFileW OPEN_REPARSE_POINT and denies concurrent write/delete sharing, rejects reparse/directory/multilink handles, checks GetFinalPathNameByHandle against the approved canonical path before reading, then reads through the same handle. POSIX walks each parent using dir_fd + O_DIRECTORY + O_NOFOLLOW and opens the final component with O_NOFOLLOW, then validates fstat identity/type/size before and after reading the same descriptor."
+  },
+  "regression_test_review": {
+    "cases": ["final-component symlink swap", "parent-component symlink swap"],
+    "method": "The tests deterministically substitute a link immediately before the real same-handle open, then assert ContractError rather than return of the outside sentinel bytes.",
+    "adequacy": "These exercise the precise prior TOCTOU boundary. Windows' handle final-path and reparse checks reject before reading; POSIX anchored no-follow traversal refuses the swapped component. Owner reports the old implementation RED and the final focused suite GREEN; those commands were not independently rerun here."
+  },
+  "blockers": [],
+  "conditional_hardening": [
+    {
+      "location": "agentkit/test_execution.py::_valid_container_inspect environment validation",
+      "finding": "The runner still requires the three pytest variables but permits other image-baked Env entries. Host environment is scrubbed and the isolated Docker config is explicit; this is not host-env inheritance. Continue to require trusted image provenance and no credentials baked into the selected image, or tighten the image Env allowlist if that is part of the operational guarantee."
+    }
+  ],
+  "verified_source_controls": [
+    "The same descriptor is used for pre-read fstat, bounded read, and post-read fstat.",
+    "Windows denies concurrent write/delete sharing while the handle is open and checks the resolved handle path before reading.",
+    "POSIX openat-style directory traversal is anchored to the resolved workspace and refuses unsupported hosts rather than falling back to ordinary open.",
+    "Existing hard-link, regular-file, per-file, total snapshot size, path allowlist, and content-hash checks remain in place.",
+    "Previously reviewed Docker limits, read-only single bind mount, timeout/output bounds, and forced cleanup remain unchanged in the inspected source."
+  ],
+  "known_limitations": [
+    "Docker daemon, image provenance, and host kernel remain trusted infrastructure; container controls are defense in depth.",
+    "A malicious pinned test suite can spoof textual pytest summaries; the runner cannot prove arbitrary Python test honesty.",
+    "Owner-reported 23 tests and live hostile Docker probes are evidence supplied for review, not independently repeated in this rereview."
+  ],
+  "overall_verdict": "no_remaining_blocker_found_in_reviewed_snapshot_race_fix",
+  "production_qualified": false
+}

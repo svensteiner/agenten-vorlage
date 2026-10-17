@@ -1,0 +1,8 @@
+{
+  "command": "python -m unittest tests.test_core_snapshot -v",
+  "test_cases": 6,
+  "exit_code": 0,
+  "result": "OK",
+  "seconds": 2.363,
+  "scope": "canonical checkout after STATUS handoff shortened"
+}

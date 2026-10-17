@@ -1,0 +1,18 @@
+{
+  "review": "isolated-test-integration-rereview",
+  "verdict": "no blocker in the reviewed delta",
+  "files": {
+    "agentkit/backends.py": "b003f7d44fdd9d61134e7f41c1f3d46edcb3c917db8dd2618b8ae92cf8912ab7",
+    "agentkit/engine.py": "3c23fb7e68a19dfb4b9885a6135fac81172754c0197225f668ae5cb79dc9a01f",
+    "tests/test_isolated_test_integration.py": "20053a3e44e3b666b6dca80ab4acb4d632f55c3bb732a1b75cfc165ec59fcdb1"
+  },
+  "findings": [],
+  "delta_review": [
+    "Engine installs begin_test_execution and record_test_execution only when a host test policy is present, preserving legacy no-policy backend contexts.",
+    "The shared recursive model-context filter removes both callbacks and other host capabilities from Codex planner/action/report and DeepSeek model contexts; policy summary remains serializable guidance only.",
+    "The no-policy Codex report regression test verifies callbacks do not reach JSON serialization while policy summary remains available. Existing test-policy authorization and receipt gating are unchanged in the inspected diff."
+  ],
+  "validation_note": "The updated unittest log reports 67 passed. The checked-in isolated-test-integration-source-sha256.txt still contains the earlier backend/engine/test hashes, so refresh the hash inventory before treating it as evidence for this latest source state.",
+  "scope": "Read-only delta review; no tests executed and no source edits."
+}
+

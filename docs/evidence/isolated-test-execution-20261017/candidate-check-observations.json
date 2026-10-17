@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-17T03:42:33.179902+00:00",
+  "ruff": {
+    "command": "python -m ruff check agentkit tests scripts",
+    "exit_code": 0,
+    "stdout": "All checks passed!"
+  },
+  "offline_release": {
+    "command": "python scripts/verify_release.py",
+    "exit_code": 0,
+    "status": "passed",
+    "passed": 16,
+    "failed": 0,
+    "offline_only": true,
+    "model_tested": false
+  },
+  "scope": "isolated integration checkout; optional operator generated packs are absent",
+  "root_operator_generated_pack_count": 4
+}
