@@ -1,0 +1,39 @@
+{
+  "schema": "marketing-native-rss-terminal/v1",
+  "run_id": "631bce262eb04b1c8c36f0a8cd2969ed",
+  "engine_status": "completed",
+  "steps": 5,
+  "failures": 2,
+  "engine_reviewed": true,
+  "independent_root_audit": "pending",
+  "qualification": "not yet independently qualified",
+  "requested_routing": {
+    "primary": "gpt-6-luna",
+    "reviewer": "gpt-6-sol",
+    "recovery": "gpt-6-sol"
+  },
+  "served_model_and_cost_attested": false,
+  "source_sha256": "30c1620acdc00cba04cd4687c0e81dd2d4dbbcf30448c13432a2f0dfa03c7006",
+  "test_sha256": "b8159502272c4da903dd9337c5201558964548ad1964b138a249e3f1e62c4563",
+  "final_full": {
+    "receipt": "75307130828f4dceba447b0179fda036",
+    "outcome": "completed",
+    "exit_code": 0,
+    "passed": 4702,
+    "skipped": 11,
+    "xfailed": 5
+  },
+  "earlier_full": {
+    "receipt": "e6e6bcaf04bf4b7baa62c4efe25285ee",
+    "outcome": "unknown",
+    "interruption": "timeout",
+    "cleanup": "tree_cleanup_unconfirmed"
+  },
+  "limitations": [
+    "Isolated workspace; original Marketingbot unchanged.",
+    "No production, real-feed reliability, marketing utility or general autonomy claim.",
+    "Requested roles do not attest provider-served model or cost.",
+    "Task ownership is not an OS sandbox or per-tool enforced allowlist.",
+    "Pack includes historical unrelated style run artifacts; this run has a fresh UUID."
+  ]
+}
