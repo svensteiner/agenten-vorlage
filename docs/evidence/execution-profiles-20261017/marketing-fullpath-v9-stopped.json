@@ -17,7 +17,7 @@
     "Second case: generation, source review, repair and second review completed. Qualification accepted as unverified; the audit stage attempted but stopped before a completed physical request. No final output.",
     "Remaining two cases were not run after transport stopped. All four remain in the utility denominator."
   ],
-  "technical_stop_cause": "Console logged a ValueError in the TypeSafe veto stage, which precedes ContentAuditor. No completed audit request exists; the exact triggering validation branch remains under investigation. No replay of this attempt.",
+  "technical_stop_cause": "The optional TypeSafe veto precedes ContentAuditor and reads TYPESAFE_API_KEY, which the evaluator did not scrub. An offline synthetic-key reproduction matched the logged ValueError: TypeSafe's different endpoint is rejected by the fixed OpenRouter-only transport, halting subsequent audit requests. The paid process's key origin was not established. No external endpoint was allowlisted and this attempt was not replayed.",
   "offline_evaluator_tests_passed": 18,
   "independent_code_review": true,
   "independent_terminal_accounting_review": true,
