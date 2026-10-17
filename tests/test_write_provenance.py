@@ -5,10 +5,13 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from agentkit.approvals import action_digest, replay_action_digest
 from agentkit.backends import CodexBackend, DeepSeekBackend
+from agentkit.api_backend import ApiBackend
+from agentkit.anthropic_backend import AnthropicBackend
+from agentkit.ollama_backend import OllamaBackend
 from agentkit.write_policy import WritePolicy
 from agentkit.write_provenance import (
     capture_baseline,
@@ -188,7 +191,7 @@ class WriteProvenanceTests(unittest.TestCase):
         self.assertEqual(2, context["record_completed_action"].call_count)
 
     def test_planner_worker_and_reviewer_prompts_use_host_provenance(self):
-        for backend_type in (CodexBackend, DeepSeekBackend):
+        for backend_type in (CodexBackend, DeepSeekBackend, ApiBackend, AnthropicBackend, OllamaBackend):
             with self.subTest(backend=backend_type.__name__):
                 captured = {}
                 backend = backend_type.__new__(backend_type)
@@ -209,6 +212,9 @@ class WriteProvenanceTests(unittest.TestCase):
                             "task": "paused", "reason": "fixture"}
                 backend._call = fake_call
                 context = {"task": "Inspect", "history": [], "workspace": str(self.workspace),
+                           "execution_budget": {"wall_seconds_remaining": 32.5,
+                                                "call_timeout_seconds": 12.0,
+                                                "steps_remaining": 3},
                            "run_write_provenance": {
                                "status": "complete", "baseline_status": "captured",
                                "changed_by_run": [], "changed_without_matching_receipt": [],
@@ -217,6 +223,9 @@ class WriteProvenanceTests(unittest.TestCase):
                            }}
                 backend.decide(context, 1.0)
                 self.assertIn("a passing test receipt alone does not prove source changed", captured["prompt"].lower())
+                self.assertIn("one bounded, independently verifiable slice", captured["prompt"].lower())
+                self.assertIn('"wall_seconds_remaining": 32.5', captured["prompt"])
+                self.assertIn('"current_call_timeout_upper_bound_seconds": 1.0', captured["prompt"])
                 for role in ("developer", "reviewer"):
                     worker_context = dict(context)
                     if backend_type is CodexBackend:
@@ -230,6 +239,157 @@ class WriteProvenanceTests(unittest.TestCase):
                         backend.execute({"action": "delegate", "role": role, "skills": [],
                                          "task": "Work", "reason": "fixture"}, worker_context, 1.0)
                     self.assertIn("a passing test receipt alone does not prove source changed", captured["prompt"].lower())
+                    self.assertIn("one bounded, independently verifiable slice", captured["prompt"].lower())
+                    self.assertIn('"call_timeout_seconds": 12.0', captured["prompt"])
+                    self.assertIn('"current_call_timeout_upper_bound_seconds": 1.0', captured["prompt"])
+
+    def test_deepseek_tool_loop_refreshes_remaining_model_call_budget(self):
+        clock = [10.0]
+        observed = []
+        context = {
+            "workspace": str(self.workspace), "sandbox": "read-only",
+            "completed_actions": [], "run_id": "fixture-run", "task": "inspect source",
+            "instructions": "", "require_approvals": False,
+        }
+        backend = DeepSeekBackend.__new__(DeepSeekBackend)
+        backend.api_key = "offline-fixture"
+        backend.allowed_tools = DeepSeekBackend.supported_tools
+        original_validate = backend._validate_messages
+
+        def slow_validate(messages):
+            result = original_validate(messages)
+            if "[AgentKit invocation budget:" in messages[0].get("content", ""):
+                clock[0] += 1.0
+            return result
+
+        backend._validate_messages = slow_validate
+        backend._run_tool = Mock(return_value="fixture source observation")
+
+        def chat(messages, timeout, tools=None):
+            observed.append((messages[0]["content"], timeout))
+            if len(observed) == 1:
+                clock[0] += 2.0
+                return {"tool_calls": [{"id": "read-1", "type": "function", "function": {
+                    "name": "read_file", "arguments": json.dumps({"path": "src/app.py"}),
+                }}]}
+            return {"content": json.dumps({
+                "status": "success", "summary": "Inspected", "artifacts": [],
+                "evidence": ["Read the requested source"], "next_actions": [],
+            })}
+
+        backend._chat = chat
+        with unittest.mock.patch("agentkit.backends.time.monotonic", side_effect=lambda: clock[0]):
+            result = backend._call("inspect", "report", context, 10.0)
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(2, len(observed))
+        self.assertIn("[AgentKit invocation budget: 10.000 seconds remain", observed[0][0])
+        self.assertIn("[AgentKit invocation budget: 4.000 seconds remain", observed[1][0])
+        self.assertEqual([9.0, 3.0], [entry[1] for entry in observed])
+
+    def test_deepseek_report_repair_dispatch_deducts_validation_and_fails_if_expired(self):
+        report = {"status": "success", "summary": "Observed", "artifacts": [],
+                  "evidence": ["Fixture observation"], "next_actions": []}
+        tool_call = {"id": "read-1", "type": "function", "function": {
+            "name": "read_file", "arguments": json.dumps({"path": "src/app.py"}),
+        }}
+
+        for validation_delay, expected_repair_timeout in ((2.0, 8.0), (11.0, None)):
+            with self.subTest(validation_delay=validation_delay):
+                clock = [100.0]
+                calls = []
+                backend = DeepSeekBackend.__new__(DeepSeekBackend)
+                backend.api_key = "offline-fixture"
+                backend.allowed_tools = DeepSeekBackend.supported_tools
+                backend.repair_structured_report = True
+                backend.max_tool_calls = 4
+                context = {"workspace": str(self.workspace), "sandbox": "read-only",
+                           "completed_actions": [], "require_approvals": False}
+                backend._run_tool = Mock(return_value="fixture observation")
+                original_validate = backend._validate_messages
+
+                def delayed_repair_validation(messages):
+                    result = original_validate(messages)
+                    if any("Current model-call budget:" in message.get("content", "")
+                           for message in messages):
+                        clock[0] += validation_delay
+                    return result
+
+                backend._validate_messages = delayed_repair_validation
+
+                def chat(messages, timeout, tools=None):
+                    calls.append((messages, timeout))
+                    if len(calls) == 1:
+                        return {"tool_calls": [tool_call]}
+                    if len(calls) == 2:
+                        return {"content": "not valid JSON"}
+                    return {"content": json.dumps(report)}
+
+                backend._chat = chat
+                with unittest.mock.patch("agentkit.backends.time.monotonic", side_effect=lambda: clock[0]):
+                    if expected_repair_timeout is None:
+                        with self.assertRaisesRegex(RuntimeError, "during request preparation"):
+                            backend._call("inspect", "report", context, 10.0)
+                    else:
+                        self.assertEqual(report, backend._call("inspect", "report", context, 10.0))
+
+                self.assertEqual(2 if expected_repair_timeout is None else 3, len(calls))
+                if expected_repair_timeout is not None:
+                    self.assertEqual(expected_repair_timeout, calls[2][1])
+
+    def test_codex_dispatch_deducts_prompt_preparation_from_worker_deadline(self):
+        clock = [50.0]
+        backend = CodexBackend.__new__(CodexBackend)
+        backend._call = Mock(return_value={
+            "kind": "final", "tool": "none",
+            "arguments": {"path": "", "content": "", "old_text": "", "new_text": "",
+                          "start_line": None, "max_lines": None},
+            "rationale": "No action needed.",
+            "report": {"status": "success", "summary": "Observed", "artifacts": [],
+                       "evidence": ["Fixture evidence"], "next_actions": []},
+        })
+        context = {"workspace": str(self.workspace), "sandbox": "read-only",
+                   "completed_actions": [], "task": "observe", "history": []}
+
+        def slow_fingerprint(_workspace):
+            clock[0] += 2.0
+            return "f" * 64
+
+        with patch("agentkit.backends.time.monotonic", side_effect=lambda: clock[0]), \
+             patch("agentkit.backends.workspace_fingerprint", side_effect=slow_fingerprint):
+            result = backend._execute_approval_gated(
+                {"action": "delegate", "role": "developer", "skills": [],
+                 "task": "bounded", "reason": "fixture"}, context, 10.0,
+            )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(8.0, backend._call.call_args.args[3])
+        self.assertIn('"current_call_timeout_upper_bound_seconds": 10.0',
+                      backend._call.call_args.args[0])
+
+    def test_deepseek_dispatch_deducts_prompt_preparation_from_worker_deadline(self):
+        clock = [50.0]
+        backend = DeepSeekBackend.__new__(DeepSeekBackend)
+        backend._call = Mock(return_value={
+            "status": "success", "summary": "Observed", "artifacts": [],
+            "evidence": ["Fixture evidence"], "next_actions": [],
+        })
+
+        def slow_context(context, **_kwargs):
+            clock[0] += 2.0
+            return context
+
+        backend._provider_context = slow_context
+        with patch("agentkit.backends.time.monotonic", side_effect=lambda: clock[0]):
+            result = backend.execute(
+                {"action": "delegate", "role": "researcher", "skills": [],
+                 "task": "bounded", "reason": "fixture"},
+                {"task": "observe", "history": [], "sandbox": "read-only"},
+                10.0,
+            )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(8.0, backend._call.call_args.args[3])
 
 
 if __name__ == "__main__":

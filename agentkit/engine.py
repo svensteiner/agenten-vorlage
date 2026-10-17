@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 import uuid
 from pathlib import Path
@@ -409,6 +410,17 @@ class Engine:
             return min(self.limits["call_timeout"], remaining)
 
         def context() -> dict:
+            wall_seconds_remaining = self.limits["max_seconds"] - (
+                elapsed_before + time.monotonic() - started
+            )
+            if not math.isfinite(wall_seconds_remaining):
+                raise ContractError("Execution budget is not finite.")
+            wall_seconds_remaining = max(0.0, round(wall_seconds_remaining, 3))
+            call_timeout_seconds = min(
+                float(self.limits["call_timeout"]), wall_seconds_remaining
+            )
+            if not math.isfinite(call_timeout_seconds):
+                raise ContractError("Execution call budget is not finite.")
             result = {
                 "task": state["task"],
                 "feedback": state["feedback"],
@@ -419,6 +431,11 @@ class Engine:
                 "require_review": config["require_review"],
                 "review_pending": state["dirty"] and not state["reviewed"],
                 "steps_remaining": self.limits["max_steps"] - state["steps"],
+                "execution_budget": {
+                    "wall_seconds_remaining": wall_seconds_remaining,
+                    "call_timeout_seconds": call_timeout_seconds,
+                    "steps_remaining": self.limits["max_steps"] - state["steps"],
+                },
                 "require_approvals": bool(state.get("require_approvals", False)),
                 "completed_actions": state.get("completed_actions", []),
                 "run_id": state["run_id"],

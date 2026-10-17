@@ -1,0 +1,71 @@
+{
+  "schema": "agentkit-evidence/v1",
+  "status": "technical_checks_passed_real_model_validation_pending",
+  "base_head_before_changes": "765254cb3a63df8a212fc659f8abf741f8d62160",
+  "changes": [
+    "Expose finite host budget snapshot: remaining active wall time, per-call cap and steps.",
+    "Expose current invocation timeout upper bound and generic bounded-step guidance across adapters.",
+    "Deduct preparation and validation time before physical model dispatch, including report repair.",
+    "Preserve limits, unknown outcomes and explicit interruption acknowledgment; no automatic replay."
+  ],
+  "source_manifest": {
+    "base_evidence": "provenance-technical-qualification.json",
+    "base_field": "source_sha256",
+    "file_count": 144,
+    "overrides_sha256": {
+      "agentkit/backends.py": "76d942fa3214289f11787924c3a9193c062116e0d3ec24a7ae5b01494aacecce",
+      "agentkit/engine.py": "78eaea8e73397d794935d041f8e08dcb8cb033f3044a5dd9c6d8505c7b5a97a4",
+      "tests/test_agentkit.py": "8a0e50586f305cdfdc919883b7519142b2f5bcbc795c72ea54fed26bc511f0a1",
+      "tests/test_write_provenance.py": "6ecec6ac97f84c238eab58ec83f12ed1c6a8255417f97a31f85da42f1d93c481"
+    },
+    "unchanged_during_suite": true,
+    "before_receipt_sha256": "d210b2c7c308e798590da9e7df8bba64d80e43348c7119713f37f886b2c01808",
+    "after_receipt_sha256": "ba62cc549b588d0c27cfc6fcb0e212cbe5d8e17632b97c8d638640e2bd11918c"
+  },
+  "tests": {
+    "command": "python -m coverage run --branch --source=agentkit,cockpit -m unittest discover -v",
+    "ran": 565,
+    "passed": 561,
+    "skipped": 4,
+    "failed": 0,
+    "seconds": 429.215,
+    "log_sha256": "ef0394ed3b70fe3e61b1066f94f7f829bb65e8b1bf93d55055b082c3a6b19f15"
+  },
+  "coverage": {
+    "covered_lines": 6352,
+    "num_statements": 7631,
+    "percent_covered": 80.58873318912819,
+    "percent_covered_display": "81",
+    "missing_lines": 1279,
+    "excluded_lines": 10,
+    "percent_statements_covered": 83.23941816275718,
+    "percent_statements_covered_display": "83",
+    "num_branches": 3002,
+    "num_partial_branches": 645,
+    "covered_branches": 2217,
+    "missing_branches": 785,
+    "percent_branches_covered": 73.85076615589607,
+    "percent_branches_covered_display": "74"
+  },
+  "release": {
+    "passed": 24,
+    "failed": 0,
+    "offline_only": true,
+    "model_tested": false,
+    "receipt_sha256": "52bdc2949cd0a782d6909492ddc0c688f02077c91125231af63085008970f35d"
+  },
+  "ruff": "passed",
+  "bandit": "passed",
+  "independent_review": "Initial stale report-repair deadline finding fixed; exact-hash rereview clear.",
+  "prior_attempt": {
+    "outcome": "intentionally_interrupted_after_independent_review_finding",
+    "qualified": false,
+    "log_sha256": "80e3ae1b716f41b32272721692564338ff9b6f7a7eef7d93181d81b44a188a2b"
+  },
+  "limits": [
+    "Prompt and fake-clock checks do not establish actual model decomposition success.",
+    "Fresh unassisted real coding trial remains required.",
+    "Marketing quality, full integration and installed-Chrome qualification remain open.",
+    "No production approval."
+  ]
+}

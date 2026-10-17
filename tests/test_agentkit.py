@@ -181,6 +181,114 @@ class AgentKitTests(unittest.TestCase):
         self.assertEqual(observations[0]["feedback"], observations[1]["feedback"])
         self.assertIsNone(state["in_flight"])
 
+    def test_execution_budget_snapshot_tracks_wall_steps_and_existing_caps(self):
+        from agentkit.engine import time as engine_time
+
+        clock = [100.0]
+        observations = {"decisions": [], "workers": []}
+
+        class BudgetBackend:
+            name = "budget-fixture"
+
+            def decide(self, context, timeout):
+                observations["decisions"].append((context, timeout))
+                if len(observations["decisions"]) == 1:
+                    clock[0] += 4.0
+                    return decision(role="researcher")
+                return decision("finish", "")
+
+            def execute(self, choice, context, timeout):
+                observations["workers"].append((context, timeout))
+                clock[0] += 2.0
+                return report()
+
+        self.change_limits(max_steps=4, max_seconds=20, call_timeout=5)
+        with patch.object(engine_time, "monotonic", side_effect=lambda: clock[0]):
+            state = self.run_backend(BudgetBackend())
+
+        self.assertEqual("completed", state["status"])
+        first_context, first_timeout = observations["decisions"][0]
+        worker_context, worker_timeout = observations["workers"][0]
+        final_context, final_timeout = observations["decisions"][1]
+        first = first_context["execution_budget"]
+        worker = worker_context["execution_budget"]
+        final = final_context["execution_budget"]
+        self.assertEqual(5.0, first["call_timeout_seconds"])
+        self.assertEqual(5.0, worker["call_timeout_seconds"])
+        self.assertEqual(5.0, final["call_timeout_seconds"])
+        self.assertEqual(5.0, first_timeout)
+        self.assertEqual(5.0, worker_timeout)
+        self.assertEqual(5.0, final_timeout)
+        self.assertEqual(20.0, first["wall_seconds_remaining"])
+        self.assertEqual(16.0, worker["wall_seconds_remaining"])
+        self.assertEqual(14.0, final["wall_seconds_remaining"])
+        self.assertEqual([3, 3, 2], [
+            first["steps_remaining"], worker["steps_remaining"], final["steps_remaining"]
+        ])
+        for budget in (first, worker, final):
+            json.dumps(budget, allow_nan=False)
+
+    def test_call_budget_is_capped_by_remaining_wall_time(self):
+        from agentkit.engine import time as engine_time
+
+        clock = [25.0]
+        observed = []
+
+        class CappedBackend:
+            name = "capped-fixture"
+
+            def decide(self, context, timeout):
+                observed.append((context, timeout))
+                return decision("blocked", "", skills=[])
+
+            def execute(self, choice, context, timeout):
+                self.fail("blocked planner must not dispatch a worker")
+
+        self.change_limits(max_seconds=3, call_timeout=10)
+        with patch.object(engine_time, "monotonic", side_effect=lambda: clock[0]):
+            state = self.run_backend(CappedBackend())
+
+        context, actual_timeout = observed[0]
+        self.assertEqual("blocked", state["status"])
+        self.assertEqual(3.0, context["execution_budget"]["wall_seconds_remaining"])
+        self.assertEqual(3.0, context["execution_budget"]["call_timeout_seconds"])
+        self.assertEqual(3.0, actual_timeout)
+
+    def test_worker_timeout_keeps_unknown_inflight_and_resume_does_not_replay(self):
+        class UnknownOutcomeBackend:
+            name = "unknown-outcome-fixture"
+
+            def __init__(self):
+                self.worker_calls = 0
+                self.decision_calls = 0
+
+            def decide(self, context, timeout):
+                self.decision_calls += 1
+                if self.decision_calls == 1:
+                    return decision(role="researcher")
+                return decision("blocked", "", skills=[])
+
+            def execute(self, choice, context, timeout):
+                self.worker_calls += 1
+                raise TimeoutError("fixture timeout after dispatch")
+
+        backend = UnknownOutcomeBackend()
+        engine = Engine(self.agent, self.workspace, backend)
+        first = engine.run("Inspect a bounded deliverable")
+        run_dir = self.agent / ".runs" / first["run_id"]
+
+        self.assertEqual("blocked", first["status"])
+        self.assertEqual("worker", first["in_flight"]["kind"])
+        self.assertEqual(1, backend.worker_calls)
+
+        resumed = engine.run(
+            "", run_dir=run_dir, acknowledge_interruption=True,
+            feedback="The timed-out call is unresolved; do not repeat it.",
+        )
+
+        self.assertEqual("blocked", resumed["status"])
+        self.assertEqual(1, backend.worker_calls)
+
     def test_premature_finish_replans_to_independent_review(self):
         backend = SequenceBackend(
             [decision(), decision("finish", ""), decision(role="reviewer"), decision("finish", "")],
