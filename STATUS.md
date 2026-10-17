@@ -14,6 +14,21 @@ pruefen und nacharbeiten. Die Mietplattform ist zurueckgestellt.
 Der Original-Marketingbot bleibt unveraendert. Isolierte Cockpit-Abnahmen
 verwenden Port 8766; die Laufprotokolle belegen ihren jeweiligen Betriebsstand.
 
+Der neue [native RSS-Auftrag](docs/evidence/execution-profiles-20261017/marketing-native-rss-terminal.json)
+ist mit eigenstaendiger Review-Nacharbeit abgeschlossen: 231 gezielte und
+4.702 vollstaendige Tests bestanden. Die unabhaengige Nachpruefung findet
+keinen Codeblocker und bestaetigt die finalen Quell-/Testhashes. Die autonome
+Wiederanlaufabnahme bleibt unvollstaendig: Vor dem zweiten Gesamttest ist
+keine Prozessbereinigungspruefung fuer den zuvor unbekannten Timeout belegt.
+Der spaetere erfolgreiche Test ersetzt diesen unbekannten Ausgang nicht.
+
+Als naechster Coding-Auftrag wird der [versionierte Quellenbeleg-Adapter](docs/SOURCE-EVIDENCE-V2.md)
+isoliert vorbereitet. Numerische Beleg-IDs sollen fehlerhaft abgeschriebene
+Quellenzitate vermeiden; semantisch falsche Belegwahl bleibt moeglich.
+Eine frische Abnahme mit tatsaechlich extrahierten RSS-Kurzquellen muss
+anschliessend brauchbare Endtexte belegen. Noch keine Implementierungs-
+oder Inhaltsfreigabe fuer diesen Entwurf.
+
 ## Belegt und offen
 
 | Bereich | Nachweis und Grenze |
