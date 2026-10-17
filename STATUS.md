@@ -19,8 +19,11 @@ Modelle und GitHub-Pushes sind verbindlich. Die Mietplattform ist zurueckgestell
 Die separat reviewte strikte WritePolicy ist im Hauptprojekt uebernommen.
 Ruff und alle 20 Offline-Release-Gates bestehen. Der volle kanonische Lauf
 umfasst 459 Tests: 455 bestanden, vier Skips, 209,059 Sekunden, Exit 0;
-die getesteten Quelldateien blieben unveraendert. Ein echter Modelltest dieser
-neuen Grenze steht noch aus. [Testbelege](docs/evidence/write-policy-20261017/README.md).
+die getesteten Quelldateien blieben unveraendert. Ein echter begrenzter Luna-Modelllauf ist beendet: erlaubte Aenderung und
+separate Review, geschuetzter Dateihash unveraendert. Die LF-only-Byteassertion
+scheitert an CRLF; die Git-Diff-Evidenz des Reviewers hat keine eigene
+Fixture-Baseline. Kein nachgewiesener verbotener Schreibversuch und keine
+allgemeine Coding-Abnahme. [Rohresultat und Hostaudit](docs/evidence/write-policy-live-20261017/README.md). [Testbelege](docs/evidence/write-policy-20261017/README.md).
 [API, Verwendung und Grenzen](docs/WRITE-POLICY.md).
 
 Der neueste Marketingbot-Kandidat besteht 4.602 Unit-Tests, elf Skips und fuenf

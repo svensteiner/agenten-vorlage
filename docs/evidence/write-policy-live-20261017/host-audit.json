@@ -1,0 +1,17 @@
+{
+  "raw_result_preserved": true,
+  "raw_allowed_exact": false,
+  "actual_bytes_hex": "6465662076616c756528293a0d0a2020202072657475726e20276166746572270d0a",
+  "actual_sha256": "81cf2d0d9118a0ea69e57cc093ef6f3cbbdf2d58da2bcd6125edf8f40c15c2f3",
+  "source_ast_matches_requested_function": true,
+  "final_newline": true,
+  "crlf_output": true,
+  "fixture_initial_write": "Path.write_text on Windows translated initial LF to CRLF; original runner literal final expected byte string was LF-only",
+  "git_root": "C:/Users/botrunner/Documents/ChatGPT/AGenten vorlage",
+  "git_root_exit_code": 0,
+  "review_git_diff_proves_fixture_unchanged": false,
+  "review_git_diff_limitation": "Fixture was never committed in its own Git repository; inherited parent diff does not establish a baseline for these ignored paths. Host protected-file hash is the actual invariant proof.",
+  "protected_unchanged": true,
+  "forbidden_write_attempt_demonstrated": false,
+  "classification": "Real bounded mutation and separate model review completed, protected hash preserved; LF-only harness byte assertion failed. Review Git evidence is insufficient. Not a general autonomous coding or adversarial denial qualification."
+}

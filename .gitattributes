@@ -39,3 +39,6 @@ docs/evidence/source-faithfulness-protocol-trace-20261017/*.txt -text
 
 docs/evidence/write-policy-20261017/*.json -text
 docs/evidence/write-policy-20261017/*.txt -text
+
+docs/evidence/write-policy-live-20261017/*.json -text
+docs/evidence/write-policy-live-20261017/*.txt -text
